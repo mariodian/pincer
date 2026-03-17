@@ -1,6 +1,6 @@
 // Agents Service - Handles reading/writing agents.json in platform-specific locations
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 
 const APP_NAME = "crabControl";
 
@@ -10,10 +10,15 @@ const APP_NAME = "crabControl";
 function getAppDataDir(): string {
   const isMacOS = process.platform === "darwin";
   const isWindows = process.platform === "win32";
-  
+
   if (isMacOS) {
     // ~/Library/Application Support/crabControl
-    return join(process.env.HOME || "", "Library", "Application Support", APP_NAME);
+    return join(
+      process.env.HOME || "",
+      "Library",
+      "Application Support",
+      APP_NAME,
+    );
   } else if (isWindows) {
     // %APPDATA%\crabControl
     const appdata = process.env.APPDATA || "";
@@ -21,7 +26,8 @@ function getAppDataDir(): string {
   } else {
     // Linux: ~/.config/crabControl or ~/.local/share/crabControl
     // Following XDG Base Directory Specification
-    const xdgConfigHome = process.env.XDG_CONFIG_HOME || join(process.env.HOME || "", ".config");
+    const xdgConfigHome =
+      process.env.XDG_CONFIG_HOME || join(process.env.HOME || "", ".config");
     return join(xdgConfigHome, APP_NAME);
   }
 }
@@ -57,10 +63,24 @@ export interface Agent {
 }
 
 /**
+ * Configuration interface
+ */
+export interface Config {
+  pollingInterval?: number; // milliseconds
+}
+
+/**
+ * Default configuration
+ */
+const DEFAULT_CONFIG: Config = {
+  pollingInterval: 30000, // 30 seconds
+};
+
+/**
  * Agent status interface
  */
 export interface AgentStatus extends Agent {
-  status: "online" | "offline" | "error" | "warning";
+  status: "ok" | "offline" | "error" | "warning";
   lastChecked: number; // timestamp
   errorMessage?: string;
 }
@@ -73,33 +93,40 @@ export async function readAgents(): Promise<Agent[]> {
   try {
     await ensureAppDataDir();
     const filePath = getAgentsFilePath();
-    
+
     try {
       await stat(filePath);
     } catch (error) {
-      // File doesn't exist yet, return empty array
       return [];
     }
-    
+
     const data = await readFile(filePath, "utf8");
     const parsed = JSON.parse(data);
-    
+
+    // Handle both array format and object format with agents array
+    let agentsData = parsed;
+    if (!Array.isArray(parsed) && parsed.agents) {
+      agentsData = parsed.agents;
+    }
+
     // Validate that we have an array
-    if (!Array.isArray(parsed)) {
-      console.warn("agents.json does not contain an array, returning empty array");
+    if (!Array.isArray(agentsData)) {
       return [];
     }
-    
+
     // Validate each agent has required fields
     const validAgents: Agent[] = [];
-    for (const agent of parsed) {
-      if (agent.id && agent.name && agent.url && typeof agent.port === "number") {
+    for (const agent of agentsData) {
+      if (
+        agent.id &&
+        agent.name &&
+        agent.url &&
+        typeof agent.port === "number"
+      ) {
         validAgents.push(agent);
-      } else {
-        console.warn(`Invalid agent entry skipped:`, agent);
       }
     }
-    
+
     return validAgents;
   } catch (error) {
     console.error("Error reading agents:", error);
@@ -108,13 +135,84 @@ export async function readAgents(): Promise<Agent[]> {
 }
 
 /**
- * Write agents to agents.json file
+ * Read configuration from agents.json file
  */
-export async function writeAgents(agents: Agent[]): Promise<void> {
+export async function readConfig(): Promise<Config> {
   try {
     await ensureAppDataDir();
     const filePath = getAgentsFilePath();
-    const data = JSON.stringify(agents, null, 2);
+
+    try {
+      await stat(filePath);
+    } catch (error) {
+      return DEFAULT_CONFIG;
+    }
+
+    const data = await readFile(filePath, "utf8");
+    const parsed = JSON.parse(data);
+
+    // Extract config from object format
+    if (!Array.isArray(parsed)) {
+      return {
+        pollingInterval:
+          parsed.pollingInterval ?? DEFAULT_CONFIG.pollingInterval,
+      };
+    }
+
+    return DEFAULT_CONFIG;
+  } catch (error) {
+    console.error("Error reading config:", error);
+    return DEFAULT_CONFIG;
+  }
+}
+
+/**
+ * Write configuration to agents.json file
+ */
+export async function writeConfig(config: Config): Promise<void> {
+  try {
+    await ensureAppDataDir();
+    const filePath = getAgentsFilePath();
+
+    // Preserve existing agents
+    const existingAgents = await readAgents();
+
+    const data = JSON.stringify(
+      {
+        agents: existingAgents,
+        pollingInterval:
+          config.pollingInterval ?? DEFAULT_CONFIG.pollingInterval,
+      },
+      null,
+      2,
+    );
+
+    await writeFile(filePath, data, "utf8");
+  } catch (error) {
+    console.error("Error writing config:", error);
+    throw error;
+  }
+}
+
+/**
+ * Write agents to agents.json file
+ */
+export async function writeAgents(
+  agents: Agent[],
+  pollingInterval?: number,
+): Promise<void> {
+  try {
+    await ensureAppDataDir();
+    const filePath = getAgentsFilePath();
+
+    // Preserve existing pollingInterval if not provided
+    let interval = pollingInterval;
+    if (interval === undefined) {
+      const existingConfig = await readConfig();
+      interval = existingConfig.pollingInterval;
+    }
+
+    const data = JSON.stringify({ agents, pollingInterval: interval }, null, 2);
     await writeFile(filePath, data, "utf8");
   } catch (error) {
     console.error("Error writing agents:", error);
@@ -139,14 +237,17 @@ export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
 /**
  * Update an existing agent
  */
-export async function updateAgent(id: string, updates: Partial<Agent>): Promise<Agent | null> {
+export async function updateAgent(
+  id: string,
+  updates: Partial<Agent>,
+): Promise<Agent | null> {
   const agents = await readAgents();
-  const index = agents.findIndex(agent => agent.id === id);
-  
+  const index = agents.findIndex((agent) => agent.id === id);
+
   if (index === -1) {
     return null;
   }
-  
+
   agents[index] = { ...agents[index], ...updates };
   await writeAgents(agents);
   return agents[index];
@@ -158,12 +259,12 @@ export async function updateAgent(id: string, updates: Partial<Agent>): Promise<
 export async function deleteAgent(id: string): Promise<boolean> {
   const agents = await readAgents();
   const initialLength = agents.length;
-  const filteredAgents = agents.filter(agent => agent.id !== id);
-  
+  const filteredAgents = agents.filter((agent) => agent.id !== id);
+
   if (filteredAgents.length === initialLength) {
     return false; // Agent not found
   }
-  
+
   await writeAgents(filteredAgents);
   return true;
 }
@@ -175,34 +276,34 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-    
-    const response = await fetch(`${agent.url}:${agent.port}/health`, {
+
+    const response = await fetch(`${agent.url}:${agent.port}/a2a/health`, {
       method: "GET",
       signal: controller.signal,
       headers: {
-        "Accept": "application/json"
-      }
+        Accept: "application/json",
+      },
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (response.ok) {
       // Try to parse JSON response for more detailed status
       try {
         const data = await response.json();
         return {
           ...agent,
-          status: data.status || "online",
+          status: data.status || "ok",
           lastChecked: Date.now(),
-          errorMessage: undefined
+          errorMessage: undefined,
         };
       } catch (parseError) {
         // If not JSON, still consider it online if we got a successful response
         return {
           ...agent,
-          status: "online",
+          status: "ok",
           lastChecked: Date.now(),
-          errorMessage: undefined
+          errorMessage: undefined,
         };
       }
     } else {
@@ -210,7 +311,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
         ...agent,
         status: "error",
         lastChecked: Date.now(),
-        errorMessage: `HTTP ${response.status}: ${response.statusText}`
+        errorMessage: `HTTP ${response.status}: ${response.statusText}`,
       };
     }
   } catch (error) {
@@ -219,7 +320,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       ...agent,
       status: "offline",
       lastChecked: Date.now(),
-      errorMessage: error instanceof Error ? error.message : String(error)
+      errorMessage: error instanceof Error ? error.message : String(error),
     };
   }
 }
@@ -229,6 +330,6 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
  */
 export async function checkAllAgentsStatus(): Promise<AgentStatus[]> {
   const agents = await readAgents();
-  const statusPromises = agents.map(agent => checkAgentStatus(agent));
+  const statusPromises = agents.map((agent) => checkAgentStatus(agent));
   return Promise.all(statusPromises);
 }

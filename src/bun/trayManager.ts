@@ -1,21 +1,29 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
-import { Tray, BrowserWindow } from "electrobun/bun";
-import { readAgents, checkAllAgentsStatus, AgentStatus } from "./agentsService";
+import { BrowserWindow, Tray } from "electrobun/bun";
 import { agentRPC } from "./agentRPC";
+import {
+  AgentStatus,
+  checkAllAgentsStatus,
+  readAgents,
+  readConfig,
+} from "./agentsService";
 import { applyMacOSWindowEffects } from "./index";
+
+const NATIVE_MENU = false;
 
 let tray: Tray | null = null;
 let configWindow: BrowserWindow | null = null;
+let popoverWindow: BrowserWindow | null = null;
 let agentStatusMap: Map<string, AgentStatus> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 
 /**
  * Initialize the tray icon and set up event handlers
  */
-export function initializeTray() {
+export async function initializeTray() {
   // Create tray icon
   tray = new Tray({
-    title: "CrabControl Agents",
+    title: "🦞 CrabControl",
     // Use a default icon - we'll need to add this to assets
     image: "views://assets/icon-32-template.png", // Will need to create this
     template: true,
@@ -25,14 +33,78 @@ export function initializeTray() {
 
   // Set up click handler
   tray.on("tray-clicked", async (event: unknown) => {
+    console.log("Tray clicked event:", JSON.stringify(event));
     const action = (event as { data?: { action?: string } })?.data?.action;
-    
+
     if (action === "") {
-      // Tray icon clicked (no menu item) - show/update menu
-      updateTrayMenu();
+      if (NATIVE_MENU) {
+        // Show native menu
+        updateTrayMenu();
+      } else {
+        // Show custom popover menu under tray icon
+        // If popover already exists, close it
+        if (popoverWindow) {
+          popoverWindow.close();
+          popoverWindow = null;
+          return;
+        }
+
+        // @ts-ignore - getBounds may not be in types
+        const bounds = tray.getBounds();
+        const isMacOS = process.platform === "darwin";
+
+        // Base window config
+        const windowConfig: Record<string, unknown> = {
+          title: "",
+          url: "views://mainview/tray-popover.html",
+          titleBarStyle: "hidden",
+          frame: {
+            width: 250,
+            height: 300,
+            x: bounds.x,
+            y: 0 + bounds.height,
+          },
+        };
+
+        // macOS specific: hide traffic lights with styleMask
+        // Windows/Linux: use frame: false to hide title bar and controls
+        if (isMacOS) {
+          windowConfig.styleMask = {
+            Borderless: true,
+            Titled: false,
+            Closable: false,
+            Miniaturizable: false,
+            Resizable: false,
+          };
+        } else {
+          windowConfig.frame = false;
+        }
+
+        popoverWindow = new BrowserWindow(windowConfig);
+        // Clear reference when closed
+        popoverWindow.on("close", () => {
+          popoverWindow = null;
+        });
+      }
     } else if (action === "configure") {
       // Configure menu item clicked
       openConfigWindow();
+    } else if (action === "refresh") {
+      // Refresh menu item clicked - show feedback in title
+      tray?.setTitle("🦞 CrabControl - Refreshing...");
+      try {
+        const statuses = await checkAllAgentsStatus();
+        statuses.forEach((status) => {
+          agentStatusMap.set(status.id, status);
+        });
+        updateTrayMenu();
+        tray?.setTitle("🦞 CrabControl - Updated!");
+        setTimeout(() => tray?.setTitle("🦞 CrabControl"), 2000);
+      } catch (error) {
+        console.error("Failed to refresh agent statuses:", error);
+        tray?.setTitle("🦞 CrabControl - Error!");
+        setTimeout(() => tray?.setTitle("🦞 CrabControl"), 2000);
+      }
     } else if (action && action.startsWith("agent:")) {
       // Agent menu item clicked
       const agentId = action.substring(6); // Remove "agent:" prefix
@@ -42,8 +114,10 @@ export function initializeTray() {
   });
 
   // Initial menu update
-  updateTrayMenu();
-  
+  if (NATIVE_MENU) {
+    updateTrayMenu();
+  }
+
   // Start periodic status updates
   startStatusUpdates();
 }
@@ -53,26 +127,26 @@ export function initializeTray() {
  */
 export async function updateTrayMenu() {
   if (!tray) return;
-  
+
   try {
     const agents = await readAgents();
     const menuItems = [];
-    
+
     // Add agent items
     for (const agent of agents) {
       const status = agentStatusMap.get(agent.id) || {
         ...agent,
         status: "offline" as const,
         lastChecked: 0,
-        errorMessage: undefined
+        errorMessage: undefined,
       };
-      
+
       let label = agent.name;
       let tooltip = `${agent.name}: ${agent.url}:${agent.port}`;
-      
+
       // Add status indicator
       switch (status.status) {
-        case "online":
+        case "ok":
           label = `● ${agent.name}`;
           tooltip += "\nStatus: Online";
           break;
@@ -89,7 +163,7 @@ export async function updateTrayMenu() {
           tooltip += `\nStatus: Warning${status.errorMessage ? `\nError: ${status.errorMessage}` : ""}`;
           break;
       }
-      
+
       menuItems.push({
         type: "normal" as const,
         label,
@@ -98,14 +172,22 @@ export async function updateTrayMenu() {
         enabled: true,
       });
     }
-    
+
     // Add separator if we have agents
     if (agents.length > 0) {
       menuItems.push({
-        type: "divider" as const
+        type: "divider" as const,
       });
     }
-    
+
+    // Add Refresh menu item
+    menuItems.push({
+      type: "normal" as const,
+      label: "Refresh Status",
+      action: "refresh",
+      enabled: true,
+    });
+
     // Add Configure menu item
     menuItems.push({
       type: "normal" as const,
@@ -113,7 +195,7 @@ export async function updateTrayMenu() {
       action: "configure",
       enabled: true,
     });
-    
+
     // Add Quit menu item
     menuItems.push({
       type: "normal" as const,
@@ -121,62 +203,88 @@ export async function updateTrayMenu() {
       action: "quit",
       enabled: true,
     });
-     // Set the menu
-     tray.setMenu(menuItems);
-   } catch (error) {
-     console.error("Failed to update tray menu:", error);
-     
-     // Show error menu
-     if (tray) {
-       tray.setMenu([
-         {
-           type: "normal" as const,
-           label: "Error loading agents",
-           enabled: false,
-         },
-         {
-           type: "divider" as const
-         },
-         {
-           type: "normal" as const,
-           label: "Configure Agents",
-           action: "configure",
-           enabled: true,
-         },
-         {
-           type: "normal" as const,
-           label: "Quit CrabControl",
-           action: "quit",
-           enabled: true,
-         },
-       ]);
-     }
-   }
- }
+    // Set the menu
+    tray.setMenu(menuItems);
+  } catch (error) {
+    console.error("Failed to update tray menu:", error);
+
+    // Show error menu
+    if (tray) {
+      tray.setMenu([
+        {
+          type: "normal" as const,
+          label: "Error loading agents",
+          enabled: false,
+        },
+        {
+          type: "divider" as const,
+        },
+        {
+          type: "normal" as const,
+          label: "Configure Agents",
+          action: "configure",
+          enabled: true,
+        },
+        {
+          type: "normal" as const,
+          label: "Quit CrabControl",
+          action: "quit",
+          enabled: true,
+        },
+      ]);
+    }
+  }
+}
 
 /**
  * Start periodic status updates for all agents
  */
-function startStatusUpdates() {
+async function startStatusUpdates() {
   // Clear any existing interval
   if (statusUpdateInterval) {
     clearInterval(statusUpdateInterval);
   }
-  
-  // Update status every 30 seconds
+
+  // Read config for polling interval
+  const config = await readConfig();
+  const interval = config.pollingInterval || 30000;
+
+  // Update status immediately
+  try {
+    const statuses = await checkAllAgentsStatus();
+    statuses.forEach((status) => {
+      agentStatusMap.set(status.id, status);
+    });
+    if (NATIVE_MENU) {
+      updateTrayMenu();
+    }
+  } catch (error) {
+    console.error("Failed to update agent statuses:", error);
+  }
+
+  // Start periodic updates
   statusUpdateInterval = setInterval(async () => {
     try {
       const statuses = await checkAllAgentsStatus();
-      statuses.forEach(status => {
+      statuses.forEach((status) => {
         agentStatusMap.set(status.id, status);
       });
-      
+
       // Update menu to reflect new statuses
-      updateTrayMenu();
+      if (NATIVE_MENU) {
+        updateTrayMenu();
+      }
     } catch (error) {
       console.error("Failed to update agent statuses:", error);
     }
-  }, 30000); // 30 seconds
+  }, interval);
+}
+
+/**
+ * Restart status updates with new interval from config
+ */
+export async function restartStatusUpdates() {
+  await startStatusUpdates();
 }
 
 /**
@@ -184,15 +292,15 @@ function startStatusUpdates() {
  */
 function openConfigWindow() {
   console.log("Opening agent configuration window...");
-  
+
   // If window already exists, focus it
   if (configWindow) {
     configWindow.focus();
     return;
   }
-  
+
   const isMacOS = process.platform === "darwin";
-  
+
   // Create new configuration window
   configWindow = new BrowserWindow({
     title: "Configure Agents - CrabControl",
@@ -204,22 +312,24 @@ function openConfigWindow() {
       y: 100,
     },
     rpc: agentRPC,
-    ...(isMacOS ? {
-      titleBarStyle: "hiddenInset" as const,
-      transparent: true,
-    } : {}),
+    ...(isMacOS
+      ? {
+          titleBarStyle: "hiddenInset" as const,
+          transparent: true,
+        }
+      : {}),
   });
-  
+
   // Apply macOS window effects
   if (isMacOS) {
     applyMacOSWindowEffects(configWindow);
   }
-  
+
   // Clean up when window closes
   configWindow.on("close", () => {
     configWindow = null;
   });
-  
+
   console.log("Agent configuration window opened");
 }
 
@@ -231,11 +341,11 @@ export function cleanupTray() {
     clearInterval(statusUpdateInterval);
     statusUpdateInterval = null;
   }
-  
+
   if (tray) {
     tray.remove();
     tray = null;
   }
-  
+
   agentStatusMap.clear();
 }
