@@ -1,4 +1,4 @@
-import { BrowserWindow, Utils } from "electrobun/bun";
+import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { agentRPC } from "./agentRPC";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { getMainViewUrl } from "./mainViewUrl";
@@ -10,6 +10,14 @@ const url = await getMainViewUrl("index.html");
 const wc = await readWindowConfig("main");
 const isMacOS = process.platform === "darwin";
 
+const windowWidth = 900;
+const windowHeight = 700;
+const primaryDisplay = Screen.getPrimaryDisplay();
+const displayCenter = {
+  x: Math.round(primaryDisplay.bounds.x + (primaryDisplay.bounds.width - windowWidth) / 2),
+  y: Math.round(primaryDisplay.bounds.y + (primaryDisplay.bounds.height - windowHeight) / 2),
+};
+
 // Initialize tray icon
 initializeTray();
 
@@ -17,10 +25,10 @@ const mainWindow = new BrowserWindow({
   title: "React + Tailwind + Vite",
   url,
   frame: {
-    width: 900,
-    height: 700,
-    x: 200,
-    y: 200,
+    width: windowWidth,
+    height: windowHeight,
+    x: displayCenter.x,
+    y: displayCenter.y,
   },
   rpc: agentRPC,
   ...(isMacOS

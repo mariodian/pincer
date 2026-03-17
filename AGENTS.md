@@ -15,6 +15,9 @@
 ### Running
 - `bun run start` - Alias for dev mode
 
+### Linting
+> ⚠️ No ESLint configured. Consider adding ESLint for code quality checks.
+
 ### Testing
 > ⚠️ No test framework configured. When adding tests:
 > - Unit tests: Use Vitest or Bun test (`bun test`)
@@ -77,6 +80,7 @@
 - Use `{#key}` blocks for efficient list rendering
 - Scope CSS to component unless global styling is needed
 - Use `class:` directive for conditional classes
+- Tailwind CSS v4 is used (configured in `tailwind.config.js`)
 
 ---
 
@@ -90,17 +94,24 @@
 ```
 
 ### Key Config Files
-- `electrobun.config.ts` - App packaging config
-- `vite.config.js` - Build tool config (root: src/mainview)
-- `tailwind.config.js` - CSS framework config
+- `electrobun.config.ts` - App packaging config (copy targets, bundle settings)
+- `vite.config.js` - Build tool config (root: src/mainview, multiple entry points)
+- `tailwind.config.js` - CSS framework config (v4 plugin style)
 - `tsconfig.json` - TypeScript config (strict mode, ES2020)
+- `svelte.config.js` - Svelte compiler options
+
+### Multiple Entry Points
+The app has 3 HTML entry points:
+- `index.html` - Main window
+- `agent-config.html` - Agent configuration window
+- `tray-popover.html` - Tray popover window
 
 ---
 
 ## Technology Stack
 - Runtime: Electrobun with Bun
 - UI: Svelte 5 (compiled to vanilla JS)
-- Styling: Tailwind CSS
+- Styling: Tailwind CSS v4
 - Build: Vite
 - Language: TypeScript
 - Native: Objective-C++ via Bun FFI
@@ -128,3 +139,17 @@
 - Prefer exact versions in package.json for reproducibility
 - Use `bun add --dev` for development dependencies
 - Document why specific versions are chosen when not using latest
+
+---
+
+## Debugging & Troubleshooting
+
+### Common Issues
+- **Native dylib not found**: Run `bun run build:native-effects` to compile
+- **Port 5173 in use**: Kill existing Vite process or change port in `vite.config.js`
+- **HMR not working**: Use `bun run dev:hmr` for concurrent Vite + Electrobun
+
+### Debugging Tips
+- Use `console.log` in main process; check terminal output
+- Browser DevTools available in Electrobun windows
+- Native crashes: check macOS Console app for crash logs
