@@ -9,6 +9,7 @@ import {
 } from "./agentsService";
 import { applyMacOSWindowEffects, getMainViewUrl } from "./index";
 import { setOpenConfigCallback, trayPopoverRPC } from "./trayPopoverRPC";
+import { readWindowConfig } from "./windowServce";
 
 const NATIVE_MENU = false;
 
@@ -58,54 +59,45 @@ export async function initializeTray() {
         // @ts-ignore - getBounds may not be in types
         const bounds = tray.getBounds();
         const isMacOS = process.platform === "darwin";
-
-        // Base window config
-        const windowConfig: Record<string, unknown> = {
+        const windowConfig = await readWindowConfig("popover");
+        const wc: Record<string, unknown> = {
           title: "",
           url: await getMainViewUrl("tray-popover.html"),
-          titleBarStyle: "hidden",
+          titleBarStyle: "hiddenInset",
+          // trafficLights: false,
           rpc: trayPopoverRPC,
-          transparent: true,
+          // transparent: true,
+          ...(isMacOS
+            ? {
+                trafficLights: windowConfig.trafficLights,
+                titleBarStyle: windowConfig.titleBarStyle as
+                  | "hiddenInset"
+                  | "hidden"
+                  | "default",
+                transparent: windowConfig.transparent,
+                styleMask: {
+                  Borderless: true,
+                  Titled: false,
+                  Closable: false,
+                  Miniaturizable: false,
+                  Resizable: false,
+                },
+              }
+            : {}),
           // frame: false,
           frame: {
             width: 250,
             height: 300,
-            x: bounds.x - 30,
+            x: bounds.x,
             y: 0 + bounds.height,
           },
         };
 
-        // macOS specific: hide traffic lights with styleMask
-        // Windows/Linux: use frame: false to hide title bar and controls
+        popoverWindow = new BrowserWindow(wc);
+
         if (isMacOS) {
-          windowConfig.styleMask = {
-            // Borderless: true,
-            // Titled: false,
-            // Closable: false,
-            // Miniaturizable: false,
-            // Resizable: false,
-            Borderless: false,
-            // Titled: false,
-            // Closable: false,
-            // Miniaturizable: false,
-            // Resizable: false,
-            // UnifiedTitleAndToolbar: true,
-            // FullScreen: false,
-            // FullSizeContentView: false,
-            // UtilityWindow: false,
-            // DocModalWindow: false,
-            // NonactivatingPanel: false,
-            // HUDWindow: false,
-          };
-        } else {
-          windowConfig.frame = false;
+          applyMacOSWindowEffects(popoverWindow, windowConfig);
         }
-
-        popoverWindow = new BrowserWindow(windowConfig);
-
-        // if (isMacOS) {
-        //   applyMacOSWindowEffects(popoverWindow);
-        // }
         // Clear reference when closed
         popoverWindow.on("close", () => {
           popoverWindow = null;
@@ -329,6 +321,7 @@ export function openConfigWindow() {
   // Create new configuration window
   const openWindow = async () => {
     const url = await getMainViewUrl("agent-config.html");
+    const windowConfig = await readWindowConfig("config");
     configWindow = new BrowserWindow({
       title: "Configure Agents - CrabControl",
       url,
@@ -341,15 +334,18 @@ export function openConfigWindow() {
       rpc: agentRPC,
       ...(isMacOS
         ? {
-            titleBarStyle: "hiddenInset" as const,
-            transparent: true,
+            titleBarStyle: windowConfig.titleBarStyle as
+              | "hiddenInset"
+              | "hidden"
+              | "default",
+            transparent: windowConfig.transparent,
           }
         : {}),
     });
 
     // Apply macOS window effects
     if (isMacOS) {
-      applyMacOSWindowEffects(configWindow);
+      applyMacOSWindowEffects(configWindow, windowConfig);
     }
 
     // Clean up when window closes

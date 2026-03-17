@@ -184,6 +184,33 @@ extern "C" bool setWindowTrafficLightsPosition(void *windowPtr, double x,
 	return success;
 }
 
+extern "C" bool setTrafficLightsVisible(void *windowPtr, bool visible) {
+	if (windowPtr == nullptr) {
+		return false;
+	}
+
+	__block BOOL success = NO;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		NSWindow *window = (__bridge NSWindow *)windowPtr;
+		if (![window isKindOfClass:[NSWindow class]]) {
+			return;
+		}
+
+		NSButton *closeButton =
+			[window standardWindowButton:NSWindowCloseButton];
+		NSButton *minimizeButton =
+			[window standardWindowButton:NSWindowMiniaturizeButton];
+		NSButton *zoomButton = [window standardWindowButton:NSWindowZoomButton];
+
+		[closeButton setHidden:!visible];
+		[minimizeButton setHidden:!visible];
+		[zoomButton setHidden:!visible];
+		success = YES;
+	});
+
+	return success;
+}
+
 extern "C" bool setNativeWindowDragRegion(void *windowPtr, double x,
 										  double height) {
 	if (windowPtr == nullptr) {

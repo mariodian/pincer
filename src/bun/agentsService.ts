@@ -67,6 +67,7 @@ export interface Agent {
  */
 export interface Config {
   pollingInterval?: number; // milliseconds
+  windows?: Record<string, unknown>;
 }
 
 /**
@@ -153,9 +154,12 @@ export async function readConfig(): Promise<Config> {
 
     // Extract config from object format
     if (!Array.isArray(parsed)) {
+      const parsedWindows =
+        parsed.windows ?? (parsed.window ? { main: parsed.window } : undefined);
       return {
         pollingInterval:
           parsed.pollingInterval ?? DEFAULT_CONFIG.pollingInterval,
+        windows: parsedWindows,
       };
     }
 
@@ -182,6 +186,7 @@ export async function writeConfig(config: Config): Promise<void> {
         agents: existingAgents,
         pollingInterval:
           config.pollingInterval ?? DEFAULT_CONFIG.pollingInterval,
+        windows: config.windows,
       },
       null,
       2,
@@ -212,7 +217,16 @@ export async function writeAgents(
       interval = existingConfig.pollingInterval;
     }
 
-    const data = JSON.stringify({ agents, pollingInterval: interval }, null, 2);
+    const existingConfig = await readConfig();
+    const data = JSON.stringify(
+      {
+        agents,
+        pollingInterval: interval,
+        windows: existingConfig.windows,
+      },
+      null,
+      2,
+    );
     await writeFile(filePath, data, "utf8");
   } catch (error) {
     console.error("Error writing agents:", error);

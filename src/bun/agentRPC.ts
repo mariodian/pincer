@@ -1,6 +1,20 @@
 // Agent RPC - Shared RPC definition for agent management
 import { BrowserView } from "electrobun/bun";
-import { readAgents, addAgent, updateAgent, deleteAgent, checkAllAgentsStatus, Agent, AgentStatus } from "./agentsService";
+import {
+  addAgent,
+  Agent,
+  AgentStatus,
+  checkAllAgentsStatus,
+  deleteAgent,
+  readAgents,
+  updateAgent,
+} from "./agentsService";
+import {
+  readWindowConfig,
+  updateWindowConfig,
+  WindowConfig,
+  WindowName,
+} from "./windowServce";
 
 export type AgentRPCType = {
   bun: {
@@ -24,6 +38,14 @@ export type AgentRPCType = {
       checkAllAgentsStatus: {
         params: Record<string, never>;
         response: AgentStatus[];
+      };
+      getWindowConfig: {
+        params: { windowName: WindowName };
+        response: WindowConfig;
+      };
+      updateWindowConfig: {
+        params: { windowName: WindowName; updates: Partial<WindowConfig> };
+        response: WindowConfig;
       };
       openConfig: {
         params: Record<string, never>;
@@ -59,6 +81,18 @@ export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
       },
       checkAllAgentsStatus: async () => {
         return await checkAllAgentsStatus();
+      },
+      getWindowConfig: async ({ windowName }: { windowName: WindowName }) => {
+        return await readWindowConfig(windowName);
+      },
+      updateWindowConfig: async ({
+        windowName,
+        updates,
+      }: {
+        windowName: WindowName;
+        updates: Partial<WindowConfig>;
+      }) => {
+        return await updateWindowConfig(windowName, updates);
       },
     },
     messages: {},

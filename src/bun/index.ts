@@ -4,13 +4,10 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { agentRPC } from "./agentRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
+import { readWindowConfig, WindowConfig } from "./windowServce";
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
-const MAC_TRAFFIC_LIGHTS_X = 14;
-const MAC_TRAFFIC_LIGHTS_Y = 12;
-const MAC_NATIVE_DRAG_REGION_X = 92;
-const MAC_NATIVE_DRAG_REGION_HEIGHT = 40;
 
 // Check if Vite dev server is running for HMR
 export async function getMainViewUrl(pagePath = "index.html"): Promise<string> {
@@ -31,12 +28,16 @@ export async function getMainViewUrl(pagePath = "index.html"): Promise<string> {
 
 // Create the main application window
 const url = await getMainViewUrl("index.html");
+const wc = await readWindowConfig("main");
 const isMacOS = process.platform === "darwin";
 
 // Initialize tray icon
 initializeTray();
 
-export function applyMacOSWindowEffects(mainWindow: BrowserWindow) {
+export function applyMacOSWindowEffects(
+  mainWindow: BrowserWindow,
+  windowConfig: WindowConfig,
+) {
   const dylibPath = join(import.meta.dir, "libMacWindowEffects.dylib");
 
   if (!existsSync(dylibPath)) {
@@ -60,26 +61,40 @@ export function applyMacOSWindowEffects(mainWindow: BrowserWindow) {
         args: [FFIType.ptr, FFIType.f64, FFIType.f64],
         returns: FFIType.bool,
       },
+      setTrafficLightsVisible: {
+        args: [FFIType.ptr, FFIType.bool],
+        returns: FFIType.bool,
+      },
       setNativeWindowDragRegion: {
         args: [FFIType.ptr, FFIType.f64, FFIType.f64],
         returns: FFIType.bool,
       },
     });
 
-    const vibrancyEnabled = lib.symbols.enableWindowVibrancy(mainWindow.ptr);
+    const vibrancyEnabled = windowConfig.vibrancy
+      ? lib.symbols.enableWindowVibrancy(mainWindow.ptr)
+      : false;
     const shadowEnabled = lib.symbols.ensureWindowShadow(mainWindow.ptr);
+    lib.symbols.setTrafficLightsVisible(
+      mainWindow.ptr,
+      windowConfig.trafficLights,
+    );
     const alignButtons = () =>
-      lib.symbols.setWindowTrafficLightsPosition(
-        mainWindow.ptr,
-        MAC_TRAFFIC_LIGHTS_X,
-        MAC_TRAFFIC_LIGHTS_Y,
-      );
+      windowConfig.trafficLights
+        ? lib.symbols.setWindowTrafficLightsPosition(
+            mainWindow.ptr,
+            windowConfig.trafficLightsX,
+            windowConfig.trafficLightsY,
+          )
+        : false;
     const alignNativeDragRegion = () =>
-      lib.symbols.setNativeWindowDragRegion(
-        mainWindow.ptr,
-        MAC_NATIVE_DRAG_REGION_X,
-        MAC_NATIVE_DRAG_REGION_HEIGHT,
-      );
+      windowConfig.nativeDragRegion
+        ? lib.symbols.setNativeWindowDragRegion(
+            mainWindow.ptr,
+            windowConfig.nativeDragRegionX,
+            windowConfig.nativeDragRegionHeight,
+          )
+        : false;
     const buttonsAlignedNow = alignButtons();
     const dragRegionAlignedNow = alignNativeDragRegion();
     setTimeout(() => {
@@ -146,17 +161,15 @@ const mainWindow = new BrowserWindow({
   rpc: agentRPC,
   ...(isMacOS
     ? {
-        // Borderless custom title area while keeping native traffic-light controls.
-        titleBarStyle: "hiddenInset" as const,
-        // Required for glass-like/translucent UI from the renderer.
-        transparent: true,
+        titleBarStyle: wc.titleBarStyle as "hiddenInset" | "hidden" | "default",
+        transparent: wc.transparent,
       }
     : {}),
 });
 
 // Apply macOS-specific window effects
 if (isMacOS) {
-  applyMacOSWindowEffects(mainWindow);
+  applyMacOSWindowEffects(mainWindow, wc);
   setupMacOSMenu(mainWindow);
 }
 

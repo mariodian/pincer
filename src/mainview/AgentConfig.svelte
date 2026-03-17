@@ -54,9 +54,7 @@
     },
   });
 
-  const electroview = new Electroview({
-    rpc,
-  });
+  new Electroview({ rpc });
 
   let agents = $state<Agent[]>([]);
   let agentStatusMap = $state<Map<string, AgentStatus>>(new Map());
@@ -97,7 +95,10 @@
     isLoading = true;
     try {
       if (editingId) {
-        const updated = await rpc.request.updateAgent([editingId, { name, url, port: portNum }]);
+        const updated = await rpc.request.updateAgent([
+          editingId,
+          { name, url, port: portNum },
+        ]);
         if (updated) {
           statusMessage = "Agent updated successfully";
           await loadAgents();
@@ -147,17 +148,26 @@
 
   function getStatusIndicator(agentId: string) {
     const status = agentStatusMap.get(agentId);
-    if (!status) return { label: "○", class: "offline", title: "Status unknown" };
+    if (!status)
+      return { label: "○", class: "offline", title: "Status unknown" };
 
     switch (status.status) {
       case "online":
         return { label: "●", class: "online", title: `${status.name}: Online` };
       case "offline":
-        return { label: "○", class: "offline", title: `${status.name}: Offline` };
+        return {
+          label: "○",
+          class: "offline",
+          title: `${status.name}: Offline`,
+        };
       case "error":
         return { label: "✗", class: "error", title: `${status.name}: Error` };
       case "warning":
-        return { label: "▲", class: "warning", title: `${status.name}: Warning` };
+        return {
+          label: "▲",
+          class: "warning",
+          title: `${status.name}: Warning`,
+        };
       default:
         return { label: "○", class: "offline", title: "Status unknown" };
     }
@@ -177,7 +187,13 @@
     <h2>{editingId ? "Edit Agent" : "Add New Agent"}</h2>
     <div class="form-group">
       <label for="agent-name">Name:</label>
-      <input type="text" id="agent-name" bind:value={name} required disabled={isLoading} />
+      <input
+        type="text"
+        id="agent-name"
+        bind:value={name}
+        required
+        disabled={isLoading}
+      />
     </div>
     <div class="form-group">
       <label for="agent-url">URL:</label>
@@ -206,7 +222,9 @@
       <button type="submit" disabled={isLoading}>
         {editingId ? "Update Agent" : "Add Agent"}
       </button>
-      <button type="button" onclick={resetForm} disabled={isLoading}>Cancel</button>
+      <button type="button" onclick={resetForm} disabled={isLoading}
+        >Cancel</button
+      >
     </div>
   </form>
 
@@ -226,17 +244,28 @@
           {@const statusInfo = getStatusIndicator(agent.id)}
           <tr>
             <td>
-              <span class="status-indicator {statusInfo.class}" title={statusInfo.title}>
+              <span
+                class="status-indicator {statusInfo.class}"
+                title={statusInfo.title}
+              >
                 {statusInfo.label}
               </span>
             </td>
             <td>{agent.name}</td>
             <td>{agent.url}:{agent.port}</td>
             <td class="agent-actions">
-              <button class="btn-edit" onclick={() => editAgent(agent)} disabled={isLoading}>
+              <button
+                class="btn-edit"
+                onclick={() => editAgent(agent)}
+                disabled={isLoading}
+              >
                 Edit
               </button>
-              <button class="btn-delete" onclick={() => deleteAgent(agent.id)} disabled={isLoading}>
+              <button
+                class="btn-delete"
+                onclick={() => deleteAgent(agent.id)}
+                disabled={isLoading}
+              >
                 Delete
               </button>
             </td>
@@ -254,7 +283,8 @@
     max-width: 800px;
     margin: 0 auto;
     padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
   }
 
   h1 {
