@@ -1,9 +1,116 @@
 #import <Cocoa/Cocoa.h>
+#import <objc/runtime.h>
 
 static NSString *const kElectrobunVibrancyViewIdentifier =
 	@"ElectrobunVibrancyView";
 static NSString *const kElectrobunNativeDragViewIdentifier =
 	@"ElectrobunNativeDragView";
+static const void *kElectrobunTrafficLightsObserverKey =
+	&kElectrobunTrafficLightsObserverKey;
+
+static BOOL applyTrafficLightsPosition(NSWindow *window, double x,
+											   double yFromTop) {
+	if (window == nil || ![window isKindOfClass:[NSWindow class]]) {
+		return NO;
+	}
+
+	NSButton *closeButton = [window standardWindowButton:NSWindowCloseButton];
+	NSButton *minimizeButton =
+		[window standardWindowButton:NSWindowMiniaturizeButton];
+	NSButton *zoomButton = [window standardWindowButton:NSWindowZoomButton];
+
+	if (closeButton == nil || minimizeButton == nil || zoomButton == nil) {
+		return NO;
+	}
+
+	NSView *buttonContainer = [closeButton superview];
+	if (buttonContainer == nil) {
+		return NO;
+	}
+
+	CGFloat spacing = NSMinX(minimizeButton.frame) - NSMinX(closeButton.frame);
+	if (spacing <= 0) {
+		spacing = closeButton.frame.size.width + 6.0;
+	}
+
+	BOOL flipped = [buttonContainer isFlipped];
+	CGFloat targetY = yFromTop;
+	if (!flipped) {
+		targetY = buttonContainer.frame.size.height - yFromTop -
+				  closeButton.frame.size.height;
+	}
+	targetY = MAX(0.0, targetY);
+
+	CGFloat currentX = x;
+	NSArray<NSButton *> *buttons = @[ closeButton, minimizeButton, zoomButton ];
+	for (NSButton *button in buttons) {
+		[button setFrameOrigin:NSMakePoint(currentX, targetY)];
+		currentX += spacing;
+	}
+
+	[buttonContainer setNeedsLayout:YES];
+	[buttonContainer layoutSubtreeIfNeeded];
+	[window invalidateShadow];
+	return YES;
+}
+
+@interface ElectrobunTrafficLightsObserver : NSObject
+@property(nonatomic, weak) NSWindow *window;
+@property(nonatomic) double x;
+@property(nonatomic) double yFromTop;
+- (instancetype)initWithWindow:(NSWindow *)window;
+- (BOOL)apply;
+@end
+
+@implementation ElectrobunTrafficLightsObserver
+- (instancetype)initWithWindow:(NSWindow *)window {
+	self = [super init];
+	if (self == nil) {
+		return nil;
+	}
+
+	_window = window;
+	[[NSNotificationCenter defaultCenter]
+		addObserver:self
+		   selector:@selector(handleWindowDidResize:)
+			   name:NSWindowDidResizeNotification
+			 object:window];
+	[[NSNotificationCenter defaultCenter]
+		addObserver:self
+		   selector:@selector(handleWindowDidResize:)
+			   name:NSWindowDidEndLiveResizeNotification
+			 object:window];
+	[[NSNotificationCenter defaultCenter]
+		addObserver:self
+		   selector:@selector(handleWindowWillClose:)
+			   name:NSWindowWillCloseNotification
+			 object:window];
+
+	return self;
+}
+
+- (void)dealloc {
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)handleWindowDidResize:(NSNotification *)notification {
+	(void)notification;
+	[self apply];
+}
+
+- (void)handleWindowWillClose:(NSNotification *)notification {
+	(void)notification;
+	NSWindow *window = self.window;
+	if (window != nil) {
+		objc_setAssociatedObject(window, kElectrobunTrafficLightsObserverKey, nil,
+								 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+}
+
+- (BOOL)apply {
+	return applyTrafficLightsPosition(self.window, self.x, self.yFromTop);
+}
+@end
 
 @interface ElectrobunNativeDragView : NSView
 @end
@@ -136,49 +243,21 @@ extern "C" bool setWindowTrafficLightsPosition(void *windowPtr, double x,
 	__block BOOL success = NO;
 	dispatch_sync(dispatch_get_main_queue(), ^{
 		NSWindow *window = (__bridge NSWindow *)windowPtr;
-		if (![window isKindOfClass:[NSWindow class]]) {
+		if (window == nil || ![window isKindOfClass:[NSWindow class]]) {
 			return;
 		}
 
-		NSButton *closeButton =
-			[window standardWindowButton:NSWindowCloseButton];
-		NSButton *minimizeButton =
-			[window standardWindowButton:NSWindowMiniaturizeButton];
-		NSButton *zoomButton = [window standardWindowButton:NSWindowZoomButton];
-
-		if (closeButton == nil || minimizeButton == nil || zoomButton == nil) {
-			return;
+		ElectrobunTrafficLightsObserver *observer =
+			objc_getAssociatedObject(window, kElectrobunTrafficLightsObserverKey);
+		if (observer == nil) {
+			observer = [[ElectrobunTrafficLightsObserver alloc] initWithWindow:window];
+			objc_setAssociatedObject(window, kElectrobunTrafficLightsObserverKey,
+							 observer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 		}
 
-		NSView *buttonContainer = [closeButton superview];
-		if (buttonContainer == nil) {
-			return;
-		}
-
-		CGFloat spacing = NSMinX(minimizeButton.frame) - NSMinX(closeButton.frame);
-		if (spacing <= 0) {
-			spacing = closeButton.frame.size.width + 6.0;
-		}
-
-		BOOL flipped = [buttonContainer isFlipped];
-		CGFloat targetY = yFromTop;
-		if (!flipped) {
-			targetY = buttonContainer.frame.size.height - yFromTop -
-					  closeButton.frame.size.height;
-		}
-		targetY = MAX(0.0, targetY);
-
-		CGFloat currentX = x;
-		NSArray<NSButton *> *buttons = @[ closeButton, minimizeButton, zoomButton ];
-		for (NSButton *button in buttons) {
-			[button setFrameOrigin:NSMakePoint(currentX, targetY)];
-			currentX += spacing;
-		}
-
-		[buttonContainer setNeedsLayout:YES];
-		[buttonContainer layoutSubtreeIfNeeded];
-		[window invalidateShadow];
-		success = YES;
+		observer.x = x;
+		observer.yFromTop = yFromTop;
+		success = [observer apply];
 	});
 
 	return success;

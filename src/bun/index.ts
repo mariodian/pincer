@@ -95,19 +95,40 @@ export function applyMacOSWindowEffects(
             windowConfig.nativeDragRegionHeight,
           )
         : false;
-    const buttonsAlignedNow = alignButtons();
-    const dragRegionAlignedNow = alignNativeDragRegion();
-    setTimeout(() => {
+
+    const alignMacOSControls = () => {
       alignButtons();
       alignNativeDragRegion();
-    }, 120);
+    };
+
+    const scheduleAlignMacOSControls = (() => {
+      let alignTimeout: ReturnType<typeof setTimeout> | null = null;
+
+      return (delayMs: number) => {
+        if (alignTimeout !== null) {
+          clearTimeout(alignTimeout);
+        }
+
+        alignTimeout = setTimeout(() => {
+          alignTimeout = null;
+          alignMacOSControls();
+        }, delayMs);
+      };
+    })();
+
     mainWindow.on("resize", () => {
-      alignButtons();
-      alignNativeDragRegion();
+      // Keep controls pinned during live resize.
+      alignMacOSControls();
+
+      // Re-apply once Cocoa finishes the current resize pass.
+      scheduleAlignMacOSControls(70);
     });
 
+    // Initial alignment once the window is fully created and laid out.
+    scheduleAlignMacOSControls(120);
+
     console.log(
-      `macOS effects applied (vibrancy=${vibrancyEnabled}, shadow=${shadowEnabled}, trafficLights=${buttonsAlignedNow}, nativeDrag=${dragRegionAlignedNow})`,
+      `macOS effects applied (vibrancy=${vibrancyEnabled}, shadow=${shadowEnabled}, trafficLights=${windowConfig.trafficLights}, nativeDrag=${windowConfig.nativeDragRegion})`,
     );
   } catch (error) {
     console.warn("Failed to apply native macOS effects:", error);
@@ -161,7 +182,7 @@ const mainWindow = new BrowserWindow({
   rpc: agentRPC,
   ...(isMacOS
     ? {
-        titleBarStyle: wc.titleBarStyle as "hiddenInset" | "hidden" | "default",
+        titleBarStyle: wc.titleBarStyle,
         transparent: wc.transparent,
       }
     : {}),
