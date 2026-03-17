@@ -1,13 +1,22 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
-import { readAgents, checkAllAgentsStatus, Agent, AgentStatus } from "./agentsService";
+import {
+  Agent,
+  AgentStatus,
+  checkAllAgentsStatus,
+  readAgents,
+} from "./../agentsService";
 
 export type TrayPopoverRPCType = {
   bun: {
     requests: {
       getAgents: {
         params: Record<string, never>;
-        response: (Agent & { status: string; lastChecked: number; errorMessage?: string })[];
+        response: (Agent & {
+          status: string;
+          lastChecked: number;
+          errorMessage?: string;
+        })[];
       };
       checkAllAgentsStatus: {
         params: Record<string, never>;

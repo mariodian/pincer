@@ -1,6 +1,5 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
-import { agentRPC } from "./agentRPC";
 import {
   AgentStatus,
   checkAllAgentsStatus,
@@ -8,7 +7,8 @@ import {
   readConfig,
 } from "./agentsService";
 import { getMainViewUrl } from "./mainViewUrl";
-import { setOpenConfigCallback, trayPopoverRPC } from "./trayPopoverRPC";
+import { agentRPC } from "./rpc/agentRPC";
+import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
 const NATIVE_MENU = false;

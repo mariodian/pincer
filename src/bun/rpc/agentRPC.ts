@@ -8,7 +8,7 @@ import {
   deleteAgent,
   readAgents,
   updateAgent,
-} from "./agentsService";
+} from "./../agentsService";
 
 export type AgentRPCType = {
   bun: {

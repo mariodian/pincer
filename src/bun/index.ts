@@ -1,7 +1,7 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { getMainViewUrl } from "./mainViewUrl";
-import { systemRPC } from "./systemRPC";
+import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
