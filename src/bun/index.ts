@@ -1,6 +1,6 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
-import { getMainViewUrl } from "./utils/mainViewUrl";
+import { getViewUrl } from "./utils/url";
 import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
@@ -9,7 +9,7 @@ import { isMacOS as isMacOSFn } from "./utils/platform";
 import { MAIN_WINDOW } from "./config/window";
 
 // Create the main application window
-const url = await getMainViewUrl("index.html");
+const url = await getViewUrl("index.html");
 const wc = await readWindowConfig("main");
 const isMacOS = isMacOSFn();
 

@@ -6,7 +6,7 @@ import {
   readAgents,
   readConfig,
 } from "./agentService";
-import { getMainViewUrl } from "./utils/mainViewUrl";
+import { getViewUrl } from "./utils/url";
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
@@ -64,7 +64,7 @@ export async function initializeTray() {
         const windowConfig = await readWindowConfig("popover");
         const wc: Record<string, unknown> = {
           title: "",
-          url: await getMainViewUrl("tray-popover.html"),
+          url: await getViewUrl("tray-popover.html"),
           titleBarStyle: "hiddenInset",
           // trafficLights: false,
           rpc: trayPopoverRPC,
@@ -317,11 +317,11 @@ export function openConfigWindow() {
 
    const isMacOS = isMacOSFn();
 
-    // Create new configuration window
-    const openWindow = async () => {
-      const url = await getMainViewUrl("agent-config.html");
-      const windowConfig = await readWindowConfig("config");
-      configWindow = new BrowserWindow({
+     // Create new configuration window
+     const openWindow = async () => {
+       const url = await getViewUrl("agent-config.html");
+       const windowConfig = await readWindowConfig("config");
+       configWindow = new BrowserWindow({
         title: "Configure Agents - CrabControl",
         url,
         frame: {

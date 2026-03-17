@@ -4,7 +4,7 @@ const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
 
 // Resolve the correct page URL for dev (Vite HMR) and packaged builds.
-export async function getMainViewUrl(pagePath = "index.html"): Promise<string> {
+export async function getViewUrl(pagePath = "index.html"): Promise<string> {
   const channel = await Updater.localInfo.channel();
   if (channel === "dev") {
     try {
