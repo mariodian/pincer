@@ -1,14 +1,14 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { agentRPC } from "./agentRPC";
-import { trayPopoverRPC, setOpenConfigCallback } from "./trayPopoverRPC";
 import {
   AgentStatus,
   checkAllAgentsStatus,
   readAgents,
   readConfig,
 } from "./agentsService";
-import { applyMacOSWindowEffects } from "./index";
+import { applyMacOSWindowEffects, getMainViewUrl } from "./index";
+import { setOpenConfigCallback, trayPopoverRPC } from "./trayPopoverRPC";
 
 const NATIVE_MENU = false;
 
@@ -62,7 +62,7 @@ export async function initializeTray() {
         // Base window config
         const windowConfig: Record<string, unknown> = {
           title: "",
-          url: "views://mainview/tray-popover.html",
+          url: await getMainViewUrl("tray-popover.html"),
           titleBarStyle: "hidden",
           rpc: trayPopoverRPC,
           frame: {
@@ -309,35 +309,40 @@ export function openConfigWindow() {
   const isMacOS = process.platform === "darwin";
 
   // Create new configuration window
-  configWindow = new BrowserWindow({
-    title: "Configure Agents - CrabControl",
-    url: "views://mainview/agent-config.html",
-    frame: {
-      width: 600,
-      height: 500,
-      x: 100,
-      y: 100,
-    },
-    rpc: agentRPC,
-    ...(isMacOS
-      ? {
-          titleBarStyle: "hiddenInset" as const,
-          transparent: true,
-        }
-      : {}),
-  });
+  const openWindow = async () => {
+    const url = await getMainViewUrl("agent-config.html");
+    configWindow = new BrowserWindow({
+      title: "Configure Agents - CrabControl",
+      url,
+      frame: {
+        width: 600,
+        height: 500,
+        x: 100,
+        y: 100,
+      },
+      rpc: agentRPC,
+      ...(isMacOS
+        ? {
+            titleBarStyle: "hiddenInset" as const,
+            transparent: true,
+          }
+        : {}),
+    });
 
-  // Apply macOS window effects
-  if (isMacOS) {
-    applyMacOSWindowEffects(configWindow);
-  }
+    // Apply macOS window effects
+    if (isMacOS) {
+      applyMacOSWindowEffects(configWindow);
+    }
 
-  // Clean up when window closes
-  configWindow.on("close", () => {
-    configWindow = null;
-  });
+    // Clean up when window closes
+    configWindow.on("close", () => {
+      configWindow = null;
+    });
 
-  console.log("Agent configuration window opened");
+    console.log("Agent configuration window opened");
+  };
+
+  void openWindow();
 }
 
 /**

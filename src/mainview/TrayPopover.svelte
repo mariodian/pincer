@@ -27,6 +27,14 @@
           params: Record<string, never>;
           response: AgentStatus[];
         };
+        openConfig: {
+          params: Record<string, never>;
+          response: boolean;
+        };
+        quit: {
+          params: Record<string, never>;
+          response: boolean;
+        };
       };
       messages: Record<string, never>;
     };
@@ -43,12 +51,13 @@
     },
   });
 
-  const electroview = new Electroview({
+  new Electroview({
     rpc,
   });
 
   let agents: AgentStatus[] = $state([]);
   let loading = $state(true);
+  let isRefreshing = $state(false);
 
   async function loadAgents() {
     loading = true;
@@ -74,16 +83,21 @@
   });
 
   async function handleRefresh() {
-    await rpc.request.checkAllAgentsStatus({});
-    await loadAgents();
+    isRefreshing = true;
+    try {
+      await rpc.request.checkAllAgentsStatus({});
+      await loadAgents();
+    } finally {
+      isRefreshing = false;
+    }
   }
 
   async function handleConfigure() {
-    window.electrobun?.rpc?.request?.openConfig?.({});
+    await rpc.request.openConfig({});
   }
 
   async function handleQuit() {
-    window.electrobun?.rpc?.request?.quit?.({});
+    await rpc.request.quit({});
   }
 
   function getStatusClass(status: string): string {
@@ -111,7 +125,7 @@
 <div class="popover">
   <div class="header">
     <span class="title">CrabControl</span>
-    <button class="refresh-btn" onclick={handleRefresh}>↻</button>
+    <button class="refresh-btn" onclick={handleRefresh}><span class:spinning={isRefreshing}>↻</span></button>
   </div>
 
   <div class="agent-list">
@@ -140,7 +154,8 @@
 
 <style>
   .popover {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
     background: rgba(30, 30, 30, 0.95);
     color: #fff;
     padding: 12px;
@@ -176,6 +191,16 @@
 
   .refresh-btn:hover {
     background: rgba(255, 255, 255, 0.2);
+  }
+
+  .refresh-btn span.spinning {
+    display: inline-block;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
   .agent-list {
