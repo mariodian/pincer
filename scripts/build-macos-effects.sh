@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC_FILE="$ROOT_DIR/native/macos/window-effects.mm"
-OUT_FILE="$ROOT_DIR/src/bun/libMacWindowEffects.dylib"
+OUT_FILE="$ROOT_DIR/src/bun/libs/libMacWindowEffects.dylib"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
 	mkdir -p "$(dirname "$OUT_FILE")"

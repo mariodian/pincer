@@ -63,7 +63,7 @@ export function applyMacOSWindowEffects(
   mainWindow: BrowserWindow,
   windowConfig: WindowConfig,
 ) {
-  const dylibPath = join(import.meta.dir, "libMacWindowEffects.dylib");
+  const dylibPath = join(import.meta.dir, "libs", "libMacWindowEffects.dylib");
 
   if (!existsSync(dylibPath)) {
     console.warn(
