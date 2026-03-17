@@ -1,11 +1,10 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
-import {
-  Agent,
-  AgentStatus,
-  checkAllAgentsStatus,
-  readAgents,
-} from "./../agentsService";
+import { Agent, AgentStatus } from "../agentService";
+import { checkAllAgentsStatus } from "../agentService";
+import { getAgentsWithStatus } from "../utils/agents";
+
+let openConfigCallback: (() => void) | null = null;
 
 export type TrayPopoverRPCType = {
   bun: {
@@ -39,8 +38,6 @@ export type TrayPopoverRPCType = {
   };
 };
 
-let openConfigCallback: (() => void) | null = null;
-
 export function setOpenConfigCallback(callback: () => void) {
   openConfigCallback = callback;
 }
@@ -49,15 +46,7 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
   handlers: {
     requests: {
       getAgents: async () => {
-        const agents = await readAgents();
-        const statuses = await checkAllAgentsStatus();
-        const statusMap = new Map(statuses.map((s) => [s.id, s]));
-        return agents.map((agent) => ({
-          ...agent,
-          status: statusMap.get(agent.id)?.status || "offline",
-          lastChecked: statusMap.get(agent.id)?.lastChecked || 0,
-          errorMessage: statusMap.get(agent.id)?.errorMessage,
-        }));
+        return await getAgentsWithStatus();
       },
       checkAllAgentsStatus: async () => {
         return await checkAllAgentsStatus();

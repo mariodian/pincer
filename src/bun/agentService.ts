@@ -4,14 +4,13 @@ import { join } from "node:path";
 
 const APP_NAME = "crabControl";
 
+import { isMacOS, isWindows } from "./utils/platform";
+
 /**
  * Get platform-specific application data directory
  */
 function getAppDataDir(): string {
-  const isMacOS = process.platform === "darwin";
-  const isWindows = process.platform === "win32";
-
-  if (isMacOS) {
+  if (isMacOS()) {
     // ~/Library/Application Support/crabControl
     return join(
       process.env.HOME || "",
@@ -19,7 +18,7 @@ function getAppDataDir(): string {
       "Application Support",
       APP_NAME,
     );
-  } else if (isWindows) {
+  } else if (isWindows()) {
     // %APPDATA%\crabControl
     const appdata = process.env.APPDATA || "";
     return join(appdata, APP_NAME);

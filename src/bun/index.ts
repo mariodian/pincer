@@ -1,17 +1,20 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
-import { getMainViewUrl } from "./mainViewUrl";
+import { getMainViewUrl } from "./utils/mainViewUrl";
 import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { isMacOS as isMacOSFn } from "./utils/platform";
+
+import { MAIN_WINDOW } from "./config/window";
 
 // Create the main application window
 const url = await getMainViewUrl("index.html");
 const wc = await readWindowConfig("main");
-const isMacOS = process.platform === "darwin";
+const isMacOS = isMacOSFn();
 
-const windowWidth = 900;
-const windowHeight = 700;
+const windowWidth = MAIN_WINDOW.width;
+const windowHeight = MAIN_WINDOW.height;
 const primaryDisplay = Screen.getPrimaryDisplay();
 const displayCenter = {
   x: Math.round(

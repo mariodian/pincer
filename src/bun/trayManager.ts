@@ -5,11 +5,13 @@ import {
   checkAllAgentsStatus,
   readAgents,
   readConfig,
-} from "./agentsService";
-import { getMainViewUrl } from "./mainViewUrl";
+} from "./agentService";
+import { getMainViewUrl } from "./utils/mainViewUrl";
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { isMacOS as isMacOSFn } from "./utils/platform";
+import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_TITLE } from "./config/window";
 
 const NATIVE_MENU = false;
 
@@ -30,7 +32,7 @@ export async function initializeTray() {
 
   // Create tray icon
   tray = new Tray({
-    title: "🦞 CrabControl",
+    title: TRAY_TITLE,
     // Use a default icon - we'll need to add this to assets
     image: "views://assets/icon-32-template.png", // Will need to create this
     template: true,
@@ -58,7 +60,7 @@ export async function initializeTray() {
 
         // @ts-ignore - getBounds may not be in types
         const bounds = tray.getBounds();
-        const isMacOS = process.platform === "darwin";
+        const isMacOS = isMacOSFn();
         const windowConfig = await readWindowConfig("popover");
         const wc: Record<string, unknown> = {
           title: "",
@@ -69,22 +71,22 @@ export async function initializeTray() {
           // transparent: true,
           ...(isMacOS
             ? {
-                trafficLights: windowConfig.trafficLights,
-                titleBarStyle: windowConfig.titleBarStyle,
-                transparent: windowConfig.transparent,
-                styleMask: {
-                  Borderless: true,
-                  Titled: false,
-                  Closable: false,
-                  Miniaturizable: false,
-                  Resizable: false,
-                },
-              }
-            : {}),
+              trafficLights: windowConfig.trafficLights,
+              titleBarStyle: windowConfig.titleBarStyle,
+              transparent: windowConfig.transparent,
+              styleMask: {
+                Borderless: true,
+                Titled: false,
+                Closable: false,
+                Miniaturizable: false,
+                Resizable: false,
+              },
+            }
+          : {}),
           // frame: false,
           frame: {
-            width: 250,
-            height: 300,
+            width: POPOVER_WINDOW.width,
+            height: POPOVER_WINDOW.height,
             x: bounds.x,
             y: 0 + bounds.height,
           },
@@ -307,35 +309,35 @@ export async function restartStatusUpdates() {
 export function openConfigWindow() {
   console.log("Opening agent configuration window...");
 
-  // If window already exists, focus it
-  if (configWindow) {
-    configWindow.focus();
-    return;
-  }
+   // If window already exists, focus it
+   if (configWindow) {
+     configWindow.focus();
+     return;
+   }
 
-  const isMacOS = process.platform === "darwin";
+   const isMacOS = isMacOSFn();
 
-  // Create new configuration window
-  const openWindow = async () => {
-    const url = await getMainViewUrl("agent-config.html");
-    const windowConfig = await readWindowConfig("config");
-    configWindow = new BrowserWindow({
-      title: "Configure Agents - CrabControl",
-      url,
-      frame: {
-        width: 600,
-        height: 500,
-        x: 100,
-        y: 100,
-      },
-      rpc: agentRPC,
-      ...(isMacOS
-        ? {
+    // Create new configuration window
+    const openWindow = async () => {
+      const url = await getMainViewUrl("agent-config.html");
+      const windowConfig = await readWindowConfig("config");
+      configWindow = new BrowserWindow({
+        title: "Configure Agents - CrabControl",
+        url,
+        frame: {
+          width: CONFIG_WINDOW.width,
+          height: CONFIG_WINDOW.height,
+          x: 100,
+          y: 100,
+        },
+        rpc: agentRPC,
+        ...(isMacOS
+          ? {
             titleBarStyle: windowConfig.titleBarStyle,
             transparent: windowConfig.transparent,
           }
-        : {}),
-    });
+          : {}),
+      });
 
     // Apply macOS window effects
     if (isMacOS) {

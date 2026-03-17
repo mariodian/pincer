@@ -1,5 +1,6 @@
 // System RPC - Shared RPC definition for system info
 import { BrowserView } from "electrobun/bun";
+import { getPlatform } from "../utils/platform";
 
 export type SystemRPCType = {
   bun: {
@@ -21,8 +22,7 @@ export const systemRPC = BrowserView.defineRPC<SystemRPCType>({
   handlers: {
     requests: {
       getPlatform: async () => {
-        const p = process.platform;
-        const os = p === "darwin" ? "macos" : p === "win32" ? "win" : "linux";
+        const os = getPlatform();
         return { os };
       },
     },
