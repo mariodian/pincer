@@ -25,6 +25,14 @@ export type AgentRPCType = {
         params: Record<string, never>;
         response: AgentStatus[];
       };
+      openConfig: {
+        params: Record<string, never>;
+        response: boolean;
+      };
+      quit: {
+        params: Record<string, never>;
+        response: boolean;
+      };
     };
     messages: Record<string, never>;
   };

@@ -6,6 +6,7 @@ import { resolve } from "path";
 export default defineConfig({
 	plugins: [svelte(), tailwindcss()],
 	root: "src/mainview",
+	base: "./",
 	build: {
 		outDir: "../../dist",
 		emptyOutDir: true,
@@ -13,6 +14,7 @@ export default defineConfig({
 			input: {
 				main: resolve(__dirname, "src/mainview/index.html"),
 				agentConfig: resolve(__dirname, "src/mainview/agent-config.html"),
+				trayPopover: resolve(__dirname, "src/mainview/tray-popover.html"),
 			},
 		},
 	},

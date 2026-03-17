@@ -1,6 +1,7 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { agentRPC } from "./agentRPC";
+import { trayPopoverRPC, setOpenConfigCallback } from "./trayPopoverRPC";
 import {
   AgentStatus,
   checkAllAgentsStatus,
@@ -21,6 +22,11 @@ let statusUpdateInterval: NodeJS.Timeout | null = null;
  * Initialize the tray icon and set up event handlers
  */
 export async function initializeTray() {
+  // Set up callback for opening config window from popover
+  setOpenConfigCallback(() => {
+    openConfigWindow();
+  });
+
   // Create tray icon
   tray = new Tray({
     title: "🦞 CrabControl",
@@ -58,6 +64,7 @@ export async function initializeTray() {
           title: "",
           url: "views://mainview/tray-popover.html",
           titleBarStyle: "hidden",
+          rpc: trayPopoverRPC,
           frame: {
             width: 250,
             height: 300,
@@ -290,7 +297,7 @@ export async function restartStatusUpdates() {
 /**
  * Open the configuration window
  */
-function openConfigWindow() {
+export function openConfigWindow() {
   console.log("Opening agent configuration window...");
 
   // If window already exists, focus it

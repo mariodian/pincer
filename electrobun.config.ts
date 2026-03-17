@@ -11,7 +11,7 @@ export default {
     copy: {
       "dist/index.html": "views/mainview/index.html",
       "dist/agent-config.html": "views/mainview/agent-config.html",
-      "src/mainview/tray-popover.html": "views/mainview/tray-popover.html",
+      "dist/tray-popover.html": "views/mainview/tray-popover.html",
       "dist/assets": "views/mainview/assets",
       "src/bun/libMacWindowEffects.dylib": "bun/libMacWindowEffects.dylib",
     },
