@@ -2,7 +2,6 @@ import { dlopen, FFIType } from "bun:ffi";
 import { BrowserWindow } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { Config, readConfig, writeConfig } from "./agentsService";
 
 export interface WindowConfig {
   titleBarStyle: "hiddenInset" | "hidden" | "default";
@@ -54,44 +53,10 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
   },
 };
 
-type StoredWindows = Partial<Record<WindowName, Partial<WindowConfig>>>;
-
-function getStoredWindows(config: Config): StoredWindows {
-  return (config.windows as StoredWindows | undefined) ?? {};
-}
-
-/**
- * Read window configuration for a specific window, merging with defaults
- */
 export async function readWindowConfig(
   name: WindowName,
 ): Promise<WindowConfig> {
-  const config = await readConfig();
-  const windows = getStoredWindows(config);
-  return { ...DEFAULT_WINDOW_CONFIGS[name], ...(windows[name] ?? {}) };
-}
-
-/**
- * Update window configuration for a specific window (merges with existing)
- */
-export async function updateWindowConfig(
-  name: WindowName,
-  updates: Partial<WindowConfig>,
-): Promise<WindowConfig> {
-  const config = await readConfig();
-  const windows = getStoredWindows(config);
-  const updatedWindow: WindowConfig = {
-    ...DEFAULT_WINDOW_CONFIGS[name],
-    ...(windows[name] ?? {}),
-    ...updates,
-  };
-
-  await writeConfig({
-    ...config,
-    windows: { ...windows, [name]: updatedWindow },
-  });
-
-  return updatedWindow;
+  return DEFAULT_WINDOW_CONFIGS[name];
 }
 
 export function applyMacOSWindowEffects(
