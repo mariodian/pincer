@@ -9,12 +9,6 @@ import {
   readAgents,
   updateAgent,
 } from "./agentsService";
-import {
-  readWindowConfig,
-  updateWindowConfig,
-  WindowConfig,
-  WindowName,
-} from "./windowService";
 
 export type AgentRPCType = {
   bun: {
@@ -38,26 +32,6 @@ export type AgentRPCType = {
       checkAllAgentsStatus: {
         params: Record<string, never>;
         response: AgentStatus[];
-      };
-      getWindowConfig: {
-        params: { windowName: WindowName };
-        response: WindowConfig;
-      };
-      updateWindowConfig: {
-        params: { windowName: WindowName; updates: Partial<WindowConfig> };
-        response: WindowConfig;
-      };
-      openConfig: {
-        params: Record<string, never>;
-        response: boolean;
-      };
-      quit: {
-        params: Record<string, never>;
-        response: boolean;
-      };
-      getPlatform: {
-        params: Record<string, never>;
-        response: { os: "macos" | "win" | "linux" };
       };
     };
     messages: Record<string, never>;
@@ -85,24 +59,6 @@ export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
       },
       checkAllAgentsStatus: async () => {
         return await checkAllAgentsStatus();
-      },
-      getWindowConfig: async ({ windowName }: { windowName: WindowName }) => {
-        return await readWindowConfig(windowName);
-      },
-      updateWindowConfig: async ({
-        windowName,
-        updates,
-      }: {
-        windowName: WindowName;
-        updates: Partial<WindowConfig>;
-      }) => {
-        return await updateWindowConfig(windowName, updates);
-      },
-      getPlatform: async () => {
-        const p = process.platform;
-        console.log("Detected platform:", p);
-        const os = p === "darwin" ? "macos" : p === "win32" ? "win" : "linux";
-        return { os };
       },
     },
     messages: {},

@@ -70,10 +70,7 @@ export async function initializeTray() {
           ...(isMacOS
             ? {
                 trafficLights: windowConfig.trafficLights,
-                titleBarStyle: windowConfig.titleBarStyle as
-                  | "hiddenInset"
-                  | "hidden"
-                  | "default",
+                titleBarStyle: windowConfig.titleBarStyle,
                 transparent: windowConfig.transparent,
                 styleMask: {
                   Borderless: true,
@@ -334,10 +331,7 @@ export function openConfigWindow() {
       rpc: agentRPC,
       ...(isMacOS
         ? {
-            titleBarStyle: windowConfig.titleBarStyle as
-              | "hiddenInset"
-              | "hidden"
-              | "default",
+            titleBarStyle: windowConfig.titleBarStyle,
             transparent: windowConfig.transparent,
           }
         : {}),

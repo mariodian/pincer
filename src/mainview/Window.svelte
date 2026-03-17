@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
   import type { Snippet } from "svelte";
-  import type { AgentRPCType } from "../bun/agentRPC";
+  import type { SystemRPCType } from "../bun/systemRPC";
 
-  const rpc = Electroview.defineRPC<AgentRPCType>({
+  const rpc = Electroview.defineRPC<SystemRPCType>({
     handlers: {
       requests: {},
       messages: {},

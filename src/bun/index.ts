@@ -1,7 +1,7 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
-import { agentRPC } from "./agentRPC";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { getMainViewUrl } from "./mainViewUrl";
+import { systemRPC } from "./systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
@@ -25,6 +25,11 @@ const displayCenter = {
 // Initialize tray icon
 initializeTray();
 
+// Combine all RPCs
+const combinedRPC = {
+  ...systemRPC,
+};
+
 const mainWindow = new BrowserWindow({
   title: "React + Tailwind + Vite",
   url,
@@ -34,7 +39,7 @@ const mainWindow = new BrowserWindow({
     x: displayCenter.x,
     y: displayCenter.y,
   },
-  rpc: agentRPC,
+  rpc: combinedRPC as any,
   ...(isMacOS
     ? {
         titleBarStyle: wc.titleBarStyle,
