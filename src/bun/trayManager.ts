@@ -7,9 +7,9 @@ import {
   readAgents,
   readConfig,
 } from "./agentsService";
-import { applyMacOSWindowEffects, getMainViewUrl } from "./index";
+import { getMainViewUrl } from "./mainViewUrl";
 import { setOpenConfigCallback, trayPopoverRPC } from "./trayPopoverRPC";
-import { readWindowConfig } from "./windowServce";
+import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
 const NATIVE_MENU = false;
 

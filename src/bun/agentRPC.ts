@@ -14,7 +14,7 @@ import {
   updateWindowConfig,
   WindowConfig,
   WindowName,
-} from "./windowServce";
+} from "./windowService";
 
 export type AgentRPCType = {
   bun: {
