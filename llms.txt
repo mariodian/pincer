@@ -1,0 +1,52 @@
+# Electrobun Project
+
+This is an Electrobun desktop application.
+
+IMPORTANT: Electrobun is NOT Electron. Do not use Electron APIs or patterns.
+
+## Documentation
+
+Full API reference: https://blackboard.sh/electrobun/llms.txt
+Getting started: https://blackboard.sh/electrobun/docs/
+
+## Quick Reference
+
+Import patterns:
+- Main process (Bun): `import { BrowserWindow } from "electrobun/bun"`
+- Browser context: `import { Electroview } from "electrobun/view"`
+
+Use `views://` URLs to load bundled assets (e.g., `url: "views://mainview/index.html"`).
+Views must be configured in `electrobun.config.ts` to be built and copied into the bundle.
+
+## Project Instructions (Native macOS Window Effects)
+
+- This app intentionally implements native macOS vibrancy via Bun FFI + custom Cocoa dylib.
+- Keep `titleBarStyle: "hiddenInset"` and `transparent: true` for macOS windows in `src/bun/index.ts`.
+- Traffic-light alignment is controlled by:
+  - `MAC_TRAFFIC_LIGHTS_X`
+  - `MAC_TRAFFIC_LIGHTS_Y`
+  in `src/bun/index.ts`.
+- Native drag region is controlled by:
+  - `MAC_NATIVE_DRAG_REGION_X`
+  - `MAC_NATIVE_DRAG_REGION_HEIGHT`
+  in `src/bun/index.ts`.
+- If header/titlebar UI height changes in `src/mainview/App.tsx`, update traffic-light constants to match.
+- Header dragging in this project is native (Cocoa overlay), not class-based web drag regions.
+- Avoid adding `electrobun-webkit-app-region-drag` unless intentionally switching back to Electrobun's JS drag path.
+- For vibrancy validation, avoid CSS `backdrop-filter` blur in the renderer UI.
+
+## Native Build Instructions
+
+- Native source: `native/macos/window-effects.mm`
+- Build script: `scripts/build-macos-effects.sh`
+- Output artifact: `src/bun/libMacWindowEffects.dylib`
+- Bundle copy mapping is in `electrobun.config.ts`.
+- Full build path runs via:
+  - `bun run build:native-effects`
+  - `vite build`
+  - `electrobun build`
+
+## About
+
+Electrobun is built by Blackboard (https://blackboard.sh), an innovation lab building
+tools and funding teams that define the next generation of technology.

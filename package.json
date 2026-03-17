@@ -1,0 +1,28 @@
+{
+ "name": "electrobun-svelte-tailwind-vite",
+ "version": "1.0.0",
+ "description": "Electrobun app with Svelte, Tailwind CSS, and Vite HMR",
+ "type": "module",
+ "scripts": {
+  "dev": "bun run build && electrobun dev",
+  "dev:hmr": "concurrently \"bun run hmr\" \"bun run dev\"",
+  "hmr": "vite --port 5173",
+  "build:native-effects": "bash ./scripts/build-macos-effects.sh",
+  "build": "bun run build:native-effects && vite build && electrobun build",
+  "build:prod": "bun run build:native-effects && vite build && electrobun build --channel prod",
+  "start": "bun run dev"
+ },
+ "dependencies": {
+  "electrobun": "1.12.3"
+ },
+ "devDependencies": {
+  "@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
+  "@tailwindcss/vite": "^4.2.1",
+  "@types/bun": "latest",
+  "concurrently": "^9.1.0",
+  "svelte": "^5.0.0",
+  "tailwindcss": "^4.2.0",
+  "typescript": "^5.7.2",
+  "vite": "^5.0.0"
+ }
+}
