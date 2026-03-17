@@ -1,5 +1,6 @@
 import { mount } from "svelte";
 import TrayPopover from "./TrayPopover.svelte";
+import "./index.css";
 
 declare global {
   interface Window {

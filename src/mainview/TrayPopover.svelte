@@ -122,10 +122,14 @@
   }
 </script>
 
-<div class="popover">
+<div
+  class="popover shadow-black/20 shadow-xl bg-black/80 border border-white/10 inset-ring-1 inset-ring-white/20 rounded-xl"
+>
   <div class="header">
     <span class="title">CrabControl</span>
-    <button class="refresh-btn" onclick={handleRefresh}><span class:spinning={isRefreshing}>↻</span></button>
+    <button class="refresh-btn" onclick={handleRefresh}
+      ><span class:spinning={isRefreshing}>↻</span></button
+    >
   </div>
 
   <div class="agent-list">
@@ -153,15 +157,30 @@
 </div>
 
 <style>
+  :global(html),
+  :global(body) {
+    background: transparent;
+    /* background: oklch(0.145 0 0 / 90%); */
+    /* backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); */
+  }
+
   .popover {
+    margin: 0 auto;
+    width: 80%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
-    background: rgba(30, 30, 30, 0.95);
+    /* background: rgba(30, 30, 30, 0.95); */
     color: #fff;
     padding: 12px;
-    border-radius: 10px;
-    min-height: 100%;
-    box-sizing: border-box;
+    /* border-radius: 10px; */
+    /* box-sizing: border-box; */
+    /* box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); */
+
+    /* background: rgba(30, 30, 50, 0.7);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px); */
   }
 
   .header {
@@ -199,8 +218,12 @@
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .agent-list {

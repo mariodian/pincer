@@ -65,10 +65,12 @@ export async function initializeTray() {
           url: await getMainViewUrl("tray-popover.html"),
           titleBarStyle: "hidden",
           rpc: trayPopoverRPC,
+          transparent: true,
+          // frame: false,
           frame: {
             width: 250,
             height: 300,
-            x: bounds.x,
+            x: bounds.x - 30,
             y: 0 + bounds.height,
           },
         };
@@ -77,17 +79,33 @@ export async function initializeTray() {
         // Windows/Linux: use frame: false to hide title bar and controls
         if (isMacOS) {
           windowConfig.styleMask = {
-            Borderless: true,
-            Titled: false,
-            Closable: false,
-            Miniaturizable: false,
-            Resizable: false,
+            // Borderless: true,
+            // Titled: false,
+            // Closable: false,
+            // Miniaturizable: false,
+            // Resizable: false,
+            Borderless: false,
+            // Titled: false,
+            // Closable: false,
+            // Miniaturizable: false,
+            // Resizable: false,
+            // UnifiedTitleAndToolbar: true,
+            // FullScreen: false,
+            // FullSizeContentView: false,
+            // UtilityWindow: false,
+            // DocModalWindow: false,
+            // NonactivatingPanel: false,
+            // HUDWindow: false,
           };
         } else {
           windowConfig.frame = false;
         }
 
         popoverWindow = new BrowserWindow(windowConfig);
+
+        // if (isMacOS) {
+        //   applyMacOSWindowEffects(popoverWindow);
+        // }
         // Clear reference when closed
         popoverWindow.on("close", () => {
           popoverWindow = null;
