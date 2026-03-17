@@ -1,5 +1,34 @@
 <script lang="ts">
+  import { Electroview } from "electrobun/view";
   import type { Snippet } from "svelte";
+  import type { AgentRPCType } from "../bun/agentRPC";
+
+  const rpc = Electroview.defineRPC<AgentRPCType>({
+    handlers: {
+      requests: {},
+      messages: {},
+    },
+  });
+
+  new Electroview({
+    rpc,
+  });
+
+  let os = $state<"macos" | "win" | "linux" | "">("");
+
+  $effect(() => {
+    rpc.request
+      .getPlatform({})
+      .then((result) => {
+        os = result.os;
+      })
+      .catch((e) => {
+        console.error("getPlatform failed:", e);
+      });
+  });
+
+  const isMacOS = $derived(os === "macos");
+  const contentHeight = $derived(isMacOS ? "h-[calc(100vh-2.5rem)]" : "h-full");
 
   let {
     title = "Window",
@@ -19,6 +48,7 @@
 <div class={`h-screen overflow-hidden ${rootClass}`}>
   <div
     class="sticky top-0 z-20 flex h-10 items-center border-b border-white/20 bg-black/20 pl-24 pr-4"
+    class:hidden={!isMacOS}
   >
     <span class="text-sm font-semibold tracking-wide text-white/90"
       >{title}</span
@@ -28,7 +58,7 @@
     </div>
   </div>
 
-  <div class="h-[calc(100vh-2.5rem)] overflow-y-auto overscroll-contain">
+  <div class="{contentHeight} overflow-y-auto overscroll-contain">
     <div class={contentClass}>
       {@render children?.()}
     </div>

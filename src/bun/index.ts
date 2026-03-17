@@ -14,8 +14,12 @@ const windowWidth = 900;
 const windowHeight = 700;
 const primaryDisplay = Screen.getPrimaryDisplay();
 const displayCenter = {
-  x: Math.round(primaryDisplay.bounds.x + (primaryDisplay.bounds.width - windowWidth) / 2),
-  y: Math.round(primaryDisplay.bounds.y + (primaryDisplay.bounds.height - windowHeight) / 2),
+  x: Math.round(
+    primaryDisplay.bounds.x + (primaryDisplay.bounds.width - windowWidth) / 2,
+  ),
+  y: Math.round(
+    primaryDisplay.bounds.y + (primaryDisplay.bounds.height - windowHeight) / 2,
+  ),
 };
 
 // Initialize tray icon

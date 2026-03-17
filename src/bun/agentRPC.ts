@@ -55,6 +55,10 @@ export type AgentRPCType = {
         params: Record<string, never>;
         response: boolean;
       };
+      getPlatform: {
+        params: Record<string, never>;
+        response: { os: "macos" | "win" | "linux" };
+      };
     };
     messages: Record<string, never>;
   };
@@ -93,6 +97,12 @@ export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
         updates: Partial<WindowConfig>;
       }) => {
         return await updateWindowConfig(windowName, updates);
+      },
+      getPlatform: async () => {
+        const p = process.platform;
+        console.log("Detected platform:", p);
+        const os = p === "darwin" ? "macos" : p === "win32" ? "win" : "linux";
+        return { os };
       },
     },
     messages: {},
