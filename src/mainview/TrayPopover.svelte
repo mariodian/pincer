@@ -122,12 +122,15 @@
   }
 </script>
 
-<!-- <div
-  class="popover shadow-black/20 shadow-xl bg-black/80 border border-white/10 inset-ring-1 inset-ring-white/20 rounded-xl"
-> -->
 <div class="popover py-2 px-4">
   <div class="header">
-    <span class="title">CrabControl</span>
+    <span
+      class={[
+        "title",
+        "font-semibold text-sm",
+        "text-zinc-800 dark:text-white",
+      ]}>CrabControl</span
+    >
     <button class="refresh-btn" onclick={handleRefresh}
       ><span class:spinning={isRefreshing}>↻</span></button
     >
@@ -167,16 +170,10 @@
   }
 
   .popover {
-    /* margin: 0 auto;
-    width: 80%; */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
-    /* background: rgba(30, 30, 30, 0.95); */
     color: #fff;
-    /* border-radius: 10px; */
     box-sizing: border-box;
-    /* box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); */
-
     /* background: rgba(30, 30, 50, 0.7);
     border-radius: 16px;
     backdrop-filter: blur(20px);
@@ -192,10 +189,10 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .title {
+  /* .title {
     font-size: 14px;
     font-weight: 600;
-  }
+  } */
 
   .refresh-btn {
     background: rgba(255, 255, 255, 0.1);
