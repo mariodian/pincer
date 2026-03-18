@@ -87,6 +87,23 @@
   }
 
   async function loadAgents() {
+    try {
+      const storedAgents = localStorage.getItem("crabAgents");
+      const storedStatuses = localStorage.getItem("crabAgentStatuses");
+      if (storedAgents && storedStatuses) {
+        const agentList: Agent[] = JSON.parse(storedAgents);
+        const statusList: AgentStatus[] = JSON.parse(storedStatuses);
+        const statusMap = new Map(statusList.map((s) => [s.id, s]));
+        agents = agentList.map((agent) => ({
+          ...agent,
+          status: statusMap.get(agent.id)?.status ?? "offline",
+          lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
+          errorMessage: statusMap.get(agent.id)?.errorMessage,
+        }));
+        loading = false;
+        return;
+      }
+    } catch { /* fall through */ }
     loading = true;
     try {
       const agentList = await rpc.request.getAgents({});
@@ -94,8 +111,8 @@
       const statusMap = new Map(statuses.map((s) => [s.id, s]));
       agents = agentList.map((agent) => ({
         ...agent,
-        status: statusMap.get(agent.id)?.status || "offline",
-        lastChecked: statusMap.get(agent.id)?.lastChecked || 0,
+        status: statusMap.get(agent.id)?.status ?? "offline",
+        lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
         errorMessage: statusMap.get(agent.id)?.errorMessage,
       }));
     } catch (error) {
@@ -107,6 +124,9 @@
 
   $effect(() => {
     loadAgents();
+    const handler = () => loadAgents();
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
   });
 
   $effect(() => {
@@ -119,7 +139,7 @@
     isRefreshing = true;
     try {
       await rpc.request.checkAllAgentsStatus({});
-      await loadAgents();
+      loadAgents();
     } finally {
       isRefreshing = false;
     }
@@ -165,26 +185,17 @@
       "border-b border-black/10",
     ]}
   >
-    <span
-      class={[
-        "title",
-        "font-semibold text-sm",
-        "text-black/80 dark:text-white",
-      ]}>Crab Monitor</span
-    >
+    <span class="font-semibold text-sm text-black/80 dark:text-white">Crab Monitor</span>
+
+    {#if isRefreshing}
+      <span class="text-[11px] text-black/50 dark:text-white/60 animate-pulse">Updating…</span>
+    {/if}
 
     <button
-      class={[
-        "refresh-btn",
-        "rounded transition-colors",
-        "px-2 py-1",
-        "font-bold text-[11px] text-black/70 dark:text-white",
-        "bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50",
-        "shadow-xs shadow-black/5",
-      ]}
+      class="refresh-btn rounded transition-colors px-2 py-1 font-bold text-[11px] text-black/70 dark:text-white bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50 shadow-xs shadow-black/5"
       onclick={handleRefresh}
     >
-      <span class:spinning={isRefreshing}>↻</span>
+      <span class:animate-spin={isRefreshing}>↻</span>
     </button>
   </div>
 
@@ -263,20 +274,6 @@
     box-sizing: border-box;
   }
 
-  .refresh-btn span.spinning {
-    display: inline-block;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   .loading,
   .empty {
     text-align: center;
@@ -312,25 +309,5 @@
   .header,
   .footer {
     transition: box-shadow 200ms ease;
-  }
-
-  .footer-btn {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #fff;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .footer-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  .footer-btn.quit:hover {
-    background: rgba(245, 101, 101, 0.3);
   }
 </style>

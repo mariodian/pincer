@@ -6,6 +6,7 @@ import {
   readAgents,
   readConfig,
 } from "./agentService";
+import { syncAgentData } from "./utils/storage";
 import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_ICON, TRAY_TITLE } from "./config";
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
@@ -270,6 +271,8 @@ async function startStatusUpdates() {
     statuses.forEach((status) => {
       agentStatusMap.set(status.id, status);
     });
+    const agents = await readAgents();
+    await syncAgentData(agents, statuses);
     if (NATIVE_MENU) {
       updateTrayMenu();
     }
@@ -284,6 +287,8 @@ async function startStatusUpdates() {
       statuses.forEach((status) => {
         agentStatusMap.set(status.id, status);
       });
+      const agents = await readAgents();
+      await syncAgentData(agents, statuses);
 
       // Update menu to reflect new statuses
       if (NATIVE_MENU) {

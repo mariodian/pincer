@@ -5,8 +5,14 @@ import { cleanupTray, initializeTray } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { readAgents, checkAllAgentsStatus } from "./agentService";
+import { syncAgentData } from "./utils/storage";
 
 import { MAIN_WINDOW } from "./config";
+
+const agents = await readAgents();
+const statuses = await checkAllAgentsStatus();
+await syncAgentData(agents, statuses);
 
 // Create the main application window
 const url = await getViewUrl("index.html");
