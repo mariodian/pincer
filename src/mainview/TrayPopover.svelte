@@ -193,16 +193,15 @@
     await rpc.request.quit({});
   }
 
-  function getStatusClass(status: string): string {
+  function getStatusClass(status: string): string | string[] {
     switch (status) {
       case "ok":
-        return "status-online";
-      case "offline":
-        return "status-offline";
+        return ["status-online", "bg-green-600 dark:bg-green-500"];
       case "error":
-        return "status-error";
+        return "animate-pulse bg-orange-400 dark:bg-orange-300";
+      case "offline":
       default:
-        return "status-offline";
+        return "bg-black/20 dark:bg-white/20";
     }
   }
 
@@ -358,16 +357,10 @@
   }
 
   .status-online {
-    background: #48bb78;
-    box-shadow: 0 0 6px #48bb78;
+    box-shadow: 0 0 6px var(--color-green-600);
   }
-
-  .status-offline {
-    background: #f56565;
-  }
-
-  .status-error {
-    background: #ecc94b;
+  :global(.dark) .status-online {
+    box-shadow: 0 0 6px var(--color-green-500);
   }
 
   .shadow-bottom {
