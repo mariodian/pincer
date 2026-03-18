@@ -179,7 +179,7 @@
     isRefreshing = true;
     try {
       await rpc.request.checkAllAgentsStatus({});
-      loadAgents();
+      await loadAgents();
     } finally {
       isRefreshing = false;
     }
@@ -250,7 +250,7 @@
       ]}
       onclick={handleRefresh}
     >
-      <span class:animate-spin={isRefreshing}>↻</span>
+      <span class={["refresh-icon", isRefreshing ? "is-spinning" : ""]}>↻</span>
     </button>
   </div>
 
@@ -364,5 +364,23 @@
   .header,
   .footer {
     transition: box-shadow 200ms ease;
+  }
+
+  .refresh-icon {
+    display: inline-block;
+    transform-origin: 50% 50%;
+  }
+
+  .refresh-icon.is-spinning {
+    animation: refresh-spin 700ms linear infinite;
+  }
+
+  @keyframes refresh-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
