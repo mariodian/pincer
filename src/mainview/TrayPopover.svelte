@@ -208,6 +208,20 @@
     }
   }
 
+  function getAgentTitle(agent: AgentStatus): string {
+    const lines = [
+      agent.name,
+      `${agent.url}:${agent.port}`,
+      `Status: ${agent.status}`,
+    ];
+
+    if (agent.errorMessage) {
+      lines.push(`Error: ${agent.errorMessage}`);
+    }
+
+    return lines.join("\n");
+  }
+
   // function formatTime(timestamp: number): string {
   //   if (!timestamp) return "Never";
   //   const date = new Date(timestamp);
@@ -266,6 +280,7 @@
     {:else}
       {#each agents as agent (agent.id)}
         <div
+          title={getAgentTitle(agent)}
           class={[
             "agent-item",
             "flex items-center gap-2 p-2",
