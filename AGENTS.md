@@ -94,11 +94,83 @@
 
 ---
 
+## Agent Storage
+
+### Architecture
+
+Agent data is persisted through a storage abstraction layer (`src/bun/storage/`). The current implementation uses JSON files. A Libsql migration is planned.
+
+```
+agentService.ts
+  └─ uses AgentStorage (injected via module)
+       ├─ JsonAgentStorage    (current)
+       └─ LibsqlAgentStorage  (future)
+```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `storage/types.ts` | `AgentStatusInfo` slim type |
+| `storage/backend.ts` | `AgentStorage` interface |
+| `storage/jsonStorage.ts` | JSON file implementation |
+| `storage/index.ts` | Exports `createAgentStorage()` factory |
+
+### AgentStatusInfo (localStorage only)
+
+Statuses are only stored in renderer `localStorage`, never persisted to disk. The slim type avoids redundancy with `Agent` data:
+
+```typescript
+interface AgentStatusInfo {
+  id: string;
+  status: "ok" | "offline" | "error" | "warning";
+  lastChecked: number;
+  errorMessage?: string;
+}
+```
+
+Synced to localStorage via `syncAgentData(agents, statuses)` in `utils/storage.ts`.
+
+### Migrating to Libsql
+
+When ready to switch from JSON to Libsql:
+
+1. Create `src/bun/storage/libsqlStorage.ts` implementing `AgentStorage`:
+
+```typescript
+// libsqlStorage.ts
+import type { AgentStorage } from "./backend";
+import { Agent } from "../agentService";
+
+export class LibsqlAgentStorage implements AgentStorage {
+  // implement readAgents() and writeAgents(agents)
+}
+```
+
+2. Update `src/bun/storage/index.ts` — swap the factory return:
+
+```typescript
+// Before
+export function createAgentStorage(): AgentStorage {
+  return new JsonAgentStorage();
+}
+
+// After
+export function createAgentStorage(): AgentStorage {
+  return new LibsqlAgentStorage();
+}
+```
+
+No other files need to change — all storage access goes through the `AgentStorage` interface.
+
+---
+
 ## Project Structure
 ```
 /src
   /bun         - Main process (Electrobun, FFI, native integration)
     /rpc       - RPC method definitions
+    /storage   - Storage abstraction layer (see Storage section)
     /utils     - Utility functions
   /mainview    - Svelte UI components, entry points, assets
     /ui        - Reusable UI components

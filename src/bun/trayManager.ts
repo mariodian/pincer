@@ -146,10 +146,23 @@ export async function updateTrayMenu() {
 
   try {
     const agents = await readAgents();
+
+    const sortedAgents = [...agents].sort((a, b) => {
+      const statusOrder = (id: string) => {
+        const s = agentStatusMap.get(id)?.status;
+        if (s === "ok") return 0;
+        if (s === "offline") return 2;
+        return 1;
+      };
+      const orderDiff = statusOrder(a.id) - statusOrder(b.id);
+      if (orderDiff !== 0) return orderDiff;
+      return a.name.localeCompare(b.name);
+    });
+
     const menuItems = [];
 
     // Add agent items
-    for (const agent of agents) {
+    for (const agent of sortedAgents) {
       const status = agentStatusMap.get(agent.id) || {
         status: "offline" as const,
         lastChecked: 0,

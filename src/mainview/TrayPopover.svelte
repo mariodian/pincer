@@ -93,6 +93,16 @@
     showFooterShadow = !atBottom;
   }
 
+  function sortAgents(list: AgentStatus[]): AgentStatus[] {
+    return [...list].sort((a, b) => {
+      const statusOrder = (s: AgentStatus["status"]) =>
+        s === "ok" ? 0 : s === "offline" ? 2 : 1;
+      const orderDiff = statusOrder(a.status) - statusOrder(b.status);
+      if (orderDiff !== 0) return orderDiff;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
   async function loadAgents() {
     try {
       const storedAgents = localStorage.getItem("crabAgents");
@@ -101,16 +111,21 @@
         const agentList: Agent[] = JSON.parse(storedAgents);
         const statusList: AgentStatus[] = JSON.parse(storedStatuses);
         const statusMap = new Map(statusList.map((s) => [s.id, s]));
-        agents = agentList.map((agent) => ({
-          ...agent,
-          status: statusMap.get(agent.id)?.status ?? "offline",
-          lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
-          errorMessage: statusMap.get(agent.id)?.errorMessage,
-        }));
+        agents = sortAgents(
+          agentList.map((agent) => ({
+            ...agent,
+            status: statusMap.get(agent.id)?.status ?? "offline",
+            lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
+            errorMessage: statusMap.get(agent.id)?.errorMessage,
+          })),
+        );
         loading = false;
         return;
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
+
     loading = true;
     try {
       const storedAgents = localStorage.getItem("crabAgents");
@@ -118,23 +133,27 @@
         const agentList: Agent[] = JSON.parse(storedAgents);
         const statuses = await rpc.request.checkAllAgentsStatus({});
         const statusMap = new Map(statuses.map((s) => [s.id, s]));
-        agents = agentList.map((agent) => ({
-          ...agent,
-          status: statusMap.get(agent.id)?.status ?? "offline",
-          lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
-          errorMessage: statusMap.get(agent.id)?.errorMessage,
-        }));
+        agents = sortAgents(
+          agentList.map((agent) => ({
+            ...agent,
+            status: statusMap.get(agent.id)?.status ?? "offline",
+            lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
+            errorMessage: statusMap.get(agent.id)?.errorMessage,
+          })),
+        );
       } else {
         const statuses = await rpc.request.checkAllAgentsStatus({});
-        agents = statuses.map((s) => ({
-          id: s.id,
-          name: "",
-          url: "",
-          port: 0,
-          status: s.status,
-          lastChecked: s.lastChecked,
-          errorMessage: s.errorMessage,
-        })) as AgentStatus[];
+        agents = sortAgents(
+          statuses.map((s) => ({
+            id: s.id,
+            name: "",
+            url: "",
+            port: 0,
+            status: s.status,
+            lastChecked: s.lastChecked,
+            errorMessage: s.errorMessage,
+          })) as AgentStatus[],
+        );
       }
     } catch (error) {
       console.error("Failed to load agents:", error);
@@ -206,14 +225,29 @@
       "border-b border-black/10",
     ]}
   >
-    <span class="font-semibold text-sm text-black/80 dark:text-white">Crab Monitor</span>
+    <span class="flex-2 font-semibold text-sm text-black/80 dark:text-white"
+      >Crab Monitor</span
+    >
 
     {#if isRefreshing}
-      <span class="text-[11px] text-black/50 dark:text-white/60 animate-pulse">Updating…</span>
+      <span
+        class={[
+          "flex-1 animate-pulse text-[11px] mr-2",
+          "text-black/50 dark:text-white/60",
+        ]}>Updating…</span
+      >
     {/if}
 
     <button
-      class="refresh-btn rounded transition-colors px-2 py-1 font-bold text-[11px] text-black/70 dark:text-white bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50 shadow-xs shadow-black/5"
+      class={[
+        "refresh-btn",
+        "rounded transition-colors",
+        "px-2 py-1",
+        "font-bold text-[11px]",
+        "text-black/70 dark:text-white",
+        "bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50",
+        "shadow-xs shadow-black/5",
+      ]}
       onclick={handleRefresh}
     >
       <span class:animate-spin={isRefreshing}>↻</span>
