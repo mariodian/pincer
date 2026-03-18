@@ -17,16 +17,23 @@
     errorMessage?: string;
   }
 
+  interface AgentStatusInfo {
+    id: string;
+    status: "ok" | "offline" | "error" | "warning";
+    lastChecked: number;
+    errorMessage?: string;
+  }
+
   type AgentRPCType = {
     bun: {
       requests: {
         getAgents: {
           params: Record<string, never>;
-          response: Agent[];
+          response: AgentStatusInfo[];
         };
         checkAllAgentsStatus: {
           params: Record<string, never>;
-          response: AgentStatus[];
+          response: AgentStatusInfo[];
         };
         openConfig: {
           params: Record<string, never>;
@@ -106,15 +113,29 @@
     } catch { /* fall through */ }
     loading = true;
     try {
-      const agentList = await rpc.request.getAgents({});
-      const statuses = await rpc.request.checkAllAgentsStatus({});
-      const statusMap = new Map(statuses.map((s) => [s.id, s]));
-      agents = agentList.map((agent) => ({
-        ...agent,
-        status: statusMap.get(agent.id)?.status ?? "offline",
-        lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
-        errorMessage: statusMap.get(agent.id)?.errorMessage,
-      }));
+      const storedAgents = localStorage.getItem("crabAgents");
+      if (storedAgents) {
+        const agentList: Agent[] = JSON.parse(storedAgents);
+        const statuses = await rpc.request.checkAllAgentsStatus({});
+        const statusMap = new Map(statuses.map((s) => [s.id, s]));
+        agents = agentList.map((agent) => ({
+          ...agent,
+          status: statusMap.get(agent.id)?.status ?? "offline",
+          lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
+          errorMessage: statusMap.get(agent.id)?.errorMessage,
+        }));
+      } else {
+        const statuses = await rpc.request.checkAllAgentsStatus({});
+        agents = statuses.map((s) => ({
+          id: s.id,
+          name: "",
+          url: "",
+          port: 0,
+          status: s.status,
+          lastChecked: s.lastChecked,
+          errorMessage: s.errorMessage,
+        })) as AgentStatus[];
+      }
     } catch (error) {
       console.error("Failed to load agents:", error);
     } finally {

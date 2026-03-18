@@ -1,12 +1,13 @@
 import { BrowserView } from "electrobun/bun";
-import { Agent, AgentStatus } from "../agentService";
+import { Agent } from "../agentService";
+import { AgentStatusInfo } from "../storage/types";
 
 const KEY_AGENTS = "crabAgents";
 const KEY_STATUSES = "crabAgentStatuses";
 
 export function syncAgentData(
   agents: Agent[],
-  statuses: AgentStatus[],
+  statuses: AgentStatusInfo[],
 ): Promise<void> {
   const agentsJson = JSON.stringify(agents);
   const statusesJson = JSON.stringify(statuses);

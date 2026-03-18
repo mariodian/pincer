@@ -3,12 +3,12 @@ import { BrowserView } from "electrobun/bun";
 import {
   addAgent,
   Agent,
-  AgentStatus,
   checkAllAgentsStatus,
   deleteAgent,
   readAgents,
   updateAgent,
 } from "./../agentService";
+import { AgentStatusInfo } from "../storage/types";
 
 export type AgentRPCType = {
   bun: {
@@ -31,7 +31,7 @@ export type AgentRPCType = {
       };
       checkAllAgentsStatus: {
         params: Record<string, never>;
-        response: AgentStatus[];
+        response: AgentStatusInfo[];
       };
     };
     messages: Record<string, never>;

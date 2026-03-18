@@ -1,11 +1,11 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
 import {
-  AgentStatus,
   checkAllAgentsStatus,
   readAgents,
   readConfig,
 } from "./agentService";
+import { AgentStatusInfo } from "./storage/types";
 import { syncAgentData } from "./utils/storage";
 import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_ICON, TRAY_TITLE } from "./config";
 import { agentRPC } from "./rpc/agentRPC";
@@ -19,7 +19,7 @@ const NATIVE_MENU = false;
 let tray: Tray | null = null;
 let configWindow: BrowserWindow | null = null;
 let popoverWindow: BrowserWindow | null = null;
-let agentStatusMap: Map<string, AgentStatus> = new Map();
+let agentStatusMap: Map<string, AgentStatusInfo> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 
 /**
@@ -151,7 +151,6 @@ export async function updateTrayMenu() {
     // Add agent items
     for (const agent of agents) {
       const status = agentStatusMap.get(agent.id) || {
-        ...agent,
         status: "offline" as const,
         lastChecked: 0,
         errorMessage: undefined,

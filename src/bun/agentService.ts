@@ -1,59 +1,10 @@
-// Agents Service - Handles reading/writing agents.json in platform-specific locations
-import { Utils } from "electrobun/bun";
+// Agents Service - Handles agent CRUD and health checking
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { Utils } from "electrobun/bun";
+import { agentStorage } from "./storage";
+import { AgentStatusInfo } from "./storage/types";
 
-// const APP_NAME = "crabControl";
-
-/**
- * Get platform-specific application data directory
- */
-// function getAppDataDir(): string {
-//   return Utils.paths.userData;
-//   // if (isMacOS()) {
-//   //   // ~/Library/Application Support/crabControl
-//   //   return join(
-//   //     process.env.HOME || "",
-//   //     "Library",
-//   //     "Application Support",
-//   //     APP_NAME,
-//   //   );
-//   // } else if (isWindows()) {
-//   //   // %APPDATA%\crabControl
-//   //   const appdata = process.env.APPDATA || "";
-//   //   return join(appdata, APP_NAME);
-//   // } else {
-//   //   // Linux: ~/.config/crabControl or ~/.local/share/crabControl
-//   //   // Following XDG Base Directory Specification
-//   //   const xdgConfigHome =
-//   //     process.env.XDG_CONFIG_HOME || join(process.env.HOME || "", ".config");
-//   //   return join(xdgConfigHome, APP_NAME);
-//   // }
-// }
-/**
- * Get the full path to the agents.json file
- */
-function getAgentsFilePath(): string {
-  console.log("User data path:", Utils.paths.userData);
-  return join(Utils.paths.userData, "agents.json");
-}
-
-/**
- * Ensure the application data directory exists
- */
-async function ensureAppDataDir(): Promise<void> {
-  const appDataDir = Utils.paths.userData;
-  try {
-    await stat(appDataDir);
-  } catch (error) {
-    // Directory doesn't exist, create it
-    await mkdir(appDataDir, { recursive: true });
-  }
-}
-
-/**
- * Agent definition interface
- */
 export interface Agent {
   id: string;
   name: string;
@@ -62,82 +13,42 @@ export interface Agent {
   enabled?: boolean;
 }
 
-/**
- * Configuration interface
- */
 export interface Config {
-  pollingInterval?: number; // milliseconds
+  pollingInterval?: number;
   windows?: Record<string, unknown>;
 }
 
-/**
- * Default configuration
- */
 const DEFAULT_CONFIG: Config = {
-  pollingInterval: 30000, // 30 seconds
+  pollingInterval: 30000,
 };
 
-/**
- * Agent status interface
- */
 export interface AgentStatus extends Agent {
   status: "ok" | "offline" | "error" | "warning";
-  lastChecked: number; // timestamp
+  lastChecked: number;
   errorMessage?: string;
 }
 
-/**
- * Read agents from agents.json file
- * Returns empty array if file doesn't exist or is invalid
- */
-export async function readAgents(): Promise<Agent[]> {
+function getAgentsFilePath(): string {
+  return join(Utils.paths.userData, "agents.json");
+}
+
+async function ensureAppDataDir(): Promise<void> {
+  const appDataDir = Utils.paths.userData;
   try {
-    await ensureAppDataDir();
-    const filePath = getAgentsFilePath();
-
-    try {
-      await stat(filePath);
-    } catch (error) {
-      return [];
-    }
-
-    const data = await readFile(filePath, "utf8");
-    const parsed = JSON.parse(data);
-
-    // Handle both array format and object format with agents array
-    let agentsData = parsed;
-    if (!Array.isArray(parsed) && parsed.agents) {
-      agentsData = parsed.agents;
-    }
-
-    // Validate that we have an array
-    if (!Array.isArray(agentsData)) {
-      return [];
-    }
-
-    // Validate each agent has required fields
-    const validAgents: Agent[] = [];
-    for (const agent of agentsData) {
-      if (
-        agent.id &&
-        agent.name &&
-        agent.url &&
-        typeof agent.port === "number"
-      ) {
-        validAgents.push(agent);
-      }
-    }
-
-    return validAgents;
-  } catch (error) {
-    console.error("Error reading agents:", error);
-    return [];
+    await stat(appDataDir);
+  } catch {
+    await mkdir(appDataDir, { recursive: true });
   }
 }
 
-/**
- * Read configuration from agents.json file
- */
+export async function readAgents(): Promise<Agent[]> {
+  return agentStorage.readAgents();
+}
+
+export async function writeAgents(agents: Agent[]): Promise<void> {
+  return agentStorage.writeAgents(agents);
+}
+
 export async function readConfig(): Promise<Config> {
   try {
     await ensureAppDataDir();
@@ -145,14 +56,13 @@ export async function readConfig(): Promise<Config> {
 
     try {
       await stat(filePath);
-    } catch (error) {
+    } catch {
       return DEFAULT_CONFIG;
     }
 
     const data = await readFile(filePath, "utf8");
     const parsed = JSON.parse(data);
 
-    // Extract config from object format
     if (!Array.isArray(parsed)) {
       const parsedWindows =
         parsed.windows ?? (parsed.window ? { main: parsed.window } : undefined);
@@ -170,15 +80,11 @@ export async function readConfig(): Promise<Config> {
   }
 }
 
-/**
- * Write configuration to agents.json file
- */
 export async function writeConfig(config: Config): Promise<void> {
   try {
     await ensureAppDataDir();
     const filePath = getAgentsFilePath();
 
-    // Preserve existing agents
     const existingAgents = await readAgents();
 
     const data = JSON.stringify(
@@ -199,58 +105,17 @@ export async function writeConfig(config: Config): Promise<void> {
   }
 }
 
-/**
- * Write agents to agents.json file
- */
-export async function writeAgents(
-  agents: Agent[],
-  pollingInterval?: number,
-): Promise<void> {
-  try {
-    await ensureAppDataDir();
-    const filePath = getAgentsFilePath();
-
-    // Preserve existing pollingInterval if not provided
-    let interval = pollingInterval;
-    if (interval === undefined) {
-      const existingConfig = await readConfig();
-      interval = existingConfig.pollingInterval;
-    }
-
-    const existingConfig = await readConfig();
-    const data = JSON.stringify(
-      {
-        agents,
-        pollingInterval: interval,
-        windows: existingConfig.windows,
-      },
-      null,
-      2,
-    );
-    await writeFile(filePath, data, "utf8");
-  } catch (error) {
-    console.error("Error writing agents:", error);
-    throw error;
-  }
-}
-
-/**
- * Add a new agent
- */
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
   const agents = await readAgents();
   const newAgent = {
     ...agent,
-    id: Math.random().toString(36).substr(2, 9), // Simple ID generation
+    id: Math.random().toString(36).substr(2, 9),
   };
   agents.push(newAgent);
   await writeAgents(agents);
   return newAgent;
 }
 
-/**
- * Update an existing agent
- */
 export async function updateAgent(
   id: string,
   updates: Partial<Agent>,
@@ -267,29 +132,25 @@ export async function updateAgent(
   return agents[index];
 }
 
-/**
- * Delete an agent by ID
- */
 export async function deleteAgent(id: string): Promise<boolean> {
   const agents = await readAgents();
   const initialLength = agents.length;
   const filteredAgents = agents.filter((agent) => agent.id !== id);
 
   if (filteredAgents.length === initialLength) {
-    return false; // Agent not found
+    return false;
   }
 
   await writeAgents(filteredAgents);
   return true;
 }
 
-/**
- * Check the status of an agent by attempting to connect to its URL:port
- */
-export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
+export async function checkAgentStatus(
+  agent: Agent,
+): Promise<AgentStatus> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(`${agent.url}:${agent.port}/a2a/health`, {
       method: "GET",
@@ -302,7 +163,6 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
     clearTimeout(timeoutId);
 
     if (response.ok) {
-      // Try to parse JSON response for more detailed status
       try {
         const data = await response.json();
         return {
@@ -311,8 +171,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
           lastChecked: Date.now(),
           errorMessage: undefined,
         };
-      } catch (parseError) {
-        // If not JSON, still consider it online if we got a successful response
+      } catch {
         return {
           ...agent,
           status: "ok",
@@ -329,7 +188,6 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       };
     }
   } catch (error) {
-    // Network error, timeout, etc.
     return {
       ...agent,
       status: "offline",
@@ -339,11 +197,14 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   }
 }
 
-/**
- * Check status for all agents
- */
-export async function checkAllAgentsStatus(): Promise<AgentStatus[]> {
+export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
   const agents = await readAgents();
   const statusPromises = agents.map((agent) => checkAgentStatus(agent));
-  return Promise.all(statusPromises);
+  const results = await Promise.all(statusPromises);
+  return results.map(({ id, status, lastChecked, errorMessage }) => ({
+    id,
+    status,
+    lastChecked,
+    errorMessage,
+  }));
 }
