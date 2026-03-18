@@ -232,7 +232,7 @@
       showHeaderShadow ? "shadow-bottom" : "",
       "flex justify-between items-center",
       "pb-2 mr-3 px-1",
-      "border-b border-black/10",
+      "border-b border-black/10 dark:border-white/10",
     ]}
   >
     <span class="flex-2 font-semibold text-sm text-black/80 dark:text-white"
@@ -256,7 +256,8 @@
         "font-bold text-[11px]",
         "text-black/70 dark:text-white",
         "bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50",
-        "shadow-xs shadow-black/5",
+        "box-border dark:border-black/5",
+        "shadow-xs shadow-black/5 dark:shadow-black/20",
       ]}
       onclick={handleRefresh}
     >
@@ -284,8 +285,9 @@
             "flex items-center gap-2 p-2",
             "rounded-md",
             "transition-colors",
-            "bg-white/25 hover:bg-white/40 dark:bg-black/25 dark:hover:bg-black/40",
-            "shadow-xs shadow-black/5",
+            "bg-white/25 hover:bg-white/40 dark:bg-black/20 dark:hover:bg-black/35",
+            "shadow-xs shadow-black/5 dark:shadow-black/15",
+            "box-border dark:border-black/5",
           ]}
         >
           <span
@@ -322,7 +324,7 @@
       showFooterShadow ? "shadow-top" : "",
       "relative z-10",
       "flex gap-2 pt-2 mr-3 px-1",
-      "border-t border-black/10",
+      "border-t border-black/10 dark:border-white/10",
     ]}
   >
     <Button onclick={handleConfigure} size="sm">Configure</Button>
@@ -354,6 +356,13 @@
   }
   .shadow-top {
     box-shadow: 0px -3px 3px -3px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.dark) .shadow-bottom {
+    box-shadow: 0px 3px 3px -3px rgba(0, 0, 0, 0.3);
+  }
+  :global(.dark) .shadow-top {
+    box-shadow: 0px -3px 3px -3px rgba(0, 0, 0, 0.3);
   }
 
   .header,

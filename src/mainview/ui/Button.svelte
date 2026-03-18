@@ -45,6 +45,8 @@
   class={[
     "transition-colors",
     "disabled:cursor-not-allowed disabled:opacity-50",
+    "box-border dark:border-black/5",
+    "shadow-xs shadow-black/5 dark:shadow-black/20",
     bgColor,
     textColor,
     displayClasses[display],
