@@ -17,12 +17,10 @@
     errorMessage?: string;
   }
 
-  interface AgentStatusInfo {
-    id: string;
-    status: "ok" | "offline" | "error";
-    lastChecked: number;
-    errorMessage?: string;
-  }
+  type AgentStatusInfo = Pick<
+    AgentStatus,
+    "id" | "status" | "lastChecked" | "errorMessage"
+  >;
 
   type AgentRPCType = {
     bun: {
@@ -225,12 +223,6 @@
 
     return lines.join("\n");
   }
-
-  // function formatTime(timestamp: number): string {
-  //   if (!timestamp) return "Never";
-  //   const date = new Date(timestamp);
-  //   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  // }
 </script>
 
 <div class={["popover py-2 pl-3", "flex flex-col h-screen"]}>
@@ -277,10 +269,12 @@
     onscroll={updateScrollShadows}
     class={["flex flex-col gap-2 py-2 pl-2 pr-5", "flex-1", "overflow-y-auto"]}
   >
-    {#if loading}
-      <div class="loading">Loading...</div>
-    {:else if agents.length === 0}
-      <div class="empty">No agents configured</div>
+    {#if agents.length === 0}
+      <div
+        class={["p-5 text-sm text-center", "text-black/60 dark:text-white/60"]}
+      >
+        No agents configured
+      </div>
     {:else}
       {#each agents as agent (agent.id)}
         <div
@@ -346,14 +340,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
     box-sizing: border-box;
-  }
-
-  .loading,
-  .empty {
-    text-align: center;
-    color: #666;
-    padding: 20px;
-    font-size: 13px;
   }
 
   .status-online {
