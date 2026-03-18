@@ -207,15 +207,22 @@
   }
 
   function getAgentTitle(agent: AgentStatus): string {
-    const lines = [
-      agent.name,
-      `${agent.url}:${agent.port}`,
-      `Status: ${agent.status}`,
-    ];
+    let tooltip = "";
 
-    if (agent.errorMessage) {
-      lines.push(`Error: ${agent.errorMessage}`);
+    // Add status indicator
+    switch (agent.status) {
+      case "ok":
+        tooltip += "Status: Online";
+        break;
+      case "offline":
+        tooltip += `Status: Offline${agent.errorMessage ? `\nError: ${agent.errorMessage}` : ""}`;
+        break;
+      case "error":
+        tooltip += `Status: Error${agent.errorMessage ? `\nError: ${agent.errorMessage}` : ""}`;
+        break;
     }
+
+    const lines = [agent.name, `${agent.url}:${agent.port}`, tooltip];
 
     return lines.join("\n");
   }
@@ -290,12 +297,12 @@
         >
           <span
             class={[
-              "shrink-0",
+              "shrink-0 ml-1",
               "w-2.5 h-2.5 rounded-full",
               getStatusClass(agent.status),
             ]}
           ></span>
-          <div class={["flex flex-col", "min-w-0"]}>
+          <div class={["flex flex-col ml-1", "min-w-0"]}>
             <span
               class={[
                 "agent-name",

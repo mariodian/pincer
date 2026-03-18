@@ -10,8 +10,8 @@ import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
-// const NATIVE_MENU = false;
-const NATIVE_MENU = true;
+const NATIVE_MENU = false;
+// const NATIVE_MENU = true;
 
 let tray: Tray | null = null;
 let configWindow: BrowserWindow | null = null;
