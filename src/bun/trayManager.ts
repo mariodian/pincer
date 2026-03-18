@@ -6,12 +6,12 @@ import {
   readAgents,
   readConfig,
 } from "./agentService";
-import { getViewUrl } from "./utils/url";
+import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_ICON, TRAY_TITLE } from "./config";
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
-import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 import { isMacOS as isMacOSFn } from "./utils/platform";
-import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_TITLE } from "./config/window";
+import { getViewUrl } from "./utils/url";
+import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
 const NATIVE_MENU = false;
 
@@ -32,9 +32,10 @@ export async function initializeTray() {
 
   // Create tray icon
   tray = new Tray({
-    title: TRAY_TITLE,
+    // title: TRAY_ICON,
     // Use a default icon - we'll need to add this to assets
-    image: "views://assets/icon-32-template.png", // Will need to create this
+    // image: "views://assets/icon-32-template.png", // Will need to create this
+    image: "views://resources/crabmon-icon-32.webp",
     template: true,
     width: 32,
     height: 32,
@@ -71,18 +72,18 @@ export async function initializeTray() {
           // transparent: true,
           ...(isMacOS
             ? {
-              trafficLights: windowConfig.trafficLights,
-              titleBarStyle: windowConfig.titleBarStyle,
-              transparent: windowConfig.transparent,
-              styleMask: {
-                Borderless: true,
-                Titled: false,
-                Closable: false,
-                Miniaturizable: false,
-                Resizable: false,
-              },
-            }
-          : {}),
+                trafficLights: windowConfig.trafficLights,
+                titleBarStyle: windowConfig.titleBarStyle,
+                transparent: windowConfig.transparent,
+                styleMask: {
+                  Borderless: true,
+                  Titled: false,
+                  Closable: false,
+                  Miniaturizable: false,
+                  Resizable: false,
+                },
+              }
+            : {}),
           // frame: false,
           frame: {
             width: POPOVER_WINDOW.width,
@@ -107,19 +108,19 @@ export async function initializeTray() {
       openConfigWindow();
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
-      tray?.setTitle("🦞 CrabControl - Refreshing...");
+      tray?.setTitle(`${TRAY_ICON} - Refreshing...`);
       try {
         const statuses = await checkAllAgentsStatus();
         statuses.forEach((status) => {
           agentStatusMap.set(status.id, status);
         });
         updateTrayMenu();
-        tray?.setTitle("🦞 CrabControl - Updated!");
-        setTimeout(() => tray?.setTitle("🦞 CrabControl"), 2000);
+        tray?.setTitle(`${TRAY_ICON} - Updated!`);
+        setTimeout(() => tray?.setTitle(`${TRAY_ICON}`), 2000);
       } catch (error) {
         console.error("Failed to refresh agent statuses:", error);
-        tray?.setTitle("🦞 CrabControl - Error!");
-        setTimeout(() => tray?.setTitle("🦞 CrabControl"), 2000);
+        tray?.setTitle(`${TRAY_ICON} - Error!`);
+        setTimeout(() => tray?.setTitle(`${TRAY_ICON}`), 2000);
       }
     } else if (action && action.startsWith("agent:")) {
       // Agent menu item clicked
@@ -215,7 +216,7 @@ export async function updateTrayMenu() {
     // Add Quit menu item
     menuItems.push({
       type: "normal" as const,
-      label: "Quit CrabControl",
+      label: "Quit CrabMonitor",
       action: "quit",
       enabled: true,
     });
@@ -243,7 +244,7 @@ export async function updateTrayMenu() {
         },
         {
           type: "normal" as const,
-          label: "Quit CrabControl",
+          label: "Quit CrabMonitor",
           action: "quit",
           enabled: true,
         },
@@ -309,35 +310,35 @@ export async function restartStatusUpdates() {
 export function openConfigWindow() {
   console.log("Opening agent configuration window...");
 
-   // If window already exists, focus it
-   if (configWindow) {
-     configWindow.focus();
-     return;
-   }
+  // If window already exists, focus it
+  if (configWindow) {
+    configWindow.focus();
+    return;
+  }
 
-   const isMacOS = isMacOSFn();
+  const isMacOS = isMacOSFn();
 
-     // Create new configuration window
-     const openWindow = async () => {
-       const url = await getViewUrl("agent-config.html");
-       const windowConfig = await readWindowConfig("config");
-       configWindow = new BrowserWindow({
-        title: "Configure Agents - CrabControl",
-        url,
-        frame: {
-          width: CONFIG_WINDOW.width,
-          height: CONFIG_WINDOW.height,
-          x: 100,
-          y: 100,
-        },
-        rpc: agentRPC,
-        ...(isMacOS
-          ? {
+  // Create new configuration window
+  const openWindow = async () => {
+    const url = await getViewUrl("agent-config.html");
+    const windowConfig = await readWindowConfig("config");
+    configWindow = new BrowserWindow({
+      title: `Configure Agents - ${TRAY_ICON} ${TRAY_TITLE}`,
+      url,
+      frame: {
+        width: CONFIG_WINDOW.width,
+        height: CONFIG_WINDOW.height,
+        x: 100,
+        y: 100,
+      },
+      rpc: agentRPC,
+      ...(isMacOS
+        ? {
             titleBarStyle: windowConfig.titleBarStyle,
             transparent: windowConfig.transparent,
           }
-          : {}),
-      });
+        : {}),
+    });
 
     // Apply macOS window effects
     if (isMacOS) {

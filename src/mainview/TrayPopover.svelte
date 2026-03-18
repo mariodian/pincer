@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
   import "./index.css";
+  import Button from "./ui/Button.svelte";
 
   interface Agent {
     id: string;
@@ -58,6 +59,32 @@
   let agents: AgentStatus[] = $state([]);
   let loading = $state(true);
   let isRefreshing = $state(false);
+  let scrollContainer: HTMLDivElement | null = $state(null);
+  let showHeaderShadow = $state(false);
+  let showFooterShadow = $state(false);
+
+  function updateScrollShadows() {
+    if (!scrollContainer) {
+      showHeaderShadow = false;
+      showFooterShadow = false;
+      return;
+    }
+
+    const { scrollTop, clientHeight, scrollHeight } = scrollContainer;
+    const canScroll = scrollHeight > clientHeight + 1;
+
+    if (!canScroll) {
+      showHeaderShadow = false;
+      showFooterShadow = false;
+      return;
+    }
+
+    const atTop = scrollTop <= 0;
+    const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+    showHeaderShadow = !atTop;
+    showFooterShadow = !atBottom;
+  }
 
   async function loadAgents() {
     loading = true;
@@ -80,6 +107,12 @@
 
   $effect(() => {
     loadAgents();
+  });
+
+  $effect(() => {
+    loading;
+    agents;
+    requestAnimationFrame(updateScrollShadows);
   });
 
   async function handleRefresh() {
@@ -115,98 +148,119 @@
     }
   }
 
-  function formatTime(timestamp: number): string {
-    if (!timestamp) return "Never";
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
+  // function formatTime(timestamp: number): string {
+  //   if (!timestamp) return "Never";
+  //   const date = new Date(timestamp);
+  //   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  // }
 </script>
 
-<div class="popover py-2 px-4">
-  <div class="header">
+<div class={["popover py-2 pl-3", "flex flex-col h-screen"]}>
+  <div
+    class={[
+      "header",
+      showHeaderShadow ? "shadow-bottom" : "",
+      "flex justify-between items-center",
+      "pb-2 mr-3 px-1",
+      "border-b border-black/10",
+    ]}
+  >
     <span
       class={[
         "title",
         "font-semibold text-sm",
-        "text-zinc-800 dark:text-white",
-      ]}>CrabControl</span
+        "text-black/80 dark:text-white",
+      ]}>Crab Monitor</span
     >
-    <button class="refresh-btn" onclick={handleRefresh}
-      ><span class:spinning={isRefreshing}>↻</span></button
+
+    <button
+      class={[
+        "refresh-btn",
+        "rounded transition-colors",
+        "px-2 py-1",
+        "font-bold text-[11px] text-black/70 dark:text-white",
+        "bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50",
+        "shadow-xs shadow-black/5",
+      ]}
+      onclick={handleRefresh}
     >
+      <span class:spinning={isRefreshing}>↻</span>
+    </button>
   </div>
 
-  <div class="agent-list">
+  <div
+    bind:this={scrollContainer}
+    onscroll={updateScrollShadows}
+    class={["flex flex-col gap-2 py-2 pl-2 pr-5", "flex-1", "overflow-y-auto"]}
+  >
     {#if loading}
       <div class="loading">Loading...</div>
     {:else if agents.length === 0}
       <div class="empty">No agents configured</div>
     {:else}
       {#each agents as agent (agent.id)}
-        <div class="agent-item">
-          <span class="status-dot {getStatusClass(agent.status)}"></span>
-          <div class="agent-info">
-            <span class="agent-name">{agent.name}</span>
-            <span class="agent-time">{formatTime(agent.lastChecked)}</span>
+        <div
+          class={[
+            "agent-item",
+            "flex items-center gap-2 p-2",
+            "rounded-md",
+            "transition-colors",
+            "bg-white/25 hover:bg-white/40 dark:bg-black/25 dark:hover:bg-black/40",
+            "shadow-xs shadow-black/5",
+          ]}
+        >
+          <span
+            class={[
+              "shrink-0",
+              "w-2.5 h-2.5 rounded-full",
+              getStatusClass(agent.status),
+            ]}
+          ></span>
+          <div class={["flex flex-col", "min-w-0"]}>
+            <span
+              class={[
+                "agent-name",
+                "font-medium text-[13px] text-ellipsis text-nowrap overflow-hidden",
+                "text-black/80 dark:text-white",
+              ]}>{agent.name}</span
+            >
+            <span
+              class={[
+                "agent-time",
+                "text-[11px]",
+                "text-black/50 dark:text-white/60",
+              ]}>{agent.url}:{agent.port}</span
+            >
           </div>
         </div>
       {/each}
     {/if}
   </div>
 
-  <div class="footer">
-    <button class="footer-btn" onclick={handleConfigure}>Configure</button>
-    <button class="footer-btn quit" onclick={handleQuit}>Quit</button>
+  <div
+    class={[
+      "footer",
+      showFooterShadow ? "shadow-top" : "",
+      "relative z-10",
+      "flex gap-2 pt-2 mr-3 px-1",
+      "border-t border-black/10",
+    ]}
+  >
+    <Button onclick={handleConfigure} size="sm">Configure</Button>
+    <Button
+      onclick={handleQuit}
+      bgColor={["bg-white/60 hover:bg-red-500/60 dark:bg-black/30"]}
+      textColor={["text-black/70 hover:text-white dark:text-white"]}
+      size="sm">Quit</Button
+    >
   </div>
 </div>
 
 <style>
-  :global(html),
-  :global(body) {
-    background: transparent;
-    /* background: oklch(0.145 0 0 / 90%); */
-    /* backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); */
-  }
-
   .popover {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
-    color: #fff;
     box-sizing: border-box;
-    /* background: rgba(30, 30, 50, 0.7);
-    border-radius: 16px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px); */
-  }
-
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* .title {
-    font-size: 14px;
-    font-weight: 600;
-  } */
-
-  .refresh-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .refresh-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
   }
 
   .refresh-btn span.spinning {
@@ -223,41 +277,12 @@
     }
   }
 
-  .agent-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 180px;
-    overflow-y: auto;
-  }
-
   .loading,
   .empty {
     text-align: center;
     color: #666;
     padding: 20px;
     font-size: 13px;
-  }
-
-  .agent-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    transition: background 0.15s;
-  }
-
-  .agent-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
   }
 
   .status-online {
@@ -277,31 +302,16 @@
     background: #ecc94b;
   }
 
-  .agent-info {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-width: 0;
+  .shadow-bottom {
+    box-shadow: 0px 3px 3px -3px rgba(0, 0, 0, 0.2);
+  }
+  .shadow-top {
+    box-shadow: 0px -3px 3px -3px rgba(0, 0, 0, 0.2);
   }
 
-  .agent-name {
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .agent-time {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-  }
-
+  .header,
   .footer {
-    margin-top: 12px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    gap: 8px;
+    transition: box-shadow 200ms ease;
   }
 
   .footer-btn {

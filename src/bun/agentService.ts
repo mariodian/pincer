@@ -1,47 +1,48 @@
 // Agents Service - Handles reading/writing agents.json in platform-specific locations
+import { Utils } from "electrobun/bun";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const APP_NAME = "crabControl";
-
-import { isMacOS, isWindows } from "./utils/platform";
+// const APP_NAME = "crabControl";
 
 /**
  * Get platform-specific application data directory
  */
-function getAppDataDir(): string {
-  if (isMacOS()) {
-    // ~/Library/Application Support/crabControl
-    return join(
-      process.env.HOME || "",
-      "Library",
-      "Application Support",
-      APP_NAME,
-    );
-  } else if (isWindows()) {
-    // %APPDATA%\crabControl
-    const appdata = process.env.APPDATA || "";
-    return join(appdata, APP_NAME);
-  } else {
-    // Linux: ~/.config/crabControl or ~/.local/share/crabControl
-    // Following XDG Base Directory Specification
-    const xdgConfigHome =
-      process.env.XDG_CONFIG_HOME || join(process.env.HOME || "", ".config");
-    return join(xdgConfigHome, APP_NAME);
-  }
-}
+// function getAppDataDir(): string {
+//   return Utils.paths.userData;
+//   // if (isMacOS()) {
+//   //   // ~/Library/Application Support/crabControl
+//   //   return join(
+//   //     process.env.HOME || "",
+//   //     "Library",
+//   //     "Application Support",
+//   //     APP_NAME,
+//   //   );
+//   // } else if (isWindows()) {
+//   //   // %APPDATA%\crabControl
+//   //   const appdata = process.env.APPDATA || "";
+//   //   return join(appdata, APP_NAME);
+//   // } else {
+//   //   // Linux: ~/.config/crabControl or ~/.local/share/crabControl
+//   //   // Following XDG Base Directory Specification
+//   //   const xdgConfigHome =
+//   //     process.env.XDG_CONFIG_HOME || join(process.env.HOME || "", ".config");
+//   //   return join(xdgConfigHome, APP_NAME);
+//   // }
+// }
 /**
  * Get the full path to the agents.json file
  */
 function getAgentsFilePath(): string {
-  return join(getAppDataDir(), "agents.json");
+  console.log("User data path:", Utils.paths.userData);
+  return join(Utils.paths.userData, "agents.json");
 }
 
 /**
  * Ensure the application data directory exists
  */
 async function ensureAppDataDir(): Promise<void> {
-  const appDataDir = getAppDataDir();
+  const appDataDir = Utils.paths.userData;
   try {
     await stat(appDataDir);
   } catch (error) {

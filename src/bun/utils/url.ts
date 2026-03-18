@@ -10,6 +10,7 @@ export async function getViewUrl(pagePath = "index.html"): Promise<string> {
     try {
       await fetch(DEV_SERVER_URL, { method: "HEAD" });
       console.log(`HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`);
+      console.log(`View URL: ${DEV_SERVER_URL}/${pagePath}`);
       return `${DEV_SERVER_URL}/${pagePath}`;
     } catch {
       console.log(
@@ -17,5 +18,6 @@ export async function getViewUrl(pagePath = "index.html"): Promise<string> {
       );
     }
   }
+  console.log(`View URL: views://mainview/${pagePath}`);
   return `views://mainview/${pagePath}`;
 }

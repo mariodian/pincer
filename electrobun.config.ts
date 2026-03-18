@@ -1,10 +1,14 @@
 import type { ElectrobunConfig } from "electrobun";
+import { readFileSync } from "fs";
+
+// Read version from package.json
+const packageJson = JSON.parse(readFileSync("./package.json", "utf8"));
 
 export default {
   app: {
-    name: "svelte-tailwind-vite",
-    identifier: "sveltetailwindvite.electrobun.dev",
-    version: "0.0.1",
+    name: "CrabMon",
+    identifier: "com.mariodian.crabmonitor",
+    version: packageJson.version,
   },
   build: {
     // Vite builds to dist/, we copy from there
@@ -13,6 +17,7 @@ export default {
       "dist/agent-config.html": "views/mainview/agent-config.html",
       "dist/tray-popover.html": "views/mainview/tray-popover.html",
       "dist/assets": "views/mainview/assets",
+      "src/resources": "views/resources",
       "src/bun/libs/libMacWindowEffects.dylib":
         "bun/libs/libMacWindowEffects.dylib",
     },
