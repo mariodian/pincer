@@ -1,6 +1,6 @@
 export interface AgentStatusInfo {
   id: string;
-  status: "ok" | "offline" | "error" | "warning";
+  status: "ok" | "offline" | "error";
   lastChecked: number;
   errorMessage?: string;
 }

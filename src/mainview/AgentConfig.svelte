@@ -10,7 +10,7 @@
   }
 
   interface AgentStatus extends Agent {
-    status: "online" | "offline" | "error" | "warning";
+    status: "online" | "offline" | "error";
     lastChecked: number;
     errorMessage?: string;
   }
@@ -162,12 +162,6 @@
         };
       case "error":
         return { label: "✗", class: "error", title: `${status.name}: Error` };
-      case "warning":
-        return {
-          label: "▲",
-          class: "warning",
-          title: `${status.name}: Warning`,
-        };
       default:
         return { label: "○", class: "offline", title: "Status unknown" };
     }
@@ -406,21 +400,14 @@
     font-weight: bold;
     font-size: 1.2em;
   }
-
   .status-indicator.online {
     color: #4caf50;
   }
-
   .status-indicator.offline {
     color: #9e9e9e;
   }
-
   .status-indicator.error {
     color: #f44336;
-  }
-
-  .status-indicator.warning {
-    color: #ff9800;
   }
 
   .agent-actions {

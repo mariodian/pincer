@@ -12,14 +12,14 @@
   }
 
   interface AgentStatus extends Agent {
-    status: "ok" | "offline" | "error" | "warning";
+    status: "ok" | "offline" | "error";
     lastChecked: number;
     errorMessage?: string;
   }
 
   interface AgentStatusInfo {
     id: string;
-    status: "ok" | "offline" | "error" | "warning";
+    status: "ok" | "offline" | "error";
     lastChecked: number;
     errorMessage?: string;
   }
@@ -201,8 +201,6 @@
         return "status-offline";
       case "error":
         return "status-error";
-      case "warning":
-        return "status-warning";
       default:
         return "status-offline";
     }
@@ -362,10 +360,6 @@
   }
 
   .status-error {
-    background: #ed8936;
-  }
-
-  .status-warning {
     background: #ecc94b;
   }
 

@@ -1,20 +1,17 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
-import {
-  checkAllAgentsStatus,
-  readAgents,
-  readConfig,
-} from "./agentService";
-import { AgentStatusInfo } from "./storage/types";
-import { syncAgentData } from "./utils/storage";
-import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_ICON, TRAY_TITLE } from "./config";
+import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
+import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_TITLE } from "./config";
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
+import { AgentStatusInfo } from "./storage/types";
 import { isMacOS as isMacOSFn } from "./utils/platform";
+import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
-const NATIVE_MENU = false;
+// const NATIVE_MENU = false;
+const NATIVE_MENU = true;
 
 let tray: Tray | null = null;
 let configWindow: BrowserWindow | null = null;
@@ -33,7 +30,6 @@ export async function initializeTray() {
 
   // Create tray icon
   tray = new Tray({
-    // title: TRAY_ICON,
     image: "views://resources/crabmon-icon-32.webp",
     template: true,
     width: 32,
@@ -107,19 +103,19 @@ export async function initializeTray() {
       openConfigWindow();
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
-      tray?.setTitle(`${TRAY_ICON} - Refreshing...`);
+      tray?.setTitle(` - Refreshing...`);
       try {
         const statuses = await checkAllAgentsStatus();
         statuses.forEach((status) => {
           agentStatusMap.set(status.id, status);
         });
         updateTrayMenu();
-        tray?.setTitle(`${TRAY_ICON} - Updated!`);
-        setTimeout(() => tray?.setTitle(`${TRAY_ICON}`), 2000);
+        tray?.setTitle(` - Updated!`);
+        setTimeout(() => tray?.setTitle(``), 2000);
       } catch (error) {
         console.error("Failed to refresh agent statuses:", error);
-        tray?.setTitle(`${TRAY_ICON} - Error!`);
-        setTimeout(() => tray?.setTitle(`${TRAY_ICON}`), 2000);
+        tray?.setTitle(` - Error!`);
+        setTimeout(() => tray?.setTitle(``), 2000);
       }
     } else if (action && action.startsWith("agent:")) {
       // Agent menu item clicked
@@ -185,10 +181,6 @@ export async function updateTrayMenu() {
         case "error":
           label = `✗ ${agent.name}`;
           tooltip += `\nStatus: Error${status.errorMessage ? `\nError: ${status.errorMessage}` : ""}`;
-          break;
-        case "warning":
-          label = `▲ ${agent.name}`;
-          tooltip += `\nStatus: Warning${status.errorMessage ? `\nError: ${status.errorMessage}` : ""}`;
           break;
       }
 
@@ -338,7 +330,7 @@ export function openConfigWindow() {
     const url = await getViewUrl("agent-config.html");
     const windowConfig = await readWindowConfig("config");
     configWindow = new BrowserWindow({
-      title: `Configure Agents - ${TRAY_ICON} ${TRAY_TITLE}`,
+      title: `Configure Agents - ${TRAY_TITLE}`,
       url,
       frame: {
         width: CONFIG_WINDOW.width,

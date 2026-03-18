@@ -1,7 +1,7 @@
 // Agents Service - Handles agent CRUD and health checking
+import { Utils } from "electrobun/bun";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { Utils } from "electrobun/bun";
 import { agentStorage } from "./storage";
 import { AgentStatusInfo } from "./storage/types";
 
@@ -23,7 +23,7 @@ const DEFAULT_CONFIG: Config = {
 };
 
 export interface AgentStatus extends Agent {
-  status: "ok" | "offline" | "error" | "warning";
+  status: "ok" | "offline" | "error";
   lastChecked: number;
   errorMessage?: string;
 }
@@ -145,9 +145,7 @@ export async function deleteAgent(id: string): Promise<boolean> {
   return true;
 }
 
-export async function checkAgentStatus(
-  agent: Agent,
-): Promise<AgentStatus> {
+export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);

@@ -8,7 +8,7 @@ export interface Agent {
 }
 
 export interface AgentStatus extends Agent {
-  status: "online" | "offline" | "error" | "warning";
+  status: "online" | "offline" | "error";
   lastChecked: number;
   errorMessage?: string;
 }
