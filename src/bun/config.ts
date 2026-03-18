@@ -5,4 +5,4 @@ export const POPOVER_WINDOW = { width: 250, height: 300 };
 
 // Tray
 export const TRAY_TITLE = "CrabMon";
-export const TRAY_ICON_PATH = "views://resources/crabmon-icon-32.webp";
+export const TRAY_ICON_PATH = "views://resources/icon-32.webp";

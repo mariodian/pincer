@@ -1,7 +1,12 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
-import { CONFIG_WINDOW, POPOVER_WINDOW, TRAY_TITLE } from "./config";
+import {
+  CONFIG_WINDOW,
+  POPOVER_WINDOW,
+  TRAY_ICON_PATH,
+  TRAY_TITLE,
+} from "./config";
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { AgentStatusInfo } from "./storage/types";
@@ -30,7 +35,7 @@ export async function initializeTray() {
 
   // Create tray icon
   tray = new Tray({
-    image: "views://resources/crabmon-icon-32.webp",
+    image: TRAY_ICON_PATH,
     template: true,
     width: 32,
     height: 32,
