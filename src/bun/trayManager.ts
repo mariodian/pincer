@@ -33,8 +33,6 @@ export async function initializeTray() {
   // Create tray icon
   tray = new Tray({
     // title: TRAY_ICON,
-    // Use a default icon - we'll need to add this to assets
-    // image: "views://assets/icon-32-template.png", // Will need to create this
     image: "views://resources/crabmon-icon-32.webp",
     template: true,
     width: 32,
