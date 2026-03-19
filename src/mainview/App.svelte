@@ -20,7 +20,7 @@
 <Window title={TRAY_TITLE}>
   <Sidebar.Provider>
     <AppSidebar />
-    <main class="w-full m-2 p-4 bg-background/70 rounded-xl">
+    <main class="w-full m-2 p-4 bg-white/50 dark:bg-black/50 rounded-xl">
       <Sidebar.Trigger />
       {@render children?.()}
     </main>
