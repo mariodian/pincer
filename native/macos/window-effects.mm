@@ -156,7 +156,8 @@ static ElectrobunNativeDragView *findNativeDragView(NSView *contentView) {
 	return nil;
 }
 
-extern "C" bool enableWindowVibrancy(void *windowPtr) {
+extern "C" bool enableWindowVibrancy(void *windowPtr,
+									  bool titleBarTransparent) {
 	if (windowPtr == nullptr) {
 		return false;
 	}
@@ -170,7 +171,7 @@ extern "C" bool enableWindowVibrancy(void *windowPtr) {
 
 		[window setOpaque:NO];
 		[window setBackgroundColor:[NSColor clearColor]];
-		[window setTitlebarAppearsTransparent:YES];
+		[window setTitlebarAppearsTransparent:titleBarTransparent ? YES : NO];
 		[window setHasShadow:YES];
 
 		NSView *contentView = [window contentView];

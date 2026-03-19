@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 export interface WindowConfig {
   titleBarStyle: "hiddenInset" | "hidden" | "default";
+  titleBarTransparent: boolean;
   transparent: boolean;
   vibrancy: boolean;
   trafficLights: boolean;
@@ -19,18 +20,21 @@ export type WindowName = "main" | "config" | "popover";
 
 export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
   main: {
-    titleBarStyle: "hiddenInset",
+    // titleBarStyle: "hiddenInset",
+    titleBarTransparent: false,
+    titleBarStyle: "default",
     transparent: true,
     vibrancy: true,
     trafficLights: true,
     trafficLightsX: 14,
-    trafficLightsY: 12,
-    nativeDragRegion: true,
+    trafficLightsY: 7,
+    nativeDragRegion: false,
     nativeDragRegionX: 92,
     nativeDragRegionHeight: 40,
   },
   config: {
     titleBarStyle: "hiddenInset",
+    titleBarTransparent: true,
     transparent: true,
     vibrancy: true,
     trafficLights: true,
@@ -42,6 +46,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
   },
   popover: {
     titleBarStyle: "hiddenInset",
+    titleBarTransparent: true,
     transparent: true,
     vibrancy: true,
     trafficLights: false,
@@ -75,7 +80,7 @@ export function applyMacOSWindowEffects(
   try {
     const lib = dlopen(dylibPath, {
       enableWindowVibrancy: {
-        args: [FFIType.ptr],
+        args: [FFIType.ptr, FFIType.bool],
         returns: FFIType.bool,
       },
       ensureWindowShadow: {
@@ -97,7 +102,10 @@ export function applyMacOSWindowEffects(
     });
 
     const vibrancyEnabled = windowConfig.vibrancy
-      ? lib.symbols.enableWindowVibrancy(mainWindow.ptr)
+      ? lib.symbols.enableWindowVibrancy(
+          mainWindow.ptr,
+          windowConfig.titleBarTransparent,
+        )
       : false;
     const shadowEnabled = lib.symbols.ensureWindowShadow(mainWindow.ptr);
     lib.symbols.setTrafficLightsVisible(

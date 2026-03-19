@@ -1,14 +1,20 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
+import { checkAllAgentsStatus, readAgents } from "./agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
+import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
-import { readAgents, checkAllAgentsStatus } from "./agentService";
-import { syncAgentData } from "./utils/storage";
 
 import { MAIN_WINDOW } from "./config";
+
+declare global {
+  interface Window {
+    platform: string;
+  }
+}
 
 const agents = await readAgents();
 const statuses = await checkAllAgentsStatus();
@@ -53,6 +59,13 @@ const mainWindow = new BrowserWindow({
     ? {
         titleBarStyle: wc.titleBarStyle,
         transparent: wc.transparent,
+        styleMask: {
+          Borderless: true,
+          Titled: true,
+          Closable: true,
+          Miniaturizable: true,
+          Resizable: true,
+        },
       }
     : {}),
 });
