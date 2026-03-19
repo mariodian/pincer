@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
-  import "./index.css";
+  import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
 
   interface Agent {

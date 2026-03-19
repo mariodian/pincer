@@ -1,4 +1,5 @@
 <script>
+  import "./app.css";
   import Window from "./ui/Window.svelte";
 
   let count = $state(0);

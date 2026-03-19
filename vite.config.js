@@ -6,6 +6,11 @@ import svelteConfig from "./svelte.config.js";
 
 export default defineConfig({
   plugins: [svelte({ configFile: false, ...svelteConfig }), tailwindcss()],
+  resolve: {
+    alias: {
+      $lib: resolve(__dirname, "src/mainview/lib"),
+    },
+  },
   root: "src/mainview",
   base: "./",
   build: {
