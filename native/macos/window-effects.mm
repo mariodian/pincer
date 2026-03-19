@@ -234,8 +234,7 @@ extern "C" bool ensureWindowShadow(void *windowPtr) {
 	return success;
 }
 
-extern "C" bool setWindowTrafficLightsPosition(void *windowPtr, double x,
-											   double yFromTop) {
+extern "C" bool setWindowTrafficLightsPosition(void *windowPtr, double x, double yFromTop) {
 	if (windowPtr == nullptr) {
 		return false;
 	}

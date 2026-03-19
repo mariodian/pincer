@@ -10,13 +10,17 @@ import {
 import { agentRPC } from "./rpc/agentRPC";
 import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { AgentStatusInfo } from "./storage/types";
-import { isMacOS as isMacOSFn } from "./utils/platform";
+import { isMacOS } from "./utils/platform";
 import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
-const NATIVE_MENU = false;
-// const NATIVE_MENU = true;
+const platformIsMacOS = isMacOS();
+
+// For now, only use native menu on non-macOS platforms since it supports icons and better styling.
+// On macOS we will use a custom popover menu to have more control over appearance and behavior.
+// @TODO: Evaluate if we can switch to custom menu on all platforms for consistency.
+const NATIVE_MENU = !platformIsMacOS;
 
 let tray: Tray | null = null;
 let configWindow: BrowserWindow | null = null;
@@ -61,7 +65,6 @@ export async function initializeTray() {
 
         // @ts-ignore - getBounds may not be in types
         const bounds = tray.getBounds();
-        const isMacOS = isMacOSFn();
         const windowConfig = await readWindowConfig("popover");
         const wc: Record<string, unknown> = {
           title: "",
@@ -70,7 +73,7 @@ export async function initializeTray() {
           // trafficLights: false,
           rpc: trayPopoverRPC,
           // transparent: true,
-          ...(isMacOS
+          ...(platformIsMacOS
             ? {
                 trafficLights: windowConfig.trafficLights,
                 titleBarStyle: windowConfig.titleBarStyle,
@@ -95,7 +98,7 @@ export async function initializeTray() {
 
         popoverWindow = new BrowserWindow(wc);
 
-        if (isMacOS) {
+        if (platformIsMacOS) {
           applyMacOSWindowEffects(popoverWindow, windowConfig);
         }
         // Clear reference when closed
@@ -328,8 +331,6 @@ export function openConfigWindow() {
     return;
   }
 
-  const isMacOS = isMacOSFn();
-
   // Create new configuration window
   const openWindow = async () => {
     const url = await getViewUrl("agent-config.html");
@@ -344,7 +345,7 @@ export function openConfigWindow() {
         y: 100,
       },
       rpc: agentRPC,
-      ...(isMacOS
+      ...(platformIsMacOS
         ? {
             titleBarStyle: windowConfig.titleBarStyle,
             transparent: windowConfig.transparent,
@@ -353,7 +354,7 @@ export function openConfigWindow() {
     });
 
     // Apply macOS window effects
-    if (isMacOS) {
+    if (platformIsMacOS) {
       applyMacOSWindowEffects(configWindow, windowConfig);
     }
 
