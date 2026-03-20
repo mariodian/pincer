@@ -8,7 +8,7 @@ import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
-import { MAIN_WINDOW } from "./config";
+import { APP_NAME, MAIN_WINDOW } from "./config";
 
 declare global {
   interface Window {
@@ -46,7 +46,7 @@ const combinedRPC = {
 };
 
 const mainWindow = new BrowserWindow({
-  title: "React + Tailwind + Vite",
+  title: APP_NAME,
   url,
   frame: {
     width: windowWidth,
@@ -72,7 +72,7 @@ const mainWindow = new BrowserWindow({
 
 // Apply macOS-specific window effects
 if (isMacOS) {
-  applyMacOSWindowEffects(mainWindow, wc);
+  applyMacOSWindowEffects("main", mainWindow, wc);
 }
 
 setupMainWindowMenu(mainWindow);

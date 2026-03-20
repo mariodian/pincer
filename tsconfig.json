@@ -8,7 +8,9 @@
     "baseUrl": ".",
     "paths": {
       "$lib": ["./src/mainview/lib"],
-      "$lib/*": ["./src/mainview/lib/*"]
+      "$lib/*": ["./src/mainview/lib/*"],
+      "$bun": ["./src/bun"],
+      "$bun/*": ["./src/bun/*"]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

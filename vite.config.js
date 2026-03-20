@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       $lib: resolve(__dirname, "src/mainview/lib"),
+      $bun: resolve(__dirname, "src/bun"),
     },
   },
   root: "src/mainview",

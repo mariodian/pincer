@@ -8,6 +8,12 @@ static NSString *const kElectrobunNativeDragViewIdentifier =
 static const void *kElectrobunTrafficLightsObserverKey =
 	&kElectrobunTrafficLightsObserverKey;
 
+typedef NS_ENUM(NSInteger, ElectrobunWindowAppearance) {
+	ElectrobunWindowAppearanceSystem = 0,
+	ElectrobunWindowAppearanceLight = 1,
+	ElectrobunWindowAppearanceDark = 2,
+};
+
 static BOOL applyTrafficLightsPosition(NSWindow *window, double x,
 											   double yFromTop) {
 	if (window == nil || ![window isKindOfClass:[NSWindow class]]) {
@@ -156,8 +162,45 @@ static ElectrobunNativeDragView *findNativeDragView(NSView *contentView) {
 	return nil;
 }
 
+static NSAppearance *appearanceForMode(ElectrobunWindowAppearance mode) {
+	switch (mode) {
+		case ElectrobunWindowAppearanceLight:
+			return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+		case ElectrobunWindowAppearanceDark:
+			return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+		case ElectrobunWindowAppearanceSystem:
+		default:
+			return nil;
+	}
+}
+
+static BOOL applyWindowAppearance(NSWindow *window,
+									  ElectrobunWindowAppearance mode) {
+	if (window == nil || ![window isKindOfClass:[NSWindow class]]) {
+		return NO;
+	}
+
+	NSView *contentView = [window contentView];
+	if (contentView == nil) {
+		return NO;
+	}
+
+	NSAppearance *appearance = appearanceForMode(mode);
+		[window setAppearance:appearance];
+
+	NSVisualEffectView *effectView = findVibrancyView(contentView);
+	if (effectView != nil) {
+		[effectView setAppearance:appearance];
+	}
+
+	[contentView setNeedsDisplay:YES];
+	[window invalidateShadow];
+	return YES;
+}
+
 extern "C" bool enableWindowVibrancy(void *windowPtr,
-									  bool titleBarTransparent) {
+									  bool titleBarTransparent,
+									  int appearanceMode) {
 	if (windowPtr == nullptr) {
 		return false;
 	}
@@ -208,8 +251,28 @@ extern "C" bool enableWindowVibrancy(void *windowPtr,
 			}
 		}
 
+		if (!applyWindowAppearance(
+				window, (ElectrobunWindowAppearance)appearanceMode)) {
+			return;
+		}
+
 		[window invalidateShadow];
 		success = YES;
+	});
+
+	return success;
+}
+
+extern "C" bool setWindowAppearance(void *windowPtr, int appearanceMode) {
+	if (windowPtr == nullptr) {
+		return false;
+	}
+
+	__block BOOL success = NO;
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		NSWindow *window = (__bridge NSWindow *)windowPtr;
+		success = applyWindowAppearance(
+			window, (ElectrobunWindowAppearance)appearanceMode);
 	});
 
 	return success;

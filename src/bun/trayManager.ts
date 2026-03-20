@@ -99,7 +99,7 @@ export async function initializeTray() {
         popoverWindow = new BrowserWindow(wc);
 
         if (platformIsMacOS) {
-          applyMacOSWindowEffects(popoverWindow, windowConfig);
+          applyMacOSWindowEffects("popover", popoverWindow, windowConfig);
         }
         // Clear reference when closed
         popoverWindow.on("close", () => {
@@ -355,7 +355,7 @@ export function openConfigWindow() {
 
     // Apply macOS window effects
     if (platformIsMacOS) {
-      applyMacOSWindowEffects(configWindow, windowConfig);
+      applyMacOSWindowEffects("config", configWindow, windowConfig);
     }
 
     // Clean up when window closes

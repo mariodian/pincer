@@ -1,66 +1,52 @@
 <script lang="ts">
+  import { APP_NAME } from "$bun/config";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import {
     CalendarIcon,
+    CrabIcon,
     HouseIcon,
     InboxIcon,
     SearchIcon,
     SettingsIcon,
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
+  import NavMain from "./NavMain.svelte";
+  import NavSecondary from "./NavSecondary.svelte";
 
-  // Menu items.
-  const items = [
-    {
-      title: "Home",
-      url: "#",
-      icon: HouseIcon,
-    },
-    {
-      title: "Inbox",
-      url: "#",
-      icon: InboxIcon,
-    },
-    {
-      title: "Calendar",
-      url: "#",
-      icon: CalendarIcon,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: SearchIcon,
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: SettingsIcon,
-    },
-  ];
+  const menuItems = {
+    navMain: [
+      { title: "Home", icon: HouseIcon, url: "#" },
+      { title: "Inbox", icon: InboxIcon, url: "#" },
+      { title: "Calendar", icon: CalendarIcon, url: "#" },
+      { title: "Search", icon: SearchIcon, url: "#" },
+    ],
+    navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "#" }],
+  };
 </script>
 
-<!-- <Sidebar.Provider> -->
 <Sidebar.Root collapsible="icon">
+  <Sidebar.Header>
+    <Sidebar.Menu>
+      <Sidebar.MenuItem>
+        <Sidebar.MenuButton size="lg">
+          {#snippet child({ props })}
+            <a href="##" {...props}>
+              <div
+                class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+              >
+                <HugeiconsIcon icon={CrabIcon} strokeWidth={2} />
+              </div>
+              <div class="flex flex-col gap-0.5 leading-none">
+                <span class="font-medium">{APP_NAME}</span>
+              </div>
+            </a>
+          {/snippet}
+        </Sidebar.MenuButton>
+      </Sidebar.MenuItem>
+    </Sidebar.Menu>
+  </Sidebar.Header>
   <Sidebar.Content>
-    <Sidebar.Group>
-      <Sidebar.GroupLabel>Application</Sidebar.GroupLabel>
-      <Sidebar.GroupContent>
-        <Sidebar.Menu>
-          {#each items as item (item.title)}
-            <Sidebar.MenuItem>
-              <Sidebar.MenuButton>
-                {#snippet child({ props })}
-                  <a href={item.url} {...props}>
-                    <HugeiconsIcon icon={item.icon} strokeWidth={2} />
-                    <span>{item.title}</span>
-                  </a>
-                {/snippet}
-              </Sidebar.MenuButton>
-            </Sidebar.MenuItem>
-          {/each}
-        </Sidebar.Menu>
-      </Sidebar.GroupContent>
-    </Sidebar.Group>
+    <NavMain items={menuItems.navMain} />
+    <NavSecondary items={menuItems.navSecondary} class="mt-auto" />
   </Sidebar.Content>
 </Sidebar.Root>
-<!-- </Sidebar.Provider> -->

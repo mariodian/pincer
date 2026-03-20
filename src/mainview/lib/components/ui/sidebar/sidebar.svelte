@@ -81,7 +81,7 @@
           : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
       )}
     ></div>
-    <!-- <div
+    <div
       data-slot="sidebar-container"
       class={cn(
         "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
@@ -95,8 +95,8 @@
         className,
       )}
       {...restProps}
-    > -->
-    <div
+    >
+      <!-- <div
       data-slot="sidebar-container"
       class={cn(
         "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
@@ -110,7 +110,7 @@
         className,
       )}
       {...restProps}
-    >
+    > -->
       <div
         data-sidebar="sidebar"
         data-slot="sidebar-inner"
