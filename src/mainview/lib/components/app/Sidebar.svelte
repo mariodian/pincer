@@ -16,7 +16,6 @@
       { title: "Dashboard", icon: DashboardSpeedIcon, url: "#" },
       { title: "Agents", icon: RoboticIcon, url: "#" },
     ],
-    // navSecondary: []
     navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "#" }],
   };
 </script>
