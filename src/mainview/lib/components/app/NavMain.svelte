@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import { AddCircleIcon } from "@hugeicons/core-free-icons";
+  import { Add01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
 
@@ -14,41 +14,42 @@
 <Sidebar.Group>
   <Sidebar.GroupContent class="flex flex-col gap-2">
     <Sidebar.Menu>
-      <Sidebar.MenuItem class="flex items-center gap-2">
-        <Sidebar.MenuButton
-          class="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-          tooltipContent="Quick create"
-        >
-          <!-- <CirclePlusFilledIcon /> -->
-          <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} />
-          <span>Quick Create</span>
-        </Sidebar.MenuButton>
-        <Button
-          size="icon"
-          class="size-8 group-data-[collapsible=icon]:opacity-0"
-          variant="outline"
-        >
-          <!-- <MailIcon /> -->
-          <span class="sr-only">Inbox</span>
-        </Button>
-      </Sidebar.MenuItem>
-    </Sidebar.Menu>
-    <Sidebar.Menu>
       {#each items as item (item.title)}
-        <Sidebar.MenuItem>
-          <Sidebar.MenuButton tooltipContent={item.title}>
-            {#snippet child({ props })}
-              <a href={item.url} {...props}>
-                <HugeiconsIcon icon={item.icon} strokeWidth={2} />
-                <span>{item.title}</span>
-              </a>
-            {/snippet}
-            <!-- {#if item.icon}
+        {#if item.title === "Agents"}
+          <Sidebar.MenuItem class="flex items-center gap-2">
+            <Sidebar.MenuButton tooltipContent="Quick create">
+              {#snippet child({ props })}
+                <a href={item.url} {...props}>
+                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
+                  <span>{item.title}</span>
+                </a>
+              {/snippet}
+            </Sidebar.MenuButton>
+            <Button
+              size="icon"
+              class="size-8 group-data-[collapsible=icon]:opacity-0"
+              variant="outline"
+            >
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+              <span class="sr-only">Add agent</span>
+            </Button>
+          </Sidebar.MenuItem>
+        {:else}
+          <Sidebar.MenuItem>
+            <Sidebar.MenuButton tooltipContent={item.title}>
+              {#snippet child({ props })}
+                <a href={item.url} {...props}>
+                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
+                  <span>{item.title}</span>
+                </a>
+              {/snippet}
+              <!-- {#if item.icon}
               <item.icon />
             {/if} -->
-            <span>{item.title}</span>
-          </Sidebar.MenuButton>
-        </Sidebar.MenuItem>
+              <span>{item.title}</span>
+            </Sidebar.MenuButton>
+          </Sidebar.MenuItem>
+        {/if}
       {/each}
     </Sidebar.Menu>
   </Sidebar.GroupContent>

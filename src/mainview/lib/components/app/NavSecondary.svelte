@@ -3,7 +3,7 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { useSidebar } from "$lib/components/ui/sidebar";
   import type { WithoutChildren } from "$lib/utils";
-  import { MoonIcon, SunIcon } from "@hugeicons/core-free-icons";
+  import { MoonIcon, SunIcon, Tick01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import { resetMode, setMode, userPrefersMode } from "mode-watcher";
@@ -20,6 +20,13 @@
       return "Dark";
     }
     return "System";
+  });
+  const selectedThemeKey = $derived.by(() => {
+    const preferred = userPrefersMode.current;
+    if (preferred === "light" || preferred === "dark") {
+      return preferred;
+    }
+    return "system";
   });
 
   $effect(() => {
@@ -95,13 +102,28 @@
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content align="start">
                   <DropdownMenu.Item onclick={() => setMode("light")}
-                    >Light</DropdownMenu.Item
+                    >Light
+                    {#if selectedThemeKey === "light"}
+                      <DropdownMenu.Shortcut>
+                        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2.5} />
+                      </DropdownMenu.Shortcut>
+                    {/if}</DropdownMenu.Item
                   >
                   <DropdownMenu.Item onclick={() => setMode("dark")}
-                    >Dark</DropdownMenu.Item
+                    >Dark
+                    {#if selectedThemeKey === "dark"}
+                      <DropdownMenu.Shortcut>
+                        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2.5} />
+                      </DropdownMenu.Shortcut>
+                    {/if}</DropdownMenu.Item
                   >
                   <DropdownMenu.Item onclick={() => resetMode()}
-                    >System</DropdownMenu.Item
+                    >System
+                    {#if selectedThemeKey === "system"}
+                      <DropdownMenu.Shortcut>
+                        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2.5} />
+                      </DropdownMenu.Shortcut>
+                    {/if}</DropdownMenu.Item
                   >
                 </DropdownMenu.Content>
               </DropdownMenu.Root>

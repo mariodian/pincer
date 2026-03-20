@@ -2,11 +2,9 @@
   import { APP_NAME } from "$bun/config";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import {
-    CalendarIcon,
     CrabIcon,
     DashboardSpeedIcon,
-    InboxIcon,
-    SearchIcon,
+    RoboticIcon,
     SettingsIcon,
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
@@ -16,9 +14,7 @@
   const menuItems = {
     navMain: [
       { title: "Dashboard", icon: DashboardSpeedIcon, url: "#" },
-      { title: "Inbox", icon: InboxIcon, url: "#" },
-      { title: "Calendar", icon: CalendarIcon, url: "#" },
-      { title: "Search", icon: SearchIcon, url: "#" },
+      { title: "Agents", icon: RoboticIcon, url: "#" },
     ],
     // navSecondary: []
     navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "#" }],
