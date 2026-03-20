@@ -6,11 +6,21 @@
   import { MoonIcon, SunIcon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
-  import { resetMode, setMode } from "mode-watcher";
+  import { resetMode, setMode, userPrefersMode } from "mode-watcher";
   import type { ComponentProps } from "svelte";
 
   const sidebar = useSidebar();
   let shouldFlex = $state(false);
+  const selectedThemeLabel = $derived.by(() => {
+    const preferred = userPrefersMode.current;
+    if (preferred === "light") {
+      return "Light";
+    }
+    if (preferred === "dark") {
+      return "Dark";
+    }
+    return "System";
+  });
 
   $effect(() => {
     console.log("Sidebar state:", sidebar.state);
@@ -58,7 +68,7 @@
                 >
                   <Sidebar.MenuButton
                     class="min-w-8 duration-200 ease-linear"
-                    tooltipContent="Toggle theme"
+                    tooltipContent={selectedThemeLabel}
                   >
                     {#snippet child({ props })}
                       <div {...props}>
@@ -78,7 +88,7 @@
                             "dark:scale-100 dark:rotate-0",
                           ].join(" ")}
                         />
-                        <span>Toggle theme</span>
+                        <span>{selectedThemeLabel}</span>
                       </div>
                     {/snippet}
                   </Sidebar.MenuButton>
@@ -112,7 +122,7 @@
             class={[
               "transition-all duration-150 overflow-hidden",
               shouldFlex
-                ? "max-h-10 opacity-100 mt-2"
+                ? "max-h-10 opacity-100"
                 : "max-h-0 opacity-0 mt-0 pointer-events-none",
             ]}
           >
