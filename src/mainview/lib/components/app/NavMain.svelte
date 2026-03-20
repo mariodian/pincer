@@ -46,10 +46,6 @@
                   <span>{item.title}</span>
                 </a>
               {/snippet}
-              <!-- {#if item.icon}
-              <item.icon />
-            {/if} -->
-              <span>{item.title}</span>
             </Sidebar.MenuButton>
           </Sidebar.MenuItem>
         {/if}

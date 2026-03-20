@@ -7,6 +7,7 @@ import { isMacOS as isMacOSFn } from "./utils/platform";
 import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { setMainWindow } from "./rpc/windowRegistry";
 
 import { APP_NAME, MAIN_WINDOW } from "./config";
 
@@ -74,6 +75,8 @@ const mainWindow = new BrowserWindow({
 if (isMacOS) {
   applyMacOSWindowEffects("main", mainWindow, wc);
 }
+
+setMainWindow(mainWindow);
 
 setupMainWindowMenu(mainWindow);
 

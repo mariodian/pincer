@@ -8,7 +8,7 @@ import {
   TRAY_TITLE,
 } from "./config";
 import { agentRPC } from "./rpc/agentRPC";
-import { setOpenConfigCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
+import { trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { AgentStatusInfo } from "./storage/types";
 import { isMacOS } from "./utils/platform";
 import { syncAgentData } from "./utils/storage";
@@ -32,11 +32,6 @@ let statusUpdateInterval: NodeJS.Timeout | null = null;
  * Initialize the tray icon and set up event handlers
  */
 export async function initializeTray() {
-  // Set up callback for opening config window from popover
-  setOpenConfigCallback(() => {
-    openConfigWindow();
-  });
-
   // Create tray icon
   tray = new Tray({
     image: TRAY_ICON_PATH,

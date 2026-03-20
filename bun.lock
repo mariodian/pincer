@@ -5,6 +5,7 @@
     "": {
       "name": "electrobun-react-tailwind-vite",
       "dependencies": {
+        "@bmlt-enabled/svelte-spa-router": "^5.0.7",
         "electrobun": "1.16.0",
         "mode-watcher": "^1.1.0",
       },
@@ -32,6 +33,8 @@
   },
   "packages": {
     "@babylonjs/core": ["@babylonjs/core@7.54.3", "", {}, "sha512-P5ncXVd8GEUJLhwloP9V0oVwQYIrvZztguVeLlvd5Rx+9aQnenKjpV8auJ6SRsUlAmNZU4pFTKzwF6o2EUfhAw=="],
+
+    "@bmlt-enabled/svelte-spa-router": ["@bmlt-enabled/svelte-spa-router@5.0.7", "", {}, "sha512-eSL4pZaEpiqsaMewSY2iMIAVPq1tldZkNACp4AUqdjwNOgNAPDPrUUSEt/vUAwM8XscDdtu0IP9IAonKbSuClg=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.21.5", "", { "os": "aix", "cpu": "ppc64" }, "sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ=="],
 

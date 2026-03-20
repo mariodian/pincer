@@ -22,7 +22,9 @@ export type SystemRPCType = {
   };
   webview: {
     requests: Record<string, never>;
-    messages: Record<string, never>;
+    messages: {
+      navigateTo: { params: { path: string }; response: void };
+    };
   };
 };
 
@@ -39,6 +41,10 @@ export const systemRPC = BrowserView.defineRPC<SystemRPCType>({
         };
       },
     },
-    messages: {},
+    messages: {
+      navigateTo: () => {
+        // Navigation is handled in the webview (App.svelte)
+      },
+    },
   },
 });

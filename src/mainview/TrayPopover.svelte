@@ -33,8 +33,8 @@
           params: Record<string, never>;
           response: AgentStatusInfo[];
         };
-        openConfig: {
-          params: Record<string, never>;
+        openMainWindow: {
+          params: { page: string };
           response: boolean;
         };
         quit: {
@@ -184,7 +184,11 @@
   }
 
   async function handleConfigure() {
-    await rpc.request.openConfig({});
+    await rpc.request.openMainWindow({ page: "agents" });
+  }
+
+  async function handleSettings() {
+    await rpc.request.openMainWindow({ page: "settings" });
   }
 
   async function handleQuit() {
@@ -328,6 +332,7 @@
     ]}
   >
     <Button onclick={handleConfigure} size="sm">Configure</Button>
+    <Button onclick={handleSettings} size="sm">Settings</Button>
     <Button
       onclick={handleQuit}
       bgColor={["bg-white/60 hover:bg-red-500/60 dark:bg-black/30"]}

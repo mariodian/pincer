@@ -13,10 +13,10 @@
 
   const menuItems = {
     navMain: [
-      { title: "Dashboard", icon: DashboardSpeedIcon, url: "#" },
-      { title: "Agents", icon: RoboticIcon, url: "#" },
+      { title: "Dashboard", icon: DashboardSpeedIcon, url: "#/" },
+      { title: "Agents", icon: RoboticIcon, url: "#/agents" },
     ],
-    navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "#" }],
+    navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "#/settings" }],
   };
 </script>
 

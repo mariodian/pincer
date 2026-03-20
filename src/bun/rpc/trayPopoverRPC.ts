@@ -1,42 +1,9 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
 import { checkAllAgentsStatus, readAgents } from "../agentService";
-import { AgentStatusInfo } from "../storage/types";
 import { syncAgentData } from "../utils/storage";
-
-let openConfigCallback: (() => void) | null = null;
-
-export type TrayPopoverRPCType = {
-  bun: {
-    requests: {
-      getAgents: {
-        params: Record<string, never>;
-        response: AgentStatusInfo[];
-      };
-      checkAllAgentsStatus: {
-        params: Record<string, never>;
-        response: AgentStatusInfo[];
-      };
-      openConfig: {
-        params: Record<string, never>;
-        response: boolean;
-      };
-      quit: {
-        params: Record<string, never>;
-        response: boolean;
-      };
-    };
-    messages: Record<string, never>;
-  };
-  webview: {
-    requests: Record<string, never>;
-    messages: Record<string, never>;
-  };
-};
-
-export function setOpenConfigCallback(callback: () => void) {
-  openConfigCallback = callback;
-}
+import { getMainWindow } from "./windowRegistry";
+import type { TrayPopoverRPCType } from "../../shared/rpc";
 
 export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
   handlers: {
@@ -50,9 +17,13 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
         await syncAgentData(agents, statuses);
         return statuses;
       },
-      openConfig: () => {
-        if (openConfigCallback) {
-          openConfigCallback();
+        openMainWindow: async ({ page }) => {
+        const win = getMainWindow();
+        if (win) {
+          win.focus();
+          // Use executeJavascript to set hash directly — bypasses RPC socket chain
+          const escaped = `/${page}`.replace(/'/g, "\\'");
+          win.webview.executeJavascript(`window.location.hash = '${escaped}'`);
         }
         return true;
       },
