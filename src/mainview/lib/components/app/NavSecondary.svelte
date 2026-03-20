@@ -103,7 +103,7 @@
                     : "max-w-10 opacity-100",
                 ]}
               >
-                <Sidebar.Trigger class="" size="icon-sm" />
+                <Sidebar.Trigger size="icon-sm" />
               </div>
             </Sidebar.MenuItem>
           </div>
@@ -117,11 +117,7 @@
             ]}
           >
             <Sidebar.MenuItem>
-              <Sidebar.Trigger
-                tooltipContent="Toggle theme"
-                class=""
-                size="icon-sm"
-              />
+              <Sidebar.Trigger tooltipContent="Open sidebar" size="icon-sm" />
             </Sidebar.MenuItem>
           </div>
         {:else}

@@ -1,31 +1,73 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils.js";
   import { SidebarLeftIcon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import type { ComponentProps } from "svelte";
   import { useSidebar } from "./context.svelte";
+  import MenuButton, {
+    type SidebarMenuButtonSize,
+  } from "./sidebar-menu-button.svelte";
 
   let {
     ref = $bindable(null),
     class: className,
+    size = "default",
+    tooltipContent,
+    tooltipContentProps,
     onclick,
     ...restProps
-  }: ComponentProps<typeof Button> & {
+  }: Omit<ComponentProps<typeof MenuButton>, "size"> & {
     onclick?: (e: MouseEvent) => void;
+    size?:
+      | SidebarMenuButtonSize
+      | "icon"
+      | "icon-xs"
+      | "icon-sm"
+      | "icon-lg"
+      | "xs";
   } = $props();
 
   const sidebar = useSidebar();
+
+  const mappedSize = $derived.by((): SidebarMenuButtonSize => {
+    if (size === "sm" || size === "lg" || size === "default") {
+      return size;
+    }
+    if (size === "xs") {
+      return "sm";
+    }
+    return "default";
+  });
+
+  const iconSizeClass = $derived.by(() => {
+    if (size === "icon-xs") {
+      return "size-6! p-1.5!";
+    }
+    if (size === "icon-sm") {
+      return "size-8! p-2!";
+    }
+    if (size === "icon-lg") {
+      return "size-10! p-2.5!";
+    }
+    if (size === "icon") {
+      return "size-9! p-2!";
+    }
+    return "";
+  });
 </script>
 
-<Button
+<MenuButton
   bind:ref
   data-sidebar="trigger"
   data-slot="sidebar-trigger"
-  variant="ghost"
-  size="default"
-  class={cn("cn-sidebar-trigger", className)}
-  type="button"
+  size={mappedSize}
+  {tooltipContent}
+  {tooltipContentProps}
+  class={cn(
+    "cn-sidebar-trigger w-auto! shrink-0 justify-center",
+    iconSizeClass,
+    className,
+  )}
   onclick={(e) => {
     onclick?.(e);
     sidebar.toggle();
@@ -34,4 +76,4 @@
 >
   <HugeiconsIcon icon={SidebarLeftIcon} strokeWidth={2} />
   <span class="sr-only">Toggle Sidebar</span>
-</Button>
+</MenuButton>

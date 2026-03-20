@@ -29,7 +29,7 @@
   <Sidebar.Provider>
     <AppSidebar />
     <main class="w-full m-1.5 py-3 px-3 rounded-xl bg-background">
-      <Sidebar.Trigger class="" />
+      <!-- <Sidebar.Trigger tooltipContent="Open sidebar" class="" /> -->
       <h1 class="">asdfasdf</h1>
       <!-- {@render children?.()} -->
     </main>

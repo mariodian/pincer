@@ -33,7 +33,12 @@
           {#snippet child({ props })}
             <a href="##" {...props}>
               <div
-                class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+                class={[
+                  "flex items-center justify-center",
+                  "bg-sidebar-primary",
+                  "text-sidebar-primary-foreground",
+                  "aspect-square size-8 rounded-lg",
+                ]}
               >
                 <HugeiconsIcon icon={CrabIcon} strokeWidth={2} />
               </div>
