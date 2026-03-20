@@ -4,7 +4,7 @@
   import {
     CalendarIcon,
     CrabIcon,
-    HouseIcon,
+    DashboardSpeedIcon,
     InboxIcon,
     SearchIcon,
     SettingsIcon,
@@ -15,7 +15,7 @@
 
   const menuItems = {
     navMain: [
-      { title: "Home", icon: HouseIcon, url: "#" },
+      { title: "Dashboard", icon: DashboardSpeedIcon, url: "#" },
       { title: "Inbox", icon: InboxIcon, url: "#" },
       { title: "Calendar", icon: CalendarIcon, url: "#" },
       { title: "Search", icon: SearchIcon, url: "#" },

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+  import { AddCircleIcon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
 
@@ -19,6 +20,7 @@
           tooltipContent="Quick create"
         >
           <!-- <CirclePlusFilledIcon /> -->
+          <HugeiconsIcon icon={AddCircleIcon} strokeWidth={2} />
           <span>Quick Create</span>
         </Sidebar.MenuButton>
         <Button

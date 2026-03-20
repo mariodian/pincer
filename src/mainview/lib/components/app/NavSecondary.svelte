@@ -1,13 +1,27 @@
 <script lang="ts">
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Sidebar from "$lib/components/ui/sidebar";
+  import { useSidebar } from "$lib/components/ui/sidebar";
   import type { WithoutChildren } from "$lib/utils";
   import { MoonIcon, SunIcon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import { resetMode, setMode } from "mode-watcher";
   import type { ComponentProps } from "svelte";
-  import { buttonVariants } from "../ui/button";
+
+  const sidebar = useSidebar();
+  let shouldFlex = $state(false);
+
+  $effect(() => {
+    console.log("Sidebar state:", sidebar.state);
+    if (sidebar.state === "collapsed") {
+      setTimeout(() => {
+        shouldFlex = true;
+      }, 180);
+    } else {
+      shouldFlex = false;
+    }
+  });
 
   let {
     items,
@@ -19,13 +33,13 @@
 
 <Sidebar.Group {...restProps}>
   <Sidebar.GroupContent>
-    <Sidebar.Menu>
+    <Sidebar.Menu class="transition-all duration-300">
       {#each items as item (item.title)}
         {#if item.title === "Settings"}
           <Sidebar.MenuItem class="flex items-center gap-2">
             <Sidebar.MenuButton
               class="min-w-8 duration-200 ease-linear"
-              tooltipContent="Quick create"
+              tooltipContent={item.title}
             >
               {#snippet child({ props })}
                 <a href={item.url} {...props}>
@@ -34,23 +48,35 @@
                 </a>
               {/snippet}
             </Sidebar.MenuButton>
+          </Sidebar.MenuItem>
+
+          <Sidebar.MenuItem
+            class={`flex items-center gap-2 ${shouldFlex ? "flex-col" : ""}`}
+          >
             <DropdownMenu.Root>
               <DropdownMenu.Trigger
-                class={[
-                  buttonVariants({ variant: "outline", size: "icon-sm" }),
-                ]}
+                class="flex-1 group-sidebar-expanded/settings:flex-1"
               >
-                <HugeiconsIcon
-                  icon={SunIcon}
-                  strokeWidth={2}
-                  class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 !transition-all dark:scale-0 dark:-rotate-90"
-                />
-                <HugeiconsIcon
-                  icon={MoonIcon}
-                  strokeWidth={2}
-                  class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 !transition-all dark:scale-100 dark:rotate-0"
-                />
-                <span class="sr-only">Toggle theme</span>
+                <Sidebar.MenuButton
+                  class="min-w-8 duration-200 ease-linear"
+                  tooltipContent="Toggle theme"
+                >
+                  {#snippet child({ props })}
+                    <div {...props}>
+                      <HugeiconsIcon
+                        icon={SunIcon}
+                        strokeWidth={2}
+                        class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 !transition-all dark:scale-0 dark:-rotate-90"
+                      />
+                      <HugeiconsIcon
+                        icon={MoonIcon}
+                        strokeWidth={2}
+                        class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 !transition-all dark:scale-100 dark:rotate-0"
+                      />
+                      <span>Toggle theme</span>
+                    </div>
+                  {/snippet}
+                </Sidebar.MenuButton>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content align="end">
                 <DropdownMenu.Item onclick={() => setMode("light")}
@@ -64,6 +90,7 @@
                 >
               </DropdownMenu.Content>
             </DropdownMenu.Root>
+            <Sidebar.Trigger class="" size="icon-sm" />
           </Sidebar.MenuItem>
         {:else}
           <Sidebar.MenuItem>
