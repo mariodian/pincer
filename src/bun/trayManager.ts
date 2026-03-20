@@ -103,27 +103,25 @@ export async function initializeTray() {
           popoverWindow = null;
         });
       }
-    } else if (action === "configure") {
-      // Configure Agents menu item clicked - navigate to Agents page in main window
+    } else if (
+      action === "configure" ||
+      action === "dashboard" ||
+      action === "settings"
+    ) {
+      // Navigate to a page in the main window
+      const route =
+        action === "configure"
+          ? "agents"
+          : action === "dashboard"
+            ? ""
+            : action;
       const win = getMainWindow();
       if (win) {
         win.focus();
         let baseUrl = win.webview.url ?? (await getViewUrl("index.html"));
         const hashIndex = baseUrl.indexOf("#");
         if (hashIndex !== -1) baseUrl = baseUrl.slice(0, hashIndex);
-        win.webview.loadURL(`${baseUrl}#/agents`);
-      }
-    } else if (action === "dashboard" || action === "settings") {
-      // Dashboard or Settings menu item clicked
-      const win = getMainWindow();
-      if (win) {
-        win.focus();
-        let baseUrl = win.webview.url ?? (await getViewUrl("index.html"));
-        const hashIndex = baseUrl.indexOf("#");
-        if (hashIndex !== -1) baseUrl = baseUrl.slice(0, hashIndex);
-        win.webview.loadURL(
-          `${baseUrl}#/${action === "dashboard" ? "" : action}`,
-        );
+        win.webview.loadURL(`${baseUrl}#/${route}`);
       }
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
@@ -232,12 +230,9 @@ export async function updateTrayMenu() {
       enabled: true,
     });
 
-    // Add Configure menu item
+    // Add separator before nav items
     menuItems.push({
-      type: "normal" as const,
-      label: "Configure Agents",
-      action: "configure",
-      enabled: true,
+      type: "divider" as const,
     });
 
     // Add Dashboard menu item
@@ -248,12 +243,25 @@ export async function updateTrayMenu() {
       enabled: true,
     });
 
+    // Add Configure menu item
+    menuItems.push({
+      type: "normal" as const,
+      label: "Configure Agents",
+      action: "configure",
+      enabled: true,
+    });
+
     // Add Settings menu item
     menuItems.push({
       type: "normal" as const,
       label: "Settings",
       action: "settings",
       enabled: true,
+    });
+
+    // Add separator before quit
+    menuItems.push({
+      type: "divider" as const,
     });
 
     // Add Quit menu item
@@ -281,14 +289,14 @@ export async function updateTrayMenu() {
         },
         {
           type: "normal" as const,
-          label: "Configure Agents",
-          action: "configure",
+          label: "Dashboard",
+          action: "dashboard",
           enabled: true,
         },
         {
           type: "normal" as const,
-          label: "Dashboard",
-          action: "dashboard",
+          label: "Configure Agents",
+          action: "configure",
           enabled: true,
         },
         {
