@@ -17,7 +17,10 @@
       {#each items as item (item.title)}
         {#if item.title === "Agents"}
           <Sidebar.MenuItem class="flex items-center gap-2">
-            <Sidebar.MenuButton tooltipContent="Quick create">
+            <Sidebar.MenuButton
+              class="min-w-8 duration-200 ease-linear"
+              tooltipContent="Quick create"
+            >
               {#snippet child({ props })}
                 <a href={item.url} {...props}>
                   <HugeiconsIcon icon={item.icon} strokeWidth={2} />
