@@ -64,7 +64,11 @@
         const rpc = Electroview.defineRPC<SystemRPCType>({
           handlers: {
             requests: {},
-            messages: {},
+            messages: {
+              navigateTo: ({ params }) => {
+                window.location.hash = params.path;
+              },
+            },
           },
         });
 

@@ -15,8 +15,8 @@ const platformIsMacOS = isMacOS();
 // For now, only use native menu on non-macOS platforms since it supports icons and better styling.
 // On macOS we will use a custom popover menu to have more control over appearance and behavior.
 // @TODO: Evaluate if we can switch to custom menu on all platforms for consistency.
-// const NATIVE_MENU = !platformIsMacOS;
-const NATIVE_MENU = true;
+const NATIVE_MENU = !platformIsMacOS;
+// const NATIVE_MENU = true;
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
