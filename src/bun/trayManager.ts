@@ -1,13 +1,7 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
-import {
-  CONFIG_WINDOW,
-  POPOVER_WINDOW,
-  TRAY_ICON_PATH,
-  TRAY_TITLE,
-} from "./config";
-import { agentRPC } from "./rpc/agentRPC";
+import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import { trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
 import { AgentStatusInfo } from "./storage/types";
@@ -25,7 +19,6 @@ const platformIsMacOS = isMacOS();
 const NATIVE_MENU = true;
 
 let tray: Tray | null = null;
-let configWindow: BrowserWindow | null = null;
 let popoverWindow: BrowserWindow | null = null;
 let agentStatusMap: Map<string, AgentStatusInfo> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
@@ -369,56 +362,6 @@ async function startStatusUpdates() {
  */
 export async function restartStatusUpdates() {
   await startStatusUpdates();
-}
-
-/**
- * Open the configuration window
- */
-export function openConfigWindow() {
-  console.log("Opening agent configuration window...");
-
-  // If window already exists, focus it
-  if (configWindow) {
-    configWindow.focus();
-    return;
-  }
-
-  // Create new configuration window
-  const openWindow = async () => {
-    const url = await getViewUrl("agent-config.html");
-    const windowConfig = await readWindowConfig("config");
-    configWindow = new BrowserWindow({
-      title: `Configure Agents - ${TRAY_TITLE}`,
-      url,
-      frame: {
-        width: CONFIG_WINDOW.width,
-        height: CONFIG_WINDOW.height,
-        x: 100,
-        y: 100,
-      },
-      rpc: agentRPC,
-      ...(platformIsMacOS
-        ? {
-            titleBarStyle: windowConfig.titleBarStyle,
-            transparent: windowConfig.transparent,
-          }
-        : {}),
-    });
-
-    // Apply macOS window effects
-    if (platformIsMacOS) {
-      applyMacOSWindowEffects("config", configWindow, windowConfig);
-    }
-
-    // Clean up when window closes
-    configWindow.on("close", () => {
-      configWindow = null;
-    });
-
-    console.log("Agent configuration window opened");
-  };
-
-  void openWindow();
 }
 
 /**
