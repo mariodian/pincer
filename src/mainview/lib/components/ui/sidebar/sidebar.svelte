@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as Sheet from "$lib/components/ui/sheet/index.js";
   import { cn, type WithElementRef } from "$lib/utils.js";
   import type { HTMLAttributes } from "svelte/elements";
   import { SIDEBAR_WIDTH_MOBILE } from "./constants.js";
@@ -33,36 +32,11 @@
   >
     {@render children?.()}
   </div>
-{:else if sidebar.isMobile}
-  <Sheet.Root
-    bind:open={() => sidebar.openMobile, (v) => sidebar.setOpenMobile(v)}
-    {...restProps}
-  >
-    <Sheet.Content
-      bind:ref
-      data-sidebar="sidebar"
-      data-slot="sidebar"
-      data-mobile="true"
-      class={cn(
-        "bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden",
-        className,
-      )}
-      style="--sidebar-width: {SIDEBAR_WIDTH_MOBILE};"
-      {side}
-    >
-      <Sheet.Header class="sr-only">
-        <Sheet.Title>Sidebar</Sheet.Title>
-        <Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
-      </Sheet.Header>
-      <div class="flex h-full w-full flex-col">
-        {@render children?.()}
-      </div>
-    </Sheet.Content>
-  </Sheet.Root>
 {:else}
   <div
     bind:this={ref}
-    class="text-sidebar-foreground group peer hidden md:block"
+    class="text-sidebar-foreground group peer block"
+    style="--sidebar-width-mobile: {SIDEBAR_WIDTH_MOBILE};"
     data-state={sidebar.state}
     data-collapsible={sidebar.state === "collapsed" ? collapsible : ""}
     data-variant={variant}
@@ -73,7 +47,7 @@
     <div
       data-slot="sidebar-gap"
       class={cn(
-        "transition-[width] duration-200 ease-linear relative w-(--sidebar-width) bg-transparent",
+        "transition-[width] duration-200 ease-linear relative w-(--sidebar-width-mobile) bg-transparent md:w-(--sidebar-width)",
         "group-data-[collapsible=offcanvas]:w-0",
         "group-data-[side=right]:rotate-180",
         variant === "floating" || variant === "inset"
@@ -84,7 +58,7 @@
     <div
       data-slot="sidebar-container"
       class={cn(
-        "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+        "fixed inset-y-0 z-10 flex h-svh w-(--sidebar-width-mobile) transition-[left,right,width] duration-200 ease-linear md:w-(--sidebar-width)",
         side === "left"
           ? "start-0 group-data-[collapsible=offcanvas]:start-[calc(var(--sidebar-width)*-1)]"
           : "end-0 group-data-[collapsible=offcanvas]:end-[calc(var(--sidebar-width)*-1)]",
