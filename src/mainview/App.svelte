@@ -1,16 +1,16 @@
 <script lang="ts">
   import AppSidebar from "$lib/components/app/Sidebar.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
+  import Agents from "$lib/pages/Agents.svelte";
+  import Dashboard from "$lib/pages/Dashboard.svelte";
+  import Settings from "$lib/pages/Settings.svelte";
+  import Router from "@bmlt-enabled/svelte-spa-router";
   import { ModeWatcher } from "mode-watcher";
+  import { onMount } from "svelte";
   import { TRAY_TITLE } from "../bun/config";
+  import type { MainWindowRPCType } from "../shared/rpc";
   import "./app.css";
   import Window from "./ui/Window.svelte";
-  import Router from "@bmlt-enabled/svelte-spa-router";
-  import { Electroview } from "electrobun/view";
-  import type { MainWindowRPCType } from "../shared/rpc";
-  import Dashboard from "$lib/pages/Dashboard.svelte";
-  import Agents from "$lib/pages/Agents.svelte";
-  import Settings from "$lib/pages/Settings.svelte";
 
   const MAIN_WINDOW_MODE_STORAGE_KEY = "crab-main-window-mode";
   const MAIN_WINDOW_THEME_STORAGE_KEY = "crab-main-window-theme";
@@ -21,18 +21,37 @@
     "/settings": Settings,
   };
 
-  const rpc = Electroview.defineRPC<MainWindowRPCType>({
-    handlers: {
-      requests: {},
-      messages: {
-        navigateTo: ({ params }) => {
-          window.location.hash = params.path;
-        },
-      },
-    },
-  });
+  onMount(() => {
+    // Skip RPC wiring in plain Vite/browser mode.
+    const hasElectrobunRuntime =
+      typeof window !== "undefined" &&
+      typeof (window as any).__electrobunWebviewId !== "undefined" &&
+      typeof (window as any).__electrobunRpcSocketPort !== "undefined";
 
-  new Electroview({ rpc });
+    if (!hasElectrobunRuntime) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const { Electroview } = await import("electrobun/view");
+        const rpc = Electroview.defineRPC<MainWindowRPCType>({
+          handlers: {
+            requests: {},
+            messages: {
+              navigateTo: ({ params }) => {
+                window.location.hash = params.path;
+              },
+            },
+          },
+        });
+
+        new Electroview({ rpc });
+      } catch (error) {
+        console.error("Main window Electrobun init failed:", error);
+      }
+    })();
+  });
 </script>
 
 <Window title={TRAY_TITLE}>
