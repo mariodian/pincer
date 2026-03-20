@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { userPrefersMode } from "mode-watcher";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
   import type { SystemRPCType } from "../../bun/rpc/systemRPC";
 
   type Align = "left" | "center" | "right";
   type ResolvedTheme = "light" | "dark";
+  type WindowAppearance = "system" | ResolvedTheme;
 
   interface Props {
     title?: string;
@@ -16,11 +18,28 @@
   }
 
   let os = $state<"macos" | "win" | "linux" | "">("");
+  let pushWindowAppearance: ((appearance: WindowAppearance) => void) | null =
+    null;
 
   function getResolvedTheme(): ResolvedTheme {
     return document.documentElement.classList.contains("dark")
       ? "dark"
       : "light";
+  }
+
+  function getRequestedAppearance(): WindowAppearance {
+    const preferred = userPrefersMode.current;
+
+    if (preferred === "light" || preferred === "dark") {
+      return preferred;
+    }
+
+    if (preferred === "system") {
+      return "system";
+    }
+
+    // Fallback if mode-watcher is not initialized yet.
+    return getResolvedTheme();
   }
 
   onMount(() => {
@@ -63,7 +82,7 @@
           return;
         }
 
-        const syncWindowAppearance = async (appearance: ResolvedTheme) => {
+        const syncWindowAppearance = async (appearance: WindowAppearance) => {
           try {
             await rpc.request.setWindowAppearance({ appearance });
           } catch (error) {
@@ -71,17 +90,21 @@
           }
         };
 
-        let lastTheme = getResolvedTheme();
-        await syncWindowAppearance(lastTheme);
-
-        const observer = new MutationObserver(() => {
-          const nextTheme = getResolvedTheme();
-          if (nextTheme === lastTheme) {
+        let lastAppearance: WindowAppearance | null = null;
+        const syncIfChanged = (appearance: WindowAppearance) => {
+          if (appearance === lastAppearance) {
             return;
           }
 
-          lastTheme = nextTheme;
-          void syncWindowAppearance(nextTheme);
+          lastAppearance = appearance;
+          void syncWindowAppearance(appearance);
+        };
+
+        pushWindowAppearance = syncIfChanged;
+        syncIfChanged(getRequestedAppearance());
+
+        const observer = new MutationObserver(() => {
+          syncIfChanged(getRequestedAppearance());
         });
 
         observer.observe(document.documentElement, {
@@ -90,6 +113,7 @@
         });
 
         stopThemeSync = () => {
+          pushWindowAppearance = null;
           observer.disconnect();
         };
       } catch (e) {
@@ -107,11 +131,12 @@
     if (os) document.body.dataset.os = os;
   });
 
-  let {
-    rootClass = "text-white",
-    contentClass = "w-full",
-    children,
-  }: Props = $props();
+  $effect(() => {
+    userPrefersMode.current;
+    pushWindowAppearance?.(getRequestedAppearance());
+  });
+
+  let { rootClass = "", contentClass = "w-full", children }: Props = $props();
 </script>
 
 <div class={["h-screen overflow-hidden", rootClass]}>
@@ -132,11 +157,11 @@
   }
   /* macOS light */
   :global(html:not(.dark) body[data-os="macos"]) {
-    background-color: transparent;
+    background-color: oklch(94.974% 0.01133 320.903 / 0.55);
   }
 
   /* macOS dark */
   :global(html.dark body[data-os="macos"]) {
-    background-color: transparent;
+    background-color: oklch(30.029% 0.01875 318.593 / 0.55);
   }
 </style>

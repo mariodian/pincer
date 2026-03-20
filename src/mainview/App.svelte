@@ -28,9 +28,10 @@
   />
   <Sidebar.Provider>
     <AppSidebar />
-    <main class="w-full m-1 py-2 px-1 rounded-xl">
+    <main class="w-full m-1.5 py-3 px-3 rounded-xl bg-background">
       <Sidebar.Trigger class="" />
-      {@render children?.()}
+      <h1 class="">asdfasdf</h1>
+      <!-- {@render children?.()} -->
     </main>
   </Sidebar.Provider>
 </Window>

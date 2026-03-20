@@ -20,6 +20,7 @@
       { title: "Calendar", icon: CalendarIcon, url: "#" },
       { title: "Search", icon: SearchIcon, url: "#" },
     ],
+    // navSecondary: []
     navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "#" }],
   };
 </script>
