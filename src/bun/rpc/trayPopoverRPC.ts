@@ -3,6 +3,7 @@ import { BrowserView, Utils } from "electrobun/bun";
 import { checkAllAgentsStatus, readAgents } from "../agentService";
 import { syncAgentData } from "../utils/storage";
 import { getMainWindow } from "./windowRegistry";
+import { getViewUrl } from "../utils/url";
 import type { TrayPopoverRPCType } from "../../shared/rpc";
 
 export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
@@ -17,13 +18,17 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
         await syncAgentData(agents, statuses);
         return statuses;
       },
-        openMainWindow: async ({ page }) => {
+      openMainWindow: async ({ page }) => {
         const win = getMainWindow();
         if (win) {
           win.focus();
-          // Use executeJavascript to set hash directly — bypasses RPC socket chain
-          const escaped = `/${page}`.replace(/'/g, "\\'");
-          win.webview.executeJavascript(`window.location.hash = '${escaped}'`);
+          let baseUrl = win.webview.url ?? (await getViewUrl("index.html"));
+          // Strip existing hash so we don't accumulate them
+          const hashIndex = baseUrl.indexOf("#");
+          if (hashIndex !== -1) {
+            baseUrl = baseUrl.slice(0, hashIndex);
+          }
+          win.webview.loadURL(`${baseUrl}#/${page}`);
         }
         return true;
       },
