@@ -9,6 +9,7 @@ import {
 } from "./config";
 import { agentRPC } from "./rpc/agentRPC";
 import { trayPopoverRPC } from "./rpc/trayPopoverRPC";
+import { getMainWindow } from "./rpc/windowRegistry";
 import { AgentStatusInfo } from "./storage/types";
 import { isMacOS } from "./utils/platform";
 import { syncAgentData } from "./utils/storage";
@@ -20,7 +21,8 @@ const platformIsMacOS = isMacOS();
 // For now, only use native menu on non-macOS platforms since it supports icons and better styling.
 // On macOS we will use a custom popover menu to have more control over appearance and behavior.
 // @TODO: Evaluate if we can switch to custom menu on all platforms for consistency.
-const NATIVE_MENU = !platformIsMacOS;
+// const NATIVE_MENU = !platformIsMacOS;
+const NATIVE_MENU = true;
 
 let tray: Tray | null = null;
 let configWindow: BrowserWindow | null = null;
@@ -102,8 +104,27 @@ export async function initializeTray() {
         });
       }
     } else if (action === "configure") {
-      // Configure menu item clicked
-      openConfigWindow();
+      // Configure Agents menu item clicked - navigate to Agents page in main window
+      const win = getMainWindow();
+      if (win) {
+        win.focus();
+        let baseUrl = win.webview.url ?? (await getViewUrl("index.html"));
+        const hashIndex = baseUrl.indexOf("#");
+        if (hashIndex !== -1) baseUrl = baseUrl.slice(0, hashIndex);
+        win.webview.loadURL(`${baseUrl}#/agents`);
+      }
+    } else if (action === "dashboard" || action === "settings") {
+      // Dashboard or Settings menu item clicked
+      const win = getMainWindow();
+      if (win) {
+        win.focus();
+        let baseUrl = win.webview.url ?? (await getViewUrl("index.html"));
+        const hashIndex = baseUrl.indexOf("#");
+        if (hashIndex !== -1) baseUrl = baseUrl.slice(0, hashIndex);
+        win.webview.loadURL(
+          `${baseUrl}#/${action === "dashboard" ? "" : action}`,
+        );
+      }
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
       tray?.setTitle(` - Refreshing...`);
@@ -219,6 +240,22 @@ export async function updateTrayMenu() {
       enabled: true,
     });
 
+    // Add Dashboard menu item
+    menuItems.push({
+      type: "normal" as const,
+      label: "Dashboard",
+      action: "dashboard",
+      enabled: true,
+    });
+
+    // Add Settings menu item
+    menuItems.push({
+      type: "normal" as const,
+      label: "Settings",
+      action: "settings",
+      enabled: true,
+    });
+
     // Add Quit menu item
     menuItems.push({
       type: "normal" as const,
@@ -246,6 +283,18 @@ export async function updateTrayMenu() {
           type: "normal" as const,
           label: "Configure Agents",
           action: "configure",
+          enabled: true,
+        },
+        {
+          type: "normal" as const,
+          label: "Dashboard",
+          action: "dashboard",
+          enabled: true,
+        },
+        {
+          type: "normal" as const,
+          label: "Settings",
+          action: "settings",
           enabled: true,
         },
         {
