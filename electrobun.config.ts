@@ -20,6 +20,7 @@ export default {
       "src/resources": "views/resources",
       "src/bun/libs/libMacWindowEffects.dylib":
         "bun/libs/libMacWindowEffects.dylib",
+      "drizzle/migrations": "drizzle/migrations",
     },
     mac: {
       bundleCEF: false,

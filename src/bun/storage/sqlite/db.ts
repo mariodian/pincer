@@ -24,13 +24,11 @@ async function ensureAppDataDir(): Promise<void> {
   }
 }
 
-async function ensureMigrationDir(): Promise<void> {
-  const migrationDir = join(process.cwd(), "drizzle", "migrations");
-  try {
-    await stat(migrationDir);
-  } catch {
-    await mkdir(migrationDir, { recursive: true });
-  }
+function getMigrationDir(): string {
+  // In packaged apps: <Resources>/app/drizzle/migrations/
+  //   import.meta.dir = <Resources>/app/bun/
+  // In dev: <project>/drizzle/migrations/
+  return join(import.meta.dir, "..", "drizzle", "migrations");
 }
 
 function getDbPath(): string {
@@ -63,21 +61,20 @@ export async function initializeDatabase(): Promise<{
   sqlite: Database;
 }> {
   await ensureAppDataDir();
-  await ensureMigrationDir();
 
   const { db, sqlite } = getDatabase();
+  const migrationDir = getMigrationDir();
 
   // Run migrations if the drizzle migrations directory exists
   try {
-    migrate(db, {
-      migrationsFolder: join(process.cwd(), "drizzle", "migrations"),
-    });
+    migrate(db, { migrationsFolder: migrationDir });
     console.log("Database migrations applied successfully");
   } catch (error) {
-    // On first run, migrations folder may be empty — that's fine
+    // If migrations folder is missing or has no journal file, that's fine
+    // (e.g. first run with empty folder, or migrations not yet generated)
     if (
       error instanceof Error &&
-      !error.message.includes("No migration files found")
+      !error.message.includes("Can't find meta/_journal.json file")
     ) {
       console.error("Migration error:", error);
       throw error;
