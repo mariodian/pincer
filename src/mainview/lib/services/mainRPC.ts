@@ -46,6 +46,13 @@ export function offAgentSync(key: string): void {
   }
 }
 
+/** Invoke all registered sync callbacks. Used by windows with separate RPC instances. */
+export function triggerSyncCallbacks(): void {
+  for (const [, cb] of syncCallbacks) {
+    cb();
+  }
+}
+
 export function isInitialized(): boolean {
   return rpcInstance !== null;
 }

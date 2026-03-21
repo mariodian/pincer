@@ -2,7 +2,7 @@
   import { Electroview } from "electrobun/view";
   import type { AgentStatus } from "$shared/types";
   import { sortAgentsByStatus } from "$shared/agent-helpers";
-  import { onAgentSync, offAgentSync } from "$lib/services/mainRPC";
+  import { onAgentSync, offAgentSync, triggerSyncCallbacks } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
@@ -53,6 +53,7 @@
             syncAgentsToCache(data);
           }
           agents = sortAgentsByStatus(data);
+          triggerSyncCallbacks();
         }) as any,
       },
     },

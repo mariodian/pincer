@@ -9,6 +9,8 @@ type BroadcastTargets = {
 type BroadcastOptions = {
   mainWindowRetryAttempts?: number;
   mainWindowRetryDelayMs?: number;
+  popoverRetryAttempts?: number;
+  popoverRetryDelayMs?: number;
 };
 
 type SendOptions = {
@@ -76,10 +78,10 @@ export async function broadcastSyncAgents(
     "popover",
     () => targets.popoverWindow?.webview.rpc,
     payload,
-    1,
-    0,
+    options?.popoverRetryAttempts ?? DEFAULT_RETRY_ATTEMPTS,
+    options?.popoverRetryDelayMs ?? DEFAULT_RETRY_DELAY_MS,
     {
-      warnOnFailure: false,
+      warnOnFailure: true,
       skipIfTargetMissing: true,
     },
   );
