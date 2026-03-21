@@ -66,7 +66,7 @@ bun run build:stable
 - bun run hmr: Start Vite on port 5173.
 - bun run build:native-effects: Compile macOS native dylib.
 - bun run build: Build native effects + Vite + Electrobun.
-- bun run build:prod: Rebuild native assets and renderer, then package the production channel.
+- bun run build:prod: Rebuild native assets and renderer, then package the stable environment (prod alias).
 - bun run build:canary: Rebuild native assets and renderer, then package the canary environment.
 - bun run build:stable: Rebuild native assets and renderer, then package the stable environment.
 - bun run db:generate: Generate Drizzle migrations.

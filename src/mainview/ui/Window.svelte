@@ -2,7 +2,7 @@
   import { userPrefersMode } from "mode-watcher";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
-  import { initMainRPC } from "$lib/services/mainRPC";
+  import { getMainRPC, initMainRPC } from "$lib/services/mainRPC";
 
   type Align = "left" | "center" | "right";
   type ResolvedTheme = "light" | "dark";
@@ -65,7 +65,6 @@
           },
         });
 
-        const { getMainRPC } = await import("$lib/services/mainRPC");
         const rpc = getMainRPC();
 
         const result = await rpc.request.getPlatform({});
