@@ -138,6 +138,7 @@ export async function initializeTray() {
         if (platformIsMacOS) {
           applyMacOSWindowEffects("popover", popoverWindow, windowConfig);
         }
+        getStatusSyncService().setPopoverWindow(popoverWindow);
         // Clear reference when closed
         popoverWindow.on("close", () => {
           popoverWindow = null;

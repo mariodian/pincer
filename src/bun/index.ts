@@ -47,7 +47,7 @@ const displayCenter = {
 };
 
 // Initialize tray icon
-initializeTray();
+await initializeTray();
 
 setRendererReadyCallback(({ view }) => {
   if (view === "main") {
