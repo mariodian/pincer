@@ -140,7 +140,8 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
 
 export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
   const agents = await readAgents();
-  const statusPromises = agents.map((agent) => checkAgentStatus(agent));
+  const enabledAgents = agents.filter((a) => a.enabled !== false);
+  const statusPromises = enabledAgents.map((agent) => checkAgentStatus(agent));
   const results = await Promise.all(statusPromises);
   return results.map(({ id, status, lastChecked, errorMessage }) => ({
     id,
