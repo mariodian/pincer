@@ -27,7 +27,13 @@
   />
   <Sidebar.Provider>
     <AppSidebar />
-    <main class="w-full m-1.5 py-3 px-3 rounded-xl bg-background">
+    <main
+      class={[
+        "w-full m-1.5 py-3 px-3",
+        "rounded-xl bg-background",
+        "shadow-xs shadow-black/5 dark:shadow-black/20",
+      ]}
+    >
       <Router {routes} />
     </main>
   </Sidebar.Provider>

@@ -3,7 +3,8 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { useSidebar } from "$lib/components/ui/sidebar";
   import type { WithoutChildren } from "$lib/utils";
-  import { MoonIcon, SunIcon, Tick01Icon } from "@hugeicons/core-free-icons";
+  import { link, router } from "@bmlt-enabled/svelte-spa-router";
+  import { Moon02Icon, SunIcon, Tick01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import { resetMode, setMode, userPrefersMode } from "mode-watcher";
@@ -11,6 +12,16 @@
 
   const sidebar = useSidebar();
   let shouldFlex = $state(false);
+
+  let currentLocation = $state(router.location);
+
+  $effect(() => {
+    currentLocation = router.location;
+  });
+
+  function isActive(url: string): boolean {
+    return currentLocation === url;
+  }
   const selectedThemeLabel = $derived.by(() => {
     const preferred = userPrefersMode.current;
     if (preferred === "light") {
@@ -57,9 +68,10 @@
             <Sidebar.MenuButton
               class="min-w-8 duration-200 ease-linear"
               tooltipContent={item.title}
+              isActive={isActive(item.url)}
             >
               {#snippet child({ props })}
-                <a href={item.url} {...props}>
+                <a href={item.url} use:link {...props}>
                   <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>
@@ -88,7 +100,7 @@
                           ].join(" ")}
                         />
                         <HugeiconsIcon
-                          icon={MoonIcon}
+                          icon={Moon02Icon}
                           strokeWidth={2}
                           class={[
                             "absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all!",
@@ -156,7 +168,7 @@
           <Sidebar.MenuItem>
             <Sidebar.MenuButton>
               {#snippet child({ props })}
-                <a href={item.url} {...props}>
+                <a href={item.url} use:link {...props}>
                   <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>

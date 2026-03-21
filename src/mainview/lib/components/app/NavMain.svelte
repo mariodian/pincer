@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { link, router } from "@bmlt-enabled/svelte-spa-router";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import { Add01Icon } from "@hugeicons/core-free-icons";
@@ -9,6 +10,16 @@
     items,
   }: { items: { title: string; url: string; icon: IconSvgElement }[] } =
     $props();
+
+  let currentLocation = $state(router.location);
+
+  $effect(() => {
+    currentLocation = router.location;
+  });
+
+  function isActive(url: string): boolean {
+    return currentLocation === url;
+  }
 </script>
 
 <Sidebar.Group>
@@ -20,9 +31,10 @@
             <Sidebar.MenuButton
               class="min-w-8 duration-200 ease-linear"
               tooltipContent="Quick create"
+              isActive={isActive(item.url)}
             >
               {#snippet child({ props })}
-                <a href={item.url} {...props}>
+                <a href={item.url} use:link {...props}>
                   <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>
@@ -39,9 +51,9 @@
           </Sidebar.MenuItem>
         {:else}
           <Sidebar.MenuItem>
-            <Sidebar.MenuButton tooltipContent={item.title}>
+            <Sidebar.MenuButton tooltipContent={item.title} isActive={isActive(item.url)}>
               {#snippet child({ props })}
-                <a href={item.url} {...props}>
+                <a href={item.url} use:link {...props}>
                   <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>

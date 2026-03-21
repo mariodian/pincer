@@ -161,7 +161,7 @@
   }
   /* macOS light */
   :global(html:not(.dark) body[data-os="macos"]) {
-    background-color: oklch(94.974% 0.01133 320.903 / 0.55);
+    background-color: oklch(94.974% 0.01133 320.903 / 0.35);
   }
 
   /* macOS dark */
