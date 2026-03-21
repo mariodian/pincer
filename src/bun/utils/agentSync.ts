@@ -7,7 +7,6 @@ import {
   DEFAULT_RETRY_ATTEMPTS,
   DEFAULT_RETRY_DELAY_MS,
 } from "./windowBroadcaster";
-import { syncAgentsToCache } from "../../mainview/lib/utils/storage";
 import { readAgents } from "../agentService";
 
 type BroadcastTargets = {
@@ -16,8 +15,6 @@ type BroadcastTargets = {
 };
 
 type SyncOptions = {
-  /** Whether to update localStorage cache. Default: true */
-  updateCache?: boolean;
   /** Whether to refresh native tray menu. Default: true */
   updateMenu?: boolean;
   /** Retry options for main window broadcast */
@@ -89,12 +86,11 @@ export class StatusSyncService {
   }
 
   /**
-   * Sync agents to all windows and optionally update cache and menu.
+   * Sync agents to all windows and optionally refresh menu.
    * This is the main synchronization method used by most callers.
    */
   async sync(options: SyncOptions = {}): Promise<void> {
     const {
-      updateCache = true,
       updateMenu = true,
       retry = {},
     } = options;
@@ -110,11 +106,6 @@ export class StatusSyncService {
       mainWindowRetryAttempts: retry.attempts ?? DEFAULT_RETRY_ATTEMPTS,
       mainWindowRetryDelayMs: retry.delayMs ?? DEFAULT_RETRY_DELAY_MS,
     });
-
-    // Update localStorage cache
-    if (updateCache) {
-      syncAgentsToCache(merged);
-    }
 
     // Refresh native tray menu
     if (updateMenu && this.onMenuUpdate) {

@@ -2,6 +2,7 @@
   import { Electroview } from "electrobun/view";
   import type { AgentStatus } from "$shared/types";
   import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import { onAgentSync, offAgentSync } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
@@ -48,7 +49,9 @@
       requests: {},
       messages: {
         syncAgents: ((data: AgentStatus[]) => {
-          syncAgentsToCache(data);
+          if (typeof localStorage !== "undefined") {
+            syncAgentsToCache(data);
+          }
           agents = sortAgentsByStatus(data);
         }) as any,
       },
@@ -100,6 +103,9 @@
 
   $effect(() => {
     loadAgents();
+
+    const key = onAgentSync(loadAgents);
+    return () => offAgentSync(key);
   });
 
   $effect(() => {

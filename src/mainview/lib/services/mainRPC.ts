@@ -73,7 +73,9 @@ export async function initMainRPC(handlers: {
           navigateTo: ({ params }: { params: { path: string } }) =>
             handlers.navigateTo(params),
           syncAgents: ((data: AgentStatus[]) => {
-            syncAgentsToCache(data);
+            if (typeof localStorage !== "undefined") {
+              syncAgentsToCache(data);
+            }
 
             for (const [, cb] of syncCallbacks) {
               cb();
