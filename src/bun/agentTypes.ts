@@ -12,6 +12,19 @@ export interface AgentTypeConfig {
   timeout?: number;
 }
 
+/**
+ * Standard status parser for OpenClaw/OpenCrabs agents.
+ * Returns "error" if the response JSON has status "error", otherwise "ok".
+ */
+function parseStandardAgentStatus(json: unknown): {
+  status: "ok" | "error";
+  errorMessage?: string;
+} {
+  const data = json as { status?: string };
+  if (data.status === "error") return { status: "error" };
+  return { status: "ok" };
+}
+
 export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
   generic: {
     id: "generic",
@@ -25,22 +38,14 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     name: "OpenClaw",
     healthEndpoint: "/health",
     healthMethod: "GET",
-    parseStatus: (json) => {
-      const data = json as { status?: string };
-      if (data.status === "error") return { status: "error" };
-      return { status: "ok" };
-    },
+    parseStatus: parseStandardAgentStatus,
   },
   opencrabs: {
     id: "opencrabs",
     name: "OpenCrabs",
     healthEndpoint: "/a2a/health",
     healthMethod: "GET",
-    parseStatus: (json) => {
-      const data = json as { status?: string };
-      if (data.status === "error") return { status: "error" };
-      return { status: "ok" };
-    },
+    parseStatus: parseStandardAgentStatus,
   },
 };
 

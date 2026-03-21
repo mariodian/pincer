@@ -5,9 +5,10 @@ import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import { trayPopoverRPC, setRefreshCallback } from "./rpc/trayPopoverRPC";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
-import { AgentStatusInfo } from "./storage/types";
+import { AgentStatusInfo } from "../shared/types";
 import { isMacOS } from "./utils/platform";
-import { getViewUrl, stripHash } from "./utils/url";
+import { getViewUrl } from "./utils/url";
+import { navigateMainWindow } from "./utils/navigation";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 import { mergeAgentsWithStatuses, sortAgentsByStatus } from "../shared/agent-helpers";
 
@@ -33,6 +34,21 @@ let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
 let agentStatusMap: Map<number, AgentStatusInfo> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
+
+/**
+ * Check all agent statuses, update the local map, push to all windows,
+ * and optionally refresh the native tray menu.
+ */
+async function refreshAndPush(updateMenu = true) {
+  const statuses = await checkAllAgentsStatus();
+  statuses.forEach((status) => {
+    agentStatusMap.set(status.id, status);
+  });
+  await pushAgentsToAllWindows(statuses);
+  if (updateMenu && NATIVE_MENU) {
+    updateTrayMenu();
+  }
+}
 
 /**
  * Initialize the tray icon and set up event handlers
@@ -112,21 +128,13 @@ export async function initializeTray() {
       action === "dashboard" ||
       action === "settings"
     ) {
-      // Navigate to a page in the main window
       const route =
         action === "configure"
           ? "agents"
           : action === "dashboard"
             ? ""
             : action;
-      const win = getMainWindow();
-      if (win) {
-        win.focus();
-        const baseUrl = stripHash(
-          win.webview.url ?? (await getViewUrl("index.html")),
-        );
-        win.webview.loadURL(`${baseUrl}#/${route}`);
-      }
+      await navigateMainWindow(route);
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
       tray?.setTitle(` - Refreshing...`);
@@ -157,36 +165,10 @@ export async function initializeTray() {
   }
 
   // Register popover refresh callback
-  setRefreshCallback(async () => {
-    try {
-      const statuses = await checkAllAgentsStatus();
-      statuses.forEach((status) => {
-        agentStatusMap.set(status.id, status);
-      });
-      await pushAgentsToAllWindows(statuses);
-      if (NATIVE_MENU) {
-        updateTrayMenu();
-      }
-    } catch (error) {
-      console.error("Failed to refresh agent statuses:", error);
-    }
-  });
+  setRefreshCallback(() => refreshAndPush());
 
   // Register mutation callback — push to all windows after add/edit/delete
-  setAgentMutationCallback(async () => {
-    try {
-      const statuses = await checkAllAgentsStatus();
-      statuses.forEach((status) => {
-        agentStatusMap.set(status.id, status);
-      });
-      await pushAgentsToAllWindows(statuses);
-      if (NATIVE_MENU) {
-        updateTrayMenu();
-      }
-    } catch (error) {
-      console.error("Failed to push agent updates after mutation:", error);
-    }
-  });
+  setAgentMutationCallback(() => refreshAndPush());
 
   // Start periodic status updates
   startStatusUpdates();
@@ -324,14 +306,7 @@ async function startStatusUpdates() {
 
   // Update status immediately
   try {
-    const statuses = await checkAllAgentsStatus();
-    statuses.forEach((status) => {
-      agentStatusMap.set(status.id, status);
-    });
-    await pushAgentsToAllWindows(statuses);
-    if (NATIVE_MENU) {
-      updateTrayMenu();
-    }
+    await refreshAndPush();
   } catch (error) {
     console.error("Failed to update agent statuses:", error);
   }
@@ -339,16 +314,7 @@ async function startStatusUpdates() {
   // Start periodic updates
   statusUpdateInterval = setInterval(async () => {
     try {
-      const statuses = await checkAllAgentsStatus();
-      statuses.forEach((status) => {
-        agentStatusMap.set(status.id, status);
-      });
-      await pushAgentsToAllWindows(statuses);
-
-      // Update menu to reflect new statuses
-      if (NATIVE_MENU) {
-        updateTrayMenu();
-      }
+      await refreshAndPush();
     } catch (error) {
       console.error("Failed to update agent statuses:", error);
     }

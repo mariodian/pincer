@@ -1,7 +1,7 @@
 import { agents } from "./schema";
 import { getDatabase } from "./db";
 import { AgentStorage } from "../backend";
-import { Agent } from "../../agentService";
+import type { Agent } from "../../../shared/types";
 
 /**
  * Convert a DB row to the Agent interface.

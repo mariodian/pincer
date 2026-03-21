@@ -10,7 +10,7 @@ import {
   updateAgent,
   getAgentTypeList,
 } from "./../agentService";
-import { AgentStatusInfo } from "../storage/types";
+import { AgentStatusInfo } from "../../shared/types";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;
