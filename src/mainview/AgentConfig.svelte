@@ -3,6 +3,7 @@
 
   interface Agent {
     id: string;
+    type: string;
     name: string;
     url: string;
     port: number;
@@ -59,11 +60,14 @@
   let agents = $state<Agent[]>([]);
   let agentStatusMap = $state<Map<string, AgentStatus>>(new Map());
   let name = $state("");
+  let type = $state("generic");
   let url = $state("");
   let port = $state("");
   let editingId = $state<string | null>(null);
   let statusMessage = $state("");
   let isLoading = $state(false);
+
+  const AGENT_TYPES = ["generic", "openclaw", "opencrabs", "opendns", "openssh"];
 
   async function loadAgents() {
     isLoading = true;
@@ -81,7 +85,7 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    if (!name || !url || !port) {
+    if (!name || !type || !url || !port) {
       statusMessage = "Please fill in all fields";
       return;
     }
@@ -104,7 +108,7 @@
           await loadAgents();
         }
       } else {
-        await rpc.request.addAgent({ name, url, port: portNum, enabled: true });
+        await rpc.request.addAgent({ type, name, url, port: portNum, enabled: true });
         statusMessage = "Agent added successfully";
         await loadAgents();
       }
@@ -120,12 +124,14 @@
   function resetForm() {
     editingId = null;
     name = "";
+    type = "generic";
     url = "";
     port = "";
   }
 
   function editAgent(agent: Agent) {
     editingId = agent.id;
+    type = agent.type;
     name = agent.name;
     url = agent.url;
     port = agent.port.toString();
@@ -190,6 +196,19 @@
       />
     </div>
     <div class="form-group">
+      <label for="agent-type">Type:</label>
+      <select
+        id="agent-type"
+        bind:value={type}
+        required
+        disabled={isLoading}
+      >
+        {#each AGENT_TYPES as agentType}
+          <option value={agentType}>{agentType}</option>
+        {/each}
+      </select>
+    </div>
+    <div class="form-group">
       <label for="agent-url">URL:</label>
       <input
         type="text"
@@ -229,6 +248,7 @@
         <tr>
           <th>Status</th>
           <th>Name</th>
+          <th>Type</th>
           <th>URL:Port</th>
           <th>Actions</th>
         </tr>
@@ -246,6 +266,7 @@
               </span>
             </td>
             <td>{agent.name}</td>
+            <td>{agent.type}</td>
             <td>{agent.url}:{agent.port}</td>
             <td class="agent-actions">
               <button

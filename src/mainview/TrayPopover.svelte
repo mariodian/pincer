@@ -5,6 +5,7 @@
 
   interface Agent {
     id: string;
+    type: string;
     name: string;
     url: string;
     port: number;

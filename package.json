@@ -11,10 +11,14 @@
     "build:native-effects": "bash ./scripts/build-macos-effects.sh",
     "build": "bun run build:native-effects && vite build && electrobun build",
     "build:prod": "bun run build:native-effects && vite build && electrobun build --channel prod",
-    "start": "bun run dev"
+    "start": "bun run dev",
+    "db:generate": "bunx drizzle-kit generate",
+    "db:push": "bunx drizzle-kit push",
+    "db:studio": "bunx drizzle-kit studio"
   },
   "dependencies": {
     "@bmlt-enabled/svelte-spa-router": "^5.0.7",
+    "drizzle-orm": "^0.45.1",
     "electrobun": "1.16.0",
     "mode-watcher": "^1.1.0"
   },
@@ -30,6 +34,7 @@
     "bits-ui": "^2.16.3",
     "clsx": "^2.1.1",
     "concurrently": "^9.1.0",
+    "drizzle-kit": "^0.31.10",
     "svelte": "^5.0.0",
     "tailwind-merge": "^3.5.0",
     "tailwind-variants": "^3.2.2",

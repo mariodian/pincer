@@ -1,44 +1,29 @@
 // Agents Service - Handles agent CRUD and health checking
-import { Utils } from "electrobun/bun";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import { agentStorage } from "./storage";
 import { AgentStatusInfo } from "./storage/types";
+import {
+  readConfig as readConfigFromDb,
+  writeConfig as writeConfigToDb,
+  type Config,
+} from "./storage/sqlite/configRepo";
+import { upsertHourlyStat } from "./storage/sqlite/statsRepo";
+import { initializeDatabase } from "./storage/sqlite/db";
+
+export type { Config } from "./storage/sqlite/configRepo";
 
 export interface Agent {
   id: string;
+  type: string;
   name: string;
   url: string;
   port: number;
   enabled?: boolean;
 }
 
-export interface Config {
-  pollingInterval?: number;
-  windows?: Record<string, unknown>;
-}
-
-const DEFAULT_CONFIG: Config = {
-  pollingInterval: 30000,
-};
-
 export interface AgentStatus extends Agent {
   status: "ok" | "offline" | "error";
   lastChecked: number;
   errorMessage?: string;
-}
-
-function getAgentsFilePath(): string {
-  return join(Utils.paths.userData, "agents.json");
-}
-
-async function ensureAppDataDir(): Promise<void> {
-  const appDataDir = Utils.paths.userData;
-  try {
-    await stat(appDataDir);
-  } catch {
-    await mkdir(appDataDir, { recursive: true });
-  }
 }
 
 export async function readAgents(): Promise<Agent[]> {
@@ -50,64 +35,16 @@ export async function writeAgents(agents: Agent[]): Promise<void> {
 }
 
 export async function readConfig(): Promise<Config> {
-  try {
-    await ensureAppDataDir();
-    const filePath = getAgentsFilePath();
-
-    try {
-      await stat(filePath);
-    } catch {
-      return DEFAULT_CONFIG;
-    }
-
-    const data = await readFile(filePath, "utf8");
-    const parsed = JSON.parse(data);
-
-    if (!Array.isArray(parsed)) {
-      const parsedWindows =
-        parsed.windows ?? (parsed.window ? { main: parsed.window } : undefined);
-      return {
-        pollingInterval:
-          parsed.pollingInterval ?? DEFAULT_CONFIG.pollingInterval,
-        windows: parsedWindows,
-      };
-    }
-
-    return DEFAULT_CONFIG;
-  } catch (error) {
-    console.error("Error reading config:", error);
-    return DEFAULT_CONFIG;
-  }
+  return readConfigFromDb();
 }
 
-export async function writeConfig(config: Config): Promise<void> {
-  try {
-    await ensureAppDataDir();
-    const filePath = getAgentsFilePath();
-
-    const existingAgents = await readAgents();
-
-    const data = JSON.stringify(
-      {
-        agents: existingAgents,
-        pollingInterval:
-          config.pollingInterval ?? DEFAULT_CONFIG.pollingInterval,
-        windows: config.windows,
-      },
-      null,
-      2,
-    );
-
-    await writeFile(filePath, data, "utf8");
-  } catch (error) {
-    console.error("Error writing config:", error);
-    throw error;
-  }
+export async function writeConfig(config: Partial<Config>): Promise<void> {
+  writeConfigToDb(config);
 }
 
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
   const agents = await readAgents();
-  const newAgent = {
+  const newAgent: Agent = {
     ...agent,
     id: Math.random().toString(36).substr(2, 9),
   };
@@ -146,6 +83,8 @@ export async function deleteAgent(id: string): Promise<boolean> {
 }
 
 export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
+  const startTime = Date.now();
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -159,17 +98,21 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
     });
 
     clearTimeout(timeoutId);
+    const responseMs = Date.now() - startTime;
 
     if (response.ok) {
       try {
         const data = await response.json();
+        const status = data.status || "ok";
+        upsertHourlyStat(agent.id, status, responseMs);
         return {
           ...agent,
-          status: data.status || "ok",
+          status,
           lastChecked: Date.now(),
           errorMessage: undefined,
         };
       } catch {
+        upsertHourlyStat(agent.id, "ok", responseMs);
         return {
           ...agent,
           status: "ok",
@@ -178,6 +121,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
         };
       }
     } else {
+      upsertHourlyStat(agent.id, "error", responseMs);
       return {
         ...agent,
         status: "error",
@@ -186,6 +130,8 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       };
     }
   } catch (error) {
+    const responseMs = Date.now() - startTime;
+    upsertHourlyStat(agent.id, "offline", responseMs);
     return {
       ...agent,
       status: "offline",
@@ -205,4 +151,12 @@ export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
     lastChecked,
     errorMessage,
   }));
+}
+
+/**
+ * Initialize the database and run migrations.
+ * Call this once at app startup before any other DB operations.
+ */
+export async function initDatabase(): Promise<void> {
+  await initializeDatabase();
 }

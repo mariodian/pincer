@@ -48,8 +48,8 @@ export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
       getAgents: async () => {
         return await readAgents();
       },
-      addAgent: async ({ name, url, port, enabled }: Omit<Agent, "id">) => {
-        return await addAgent({ name, url, port, enabled });
+      addAgent: async ({ type, name, url, port, enabled }: Omit<Agent, "id">) => {
+        return await addAgent({ type, name, url, port, enabled });
       },
       updateAgent: async ([id, updates]: [string, Partial<Agent>]) => {
         return await updateAgent(id, updates);
