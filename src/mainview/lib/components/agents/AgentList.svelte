@@ -5,6 +5,7 @@
   import { getMainRPC, onAgentSync, offAgentSync } from "$lib/services/mainRPC";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
   import type { AgentStatus } from "$shared/types";
+  import { sortAgentsByStatus } from "$shared/agent-helpers";
   import {
     Add01Icon,
     Delete01Icon,
@@ -27,7 +28,7 @@
   function loadFromCache() {
     const cached = readCachedAgents();
     if (cached) {
-      agents = cached;
+      agents = sortAgentsByStatus(cached);
     }
   }
 
