@@ -13,7 +13,7 @@ function truncateToHour(timestampSecs: number): number {
  * Upsert a single status check result into the hourly aggregate.
  */
 export function upsertHourlyStat(
-  agentId: string,
+  agentId: number,
   status: "ok" | "offline" | "error",
   responseMs: number,
 ): void {
@@ -54,7 +54,7 @@ export function upsertHourlyStat(
  * Returns rows sorted by hour_timestamp ascending.
  */
 export function getAgentStats(
-  agentId: string,
+  agentId: number,
   fromTimestampSecs: number,
   toTimestampSecs: number,
 ): {
@@ -96,7 +96,7 @@ export function getAllAgentStats(
   fromTimestampSecs: number,
   toTimestampSecs: number,
 ): {
-  agentId: string;
+  agentId: number;
   hourTimestamp: number;
   totalChecks: number;
   okCount: number;

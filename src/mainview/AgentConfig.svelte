@@ -2,7 +2,7 @@
   import { Electroview } from "electrobun/view";
 
   interface Agent {
-    id: string;
+    id: number;
     type: string;
     name: string;
     url: string;
@@ -23,16 +23,20 @@
           params: Record<string, never>;
           response: Agent[];
         };
+        getAgentTypes: {
+          params: Record<string, never>;
+          response: { id: string; name: string }[];
+        };
         addAgent: {
           params: Omit<Agent, "id">;
           response: Agent;
         };
         updateAgent: {
-          params: [string, Partial<Agent>];
+          params: [number, Partial<Agent>];
           response: Agent | null;
         };
         deleteAgent: {
-          params: string;
+          params: number;
           response: boolean;
         };
         checkAllAgentsStatus: {
@@ -58,16 +62,23 @@
   new Electroview({ rpc });
 
   let agents = $state<Agent[]>([]);
-  let agentStatusMap = $state<Map<string, AgentStatus>>(new Map());
+  let agentStatusMap = $state<Map<number, AgentStatus>>(new Map());
+  let agentTypes = $state<{ id: string; name: string }[]>([]);
   let name = $state("");
   let type = $state("generic");
   let url = $state("");
   let port = $state("");
-  let editingId = $state<string | null>(null);
+  let editingId = $state<number | null>(null);
   let statusMessage = $state("");
   let isLoading = $state(false);
 
-  const AGENT_TYPES = ["generic", "openclaw", "opencrabs", "opendns", "openssh"];
+  async function loadAgentTypes() {
+    try {
+      agentTypes = await rpc.request.getAgentTypes({});
+    } catch (e) {
+      console.error("Error loading agent types:", e);
+    }
+  }
 
   async function loadAgents() {
     isLoading = true;
@@ -137,7 +148,7 @@
     port = agent.port.toString();
   }
 
-  async function deleteAgent(id: string) {
+  async function deleteAgent(id: number) {
     if (!confirm("Are you sure you want to delete this agent?")) return;
     isLoading = true;
     try {
@@ -173,6 +184,7 @@
     }
   }
 
+  loadAgentTypes();
   loadAgents();
 </script>
 
@@ -203,8 +215,8 @@
         required
         disabled={isLoading}
       >
-        {#each AGENT_TYPES as agentType}
-          <option value={agentType}>{agentType}</option>
+        {#each agentTypes as agentType}
+          <option value={agentType.id}>{agentType.name}</option>
         {/each}
       </select>
     </div>

@@ -20,11 +20,11 @@ export type TrayPopoverRPCType = {
     requests: {
       getAgents: {
         params: Record<string, never>;
-        response: { id: string; status: "ok" | "offline" | "error"; lastChecked: number; errorMessage?: string }[];
+        response: { id: number; status: "ok" | "offline" | "error"; lastChecked: number; errorMessage?: string }[];
       };
       checkAllAgentsStatus: {
         params: Record<string, never>;
-        response: { id: string; status: "ok" | "offline" | "error"; lastChecked: number; errorMessage?: string }[];
+        response: { id: number; status: "ok" | "offline" | "error"; lastChecked: number; errorMessage?: string }[];
       };
       openMainWindow: {
         params: { page: string };

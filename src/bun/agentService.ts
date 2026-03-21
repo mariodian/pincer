@@ -8,11 +8,12 @@ import {
 } from "./storage/sqlite/configRepo";
 import { upsertHourlyStat } from "./storage/sqlite/statsRepo";
 import { initializeDatabase } from "./storage/sqlite/db";
+import { getAgentType } from "./agentTypes";
 
 export type { Config } from "./storage/sqlite/configRepo";
 
 export interface Agent {
-  id: string;
+  id: number;
   type: string;
   name: string;
   url: string;
@@ -46,15 +47,17 @@ export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
   const agents = await readAgents();
   const newAgent: Agent = {
     ...agent,
-    id: Math.random().toString(36).substr(2, 9),
+    id: 0, // placeholder — actual ID assigned by writeAgents
   };
   agents.push(newAgent);
   await writeAgents(agents);
-  return newAgent;
+  // Re-read to get the DB-assigned ID
+  const updated = await readAgents();
+  return updated[updated.length - 1];
 }
 
 export async function updateAgent(
-  id: string,
+  id: number,
   updates: Partial<Agent>,
 ): Promise<Agent | null> {
   const agents = await readAgents();
@@ -69,7 +72,7 @@ export async function updateAgent(
   return agents[index];
 }
 
-export async function deleteAgent(id: string): Promise<boolean> {
+export async function deleteAgent(id: number): Promise<boolean> {
   const agents = await readAgents();
   const initialLength = agents.length;
   const filteredAgents = agents.filter((agent) => agent.id !== id);
@@ -84,18 +87,36 @@ export async function deleteAgent(id: string): Promise<boolean> {
 
 export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   const startTime = Date.now();
+  const agentType = getAgentType(agent.type);
+
+  if (!agentType) {
+    upsertHourlyStat(agent.id, "error", 0);
+    return {
+      ...agent,
+      status: "error",
+      lastChecked: Date.now(),
+      errorMessage: `Unknown agent type: ${agent.type}`,
+    };
+  }
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      agentType.timeout ?? 5000,
+    );
 
-    const response = await fetch(`${agent.url}:${agent.port}/a2a/health`, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
+    const response = await fetch(
+      `${agent.url}:${agent.port}${agentType.healthEndpoint}`,
+      {
+        method: agentType.healthMethod,
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          ...agentType.headers,
+        },
       },
-    });
+    );
 
     clearTimeout(timeoutId);
     const responseMs = Date.now() - startTime;
@@ -103,21 +124,24 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
     if (response.ok) {
       try {
         const data = await response.json();
-        const status = data.status || "ok";
+        const result = agentType.parseStatus(data);
+        const status = result.status;
         upsertHourlyStat(agent.id, status, responseMs);
         return {
           ...agent,
           status,
           lastChecked: Date.now(),
-          errorMessage: undefined,
+          errorMessage: result.errorMessage,
         };
       } catch {
-        upsertHourlyStat(agent.id, "ok", responseMs);
+        // Response not valid JSON — fall back to type's parseStatus with null
+        const result = agentType.parseStatus(null);
+        upsertHourlyStat(agent.id, result.status, responseMs);
         return {
           ...agent,
-          status: "ok",
+          status: result.status,
           lastChecked: Date.now(),
-          errorMessage: undefined,
+          errorMessage: result.errorMessage,
         };
       }
     } else {
@@ -152,6 +176,8 @@ export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
     errorMessage,
   }));
 }
+
+export { getAgentTypeList, getAgentType } from "./agentTypes";
 
 /**
  * Initialize the database and run migrations.

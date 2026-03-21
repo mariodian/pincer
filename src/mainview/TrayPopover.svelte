@@ -4,7 +4,7 @@
   import Button from "./ui/Button.svelte";
 
   interface Agent {
-    id: string;
+    id: number;
     type: string;
     name: string;
     url: string;

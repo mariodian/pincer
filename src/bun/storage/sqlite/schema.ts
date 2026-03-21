@@ -9,7 +9,7 @@ import {
 import { sql } from "drizzle-orm";
 
 export const agents = sqliteTable("agents", {
-  id: text("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true }),
   type: text("type").notNull(),
   name: text("name").notNull(),
   url: text("url").notNull(),
@@ -32,7 +32,7 @@ export const stats = sqliteTable(
   "stats",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    agentId: text("agent_id").notNull(),
+    agentId: integer("agent_id").notNull(),
     hourTimestamp: integer("hour_timestamp").notNull(),
     totalChecks: integer("total_checks").notNull(),
     okCount: integer("ok_count").notNull(),

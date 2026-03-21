@@ -31,35 +31,47 @@ export class SqliteAgentStorage implements AgentStorage {
     // Use a raw SQLite transaction for atomicity
     const write = sqlite.transaction(() => {
       const now = new Date(Date.now());
-      const stmt = sqlite.prepare(
-        `INSERT INTO agents (id, type, name, url, port, enabled, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           type = excluded.type,
-           name = excluded.name,
-           url = excluded.url,
-           port = excluded.port,
-           enabled = excluded.enabled,
-           updated_at = excluded.updated_at`,
+
+      const updateStmt = sqlite.prepare(
+        `UPDATE agents SET type = ?, name = ?, url = ?, port = ?, enabled = ?, updated_at = ?
+         WHERE id = ?`,
+      );
+
+      const insertStmt = sqlite.prepare(
+        `INSERT INTO agents (type, name, url, port, enabled, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
       );
 
       for (const agent of agentList) {
-        stmt.run(
-          agent.id,
-          agent.type,
-          agent.name,
-          agent.url,
-          agent.port,
-          agent.enabled ?? true,
-          now.getTime(),
-        );
+        if (agent.id > 0) {
+          // Existing agent — update
+          updateStmt.run(
+            agent.type,
+            agent.name,
+            agent.url,
+            agent.port,
+            agent.enabled ?? true,
+            now.getTime(),
+            agent.id,
+          );
+        } else {
+          // New agent — let DB auto-increment the ID
+          insertStmt.run(
+            agent.type,
+            agent.name,
+            agent.url,
+            agent.port,
+            agent.enabled ?? true,
+            now.getTime(),
+          );
+        }
       }
 
       // Delete agents that are no longer in the list
       const existingIds = sqlite
         .query("SELECT id FROM agents")
-        .all() as { id: string }[];
-      const newIds = new Set(agentList.map((a) => a.id));
+        .all() as { id: number }[];
+      const newIds = new Set(agentList.filter((a) => a.id > 0).map((a) => a.id));
 
       for (const row of existingIds) {
         if (!newIds.has(row.id)) {
