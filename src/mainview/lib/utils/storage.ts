@@ -1,0 +1,144 @@
+import { KEY_AGENTS, KEY_STATUSES } from "../../../bun/config";
+import type { Agent, AgentStatus, AgentStatusInfo } from "../../../shared/types";
+import {
+  mergeAgentsWithStatuses,
+} from "../../../shared/agent-helpers";
+
+/** Returns the storage key with a "_dev" suffix in development. */
+export function getStorageKey(baseKey: string): string {
+  const suffix =
+    typeof window !== "undefined" &&
+    window.location.hostname === "localhost"
+      ? "_dev"
+      : "";
+  return `${baseKey}${suffix}`;
+}
+
+const STORAGE_KEY_AGENTS = getStorageKey(KEY_AGENTS);
+const STORAGE_KEY_STATUSES = getStorageKey(KEY_STATUSES);
+
+/**
+ * Read merged agent+status data from localStorage.
+ * Returns null if cache is empty or unavailable.
+ */
+export function readCachedAgents(): AgentStatus[] | null {
+  try {
+    const storedAgents = localStorage.getItem(STORAGE_KEY_AGENTS);
+    const storedStatuses = localStorage.getItem(STORAGE_KEY_STATUSES);
+    if (!storedAgents || !storedStatuses) return null;
+
+    const agentList: Agent[] = JSON.parse(storedAgents);
+    const statusList: AgentStatusInfo[] = JSON.parse(storedStatuses);
+    return mergeAgentsWithStatuses(agentList, statusList);
+  } catch {
+    return null;
+  }
+}
+
+/** Write agent definitions to localStorage. */
+export function writeCachedAgents(agents: Agent[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
+/** Write status info to localStorage. */
+export function writeCachedStatuses(statuses: AgentStatusInfo[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
+/**
+ * Write merged agent+status data to localStorage (split into both keys).
+ * Called by the syncAgents handler in both windows.
+ */
+export function syncAgentsToCache(data: AgentStatus[]): void {
+  try {
+    const agents: Agent[] = data.map(
+      ({ status, lastChecked, errorMessage, ...agent }) => agent,
+    );
+    const statuses: AgentStatusInfo[] = data.map(
+      ({ id, status, lastChecked, errorMessage }) => ({
+        id,
+        status,
+        lastChecked,
+        errorMessage,
+      }),
+    );
+    localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
+    localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
+    notifyCacheListeners();
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
+/** Add or update a single agent in the cached agents list. */
+export function updateCachedAgent(agent: Agent): void {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_AGENTS);
+    const agents: Agent[] = stored ? JSON.parse(stored) : [];
+    const index = agents.findIndex((a) => a.id === agent.id);
+    if (index >= 0) {
+      agents[index] = agent;
+    } else {
+      agents.push(agent);
+    }
+    localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
+    notifyCacheListeners();
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
+/** Remove a single agent from both localStorage keys. */
+export function removeCachedAgent(id: number): void {
+  try {
+    const agentsRaw = localStorage.getItem(STORAGE_KEY_AGENTS);
+    const statusesRaw = localStorage.getItem(STORAGE_KEY_STATUSES);
+
+    if (agentsRaw) {
+      const agents: Agent[] = JSON.parse(agentsRaw);
+      localStorage.setItem(
+        STORAGE_KEY_AGENTS,
+        JSON.stringify(agents.filter((a) => a.id !== id)),
+      );
+    }
+
+    if (statusesRaw) {
+      const statuses: AgentStatusInfo[] = JSON.parse(statusesRaw);
+      localStorage.setItem(
+        STORAGE_KEY_STATUSES,
+        JSON.stringify(statuses.filter((s) => s.id !== id)),
+      );
+    }
+
+    notifyCacheListeners();
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
+// ── Cache change subscription ──────────────────────────────────────────
+
+type CacheListener = () => void;
+const cacheListeners = new Set<CacheListener>();
+
+/** Subscribe to cache changes (same-tab notifications). */
+export function onAgentCacheChange(callback: CacheListener): void {
+  cacheListeners.add(callback);
+}
+
+/** Unsubscribe from cache changes. */
+export function offAgentCacheChange(callback: CacheListener): void {
+  cacheListeners.delete(callback);
+}
+
+function notifyCacheListeners(): void {
+  cacheListeners.forEach((cb) => cb());
+}

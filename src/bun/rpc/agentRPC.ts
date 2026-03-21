@@ -3,6 +3,7 @@ import { BrowserView } from "electrobun/bun";
 import {
   addAgent,
   Agent,
+  AgentStatus,
   checkAllAgentsStatus,
   deleteAgent,
   readAgents,
@@ -10,6 +11,14 @@ import {
   getAgentTypeList,
 } from "./../agentService";
 import { AgentStatusInfo } from "../storage/types";
+
+type AgentMutationCallback = () => void;
+let onAgentMutation: AgentMutationCallback | null = null;
+
+/** Register a callback fired after any agent add/update/delete. */
+export function setAgentMutationCallback(cb: AgentMutationCallback) {
+  onAgentMutation = cb;
+}
 
 export type AgentRPCType = {
   bun: {
@@ -43,7 +52,12 @@ export type AgentRPCType = {
   };
   webview: {
     requests: Record<string, never>;
-    messages: Record<string, never>;
+    messages: {
+      syncAgents: {
+        params: AgentStatus[];
+        response: void;
+      };
+    };
   };
 };
 
@@ -57,13 +71,19 @@ export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
         return getAgentTypeList();
       },
       addAgent: async ({ type, name, url, port, enabled }: Omit<Agent, "id">) => {
-        return await addAgent({ type, name, url, port, enabled });
+        const result = await addAgent({ type, name, url, port, enabled });
+        if (onAgentMutation) onAgentMutation();
+        return result;
       },
       updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
-        return await updateAgent(id, updates);
+        const result = await updateAgent(id, updates);
+        if (onAgentMutation) onAgentMutation();
+        return result;
       },
       deleteAgent: async (id: number) => {
-        return await deleteAgent(id);
+        const result = await deleteAgent(id);
+        if (onAgentMutation) onAgentMutation();
+        return result;
       },
       checkAllAgentsStatus: async () => {
         return await checkAllAgentsStatus();

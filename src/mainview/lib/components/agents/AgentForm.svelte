@@ -3,6 +3,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+  import { updateCachedAgent } from "$lib/utils/storage";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import type { Agent } from "$shared/types";
@@ -117,10 +118,17 @@
         enabled,
       };
 
+      let result: Agent | null = null;
+
       if (isEdit && agentId) {
-        await rpc.request.updateAgent([agentId, agentData]);
+        result = await rpc.request.updateAgent([agentId, agentData]);
       } else {
-        await rpc.request.addAgent(agentData);
+        result = await rpc.request.addAgent(agentData);
+      }
+
+      // Update localStorage cache so the agent list shows changes immediately
+      if (result) {
+        updateCachedAgent(result);
       }
 
       onNavigate("/agents");

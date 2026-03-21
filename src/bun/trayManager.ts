@@ -3,11 +3,13 @@ import { BrowserWindow, Tray } from "electrobun/bun";
 import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import { trayPopoverRPC, setRefreshCallback } from "./rpc/trayPopoverRPC";
+import { setAgentMutationCallback } from "./rpc/agentRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
 import { AgentStatusInfo } from "./storage/types";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl, stripHash } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { mergeAgentsWithStatuses, sortAgentsByStatus } from "../shared/agent-helpers";
 
 const platformIsMacOS = isMacOS();
 
@@ -161,12 +163,28 @@ export async function initializeTray() {
       statuses.forEach((status) => {
         agentStatusMap.set(status.id, status);
       });
-      await pushAgentsToPopover(statuses);
+      await pushAgentsToAllWindows(statuses);
       if (NATIVE_MENU) {
         updateTrayMenu();
       }
     } catch (error) {
       console.error("Failed to refresh agent statuses:", error);
+    }
+  });
+
+  // Register mutation callback — push to all windows after add/edit/delete
+  setAgentMutationCallback(async () => {
+    try {
+      const statuses = await checkAllAgentsStatus();
+      statuses.forEach((status) => {
+        agentStatusMap.set(status.id, status);
+      });
+      await pushAgentsToAllWindows(statuses);
+      if (NATIVE_MENU) {
+        updateTrayMenu();
+      }
+    } catch (error) {
+      console.error("Failed to push agent updates after mutation:", error);
     }
   });
 
@@ -183,44 +201,38 @@ export async function updateTrayMenu() {
   try {
     const agents = await readAgents();
 
-    const sortedAgents = [...agents].sort((a, b) => {
-      const statusOrder = (id: number) => {
-        const s = agentStatusMap.get(id)?.status;
-        if (s === "ok") return 0;
-        if (s === "offline") return 2;
-        return 1;
-      };
-      const orderDiff = statusOrder(a.id) - statusOrder(b.id);
-      if (orderDiff !== 0) return orderDiff;
-      return a.name.localeCompare(b.name);
-    });
+    const agentsWithStatus = agents.map((agent) => ({
+      ...agent,
+      status: (agentStatusMap.get(agent.id)?.status ?? "offline") as
+        | "ok"
+        | "offline"
+        | "error",
+    }));
+
+    const sortedAgents = sortAgentsByStatus(agentsWithStatus);
 
     const menuItems = [];
 
     // Add agent items
     for (const agent of sortedAgents) {
-      const status = agentStatusMap.get(agent.id) || {
-        status: "offline" as const,
-        lastChecked: 0,
-        errorMessage: undefined,
-      };
+      const errorMessage = agentStatusMap.get(agent.id)?.errorMessage;
 
       let label = agent.name;
       let tooltip = `${agent.name}: ${agent.url}:${agent.port}`;
 
       // Add status indicator
-      switch (status.status) {
+      switch (agent.status) {
         case "ok":
           label = `● ${agent.name}`;
           tooltip += "\nStatus: Online";
           break;
         case "offline":
           label = `○ ${agent.name}`;
-          tooltip += `\nStatus: Offline${status.errorMessage ? `\nError: ${status.errorMessage}` : ""}`;
+          tooltip += `\nStatus: Offline${errorMessage ? `\nError: ${errorMessage}` : ""}`;
           break;
         case "error":
           label = `✗ ${agent.name}`;
-          tooltip += `\nStatus: Error${status.errorMessage ? `\nError: ${status.errorMessage}` : ""}`;
+          tooltip += `\nStatus: Error${errorMessage ? `\nError: ${errorMessage}` : ""}`;
           break;
       }
 
@@ -270,23 +282,30 @@ export async function updateTrayMenu() {
 }
 
 /**
- * Push merged agent+status data to the popover's localStorage via RPC.
- * No-op if the popover window doesn't exist yet.
+ * Push merged agent+status data to all windows via RPC.
+ * No-op if a window doesn't exist yet.
  */
-async function pushAgentsToPopover(statuses: AgentStatusInfo[]) {
-  if (!popoverWindow?.webview.rpc) return;
-  try {
-    const agents = await readAgents();
-    const statusMap = new Map(statuses.map((s) => [s.id, s]));
-    const merged = agents.map((agent) => ({
-      ...agent,
-      status: statusMap.get(agent.id)?.status ?? "offline",
-      lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
-      errorMessage: statusMap.get(agent.id)?.errorMessage,
-    }));
-    (popoverWindow.webview.rpc as any).send.syncAgents(merged);
-  } catch (error) {
-    console.warn("Failed to push agents to popover:", error);
+async function pushAgentsToAllWindows(statuses: AgentStatusInfo[]) {
+  const agents = await readAgents();
+  const merged = mergeAgentsWithStatuses(agents, statuses);
+
+  // Push to popover
+  if (popoverWindow?.webview.rpc) {
+    try {
+      (popoverWindow.webview.rpc as any).send.syncAgents(merged);
+    } catch (error) {
+      console.warn("Failed to push agents to popover:", error);
+    }
+  }
+
+  // Push to main window
+  const mainWindow = getMainWindow();
+  if (mainWindow?.webview.rpc) {
+    try {
+      (mainWindow.webview.rpc as any).send.syncAgents(merged);
+    } catch (error) {
+      console.warn("Failed to push agents to main window:", error);
+    }
   }
 }
 
@@ -309,7 +328,7 @@ async function startStatusUpdates() {
     statuses.forEach((status) => {
       agentStatusMap.set(status.id, status);
     });
-    await pushAgentsToPopover(statuses);
+    await pushAgentsToAllWindows(statuses);
     if (NATIVE_MENU) {
       updateTrayMenu();
     }
@@ -324,7 +343,7 @@ async function startStatusUpdates() {
       statuses.forEach((status) => {
         agentStatusMap.set(status.id, status);
       });
-      await pushAgentsToPopover(statuses);
+      await pushAgentsToAllWindows(statuses);
 
       // Update menu to reflect new statuses
       if (NATIVE_MENU) {

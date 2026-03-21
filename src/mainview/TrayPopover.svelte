@@ -1,31 +1,21 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
-  import { KEY_AGENTS, KEY_STATUSES } from "$bun/config";
-  import type { Agent, AgentStatus } from "$shared/types";
+  import type { AgentStatus } from "$shared/types";
+  import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
-
-  const suffix = window.location.hostname === "localhost" ? "_dev" : "";
-  const STORAGE_KEY_AGENTS = `${KEY_AGENTS}${suffix}`;
-  const STORAGE_KEY_STATUSES = `${KEY_STATUSES}${suffix}`;
-
-  /** Combined agent + status used by the popover RPC responses. */
-  type PopoverAgentStatus = Agent & {
-    status: "ok" | "offline" | "error";
-    lastChecked: number;
-    errorMessage?: string;
-  };
 
   type AgentRPCType = {
     bun: {
       requests: {
         getAgents: {
           params: Record<string, never>;
-          response: PopoverAgentStatus[];
+          response: AgentStatus[];
         };
         checkAllAgentsStatus: {
           params: Record<string, never>;
-          response: PopoverAgentStatus[];
+          response: AgentStatus[];
         };
         requestRefresh: {
           params: Record<string, never>;
@@ -46,7 +36,7 @@
       requests: Record<string, never>;
       messages: {
         syncAgents: {
-          params: PopoverAgentStatus[];
+          params: AgentStatus[];
           response: void;
         };
       };
@@ -57,14 +47,9 @@
     handlers: {
       requests: {},
       messages: {
-        syncAgents: ((data: PopoverAgentStatus[]) => {
-          agents = sortAgents(data);
-          localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(
-            data.map(({ status, lastChecked, errorMessage, ...agent }) => agent)
-          ));
-          localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(
-            data.map(({ id, status, lastChecked, errorMessage }) => ({ id, status, lastChecked, errorMessage }))
-          ));
+        syncAgents: ((data: AgentStatus[]) => {
+          syncAgentsToCache(data);
+          agents = sortAgentsByStatus(data);
         }) as any,
       },
     },
@@ -104,39 +89,13 @@
     showFooterShadow = !atBottom;
   }
 
-  function sortAgents(list: AgentStatus[]): AgentStatus[] {
-    return [...list].sort((a, b) => {
-      const statusOrder = (s: AgentStatus["status"]) =>
-        s === "ok" ? 0 : s === "offline" ? 2 : 1;
-      const orderDiff = statusOrder(a.status) - statusOrder(b.status);
-      if (orderDiff !== 0) return orderDiff;
-      return a.name.localeCompare(b.name);
-    });
-  }
-
   function loadAgents() {
     // Read from localStorage — data is pushed via syncAgents by trayManager
-    try {
-      const storedAgents = localStorage.getItem(STORAGE_KEY_AGENTS);
-      const storedStatuses = localStorage.getItem(STORAGE_KEY_STATUSES);
-      if (storedAgents && storedStatuses) {
-        const agentList: Agent[] = JSON.parse(storedAgents);
-        const statusList: PopoverAgentStatus[] = JSON.parse(storedStatuses);
-        const statusMap = new Map(statusList.map((s) => [s.id, s]));
-        agents = sortAgents(
-          agentList.map((agent) => ({
-            ...agent,
-            status: statusMap.get(agent.id)?.status ?? "offline",
-            lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
-            errorMessage: statusMap.get(agent.id)?.errorMessage,
-          })),
-        );
-      }
-    } catch {
-      /* localStorage unavailable */
-    } finally {
-      loading = false;
+    const cached = readCachedAgents();
+    if (cached) {
+      agents = sortAgentsByStatus(cached);
     }
+    loading = false;
   }
 
   $effect(() => {

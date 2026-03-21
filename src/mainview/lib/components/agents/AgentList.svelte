@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
-  import type { Agent, AgentStatusInfo } from "$shared/types";
+  import { getMainRPC, onAgentSync, offAgentSync } from "$lib/services/mainRPC";
+  import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
+  import type { AgentStatus } from "$shared/types";
   import {
     Add01Icon,
     Delete01Icon,
@@ -16,39 +18,36 @@
 
   let { onNavigate }: Props = $props();
 
-  let agents = $state<Agent[]>([]);
-  let statuses = $state<Map<number, AgentStatusInfo>>(new Map());
+  let agents = $state<AgentStatus[]>([]);
   let loading = $state(true);
   let deletingId = $state<number | null>(null);
   let confirmDeleteId = $state<number | null>(null);
 
-  async function loadAgents() {
-    if (!isInitialized()) return;
-
-    try {
-      const rpc = getMainRPC();
-      const [agentList, statusList] = await Promise.all([
-        rpc.request.getAgents({}),
-        rpc.request.checkAllAgentsStatus({}),
-      ]);
-      agents = agentList;
-      statuses = new Map(statusList.map((s: AgentStatusInfo) => [s.id, s]));
-    } catch (error) {
-      console.error("Failed to load agents:", error);
-    } finally {
-      loading = false;
+  /** Load agents from localStorage cache. */
+  function loadFromCache() {
+    const cached = readCachedAgents();
+    if (cached) {
+      agents = cached;
     }
   }
 
-  $effect(() => {
-    loadAgents();
+  /** Handle push sync from backend. */
+  function handleSync() {
+    loadFromCache();
+  }
+
+  onMount(() => {
+    // Read from cache immediately — no RPC call needed
+    loadFromCache();
+    loading = false;
+
+    // Subscribe to backend sync pushes
+    onAgentSync(handleSync);
+    return () => offAgentSync(handleSync);
   });
 
-  function getStatusClass(agentId: number): string {
-    const status = statuses.get(agentId);
-    if (!status) return "bg-muted-foreground/30";
-
-    switch (status.status) {
+  function getStatusClass(status: string): string {
+    switch (status) {
       case "ok":
         return "bg-green-500 dark:bg-green-400 shadow-[0_0_6px_var(--color-green-500)]";
       case "error":
@@ -59,10 +58,8 @@
     }
   }
 
-  function getStatusLabel(agentId: number): string {
-    const status = statuses.get(agentId);
-    if (!status) return "Unknown";
-    return status.status.charAt(0).toUpperCase() + status.status.slice(1);
+  function getStatusLabel(status: string): string {
+    return status.charAt(0).toUpperCase() + status.slice(1);
   }
 
   function getTypeName(type: string): string {
@@ -78,7 +75,7 @@
     }
   }
 
-  async function handleDelete(agent: Agent) {
+  async function handleDelete(agent: AgentStatus) {
     if (deletingId !== null) return;
     deletingId = agent.id;
 
@@ -86,9 +83,8 @@
       const rpc = getMainRPC();
       await rpc.request.deleteAgent(agent.id);
       confirmDeleteId = null;
-      agents = agents.filter((a) => a.id !== agent.id);
-      statuses.delete(agent.id);
-      statuses = new Map(statuses);
+      removeCachedAgent(agent.id);
+      loadFromCache();
     } catch (error) {
       console.error("Failed to delete agent:", error);
     } finally {
@@ -185,9 +181,9 @@
             <span
               class={[
                 "shrink-0 size-3 rounded-full transition-all",
-                getStatusClass(agent.id),
+                getStatusClass(agent.status),
               ]}
-              title={getStatusLabel(agent.id)}
+              title={getStatusLabel(agent.status)}
             ></span>
 
             <div class="flex-1 min-w-0">

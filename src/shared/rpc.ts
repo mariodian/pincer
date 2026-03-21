@@ -1,5 +1,6 @@
-// Shared RPC types for main window navigation
+// Shared RPC types for tray popover
 import type { AgentStatus } from "./types";
+
 export type MainWindowRPCType = {
   bun: {
     requests: Record<string, never>;
@@ -21,29 +22,11 @@ export type TrayPopoverRPCType = {
     requests: {
       getAgents: {
         params: Record<string, never>;
-        response: {
-          id: number;
-          name: string;
-          url: string;
-          port: number;
-          enabled?: boolean;
-          status: "ok" | "offline" | "error";
-          lastChecked: number;
-          errorMessage?: string;
-        }[];
+        response: AgentStatus[];
       };
       checkAllAgentsStatus: {
         params: Record<string, never>;
-        response: {
-          id: number;
-          name: string;
-          url: string;
-          port: number;
-          enabled?: boolean;
-          status: "ok" | "offline" | "error";
-          lastChecked: number;
-          errorMessage?: string;
-        }[];
+        response: AgentStatus[];
       };
       requestRefresh: {
         params: Record<string, never>;
