@@ -204,6 +204,48 @@ export async function initializeTray() {
 /**
  * Update the tray menu with current agent statuses
  */
+type TrayMenuItem = {
+  type: "normal";
+  label: string;
+  tooltip?: string;
+  action: string;
+  enabled: boolean;
+} | { type: "divider"; label?: never; tooltip?: never; action?: never; enabled?: never };
+
+/**
+ * Build a menu item for a single agent with status indicator.
+ */
+function buildAgentMenuItem(
+  agent: { id: number; name: string; url: string; port: number; status: string },
+  errorMessage?: string,
+): TrayMenuItem {
+  let label = agent.name;
+  let tooltip = `${agent.name}: ${agent.url}:${agent.port}`;
+
+  switch (agent.status) {
+    case "ok":
+      label = `● ${agent.name}`;
+      tooltip += "\nStatus: Online";
+      break;
+    case "offline":
+      label = `○ ${agent.name}`;
+      tooltip += `\nStatus: Offline${errorMessage ? `\nError: ${errorMessage}` : ""}`;
+      break;
+    case "error":
+      label = `✗ ${agent.name}`;
+      tooltip += `\nStatus: Error${errorMessage ? `\nError: ${errorMessage}` : ""}`;
+      break;
+  }
+
+  return {
+    type: "normal" as const,
+    label,
+    tooltip,
+    action: `agent:${agent.id}`,
+    enabled: true,
+  };
+}
+
 export async function updateTrayMenu() {
   if (!tray) return;
 
@@ -215,60 +257,27 @@ export async function updateTrayMenu() {
       const status = sync.getAgentStatus(agent.id);
       return {
         ...agent,
-        status: (status?.status ?? "offline") as
-          | "ok"
-          | "offline"
-          | "error",
+        status: (status?.status ?? "offline") as "ok" | "offline" | "error",
       };
     });
 
     const sortedAgents = sortAgentsByStatus(agentsWithStatus);
 
-    const menuItems = [];
-
-    // Add agent items
-    for (const agent of sortedAgents) {
-      const errorMessage = sync.getAgentStatus(agent.id)?.errorMessage;
-
-      let label = agent.name;
-      let tooltip = `${agent.name}: ${agent.url}:${agent.port}`;
-
-      // Add status indicator
-      switch (agent.status) {
-        case "ok":
-          label = `● ${agent.name}`;
-          tooltip += "\nStatus: Online";
-          break;
-        case "offline":
-          label = `○ ${agent.name}`;
-          tooltip += `\nStatus: Offline${errorMessage ? `\nError: ${errorMessage}` : ""}`;
-          break;
-        case "error":
-          label = `✗ ${agent.name}`;
-          tooltip += `\nStatus: Error${errorMessage ? `\nError: ${errorMessage}` : ""}`;
-          break;
-      }
-
-      menuItems.push({
-        type: "normal" as const,
-        label,
-        tooltip,
-        action: `agent:${agent.id}`,
-        enabled: true,
-      });
-    }
+    // Build menu items
+    const menuItems: TrayMenuItem[] = sortedAgents.map((agent) =>
+      buildAgentMenuItem(agent, sync.getAgentStatus(agent.id)?.errorMessage),
+    );
 
     // Add separator if we have agents
     if (agents.length > 0) {
-      menuItems.push({
-        type: "divider" as const,
-      });
+      menuItems.push({ type: "divider" as const });
     }
 
     // Add Refresh menu item
     menuItems.push({
       type: "normal" as const,
       label: "Refresh Status",
+      tooltip: "Refresh all agent statuses",
       action: "refresh",
       enabled: true,
     });
@@ -283,11 +292,7 @@ export async function updateTrayMenu() {
     // Show error menu
     if (tray) {
       tray.setMenu([
-        {
-          type: "normal" as const,
-          label: "Error loading agents",
-          enabled: false,
-        },
+        { type: "normal" as const, label: "Error loading agents", enabled: false },
         ...NAV_MENU_ITEMS,
       ]);
     }

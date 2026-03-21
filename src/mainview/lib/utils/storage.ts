@@ -18,6 +18,11 @@ export function getStorageKey(baseKey: string): string {
 const STORAGE_KEY_AGENTS = getStorageKey(KEY_AGENTS);
 const STORAGE_KEY_STATUSES = getStorageKey(KEY_STATUSES);
 
+/** Log storage operations at warn level for easier debugging. */
+function warnStorage(context: string, error: unknown): void {
+  console.warn(`[storage] ${context}:`, error instanceof Error ? error.message : error);
+}
+
 /**
  * Read merged agent+status data from localStorage.
  * Returns null if cache is empty or unavailable.
@@ -31,7 +36,8 @@ export function readCachedAgents(): AgentStatus[] | null {
     const agentList: Agent[] = JSON.parse(storedAgents);
     const statusList: AgentStatusInfo[] = JSON.parse(storedStatuses);
     return mergeAgentsWithStatuses(agentList, statusList);
-  } catch {
+  } catch (e) {
+    warnStorage("readCachedAgents failed", e);
     return null;
   }
 }
@@ -68,8 +74,8 @@ export function syncAgentsToCacheWithOptions(
     if (options?.notifyListeners !== false) {
       notifyCacheListeners();
     }
-  } catch {
-    /* localStorage unavailable */
+  } catch (e) {
+    warnStorage("syncAgentsToCache failed", e);
   }
 }
 
@@ -96,8 +102,8 @@ export function removeCachedAgent(id: number): void {
     }
 
     notifyCacheListeners();
-  } catch {
-    /* localStorage unavailable */
+  } catch (e) {
+    warnStorage("removeCachedAgent failed", e);
   }
 }
 

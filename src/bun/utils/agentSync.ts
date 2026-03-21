@@ -2,7 +2,11 @@
 import type { BrowserWindow } from "electrobun/bun";
 import type { AgentStatus, AgentStatusInfo } from "../../shared/types";
 import { mergeAgentsWithStatuses } from "../../shared/agent-helpers";
-import { broadcastSyncAgents } from "./windowBroadcaster";
+import {
+  broadcastSyncAgents,
+  DEFAULT_RETRY_ATTEMPTS,
+  DEFAULT_RETRY_DELAY_MS,
+} from "./windowBroadcaster";
 import { syncAgentsToCache } from "../../mainview/lib/utils/storage";
 import { readAgents } from "../agentService";
 
@@ -22,9 +26,6 @@ type SyncOptions = {
     delayMs?: number;
   };
 };
-
-const DEFAULT_RETRY_ATTEMPTS = 4;
-const DEFAULT_RETRY_DELAY_MS = 120;
 
 /**
  * Centralized service for synchronizing agent statuses across:
@@ -144,7 +145,12 @@ export class StatusSyncService {
    */
   async pushOneStatus(status: AgentStatusInfo): Promise<void> {
     this.agentStatusMap.set(status.id, status);
-    await this.sync({ retry: { attempts: 4, delayMs: 120 } });
+    await this.sync({
+      retry: {
+        attempts: DEFAULT_RETRY_ATTEMPTS,
+        delayMs: DEFAULT_RETRY_DELAY_MS,
+      },
+    });
   }
 
   /**

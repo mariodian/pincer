@@ -16,8 +16,10 @@ type SendOptions = {
   skipIfTargetMissing?: boolean;
 };
 
-const DEFAULT_MAIN_RETRY_ATTEMPTS = 3;
-const DEFAULT_MAIN_RETRY_DELAY_MS = 120;
+/** Default retry configuration for main window broadcasts. */
+export const DEFAULT_RETRY_ATTEMPTS = 3;
+/** Default delay between retry attempts in milliseconds. */
+export const DEFAULT_RETRY_DELAY_MS = 120;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -86,8 +88,8 @@ export async function broadcastSyncAgents(
     "main window",
     () => targets.mainWindow?.webview.rpc,
     payload,
-    options?.mainWindowRetryAttempts ?? DEFAULT_MAIN_RETRY_ATTEMPTS,
-    options?.mainWindowRetryDelayMs ?? DEFAULT_MAIN_RETRY_DELAY_MS,
+    options?.mainWindowRetryAttempts ?? DEFAULT_RETRY_ATTEMPTS,
+    options?.mainWindowRetryDelayMs ?? DEFAULT_RETRY_DELAY_MS,
     {
       warnOnFailure: true,
     },
