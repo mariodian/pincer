@@ -1,16 +1,19 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
+import {
+  mergeAgentsWithStatuses,
+  sortAgentsByStatus,
+} from "../shared/agent-helpers";
+import { AgentStatusInfo } from "../shared/types";
 import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
-import { trayPopoverRPC, setRefreshCallback } from "./rpc/trayPopoverRPC";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
+import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
-import { AgentStatusInfo } from "../shared/types";
+import { navigateMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { navigateMainWindow } from "./utils/navigation";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
-import { mergeAgentsWithStatuses, sortAgentsByStatus } from "../shared/agent-helpers";
 
 const platformIsMacOS = isMacOS();
 
@@ -23,11 +26,31 @@ const NATIVE_MENU = !platformIsMacOS;
 /** Shared navigation/action menu items used in both normal and error-fallback menus. */
 const NAV_MENU_ITEMS = [
   { type: "divider" as const },
-  { type: "normal" as const, label: "Dashboard", action: "dashboard", enabled: true },
-  { type: "normal" as const, label: "Configure Agents", action: "configure", enabled: true },
-  { type: "normal" as const, label: "Settings", action: "settings", enabled: true },
+  {
+    type: "normal" as const,
+    label: "Dashboard",
+    action: "dashboard",
+    enabled: true,
+  },
+  {
+    type: "normal" as const,
+    label: "Configure Agents",
+    action: "configure",
+    enabled: true,
+  },
+  {
+    type: "normal" as const,
+    label: "Settings",
+    action: "settings",
+    enabled: true,
+  },
   { type: "divider" as const },
-  { type: "normal" as const, label: "Quit CrabMonitor", action: "quit", enabled: true },
+  {
+    type: "normal" as const,
+    label: "Quit CrabMonitor",
+    action: "quit",
+    enabled: true,
+  },
 ];
 
 let tray: Tray | null = null;
@@ -293,8 +316,11 @@ export async function pushOneStatusToWindows(
   status: AgentStatusInfo,
 ): Promise<void> {
   const agents = await readAgents();
-  const merged = mergeAgentsWithStatuses(agents, [status]);
   agentStatusMap.set(status.id, status);
+  const merged = mergeAgentsWithStatuses(
+    agents,
+    Array.from(agentStatusMap.values()),
+  );
 
   if (popoverWindow?.webview.rpc) {
     try {
@@ -334,7 +360,10 @@ export async function pushOfflineStatusToWindows(id: number): Promise<void> {
 
   agentStatusMap.set(id, offlineStatus);
 
-  const merged = mergeAgentsWithStatuses(agents, [offlineStatus]);
+  const merged = mergeAgentsWithStatuses(
+    agents,
+    Array.from(agentStatusMap.values()),
+  );
 
   if (popoverWindow?.webview.rpc) {
     try {
