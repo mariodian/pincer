@@ -8,7 +8,8 @@ import { getViewUrl, stripHash } from "./url";
 export async function navigateMainWindow(page: string): Promise<void> {
   const win = getMainWindow();
   if (win) {
-    win.focus();
+    // @TODO: do NOT delete yet, may be used when we start closing tray menu after click
+    // win.focus(); - Don't focus the window to avoid interrupting the user
     const baseUrl = stripHash(
       win.webview.url ?? (await getViewUrl("index.html")),
     );
