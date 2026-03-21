@@ -2,162 +2,137 @@
 
 ## Build, Lint, and Test Commands
 
-### Development
+| Command | Description |
+| --- | --- |
+| `bun run dev` | Build native dylib, Vite, and start Electrobun dev server |
+| `bun run dev:hmr` | Vite HMR (port 5173) + dev server concurrently |
+| `bun run dev:web` | Vite dev server only (no Electrobun) |
+| `bun run build:native-effects` | Compile macOS native dylib (required before dev/build) |
+| `bun run build` | Full production build: native dylib + Vite + electrobun |
+| `bun run build:canary` / `build:stable` | Environment-specific production builds |
+| `bun run db:generate` | Generate Drizzle migration files |
+| `bun run db:push` | Push schema to SQLite (dev only) |
+| `bun run db:studio` | Open Drizzle Studio UI |
+| `bunx tsc --noEmit` | Type checking (strict mode; no ESLint configured) |
+| `bun test <file>` | Run a single test file |
+| `bun test --grep "<pattern>"` | Run tests matching a pattern |
 
-- `bun run dev` - Build native dylib, run Vite build, and start Electrobun dev server
-- `bun run dev:hmr` - Run Vite HMR (port 5173) + dev server concurrently for fast iteration
-- `bun run hmr` - Start Vite HMR server only on port 5173
-- `bun run dev:web` - Vite dev server only (no Electrobun)
-
-### Building
-
-- `bun run build:native-effects` - Compile macOS native dylib with clang++ (required before dev)
-- `bun run build` - Full production build: native dylib + Vite + electrobun
-- `bun run build:prod` - Rebuild native dylib and renderer, then create a stable environment build (prod alias)
-- `bun run build:canary` - Rebuild native dylib and renderer, then create a canary environment build
-- `bun run build:stable` - Rebuild native dylib and renderer, then create a stable environment build
-
-### Database (Drizzle + SQLite)
-
-- `bun run db:generate` - Generate Drizzle migration files from schema changes
-- `bun run db:push` - Push schema directly to SQLite DB (dev only)
-- `bun run db:studio` - Open Drizzle Studio browser UI
-
-### Linting & Type Checking
-
-> No ESLint configured. TypeScript strict mode (`tsconfig.json`) provides compile-time checks.
-> Run `bunx tsc --noEmit` for type checking.
-
-### Testing
-
-> No test framework configured. When adding tests:
->
-> - Use Vitest or Bun test (`bun test`)
-> - Run single test: `bun test <file>` or `bun test --grep "<pattern>"`
+> No test framework is currently configured. Use **Vitest** or **Bun test** (`bun test`) when adding tests.
 
 ---
 
-## Code Style Guidelines
+## Code Style
 
 ### TypeScript
 
-- Target ES2020, strict mode enabled, `noUnusedLocals` and `noUnusedParameters` on
-- Use ES modules, `const`/`let` only, `async`/`await` for promises
-- Specify return types on public functions; use `try`/`catch` with contextual logging
+- Target ES2020, strict mode on (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`)
+- ES modules only; `const`/`let` (never `var`); `async`/`await` for promises
+- Specify return types on public/exported functions
+- Wrap I/O and native calls in `try`/`catch` with contextual logging before rethrowing
 
 ### Imports
 
-- External libraries first, then internal modules; sort alphabetically within groups
-- Use relative imports for local files: `import { fn } from "./utils"`
-- Named exports preferred over default exports for utilities
+Order: **(1)** external libraries, **(2)** path-aliased internal modules, **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components.
+
+```ts
+// External
+import { BrowserView } from "electrobun/bun";
+import { eq } from "drizzle-orm";
+
+// Aliased internal
+import type { Agent } from "$shared/types";
+
+// Relative
+import { agentsTable } from "./schema";
+```
+
+Path aliases (tsconfig + vite): `$lib` → `src/mainview/lib`, `$bun` → `src/bun`, `$shared` → `src/shared`.
 
 ### Formatting & Naming
 
-- 2 spaces, semicolons, 80-100 char lines, trailing commas in multi-line literals
+2-space indent, semicolons, 80–100 char lines, trailing commas in multi-line literals/params.
 
-| Type                | Convention                                    | Example                              |
-| ------------------- | --------------------------------------------- | ------------------------------------ |
-| Constants           | UPPER_SNAKE_CASE                              | `MAC_TRAFFIC_LIGHTS_X`               |
-| Variables/functions | camelCase                                     | `isMacOS`, `applyMacOSWindowEffects` |
-| Types/interfaces    | PascalCase                                    | `WindowEffects`, `AgentStatus`       |
-| Files               | kebab-case (configs), PascalCase (components) | `windowService.ts`, `App.svelte`     |
-| Boolean vars        | `is`/`has`/`can` prefixes                     | `isMacOS`, `hasFocus`                |
-| Event handlers      | `handle` prefix                               | `handleClick`, `handleSubmit`        |
+| Type | Convention | Example |
+| --- | --- | --- |
+| Constants | `UPPER_SNAKE_CASE` | `MAC_TRAFFIC_LIGHTS_X` |
+| Variables/functions | `camelCase` | `applyMacOSWindowEffects` |
+| Types/interfaces | `PascalCase` | `WindowEffects`, `AgentStatus` |
+| Files | `kebab-case.ts` (services/configs), `PascalCase.svelte` (components) | `windowService.ts`, `App.svelte` |
+| Booleans | `is`/`has`/`can` prefix | `isMacOS`, `hasFocus` |
+| Event handlers | `handle` prefix | `handleClick`, `handleSubmit` |
 
 ### Error Handling
 
-- Use `try`/`catch` for sync and async operations; log with context before rethrowing
-- In native bridging, check library existence before loading; never ignore caught errors
-- `console.warn()` for recoverable issues, `console.error()` for unexpected failures
+- `try`/`catch` for all sync/async I/O; log context via `console.error()` before rethrowing
+- `console.warn()` for recoverable issues only
+- In native FFI bridging: check library existence before loading; never swallow errors
 
 ---
 
 ## Project Structure
 
 ```
-/src
-  /bun         - Main process (Electrobun, FFI, native integration)
-    /rpc       - RPC method definitions
-    /storage   - Storage abstraction layer (JSON, future Libsql)
-    /utils     - Utility functions
-  /mainview    - Svelte UI components, entry points, assets
-    /ui        - Reusable UI components
-  /shared      - Shared types for RPC communication
-/native/macos  - Objective-C++ window effects implementation
-/scripts       - Build scripts
+src/
+  bun/            Main process (Electrobun, FFI, native integration)
+    rpc/          RPC method definitions & type maps
+    storage/      Storage abstraction (AgentStorage interface → JSON impl, future Libsql)
+    utils/        Utility functions
+  mainview/       Svelte UI — entry points, pages, assets
+    lib/
+      components/ Reusable UI primitives (shadcn-style) + app-specific components
+      pages/      Route-level page components
+    ui/           Top-level wrappers (Window.svelte, Button.svelte)
+  shared/         Shared types for RPC communication (types.ts, rpc.ts, agent-helpers.ts)
+  resources/      Static assets
+native/macos/     Objective-C++ window effects implementation
+scripts/          Build scripts
 ```
 
-### Key Config Files
-
-- `electrobun.config.ts` - App packaging, copy targets, bundle settings
-- `vite.config.js` - Vite config with 3 entry points (root: `src/mainview`)
-- `tailwind.config.js` - Tailwind v4 config (content paths, dark mode)
-- `tsconfig.json` - TypeScript (strict, ES2020 target, path aliases: `$lib`, `$bun`)
-- `svelte.config.js` - Svelte preprocessor config
-- `drizzle.config.ts` - Drizzle Kit config (SQLite, schema at `src/bun/storage/sqlite/`)
-
-### Entry Points
-
-| File                | Purpose             |
-| ------------------- | ------------------- |
-| `index.html`        | Main window         |
-| `tray-popover.html` | Tray popover window |
+Key configs: `electrobun.config.ts` (packaging), `vite.config.js` (3 entry points, root: `src/mainview`), `tsconfig.json` (strict, aliases), `drizzle.config.ts` (SQLite schema).
 
 ---
 
 ## Technology Stack
 
-Runtime: Electrobun with Bun · UI: Svelte 5 · Styling: Tailwind CSS v4 · Build: Vite · Language: TypeScript · DB: Drizzle ORM + SQLite · Native: Objective-C++ via Bun FFI
-
----
-
-## Agent Storage
-
-Agent data is persisted through a storage abstraction layer (`src/bun/storage/`). The current implementation uses JSON files; a Libsql migration is planned.
-
-```
-agentService.ts
-  └─ AgentStorage (interface in backend.ts)
-       ├─ JsonAgentStorage (current - jsonStorage.ts)
-       └─ LibsqlAgentStorage (future)
-```
-
-`AgentStatusInfo` (status, lastChecked, errorMessage) is stored in renderer `localStorage` only, synced via `syncAgentData()` in `utils/storage.ts`. To migrate to Libsql: implement `LibsqlAgentStorage` in `storage/libsqlStorage.ts` and swap the factory in `storage/index.ts`.
-
----
-
-## Svelte 5 Guidelines
-
-- Use runes for reactivity: `$state`, `$derived`, `$effect`
-- Keep components small, single responsibility
-- Props: `export let` (legacy-compatible) or runes syntax
-- Event handling: `onclick={handler}` (no colon prefix in Svelte 5)
-- Tailwind CSS v4 via `@tailwindcss/vite`; CSS scoped unless global
+Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, `$effect`; event syntax: `onclick={handler}`) · Styling: **Tailwind CSS v4** (`@tailwindcss/vite`, scoped by default) · Build: **Vite** · DB: **Drizzle ORM + SQLite** · Native: **Objective-C++ via Bun FFI**
 
 ---
 
 ## RPC & Native Integration
 
-- RPC methods in `src/bun/rpc/*.ts`; shared types in `src/shared/types.ts`
-- Validate all RPC inputs from renderer before processing
-- Guard macOS code with `process.platform === "darwin"`
-- Use Bun FFI (`bun:ffi`) with explicit type definitions
-- Handle missing native libraries gracefully with fallback behavior
+- RPC types defined in `src/bun/rpc/*.ts` using `BrowserView.defineRPC<T>()`; shared types in `src/shared/types.ts`
+- Always validate RPC inputs from the renderer before processing or passing to native code
+- Guard macOS-specific code with `process.platform === "darwin"`
+- Use Bun FFI (`bun:ffi`) with explicit `CString`/`ptr` type definitions
+- Handle missing native libraries gracefully — fall back, don't crash
 
 ---
 
-## Security Guidelines
+## Svelte 5 Conventions
 
-- Validate all inputs from renderer before passing to native code
-- Avoid `eval` and `Function` constructor
-- Follow principle of least privilege; keep dependencies updated (`bun audit`)
+- Reactivity via runes: `$state`, `$derived`, `$effect` (no stores unless cross-component)
+- Props via `export let` (legacy-compatible) or runes `$props()` syntax
+- Events: `onclick={handler}` (no colon prefix — Svelte 5 syntax)
+- Keep components small and single-responsibility; pages in `lib/pages/`, UI primitives in `lib/components/ui/`
+- CSS scoped by default; Tailwind utility classes; use `cn()` from `$lib/utils` for conditional classes
+
+---
+
+## Security
+
+- Validate all renderer inputs before passing to native code or storage
+- Avoid `eval`, `new Function()`, and template-based code execution
+- Principle of least privilege; run `bun audit` regularly
 
 ---
 
 ## Debugging
 
-- **Native dylib not found**: Run `bun run build:native-effects`
-- **Port 5173 in use**: Kill existing Vite process or change port in `vite.config.js`
-- **HMR not working**: Use `bun run dev:hmr` for concurrent Vite + Electrobun
-- Main process logs: check terminal output; renderer: use Browser DevTools in Electrobun windows
-- Native crashes: check macOS Console app for crash logs
+| Issue | Fix |
+| --- | --- |
+| Native dylib not found | `bun run build:native-effects` |
+| Port 5173 in use | Kill existing Vite process or change port in `vite.config.js` |
+| HMR not working | Use `bun run dev:hmr` for concurrent Vite + Electrobun |
+| Main process logs | Terminal output |
+| Renderer logs | Browser DevTools in Electrobun windows |
+| Native crashes | macOS Console app → crash logs |
