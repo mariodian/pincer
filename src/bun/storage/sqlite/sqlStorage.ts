@@ -25,9 +25,15 @@ function agentToTuple(agent: Agent): AgentFieldTuple {
   ];
 }
 
-const UPDATE_SET_CLAUSE =
-  "type = ?, name = ?, url = ?, port = ?, enabled = ?, health_endpoint = ?, status_shape = ?";
-const INSERT_SQL = `INSERT INTO agents (type, name, url, port, enabled, health_endpoint, status_shape, updated_at) VALUES (${UPDATE_SET_CLAUSE.replace(/=/g, "?,").replace(/\?=$/, "?")}, ?)`;
+const AGENT_COLUMNS = [
+  "type", "name", "url", "port", "enabled",
+  "health_endpoint", "status_shape",
+] as const;
+
+const AGENT_PLACEHOLDERS = AGENT_COLUMNS.map(() => "?").join(", ");
+const UPDATE_SET_CLAUSE = AGENT_COLUMNS.map((c) => `${c} = ?`).join(", ");
+
+const INSERT_SQL = `INSERT INTO agents (${AGENT_COLUMNS.join(", ")}, updated_at) VALUES (${AGENT_PLACEHOLDERS}, ?)`;
 const UPDATE_SQL = `UPDATE agents SET ${UPDATE_SET_CLAUSE}, updated_at = ? WHERE id = ?`;
 
 function rowToAgent(row: typeof agents.$inferSelect): Agent {

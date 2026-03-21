@@ -30,7 +30,7 @@
     <AppSidebar />
     <main
       class={[
-        "w-full m-1.5 py-3 px-3",
+        "w-full m-1.5 py-5 px-4",
         "rounded-xl bg-background",
         "shadow-xs shadow-black/5 dark:shadow-black/20",
       ]}

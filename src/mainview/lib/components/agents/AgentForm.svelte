@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+  import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
   import { updateCachedAgent } from "$lib/utils/storage";
+  import type { Agent } from "$shared/types";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
-  import type { Agent } from "$shared/types";
 
   interface Props {
     agentId?: number;
@@ -106,7 +106,11 @@
       newErrors.port = "Port must be 1-65535";
     }
 
-    if (isCustom && healthEndpoint.trim() && !healthEndpoint.trim().startsWith("/")) {
+    if (
+      isCustom &&
+      healthEndpoint.trim() &&
+      !healthEndpoint.trim().startsWith("/")
+    ) {
       newErrors.healthEndpoint = "Health endpoint must start with /";
     }
 
@@ -131,7 +135,9 @@
         url: url.trim().replace(/\/+$/, ""),
         port: parseInt(port, 10),
         enabled,
-        healthEndpoint: isCustom ? healthEndpoint.trim() || "/health" : undefined,
+        healthEndpoint: isCustom
+          ? healthEndpoint.trim() || "/health"
+          : undefined,
         statusShape: isCustom ? statusShape : undefined,
       };
 
@@ -173,13 +179,17 @@
         {isEdit ? "Edit Agent" : "Add Agent"}
       </h1>
       <p class="text-sm text-muted-foreground mt-1">
-        {isEdit ? "Update the agent configuration." : "Configure a new service to monitor."}
+        {isEdit
+          ? "Update the agent configuration."
+          : "Configure a new service to monitor."}
       </p>
     </div>
   </div>
 
   {#if loadError}
-    <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+    <div
+      class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
+    >
       {loadError}
     </div>
   {:else if loading}
@@ -204,7 +214,9 @@
   {:else}
     <form onsubmit={handleSubmit} class="space-y-5">
       {#if errors.form}
-        <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+        <div
+          class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+        >
           {errors.form}
         </div>
       {/if}
@@ -216,7 +228,7 @@
           bind:value={type}
           class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
         >
-          {#each [...agentTypes].sort((a, b) => a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0) as agentType (agentType.id)}
+          {#each [...agentTypes].sort( (a, b) => (a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0), ) as agentType (agentType.id)}
             <option value={agentType.id}>{agentType.name}</option>
           {/each}
         </select>
@@ -280,7 +292,7 @@
         <Input
           id="url"
           type="text"
-          placeholder="http(s)://localhost"
+          placeholder="example.com or http(s)://example.com"
           bind:value={url}
           aria-invalid={!!errors.url}
         />
@@ -294,7 +306,7 @@
         <Input
           id="port"
           type="number"
-          placeholder="3000"
+          placeholder="18790"
           bind:value={port}
           min="1"
           max="65535"
@@ -312,7 +324,9 @@
           bind:checked={enabled}
           class="size-4 rounded border-input accent-primary"
         />
-        <label for="enabled" class="text-sm font-medium cursor-pointer">Enabled</label>
+        <label for="enabled" class="text-sm font-medium cursor-pointer"
+          >Enabled</label
+        >
       </div>
 
       <div class="flex gap-3 pt-2">

@@ -4,6 +4,7 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { sql } from "drizzle-orm";
 import { Utils } from "electrobun/bun";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { ensureAppDataDir } from "../../utils/fs";
 import { config as configTable } from "./schema";
 
@@ -16,10 +17,13 @@ const DEFAULT_CONFIG = {
 };
 
 function getMigrationDir(): string {
-  // In packaged apps: <Resources>/app/drizzle/migrations/
-  //   import.meta.dir = <Resources>/app/bun/
-  // In dev: <project>/drizzle/migrations/
-  return join(import.meta.dir, "..", "drizzle", "migrations");
+  // Resolve from this file's URL so it works in both dev and packaged contexts.
+  // Dev: file:///.../src/bun/storage/sqlite/db.ts       → .../drizzle/migrations  (5 up)
+  // Packaged: file:///.../bun/storage/sqlite/db.ts       → .../drizzle/migrations  (3 up)
+  const thisFile = fileURLToPath(import.meta.url);
+  const depth = import.meta.url.includes("/src/") ? 5 : 3;
+  const root = join(thisFile, ...Array(depth).fill(".."));
+  return join(root, "drizzle", "migrations");
 }
 
 function getDbPath(): string {
