@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { getMainRPC, initMainRPC } from "$lib/services/mainRPC";
   import { userPrefersMode } from "mode-watcher";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
-  import { getMainRPC, initMainRPC } from "$lib/services/mainRPC";
 
   type Align = "left" | "center" | "right";
   type ResolvedTheme = "light" | "dark";
@@ -66,6 +66,7 @@
         });
 
         const rpc = getMainRPC();
+        await rpc.request.notifyRendererReady({ view: "main" });
 
         const result = await rpc.request.getPlatform({});
         if (isDisposed) {

@@ -6,6 +6,17 @@ import {
   type WindowAppearance,
 } from "../windowService";
 
+type RendererView = "main";
+type RendererReadyCallback = (params: {
+  view: RendererView;
+}) => void | Promise<void>;
+
+let onRendererReady: RendererReadyCallback | null = null;
+
+export function setRendererReadyCallback(cb: RendererReadyCallback): void {
+  onRendererReady = cb;
+}
+
 export type SystemRPCType = {
   bun: {
     requests: {
@@ -16,6 +27,10 @@ export type SystemRPCType = {
       setWindowAppearance: {
         params: { appearance: WindowAppearance };
         response: { success: boolean };
+      };
+      notifyRendererReady: {
+        params: { view: RendererView };
+        response: { ok: boolean };
       };
     };
     messages: Record<string, never>;
@@ -33,10 +48,21 @@ export const systemRequestHandlers = {
     const os = getPlatform();
     return { os };
   },
-  setWindowAppearance: async ({ appearance }: { appearance: WindowAppearance }) => {
+  setWindowAppearance: async ({
+    appearance,
+  }: {
+    appearance: WindowAppearance;
+  }) => {
     return {
       success: setMacOSWindowAppearance(appearance),
     };
+  },
+  notifyRendererReady: async ({ view }: { view: RendererView }) => {
+    if (onRendererReady) {
+      await onRendererReady({ view });
+    }
+
+    return { ok: true };
   },
 };
 

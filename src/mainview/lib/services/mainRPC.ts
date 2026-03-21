@@ -1,16 +1,20 @@
-import type { AgentStatus } from "$shared/types";
 import type { AgentRPCType } from "$bun/rpc/agentRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import { syncAgentsToCache } from "$lib/utils/storage";
+import type { AgentStatus } from "$shared/types";
 
 export type MainRPCType = {
   bun: {
-    requests: SystemRPCType["bun"]["requests"] & AgentRPCType["bun"]["requests"];
-    messages: SystemRPCType["bun"]["messages"] & AgentRPCType["bun"]["messages"];
+    requests: SystemRPCType["bun"]["requests"] &
+      AgentRPCType["bun"]["requests"];
+    messages: SystemRPCType["bun"]["messages"] &
+      AgentRPCType["bun"]["messages"];
   };
   webview: {
-    requests: SystemRPCType["webview"]["requests"] & AgentRPCType["webview"]["requests"];
-    messages: SystemRPCType["webview"]["messages"] & AgentRPCType["webview"]["messages"];
+    requests: SystemRPCType["webview"]["requests"] &
+      AgentRPCType["webview"]["requests"];
+    messages: SystemRPCType["webview"]["messages"] &
+      AgentRPCType["webview"]["messages"];
   };
 };
 
@@ -36,7 +40,7 @@ export function offAgentSync(key: string): void {
   syncCallbacks.delete(key);
   // Purge any stale entries left by HMR module replacement.
   for (const [k] of syncCallbacks) {
-    if (typeof (syncCallbacks.get(k)) !== "function") {
+    if (typeof syncCallbacks.get(k) !== "function") {
       syncCallbacks.delete(k);
     }
   }
@@ -68,12 +72,13 @@ export async function initMainRPC(handlers: {
         messages: {
           navigateTo: ({ params }: { params: { path: string } }) =>
             handlers.navigateTo(params),
-          syncAgents: ({ params }: { params: AgentStatus[] }) => {
-            syncAgentsToCache(params);
+          syncAgents: ((data: AgentStatus[]) => {
+            syncAgentsToCache(data);
+
             for (const [, cb] of syncCallbacks) {
               cb();
             }
-          },
+          }) as any,
         },
       },
     });

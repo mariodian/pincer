@@ -1,14 +1,15 @@
 import { KEY_AGENTS, KEY_STATUSES } from "../../../bun/config";
-import type { Agent, AgentStatus, AgentStatusInfo } from "../../../shared/types";
-import {
-  mergeAgentsWithStatuses,
-} from "../../../shared/agent-helpers";
+import { mergeAgentsWithStatuses } from "../../../shared/agent-helpers";
+import type {
+  Agent,
+  AgentStatus,
+  AgentStatusInfo,
+} from "../../../shared/types";
 
 /** Returns the storage key with a "_dev" suffix in development. */
 export function getStorageKey(baseKey: string): string {
   const suffix =
-    typeof window !== "undefined" &&
-    window.location.hostname === "localhost"
+    typeof window !== "undefined" && window.location.hostname === "localhost"
       ? "_dev"
       : "";
   return `${baseKey}${suffix}`;
@@ -53,11 +54,39 @@ export function writeCachedStatuses(statuses: AgentStatusInfo[]): void {
   }
 }
 
+/** Add or update one status entry in localStorage. */
+export function upsertCachedStatus(status: AgentStatusInfo): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_STATUSES);
+    const statuses: AgentStatusInfo[] = raw ? JSON.parse(raw) : [];
+    const index = statuses.findIndex((s) => s.id === status.id);
+    if (index >= 0) {
+      statuses[index] = status;
+    } else {
+      statuses.push(status);
+    }
+    localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
+    notifyCacheListeners();
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
 /**
  * Write merged agent+status data to localStorage (split into both keys).
  * Called by the syncAgents handler in both windows.
  */
 export function syncAgentsToCache(data: AgentStatus[]): void {
+  syncAgentsToCacheWithOptions(data, { notifyListeners: true });
+}
+
+/**
+ * Same as syncAgentsToCache but allows suppressing cache listeners for no-op updates.
+ */
+export function syncAgentsToCacheWithOptions(
+  data: AgentStatus[],
+  options?: { notifyListeners?: boolean },
+): void {
   try {
     const agents: Agent[] = data.map(
       ({ status, lastChecked, errorMessage, ...agent }) => agent,
@@ -72,7 +101,9 @@ export function syncAgentsToCache(data: AgentStatus[]): void {
     );
     localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
     localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
-    notifyCacheListeners();
+    if (options?.notifyListeners !== false) {
+      notifyCacheListeners();
+    }
   } catch {
     /* localStorage unavailable */
   }

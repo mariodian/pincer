@@ -13,6 +13,7 @@ import { getMainWindow } from "./rpc/windowRegistry";
 import { navigateMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
+import { broadcastSyncAgents } from "./utils/windowBroadcaster";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
 const platformIsMacOS = isMacOS();
@@ -57,6 +58,7 @@ let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
 let agentStatusMap: Map<number, AgentStatusInfo> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
+let statusUpdatesStarted = false;
 
 /**
  * Check all agent statuses, update the local map, push to all windows,
@@ -191,10 +193,7 @@ export async function initializeTray() {
   setRefreshCallback(() => refreshAndPush());
 
   // Register mutation callback — push to all windows after add/edit/delete
-  setAgentMutationCallback(() => refreshAndPush());
-
-  // Start periodic status updates
-  startStatusUpdates();
+  setAgentMutationCallback(() => syncAgentsFromKnownStatuses());
 }
 
 /**
@@ -290,21 +289,26 @@ async function pushAgentsToAllWindows(statuses: AgentStatusInfo[]) {
   const agents = await readAgents();
   const merged = mergeAgentsWithStatuses(agents, statuses);
 
-  if (popoverWindow?.webview.rpc) {
-    try {
-      (popoverWindow.webview.rpc as any).send.syncAgents(merged);
-    } catch (error) {
-      console.warn("Failed to push agents to popover:", error);
-    }
-  }
+  await broadcastSyncAgents(merged, {
+    popoverWindow,
+    mainWindow: getMainWindow(),
+  });
+}
 
-  const mainWindow = getMainWindow();
-  if (mainWindow?.webview.rpc) {
-    try {
-      (mainWindow.webview.rpc as any).send.syncAgents(merged);
-    } catch (error) {
-      console.warn("Failed to push agents to main window:", error);
-    }
+export async function syncAgentsFromKnownStatuses(updateMenu = true) {
+  const agents = await readAgents();
+  const merged = mergeAgentsWithStatuses(
+    agents,
+    Array.from(agentStatusMap.values()),
+  );
+
+  await broadcastSyncAgents(merged, {
+    popoverWindow,
+    mainWindow: getMainWindow(),
+  });
+
+  if (updateMenu && NATIVE_MENU) {
+    updateTrayMenu();
   }
 }
 
@@ -322,22 +326,17 @@ export async function pushOneStatusToWindows(
     Array.from(agentStatusMap.values()),
   );
 
-  if (popoverWindow?.webview.rpc) {
-    try {
-      (popoverWindow.webview.rpc as any).send.syncAgents(merged);
-    } catch (error) {
-      console.warn("Failed to push agent status to popover:", error);
-    }
-  }
-
-  const mainWindow = getMainWindow();
-  if (mainWindow?.webview.rpc) {
-    try {
-      (mainWindow.webview.rpc as any).send.syncAgents(merged);
-    } catch (error) {
-      console.warn("Failed to push agent status to main window:", error);
-    }
-  }
+  await broadcastSyncAgents(
+    merged,
+    {
+      popoverWindow,
+      mainWindow: getMainWindow(),
+    },
+    {
+      mainWindowRetryAttempts: 4,
+      mainWindowRetryDelayMs: 120,
+    },
+  );
 
   if (NATIVE_MENU) {
     updateTrayMenu();
@@ -365,22 +364,17 @@ export async function pushOfflineStatusToWindows(id: number): Promise<void> {
     Array.from(agentStatusMap.values()),
   );
 
-  if (popoverWindow?.webview.rpc) {
-    try {
-      (popoverWindow.webview.rpc as any).send.syncAgents(merged);
-    } catch (error) {
-      console.warn("Failed to push offline status to popover:", error);
-    }
-  }
-
-  const mainWindow = getMainWindow();
-  if (mainWindow?.webview.rpc) {
-    try {
-      (mainWindow.webview.rpc as any).send.syncAgents(merged);
-    } catch (error) {
-      console.warn("Failed to push offline status to main window:", error);
-    }
-  }
+  await broadcastSyncAgents(
+    merged,
+    {
+      popoverWindow,
+      mainWindow: getMainWindow(),
+    },
+    {
+      mainWindowRetryAttempts: 4,
+      mainWindowRetryDelayMs: 120,
+    },
+  );
 
   if (NATIVE_MENU) {
     updateTrayMenu();
@@ -418,9 +412,23 @@ async function startStatusUpdates() {
 }
 
 /**
+ * Start status updates once after renderer RPC listeners are ready.
+ * Repeated calls are safe and do not create duplicate timers.
+ */
+export async function beginStatusUpdates() {
+  if (statusUpdatesStarted && statusUpdateInterval) {
+    return;
+  }
+
+  statusUpdatesStarted = true;
+  await startStatusUpdates();
+}
+
+/**
  * Restart status updates with new interval from config
  */
 export async function restartStatusUpdates() {
+  statusUpdatesStarted = true;
   await startStatusUpdates();
 }
 
@@ -439,4 +447,5 @@ export function cleanupTray() {
   }
 
   agentStatusMap.clear();
+  statusUpdatesStarted = false;
 }

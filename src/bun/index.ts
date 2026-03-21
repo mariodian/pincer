@@ -2,12 +2,21 @@ import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { initDatabase } from "./agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { agentRequestHandlers } from "./rpc/agentRPC";
-import { systemRPC, systemRequestHandlers } from "./rpc/systemRPC";
-import { cleanupTray, initializeTray } from "./trayManager";
+import {
+  setRendererReadyCallback,
+  systemRPC,
+  systemRequestHandlers,
+} from "./rpc/systemRPC";
+import { setMainWindow } from "./rpc/windowRegistry";
+import {
+  beginStatusUpdates,
+  cleanupTray,
+  initializeTray,
+  syncAgentsFromKnownStatuses,
+} from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
-import { setMainWindow } from "./rpc/windowRegistry";
 
 import { APP_NAME, MAIN_WINDOW } from "./config";
 
@@ -39,6 +48,13 @@ const displayCenter = {
 
 // Initialize tray icon
 initializeTray();
+
+setRendererReadyCallback(({ view }) => {
+  if (view === "main") {
+    void syncAgentsFromKnownStatuses(false);
+    void beginStatusUpdates();
+  }
+});
 
 // Combine RPCs: use systemRPC as base, register all request handlers via setRequestHandler
 const combinedRPC = systemRPC;
@@ -78,6 +94,9 @@ if (isMacOS) {
 }
 
 setMainWindow(mainWindow);
+
+// Start centralized polling as soon as the app window exists.
+void beginStatusUpdates();
 
 setupMainWindowMenu(mainWindow);
 

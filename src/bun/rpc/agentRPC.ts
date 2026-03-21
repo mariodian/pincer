@@ -1,6 +1,12 @@
 // Agent RPC - Shared RPC definition for agent management
 import { BrowserView } from "electrobun/bun";
+import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
 import { AgentStatusInfo } from "../../shared/types";
+import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
+import {
+  pushOfflineStatusToWindows,
+  pushOneStatusToWindows,
+} from "../trayManager";
 import {
   addAgent,
   Agent,
@@ -12,8 +18,6 @@ import {
   readAgents,
   updateAgent,
 } from "./../agentService";
-import { pushOneStatusToWindows, pushOfflineStatusToWindows } from "../trayManager";
-import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;
@@ -49,6 +53,10 @@ export type AgentRPCType = {
         params: Record<string, never>;
         response: AgentStatusInfo[];
       };
+      checkOneAgentStatus: {
+        params: number;
+        response: AgentStatusInfo | null;
+      };
     };
     messages: Record<string, never>;
   };
@@ -62,15 +70,6 @@ export type AgentRPCType = {
     };
   };
 };
-
-/** Fields whose change should trigger an immediate health check. */
-const HEALTH_AFFECTING_FIELDS = [
-  "url",
-  "port",
-  "healthEndpoint",
-  "statusShape",
-  "type",
-] as const;
 
 /**
  * Register a callback fired after any agent add/update/delete.
@@ -87,12 +86,35 @@ export const agentRequestHandlers = {
     const types = getAgentTypeList();
     return types.map((t) => ({
       ...t,
-      statusShapeOptions:
-        t.id === "custom" ? [...STATUS_SHAPE_OPTIONS] : [],
+      statusShapeOptions: t.id === "custom" ? [...STATUS_SHAPE_OPTIONS] : [],
     }));
   },
-  addAgent: async ({ type, name, url, port, enabled }: Omit<Agent, "id">) => {
-    const result = await addAgent({ type, name, url, port, enabled });
+  addAgent: async ({
+    type,
+    name,
+    url,
+    port,
+    enabled,
+    healthEndpoint,
+    statusShape,
+  }: Omit<Agent, "id">) => {
+    const result = await addAgent({
+      type,
+      name,
+      url,
+      port,
+      enabled,
+      healthEndpoint,
+      statusShape,
+    });
+
+    if (result.enabled === false) {
+      await pushOfflineStatusToWindows(result.id);
+    } else {
+      const status = await checkOneAgentStatus(result.id);
+      if (status) await pushOneStatusToWindows(status);
+    }
+
     if (onAgentMutation) onAgentMutation();
     return result;
   },
@@ -104,7 +126,7 @@ export const agentRequestHandlers = {
         await pushOfflineStatusToWindows(id);
       } else if (
         updates.enabled === true ||
-        HEALTH_AFFECTING_FIELDS.some((f) => f in updates)
+        shouldTriggerHealthCheck(updates)
       ) {
         const status = await checkOneAgentStatus(id);
         if (status) await pushOneStatusToWindows(status);
@@ -121,6 +143,9 @@ export const agentRequestHandlers = {
   },
   checkAllAgentsStatus: async () => {
     return await checkAllAgentsStatus();
+  },
+  checkOneAgentStatus: async (id: number) => {
+    return await checkOneAgentStatus(id);
   },
 };
 

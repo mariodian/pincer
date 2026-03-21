@@ -1,17 +1,20 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { getMainRPC, onAgentSync, offAgentSync } from "$lib/services/mainRPC";
+  import { getMainRPC, offAgentSync, onAgentSync } from "$lib/services/mainRPC";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
+  import {
+    createAgentSyncSignature,
+    sortAgentsByStatus,
+  } from "$shared/agent-helpers";
   import type { AgentStatus } from "$shared/types";
-  import { sortAgentsByStatus } from "$shared/agent-helpers";
   import {
     Add01Icon,
     Delete01Icon,
     Edit01Icon,
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
+  import { onMount } from "svelte";
 
   interface Props {
     onNavigate: (path: string) => void;
@@ -23,6 +26,7 @@
   let loading = $state(true);
   let deletingId = $state<number | null>(null);
   let confirmDeleteId = $state<number | null>(null);
+  let lastListSignature = "";
 
   /** Load agents from localStorage cache, enforcing offline status for disabled agents. */
   function loadFromCache() {
@@ -31,7 +35,16 @@
       const withForcedStatus = cached.map((a) =>
         a.enabled === false ? { ...a, status: "offline" as const } : a,
       );
-      agents = sortAgentsByStatus(withForcedStatus);
+      const sorted = sortAgentsByStatus(withForcedStatus);
+      const nextSignature = createAgentSyncSignature(sorted);
+
+      // Avoid no-op list rerenders while still allowing every backend sync through.
+      if (nextSignature === lastListSignature) {
+        return;
+      }
+
+      lastListSignature = nextSignature;
+      agents = sorted;
     }
   }
 

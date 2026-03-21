@@ -3,8 +3,9 @@
   import { Input } from "$lib/components/ui/input/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
-  import { updateCachedAgent } from "$lib/utils/storage";
-  import type { Agent } from "$shared/types";
+  import { updateCachedAgent, upsertCachedStatus } from "$lib/utils/storage";
+  import { shouldTriggerHealthCheck } from "$shared/agent-helpers";
+  import type { Agent, AgentStatusInfo } from "$shared/types";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
 
@@ -36,8 +37,42 @@
     statusShapeOptions: { value: string; label: string }[];
   };
   let agentTypes = $state<AgentTypeInfo[]>([]);
+  let initialEditSnapshot = $state<Omit<Agent, "id"> | null>(null);
 
   const isCustom = $derived(type === "custom");
+
+  function buildNormalizedPayload(): Omit<Agent, "id"> {
+    return {
+      type,
+      name: name.trim(),
+      url: url.trim().replace(/\/+$/, ""),
+      port: parseInt(port, 10),
+      enabled,
+      healthEndpoint: isCustom ? healthEndpoint.trim() || "/health" : undefined,
+      statusShape: isCustom ? statusShape : undefined,
+    };
+  }
+
+  function buildChangedFields(
+    initial: Omit<Agent, "id">,
+    next: Omit<Agent, "id">,
+  ): Partial<Agent> {
+    const updates: Partial<Agent> = {};
+
+    if (initial.type !== next.type) updates.type = next.type;
+    if (initial.name !== next.name) updates.name = next.name;
+    if (initial.url !== next.url) updates.url = next.url;
+    if (initial.port !== next.port) updates.port = next.port;
+    if (initial.enabled !== next.enabled) updates.enabled = next.enabled;
+    if (initial.healthEndpoint !== next.healthEndpoint) {
+      updates.healthEndpoint = next.healthEndpoint;
+    }
+    if (initial.statusShape !== next.statusShape) {
+      updates.statusShape = next.statusShape;
+    }
+
+    return updates;
+  }
 
   async function loadData() {
     if (!isInitialized()) return;
@@ -61,6 +96,18 @@
         enabled = agent.enabled ?? true;
         healthEndpoint = agent.healthEndpoint ?? "/health";
         statusShape = agent.statusShape ?? "always_ok";
+        initialEditSnapshot = {
+          type: agent.type,
+          name: agent.name.trim(),
+          url: agent.url.trim().replace(/\/+$/, ""),
+          port: agent.port,
+          enabled: agent.enabled ?? true,
+          healthEndpoint:
+            agent.type === "custom"
+              ? (agent.healthEndpoint ?? "/health")
+              : undefined,
+          statusShape: agent.type === "custom" ? agent.statusShape : undefined,
+        };
       }
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -129,24 +176,59 @@
 
     try {
       const rpc = getMainRPC();
-      const agentData = {
-        type,
-        name: name.trim(),
-        url: url.trim().replace(/\/+$/, ""),
-        port: parseInt(port, 10),
-        enabled,
-        healthEndpoint: isCustom
-          ? healthEndpoint.trim() || "/health"
-          : undefined,
-        statusShape: isCustom ? statusShape : undefined,
-      };
+      const agentData = buildNormalizedPayload();
 
       let result: Agent | null = null;
 
       if (isEdit && agentId) {
-        result = await rpc.request.updateAgent([agentId, agentData]);
+        const initial = initialEditSnapshot ?? agentData;
+        const updates = buildChangedFields(initial, agentData);
+
+        if (Object.keys(updates).length === 0) {
+          onNavigate("/agents");
+          return;
+        }
+
+        result = await rpc.request.updateAgent([agentId, updates]);
+
+        if (result) {
+          if (updates.enabled === false) {
+            upsertCachedStatus({
+              id: result.id,
+              status: "offline",
+              lastChecked: Date.now(),
+              errorMessage: undefined,
+            });
+          } else if (
+            updates.enabled === true ||
+            shouldTriggerHealthCheck(updates)
+          ) {
+            const freshStatus: AgentStatusInfo | null =
+              await rpc.request.checkOneAgentStatus(result.id);
+            if (freshStatus) {
+              upsertCachedStatus(freshStatus);
+            }
+          }
+        }
       } else {
         result = await rpc.request.addAgent(agentData);
+
+        if (result) {
+          if (result.enabled === false) {
+            upsertCachedStatus({
+              id: result.id,
+              status: "offline",
+              lastChecked: Date.now(),
+              errorMessage: undefined,
+            });
+          } else {
+            const freshStatus: AgentStatusInfo | null =
+              await rpc.request.checkOneAgentStatus(result.id);
+            if (freshStatus) {
+              upsertCachedStatus(freshStatus);
+            }
+          }
+        }
       }
 
       // Update localStorage cache so the agent list shows changes immediately
