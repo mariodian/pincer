@@ -13,7 +13,9 @@
 
 - `bun run build:native-effects` - Compile macOS native dylib with clang++ (required before dev)
 - `bun run build` - Full production build: native dylib + Vite + electrobun
-- `bun run build:prod` - Production build with release channel
+- `bun run build:prod` - Rebuild native dylib and renderer, then create a production channel build
+- `bun run build:canary` - Rebuild native dylib and renderer, then create a canary environment build
+- `bun run build:stable` - Rebuild native dylib and renderer, then create a stable environment build
 
 ### Database (Drizzle + SQLite)
 
