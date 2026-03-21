@@ -138,6 +138,19 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   }
 }
 
+export async function checkOneAgentStatus(id: number): Promise<AgentStatusInfo | null> {
+  const agents = await readAgents();
+  const agent = agents.find((a) => a.id === id);
+  if (!agent) return null;
+  const result = await checkAgentStatus(agent);
+  return {
+    id: result.id,
+    status: result.status,
+    lastChecked: result.lastChecked,
+    errorMessage: result.errorMessage,
+  };
+}
+
 export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
   const agents = await readAgents();
   const enabledAgents = agents.filter((a) => a.enabled !== false);

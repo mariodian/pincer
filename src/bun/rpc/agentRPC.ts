@@ -6,11 +6,13 @@ import {
   Agent,
   AgentStatus,
   checkAllAgentsStatus,
+  checkOneAgentStatus,
   deleteAgent,
   getAgentTypeList,
   readAgents,
   updateAgent,
 } from "./../agentService";
+import { pushOneStatusToWindows } from "../trayManager";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 
 type AgentMutationCallback = () => void;
@@ -85,6 +87,10 @@ export const agentRequestHandlers = {
   },
   updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
     const result = await updateAgent(id, updates);
+    if (result && updates.enabled === true) {
+      const status = await checkOneAgentStatus(id);
+      if (status) await pushOneStatusToWindows(status);
+    }
     if (onAgentMutation) onAgentMutation();
     return result;
   },

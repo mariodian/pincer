@@ -263,15 +263,10 @@ export async function updateTrayMenu() {
   }
 }
 
-/**
- * Push merged agent+status data to all windows via RPC.
- * No-op if a window doesn't exist yet.
- */
 async function pushAgentsToAllWindows(statuses: AgentStatusInfo[]) {
   const agents = await readAgents();
   const merged = mergeAgentsWithStatuses(agents, statuses);
 
-  // Push to popover
   if (popoverWindow?.webview.rpc) {
     try {
       (popoverWindow.webview.rpc as any).send.syncAgents(merged);
@@ -280,7 +275,6 @@ async function pushAgentsToAllWindows(statuses: AgentStatusInfo[]) {
     }
   }
 
-  // Push to main window
   const mainWindow = getMainWindow();
   if (mainWindow?.webview.rpc) {
     try {
@@ -288,6 +282,39 @@ async function pushAgentsToAllWindows(statuses: AgentStatusInfo[]) {
     } catch (error) {
       console.warn("Failed to push agents to main window:", error);
     }
+  }
+}
+
+/**
+ * Push a single agent's status to all windows immediately (bypasses polling).
+ * Used after toggling enabled state so the UI dot updates without waiting.
+ */
+export async function pushOneStatusToWindows(
+  status: AgentStatusInfo,
+): Promise<void> {
+  const agents = await readAgents();
+  const merged = mergeAgentsWithStatuses(agents, [status]);
+  agentStatusMap.set(status.id, status);
+
+  if (popoverWindow?.webview.rpc) {
+    try {
+      (popoverWindow.webview.rpc as any).send.syncAgents(merged);
+    } catch (error) {
+      console.warn("Failed to push agent status to popover:", error);
+    }
+  }
+
+  const mainWindow = getMainWindow();
+  if (mainWindow?.webview.rpc) {
+    try {
+      (mainWindow.webview.rpc as any).send.syncAgents(merged);
+    } catch (error) {
+      console.warn("Failed to push agent status to main window:", error);
+    }
+  }
+
+  if (NATIVE_MENU) {
+    updateTrayMenu();
   }
 }
 
