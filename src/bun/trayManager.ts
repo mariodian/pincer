@@ -284,7 +284,7 @@ async function pushAgentsToPopover(statuses: AgentStatusInfo[]) {
       lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
       errorMessage: statusMap.get(agent.id)?.errorMessage,
     }));
-    (popoverWindow.webview.rpc as any).syncAgents(merged);
+    (popoverWindow.webview.rpc as any).send.syncAgents(merged);
   } catch (error) {
     console.warn("Failed to push agents to popover:", error);
   }

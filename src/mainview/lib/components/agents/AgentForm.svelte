@@ -14,7 +14,7 @@
 
   let { agentId, onNavigate }: Props = $props();
 
-  const isEdit = agentId !== undefined;
+  const isEdit = $derived(agentId !== undefined);
 
   let type = $state("generic");
   let name = $state("");
@@ -22,7 +22,7 @@
   let port = $state("");
   let enabled = $state(true);
 
-  let loading = $state(isEdit);
+  let loading = $state(false);
   let saving = $state(false);
   let errors = $state<Record<string, string>>({});
   let loadError = $state("");
@@ -59,6 +59,7 @@
   }
 
   $effect(() => {
+    if (isEdit) loading = true;
     loadData();
   });
 
