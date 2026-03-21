@@ -16,6 +16,7 @@
   const routes = {
     "/": Dashboard,
     "/agents": Agents,
+    "/agents/*": Agents,
     "/settings": Settings,
   };
 </script>

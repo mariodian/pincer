@@ -1,6 +1,7 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { initDatabase } from "./agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
+import { agentRPC } from "./rpc/agentRPC";
 import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
@@ -42,6 +43,7 @@ initializeTray();
 // Combine all RPCs
 const combinedRPC = {
   ...systemRPC,
+  ...agentRPC,
 };
 
 const mainWindow = new BrowserWindow({

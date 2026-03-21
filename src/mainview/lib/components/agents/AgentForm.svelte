@@ -1,0 +1,263 @@
+<script lang="ts">
+  import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { Input } from "$lib/components/ui/input/index.js";
+  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+  import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+  import { HugeiconsIcon } from "@hugeicons/svelte";
+  import type { Agent } from "$shared/types";
+
+  interface Props {
+    agentId?: number;
+    onNavigate: (path: string) => void;
+  }
+
+  let { agentId, onNavigate }: Props = $props();
+
+  const isEdit = agentId !== undefined;
+
+  let type = $state("generic");
+  let name = $state("");
+  let url = $state("");
+  let port = $state("");
+  let enabled = $state(true);
+
+  let loading = $state(isEdit);
+  let saving = $state(false);
+  let errors = $state<Record<string, string>>({});
+  let loadError = $state("");
+
+  let agentTypes = $state<{ id: string; name: string }[]>([]);
+
+  async function loadData() {
+    if (!isInitialized()) return;
+
+    try {
+      const rpc = getMainRPC();
+      const types = await rpc.request.getAgentTypes({});
+      agentTypes = types;
+
+      if (isEdit && agentId) {
+        const agents: Agent[] = await rpc.request.getAgents({});
+        const agent = agents.find((a) => a.id === agentId);
+        if (!agent) {
+          loadError = "Agent not found";
+          return;
+        }
+        type = agent.type;
+        name = agent.name;
+        url = agent.url;
+        port = String(agent.port);
+        enabled = agent.enabled ?? true;
+      }
+    } catch (error) {
+      console.error("Failed to load data:", error);
+      loadError = "Failed to load agent data";
+    } finally {
+      loading = false;
+    }
+  }
+
+  $effect(() => {
+    loadData();
+  });
+
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+
+    if (!name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
+    if (!url.trim()) {
+      newErrors.url = "URL is required";
+    } else {
+      try {
+        const parsed = new URL(url.trim());
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          newErrors.url = "URL must use http or https";
+        }
+      } catch {
+        newErrors.url = "Invalid URL format";
+      }
+    }
+
+    const portNum = parseInt(port, 10);
+    if (!port || isNaN(portNum)) {
+      newErrors.port = "Port is required";
+    } else if (portNum < 1 || portNum > 65535) {
+      newErrors.port = "Port must be 1-65535";
+    }
+
+    errors = newErrors;
+    return Object.keys(newErrors).length === 0;
+  }
+
+  async function handleSubmit(e: Event) {
+    e.preventDefault();
+    if (saving) return;
+
+    if (!validate()) return;
+
+    saving = true;
+    errors = {};
+
+    try {
+      const rpc = getMainRPC();
+      const agentData = {
+        type,
+        name: name.trim(),
+        url: url.trim(),
+        port: parseInt(port, 10),
+        enabled,
+      };
+
+      if (isEdit && agentId) {
+        await rpc.request.updateAgent([agentId, agentData]);
+      } else {
+        await rpc.request.addAgent(agentData);
+      }
+
+      onNavigate("/agents");
+    } catch (error) {
+      console.error("Failed to save agent:", error);
+      errors.form = "Failed to save agent. Please try again.";
+    } finally {
+      saving = false;
+    }
+  }
+</script>
+
+<div class="flex flex-col h-full max-w-lg">
+  <div class="flex items-center gap-3 mb-6">
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      onclick={() => onNavigate("/agents")}
+    >
+      <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+      <span class="sr-only">Back</span>
+    </Button>
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">
+        {isEdit ? "Edit Agent" : "Add Agent"}
+      </h1>
+      <p class="text-sm text-muted-foreground mt-1">
+        {isEdit ? "Update the agent configuration." : "Configure a new service to monitor."}
+      </p>
+    </div>
+  </div>
+
+  {#if loadError}
+    <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+      {loadError}
+    </div>
+  {:else if loading}
+    <div class="space-y-6">
+      <div class="space-y-2">
+        <Skeleton class="h-4 w-12" />
+        <Skeleton class="h-9 w-full" />
+      </div>
+      <div class="space-y-2">
+        <Skeleton class="h-4 w-12" />
+        <Skeleton class="h-9 w-full" />
+      </div>
+      <div class="space-y-2">
+        <Skeleton class="h-4 w-8" />
+        <Skeleton class="h-9 w-full" />
+      </div>
+      <div class="space-y-2">
+        <Skeleton class="h-4 w-8" />
+        <Skeleton class="h-9 w-full" />
+      </div>
+    </div>
+  {:else}
+    <form onsubmit={handleSubmit} class="space-y-5">
+      {#if errors.form}
+        <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          {errors.form}
+        </div>
+      {/if}
+
+      <div class="space-y-2">
+        <label for="type" class="text-sm font-medium">Type</label>
+        <select
+          id="type"
+          bind:value={type}
+          class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
+        >
+          {#each agentTypes as agentType (agentType.id)}
+            <option value={agentType.id}>{agentType.name}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label for="name" class="text-sm font-medium">Name</label>
+        <Input
+          id="name"
+          type="text"
+          placeholder="My Service"
+          bind:value={name}
+          aria-invalid={!!errors.name}
+        />
+        {#if errors.name}
+          <p class="text-xs text-destructive">{errors.name}</p>
+        {/if}
+      </div>
+
+      <div class="space-y-2">
+        <label for="url" class="text-sm font-medium">URL</label>
+        <Input
+          id="url"
+          type="text"
+          placeholder="http://localhost"
+          bind:value={url}
+          aria-invalid={!!errors.url}
+        />
+        {#if errors.url}
+          <p class="text-xs text-destructive">{errors.url}</p>
+        {/if}
+      </div>
+
+      <div class="space-y-2">
+        <label for="port" class="text-sm font-medium">Port</label>
+        <Input
+          id="port"
+          type="number"
+          placeholder="3000"
+          bind:value={port}
+          min="1"
+          max="65535"
+          aria-invalid={!!errors.port}
+        />
+        {#if errors.port}
+          <p class="text-xs text-destructive">{errors.port}</p>
+        {/if}
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input
+          id="enabled"
+          type="checkbox"
+          bind:checked={enabled}
+          class="size-4 rounded border-input accent-primary"
+        />
+        <label for="enabled" class="text-sm font-medium cursor-pointer">Enabled</label>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Agent"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => onNavigate("/agents")}
+        >
+          Cancel
+        </Button>
+      </div>
+    </form>
+  {/if}
+</div>

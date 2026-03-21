@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { link, router } from "@bmlt-enabled/svelte-spa-router";
+  import { link, push, router } from "@bmlt-enabled/svelte-spa-router";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import { Add01Icon } from "@hugeicons/core-free-icons";
@@ -18,7 +18,10 @@
   });
 
   function isActive(url: string): boolean {
-    return currentLocation === url;
+    if (url === "/") {
+      return currentLocation === "/";
+    }
+    return currentLocation === url || currentLocation.startsWith(url + "/");
   }
 </script>
 
@@ -44,6 +47,7 @@
               size="icon"
               class="size-8 group-data-[collapsible=icon]:opacity-0"
               variant="outline"
+              onclick={() => push("/agents/add")}
             >
               <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
               <span class="sr-only">Add agent</span>

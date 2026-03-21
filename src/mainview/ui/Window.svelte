@@ -2,7 +2,7 @@
   import { userPrefersMode } from "mode-watcher";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
-  import type { SystemRPCType } from "../../bun/rpc/systemRPC";
+  import { initMainRPC } from "$lib/services/mainRPC";
 
   type Align = "left" | "center" | "right";
   type ResolvedTheme = "light" | "dark";
@@ -59,20 +59,14 @@
 
     void (async () => {
       try {
-        const { Electroview } = await import("electrobun/view");
-
-        const rpc = Electroview.defineRPC<SystemRPCType>({
-          handlers: {
-            requests: {},
-            messages: {
-              navigateTo: ({ params }) => {
-                window.location.hash = params.path;
-              },
-            },
+        await initMainRPC({
+          navigateTo: (params) => {
+            window.location.hash = params.path;
           },
         });
 
-        new Electroview({ rpc });
+        const { getMainRPC } = await import("$lib/services/mainRPC");
+        const rpc = getMainRPC();
 
         const result = await rpc.request.getPlatform({});
         if (isDisposed) {
