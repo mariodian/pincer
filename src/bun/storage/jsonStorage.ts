@@ -1,20 +1,12 @@
 import { Utils } from "electrobun/bun";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { Agent } from "../agentService";
+import type { Agent } from "../../shared/types";
+import { ensureAppDataDir } from "../utils/fs";
 import { AgentStorage } from "./backend";
 
 function getAgentsFilePath(): string {
   return join(Utils.paths.userData, "agents.json");
-}
-
-async function ensureAppDataDir(): Promise<void> {
-  const appDataDir = Utils.paths.userData;
-  try {
-    await stat(appDataDir);
-  } catch {
-    await mkdir(appDataDir, { recursive: true });
-  }
 }
 
 export class JsonAgentStorage implements AgentStorage {

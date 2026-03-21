@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
   import { KEY_AGENTS, KEY_STATUSES } from "$bun/config";
+  import type { Agent, AgentStatus } from "$shared/types";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
 
@@ -8,27 +9,8 @@
   const STORAGE_KEY_AGENTS = `${KEY_AGENTS}${suffix}`;
   const STORAGE_KEY_STATUSES = `${KEY_STATUSES}${suffix}`;
 
-  interface Agent {
-    id: number;
-    type: string;
-    name: string;
-    url: string;
-    port: number;
-    enabled?: boolean;
-  }
-
-  interface AgentStatus extends Agent {
-    status: "ok" | "offline" | "error";
-    lastChecked: number;
-    errorMessage?: string;
-  }
-
-  type AgentStatusInfo = {
-    id: number;
-    name: string;
-    url: string;
-    port: number;
-    enabled?: boolean;
+  /** Combined agent + status used by the popover RPC responses. */
+  type PopoverAgentStatus = Agent & {
     status: "ok" | "offline" | "error";
     lastChecked: number;
     errorMessage?: string;
@@ -39,11 +21,11 @@
       requests: {
         getAgents: {
           params: Record<string, never>;
-          response: AgentStatusInfo[];
+          response: PopoverAgentStatus[];
         };
         checkAllAgentsStatus: {
           params: Record<string, never>;
-          response: AgentStatusInfo[];
+          response: PopoverAgentStatus[];
         };
         openMainWindow: {
           params: { page: string };
@@ -120,7 +102,7 @@
       const storedStatuses = localStorage.getItem(STORAGE_KEY_STATUSES);
       if (storedAgents && storedStatuses) {
         const agentList: Agent[] = JSON.parse(storedAgents);
-        const statusList: AgentStatusInfo[] = JSON.parse(storedStatuses);
+        const statusList: PopoverAgentStatus[] = JSON.parse(storedStatuses);
         const statusMap = new Map(statusList.map((s) => [s.id, s]));
         agents = sortAgents(
           agentList.map((agent) => ({

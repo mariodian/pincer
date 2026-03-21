@@ -21,3 +21,9 @@ export async function getViewUrl(pagePath = "index.html"): Promise<string> {
   console.log(`View URL: views://mainview/${pagePath}`);
   return `views://mainview/${pagePath}`;
 }
+
+/** Strip hash fragment from a URL to avoid accumulation on re-navigation. */
+export function stripHash(url: string): string {
+  const hashIndex = url.indexOf("#");
+  return hashIndex !== -1 ? url.slice(0, hashIndex) : url;
+}

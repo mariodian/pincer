@@ -10,7 +10,9 @@
       "$lib": ["./src/mainview/lib"],
       "$lib/*": ["./src/mainview/lib/*"],
       "$bun": ["./src/bun"],
-      "$bun/*": ["./src/bun/*"]
+      "$bun/*": ["./src/bun/*"],
+      "$shared": ["./src/shared"],
+      "$shared/*": ["./src/shared/*"]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

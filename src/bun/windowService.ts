@@ -18,7 +18,7 @@ export interface WindowConfig {
 
 export type WindowAppearance = "system" | "light" | "dark";
 
-export type WindowName = "main" | "config" | "popover";
+export type WindowName = "main" | "popover";
 
 type MacWindowEffectsLibrary = {
   symbols: {
@@ -50,7 +50,6 @@ let currentWindowAppearance: WindowAppearance = "system";
 let macWindowEffectsLib: MacWindowEffectsLibrary | null = null;
 const trackedMacOSWindows: Record<WindowName, Set<BrowserWindow>> = {
   main: new Set<BrowserWindow>(),
-  config: new Set<BrowserWindow>(),
   popover: new Set<BrowserWindow>(),
 };
 
@@ -65,18 +64,6 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
     trafficLightsX: 14,
     trafficLightsY: 7,
     nativeDragRegion: false,
-    nativeDragRegionX: 92,
-    nativeDragRegionHeight: 40,
-  },
-  config: {
-    titleBarStyle: "hiddenInset",
-    titleBarTransparent: true,
-    transparent: true,
-    vibrancy: true,
-    trafficLights: true,
-    trafficLightsX: 14,
-    trafficLightsY: 12,
-    nativeDragRegion: true,
     nativeDragRegionX: 92,
     nativeDragRegionHeight: 40,
   },

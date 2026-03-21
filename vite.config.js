@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       $lib: resolve(__dirname, "src/mainview/lib"),
       $bun: resolve(__dirname, "src/bun"),
+      $shared: resolve(__dirname, "src/shared"),
     },
   },
   root: "src/mainview",
@@ -20,7 +21,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "src/mainview/index.html"),
-        agentConfig: resolve(__dirname, "src/mainview/agent-config.html"),
         trayPopover: resolve(__dirname, "src/mainview/tray-popover.html"),
       },
     },

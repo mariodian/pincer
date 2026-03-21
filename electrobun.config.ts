@@ -14,7 +14,6 @@ export default {
     // Vite builds to dist/, we copy from there
     copy: {
       "dist/index.html": "views/mainview/index.html",
-      "dist/agent-config.html": "views/mainview/agent-config.html",
       "dist/tray-popover.html": "views/mainview/tray-popover.html",
       "dist/assets": "views/mainview/assets",
       "src/resources": "views/resources",

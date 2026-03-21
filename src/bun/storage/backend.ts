@@ -1,4 +1,4 @@
-import { Agent } from "../agentService";
+import type { Agent } from "../../shared/types";
 
 export interface AgentStorage {
   readAgents(): Promise<Agent[]>;

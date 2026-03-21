@@ -7,7 +7,7 @@ import { getMainWindow } from "./rpc/windowRegistry";
 import { AgentStatusInfo } from "./storage/types";
 import { isMacOS } from "./utils/platform";
 import { syncAgentData } from "./utils/storage";
-import { getViewUrl } from "./utils/url";
+import { getViewUrl, stripHash } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
 const platformIsMacOS = isMacOS();
@@ -17,6 +17,16 @@ const platformIsMacOS = isMacOS();
 // @TODO: Evaluate if we can switch to custom menu on all platforms for consistency.
 const NATIVE_MENU = !platformIsMacOS;
 // const NATIVE_MENU = true;
+
+/** Shared navigation/action menu items used in both normal and error-fallback menus. */
+const NAV_MENU_ITEMS = [
+  { type: "divider" as const },
+  { type: "normal" as const, label: "Dashboard", action: "dashboard", enabled: true },
+  { type: "normal" as const, label: "Configure Agents", action: "configure", enabled: true },
+  { type: "normal" as const, label: "Settings", action: "settings", enabled: true },
+  { type: "divider" as const },
+  { type: "normal" as const, label: "Quit CrabMonitor", action: "quit", enabled: true },
+];
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
@@ -111,9 +121,9 @@ export async function initializeTray() {
       const win = getMainWindow();
       if (win) {
         win.focus();
-        let baseUrl = win.webview.url ?? (await getViewUrl("index.html"));
-        const hashIndex = baseUrl.indexOf("#");
-        if (hashIndex !== -1) baseUrl = baseUrl.slice(0, hashIndex);
+        const baseUrl = stripHash(
+          win.webview.url ?? (await getViewUrl("index.html")),
+        );
         win.webview.loadURL(`${baseUrl}#/${route}`);
       }
     } else if (action === "refresh") {
@@ -223,47 +233,8 @@ export async function updateTrayMenu() {
       enabled: true,
     });
 
-    // Add separator before nav items
-    menuItems.push({
-      type: "divider" as const,
-    });
+    menuItems.push(...NAV_MENU_ITEMS);
 
-    // Add Dashboard menu item
-    menuItems.push({
-      type: "normal" as const,
-      label: "Dashboard",
-      action: "dashboard",
-      enabled: true,
-    });
-
-    // Add Configure menu item
-    menuItems.push({
-      type: "normal" as const,
-      label: "Configure Agents",
-      action: "configure",
-      enabled: true,
-    });
-
-    // Add Settings menu item
-    menuItems.push({
-      type: "normal" as const,
-      label: "Settings",
-      action: "settings",
-      enabled: true,
-    });
-
-    // Add separator before quit
-    menuItems.push({
-      type: "divider" as const,
-    });
-
-    // Add Quit menu item
-    menuItems.push({
-      type: "normal" as const,
-      label: "Quit CrabMonitor",
-      action: "quit",
-      enabled: true,
-    });
     // Set the menu
     tray.setMenu(menuItems);
   } catch (error) {
@@ -277,33 +248,7 @@ export async function updateTrayMenu() {
           label: "Error loading agents",
           enabled: false,
         },
-        {
-          type: "divider" as const,
-        },
-        {
-          type: "normal" as const,
-          label: "Dashboard",
-          action: "dashboard",
-          enabled: true,
-        },
-        {
-          type: "normal" as const,
-          label: "Configure Agents",
-          action: "configure",
-          enabled: true,
-        },
-        {
-          type: "normal" as const,
-          label: "Settings",
-          action: "settings",
-          enabled: true,
-        },
-        {
-          type: "normal" as const,
-          label: "Quit CrabMonitor",
-          action: "quit",
-          enabled: true,
-        },
+        ...NAV_MENU_ITEMS,
       ]);
     }
   }

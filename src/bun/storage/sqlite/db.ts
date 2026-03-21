@@ -3,8 +3,8 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { sql } from "drizzle-orm";
 import { Utils } from "electrobun/bun";
-import { mkdir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { ensureAppDataDir } from "../../utils/fs";
 import { config as configTable } from "./schema";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
@@ -14,15 +14,6 @@ const DEFAULT_CONFIG = {
   pollingInterval: "30000",
   retentionDays: "90",
 };
-
-async function ensureAppDataDir(): Promise<void> {
-  const appDataDir = Utils.paths.userData;
-  try {
-    await stat(appDataDir);
-  } catch {
-    await mkdir(appDataDir, { recursive: true });
-  }
-}
 
 function getMigrationDir(): string {
   // In packaged apps: <Resources>/app/drizzle/migrations/

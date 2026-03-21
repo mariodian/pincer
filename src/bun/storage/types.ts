@@ -1,6 +1,2 @@
-export interface AgentStatusInfo {
-  id: number;
-  status: "ok" | "offline" | "error";
-  lastChecked: number;
-  errorMessage?: string;
-}
+// Re-export from canonical source for backward compatibility
+export type { AgentStatusInfo } from "../../shared/types";

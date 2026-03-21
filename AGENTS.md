@@ -96,11 +96,10 @@
 
 ### Entry Points
 
-| File                | Purpose                    |
-| ------------------- | -------------------------- |
-| `index.html`        | Main window                |
-| `agent-config.html` | Agent configuration window |
-| `tray-popover.html` | Tray popover window        |
+| File                | Purpose             |
+| ------------------- | ------------------- |
+| `index.html`        | Main window         |
+| `tray-popover.html` | Tray popover window |
 
 ---
 

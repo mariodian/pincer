@@ -1,6 +1,6 @@
 // Agents Service - Handles agent CRUD and health checking
 import { agentStorage } from "./storage";
-import { AgentStatusInfo } from "./storage/types";
+import type { Agent, AgentStatus, AgentStatusInfo } from "../shared/types";
 import {
   readConfig as readConfigFromDb,
   writeConfig as writeConfigToDb,
@@ -11,21 +11,7 @@ import { initializeDatabase } from "./storage/sqlite/db";
 import { getAgentType } from "./agentTypes";
 
 export type { Config } from "./storage/sqlite/configRepo";
-
-export interface Agent {
-  id: number;
-  type: string;
-  name: string;
-  url: string;
-  port: number;
-  enabled?: boolean;
-}
-
-export interface AgentStatus extends Agent {
-  status: "ok" | "offline" | "error";
-  lastChecked: number;
-  errorMessage?: string;
-}
+export type { Agent, AgentStatus, AgentStatusInfo } from "../shared/types";
 
 export async function readAgents(): Promise<Agent[]> {
   return agentStorage.readAgents();

@@ -1,4 +1,6 @@
-// Shared types for RPC communication
+// Canonical type definitions shared between main process and renderer.
+// Import from this file instead of re-declaring interfaces.
+
 export interface Agent {
   id: number;
   type: string;
@@ -9,9 +11,14 @@ export interface Agent {
 }
 
 export interface AgentStatus extends Agent {
-  status: "online" | "offline" | "error";
+  status: "ok" | "offline" | "error";
   lastChecked: number;
   errorMessage?: string;
 }
 
-export type RPCSchema<T> = T;
+export interface AgentStatusInfo {
+  id: number;
+  status: "ok" | "offline" | "error";
+  lastChecked: number;
+  errorMessage?: string;
+}
