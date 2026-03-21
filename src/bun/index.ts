@@ -1,5 +1,5 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
-import { initDatabase } from "./agentService";
+import { initDatabase } from "./services/agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { agentRequestHandlers } from "./rpc/agentRPC";
 import {
@@ -11,7 +11,7 @@ import { setMainWindow } from "./rpc/windowRegistry";
 import {
   beginStatusUpdates,
   restartStatusUpdates,
-} from "./statusService";
+} from "./services/statusService";
 import {
   cleanupTray,
   initializeTray,
@@ -19,7 +19,7 @@ import {
 } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { readWindowConfig } from "./windowService";
+import { readWindowConfig } from "./utils/windowConfig";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 
 import { APP_NAME, MAIN_WINDOW } from "./config";

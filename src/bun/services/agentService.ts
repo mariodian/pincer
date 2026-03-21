@@ -1,23 +1,23 @@
 // Agents Service - Handles agent CRUD and health checking
-import { agentStorage } from "./storage";
-import type { Agent, AgentStatus, AgentStatusInfo } from "../shared/types";
-import { normalizeUrl } from "../shared/agent-helpers";
+import { agentStorage } from "../storage";
+import type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
+import { normalizeUrl } from "../../shared/agent-helpers";
 import {
   readConfig as readConfigFromDb,
   writeConfig as writeConfigToDb,
   type Config,
-} from "./storage/sqlite/configRepo";
-import { upsertHourlyStat } from "./storage/sqlite/statsRepo";
-import { initializeDatabase } from "./storage/sqlite/db";
+} from "../storage/sqlite/configRepo";
+import { upsertHourlyStat } from "../storage/sqlite/statsRepo";
+import { initializeDatabase } from "../storage/sqlite/db";
 import {
   getAgentType,
   STATUS_PARSERS,
   type StatusShape,
   type StatusParser,
-} from "./agentTypes";
+} from "../agentTypes";
 
-export type { Config } from "./storage/sqlite/configRepo";
-export type { Agent, AgentStatus, AgentStatusInfo } from "../shared/types";
+export type { Config } from "../storage/sqlite/configRepo";
+export type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
 
 export async function readAgents(): Promise<Agent[]> {
   return agentStorage.readAgents();
@@ -194,7 +194,7 @@ export function resolveHealthConfig(
   };
 }
 
-export { getAgentTypeList, getAgentType } from "./agentTypes";
+export { getAgentTypeList, getAgentType } from "../agentTypes";
 
 /**
  * Initialize the database and run migrations.

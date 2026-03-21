@@ -6,8 +6,8 @@ import {
   broadcastSyncAgents,
   DEFAULT_RETRY_ATTEMPTS,
   DEFAULT_RETRY_DELAY_MS,
-} from "./windowBroadcaster";
-import { readAgents } from "../agentService";
+} from "../utils/windowBroadcaster";
+import { readAgents } from "./agentService";
 
 type BroadcastTargets = {
   popoverWindow?: BrowserWindow | null;

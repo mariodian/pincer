@@ -1,22 +1,22 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
+import { POPOVER_WINDOW, TRAY_ICON_PATH } from "$bun/config";
+import { setAgentMutationCallback } from "$bun/rpc/agentRPC";
+import { setRefreshCallback, trayPopoverRPC } from "$bun/rpc/trayPopoverRPC";
+import { getMainWindow } from "$bun/rpc/windowRegistry";
+import { readAgents } from "$bun/services/agentService";
+import { refreshAndPush } from "$bun/services/statusService";
+import { sortAgentsByStatus } from "$shared/agent-helpers";
+import { AgentStatusInfo } from "$shared/types";
 import { BrowserWindow, Tray } from "electrobun/bun";
-import { sortAgentsByStatus } from "../shared/agent-helpers";
-import { AgentStatusInfo } from "../shared/types";
-import { readAgents } from "./agentService";
-import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import {
-  initStatusSyncService,
   getStatusSyncService,
-} from "./utils/agentSync";
-import { setAgentMutationCallback } from "./rpc/agentRPC";
-import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
-import { getMainWindow } from "./rpc/windowRegistry";
+  initStatusSyncService,
+} from "./services/statusSyncService";
+import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { navigateMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { readWindowConfig } from "./windowService";
-import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
-import { refreshAndPush } from "./statusService";
+import { readWindowConfig } from "./utils/windowConfig";
 
 // Re-export for backward compat with setRefreshCallback in this file
 export { refreshAndPush };
@@ -194,19 +194,33 @@ export async function initializeTray() {
 /**
  * Update the tray menu with current agent statuses
  */
-type TrayMenuItem = {
-  type: "normal";
-  label: string;
-  tooltip?: string;
-  action: string;
-  enabled: boolean;
-} | { type: "divider"; label?: never; tooltip?: never; action?: never; enabled?: never };
+type TrayMenuItem =
+  | {
+      type: "normal";
+      label: string;
+      tooltip?: string;
+      action: string;
+      enabled: boolean;
+    }
+  | {
+      type: "divider";
+      label?: never;
+      tooltip?: never;
+      action?: never;
+      enabled?: never;
+    };
 
 /**
  * Build a menu item for a single agent with status indicator.
  */
 function buildAgentMenuItem(
-  agent: { id: number; name: string; url: string; port: number; status: string },
+  agent: {
+    id: number;
+    name: string;
+    url: string;
+    port: number;
+    status: string;
+  },
   errorMessage?: string,
 ): TrayMenuItem {
   let label = agent.name;
@@ -282,7 +296,11 @@ export async function updateTrayMenu() {
     // Show error menu
     if (tray) {
       tray.setMenu([
-        { type: "normal" as const, label: "Error loading agents", enabled: false },
+        {
+          type: "normal" as const,
+          label: "Error loading agents",
+          enabled: false,
+        },
         ...NAV_MENU_ITEMS,
       ]);
     }

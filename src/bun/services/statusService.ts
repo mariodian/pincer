@@ -2,7 +2,7 @@
 import { checkAllAgentsStatus, readConfig } from "./agentService";
 import {
   getStatusSyncService,
-} from "./utils/agentSync";
+} from "./statusSyncService";
 
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;

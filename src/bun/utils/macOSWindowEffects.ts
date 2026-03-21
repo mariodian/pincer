@@ -3,7 +3,7 @@ import { dlopen, FFIType, type Pointer } from "bun:ffi";
 import { BrowserWindow } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { WindowConfig, WindowName } from "../windowService";
+import type { WindowConfig, WindowName } from "./windowConfig";
 
 export type WindowAppearance = "system" | "light" | "dark";
 
