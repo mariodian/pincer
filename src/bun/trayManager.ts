@@ -2,7 +2,7 @@
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { sortAgentsByStatus } from "../shared/agent-helpers";
 import { AgentStatusInfo } from "../shared/types";
-import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
+import { readAgents } from "./agentService";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import {
   initStatusSyncService,
@@ -14,7 +14,12 @@ import { getMainWindow } from "./rpc/windowRegistry";
 import { navigateMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { readWindowConfig } from "./windowService";
+import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
+import { refreshAndPush } from "./statusService";
+
+// Re-export for backward compat with setRefreshCallback in this file
+export { refreshAndPush };
 
 const platformIsMacOS = isMacOS();
 
@@ -56,19 +61,6 @@ const NAV_MENU_ITEMS = [
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
-let statusUpdateInterval: NodeJS.Timeout | null = null;
-let statusUpdatesStarted = false;
-
-/**
- * Check all agent statuses, update the local map, push to all windows,
- * and optionally refresh the native tray menu.
- */
-async function refreshAndPush(updateMenu = true) {
-  const sync = getStatusSyncService();
-  const statuses = await checkAllAgentsStatus();
-  sync.updateStatusMap(statuses);
-  await sync.sync({ updateMenu: updateMenu && NATIVE_MENU });
-}
 
 /**
  * Initialize the tray icon and set up event handlers
@@ -161,10 +153,7 @@ export async function initializeTray() {
       // Refresh menu item clicked - show feedback in title
       tray?.setTitle(` - Refreshing...`);
       try {
-        const statuses = await checkAllAgentsStatus();
-        const sync = getStatusSyncService();
-        sync.updateStatusMap(statuses);
-        await sync.sync({ updateMenu: false });
+        await refreshAndPush();
         updateTrayMenu();
         tray?.setTitle(` - Updated!`);
         setTimeout(() => tray?.setTitle(``), 2000);
@@ -336,69 +325,11 @@ export async function pushOfflineStatusToWindows(id: number): Promise<void> {
 }
 
 /**
- * Start periodic status updates for all agents
- */
-async function startStatusUpdates() {
-  // Clear any existing interval
-  if (statusUpdateInterval) {
-    clearInterval(statusUpdateInterval);
-  }
-
-  // Read config for polling interval
-  const config = await readConfig();
-  const interval = config.pollingInterval || 30000;
-
-  // Update status immediately
-  try {
-    await refreshAndPush();
-  } catch (error) {
-    console.error("Failed to update agent statuses:", error);
-  }
-
-  // Start periodic updates
-  statusUpdateInterval = setInterval(async () => {
-    try {
-      await refreshAndPush();
-    } catch (error) {
-      console.error("Failed to update agent statuses:", error);
-    }
-  }, interval);
-}
-
-/**
- * Start status updates once after renderer RPC listeners are ready.
- * Repeated calls are safe and do not create duplicate timers.
- */
-export async function beginStatusUpdates() {
-  if (statusUpdatesStarted && statusUpdateInterval) {
-    return;
-  }
-
-  statusUpdatesStarted = true;
-  await startStatusUpdates();
-}
-
-/**
- * Restart status updates with new interval from config
- */
-export async function restartStatusUpdates() {
-  statusUpdatesStarted = true;
-  await startStatusUpdates();
-}
-
-/**
  * Clean up tray resources
  */
 export function cleanupTray() {
-  if (statusUpdateInterval) {
-    clearInterval(statusUpdateInterval);
-    statusUpdateInterval = null;
-  }
-
   if (tray) {
     tray.remove();
     tray = null;
   }
-
-  statusUpdatesStarted = false;
 }

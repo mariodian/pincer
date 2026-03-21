@@ -4,7 +4,7 @@ import { getPlatform } from "../utils/platform";
 import {
   setMacOSWindowAppearance,
   type WindowAppearance,
-} from "../windowService";
+} from "../utils/macOSWindowEffects";
 
 type RendererView = "main";
 type RendererReadyCallback = (params: {

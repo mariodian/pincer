@@ -10,13 +10,17 @@ import {
 import { setMainWindow } from "./rpc/windowRegistry";
 import {
   beginStatusUpdates,
+  restartStatusUpdates,
+} from "./statusService";
+import {
   cleanupTray,
   initializeTray,
   syncAgentsFromKnownStatuses,
 } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
+import { readWindowConfig } from "./windowService";
+import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 
 import { APP_NAME, MAIN_WINDOW } from "./config";
 
