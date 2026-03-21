@@ -61,34 +61,36 @@ export type AgentRPCType = {
   };
 };
 
+export const agentRequestHandlers = {
+  getAgents: async () => {
+    return await readAgents();
+  },
+  getAgentTypes: async () => {
+    return getAgentTypeList();
+  },
+  addAgent: async ({ type, name, url, port, enabled }: Omit<Agent, "id">) => {
+    const result = await addAgent({ type, name, url, port, enabled });
+    if (onAgentMutation) onAgentMutation();
+    return result;
+  },
+  updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
+    const result = await updateAgent(id, updates);
+    if (onAgentMutation) onAgentMutation();
+    return result;
+  },
+  deleteAgent: async (id: number) => {
+    const result = await deleteAgent(id);
+    if (onAgentMutation) onAgentMutation();
+    return result;
+  },
+  checkAllAgentsStatus: async () => {
+    return await checkAllAgentsStatus();
+  },
+};
+
 export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
   handlers: {
-    requests: {
-      getAgents: async () => {
-        return await readAgents();
-      },
-      getAgentTypes: async () => {
-        return getAgentTypeList();
-      },
-      addAgent: async ({ type, name, url, port, enabled }: Omit<Agent, "id">) => {
-        const result = await addAgent({ type, name, url, port, enabled });
-        if (onAgentMutation) onAgentMutation();
-        return result;
-      },
-      updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
-        const result = await updateAgent(id, updates);
-        if (onAgentMutation) onAgentMutation();
-        return result;
-      },
-      deleteAgent: async (id: number) => {
-        const result = await deleteAgent(id);
-        if (onAgentMutation) onAgentMutation();
-        return result;
-      },
-      checkAllAgentsStatus: async () => {
-        return await checkAllAgentsStatus();
-      },
-    },
+    requests: agentRequestHandlers,
     messages: {},
   },
 });

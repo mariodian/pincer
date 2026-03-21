@@ -28,19 +28,21 @@ export type SystemRPCType = {
   };
 };
 
+export const systemRequestHandlers = {
+  getPlatform: async () => {
+    const os = getPlatform();
+    return { os };
+  },
+  setWindowAppearance: async ({ appearance }: { appearance: WindowAppearance }) => {
+    return {
+      success: setMacOSWindowAppearance(appearance),
+    };
+  },
+};
+
 export const systemRPC = BrowserView.defineRPC<SystemRPCType>({
   handlers: {
-    requests: {
-      getPlatform: async () => {
-        const os = getPlatform();
-        return { os };
-      },
-      setWindowAppearance: async ({ appearance }) => {
-        return {
-          success: setMacOSWindowAppearance(appearance),
-        };
-      },
-    },
+    requests: systemRequestHandlers,
     messages: {
       navigateTo: () => {
         // Navigation is handled in the webview (App.svelte)

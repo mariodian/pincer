@@ -1,8 +1,8 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { initDatabase } from "./agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
-import { agentRPC } from "./rpc/agentRPC";
-import { systemRPC } from "./rpc/systemRPC";
+import { agentRequestHandlers } from "./rpc/agentRPC";
+import { systemRPC, systemRequestHandlers } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
@@ -40,11 +40,12 @@ const displayCenter = {
 // Initialize tray icon
 initializeTray();
 
-// Combine all RPCs
-const combinedRPC = {
-  ...systemRPC,
-  ...agentRPC,
-};
+// Combine RPCs: use systemRPC as base, register all request handlers via setRequestHandler
+const combinedRPC = systemRPC;
+combinedRPC.setRequestHandler({
+  ...systemRequestHandlers,
+  ...agentRequestHandlers,
+});
 
 const mainWindow = new BrowserWindow({
   title: APP_NAME,

@@ -74,7 +74,7 @@
         }
 
         os = result.os;
-        console.log("OS:", os);
+        document.body.dataset.os = os;
 
         if (result.os !== "macos") {
           return;
@@ -123,10 +123,6 @@
       isDisposed = true;
       stopThemeSync();
     };
-  });
-
-  $effect(() => {
-    if (os) document.body.dataset.os = os;
   });
 
   $effect(() => {
