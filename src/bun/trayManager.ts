@@ -6,7 +6,6 @@ import { trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
 import { AgentStatusInfo } from "./storage/types";
 import { isMacOS } from "./utils/platform";
-import { syncAgentData } from "./utils/storage";
 import { getViewUrl, stripHash } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
@@ -255,6 +254,28 @@ export async function updateTrayMenu() {
 }
 
 /**
+ * Push merged agent+status data to the popover's localStorage via RPC.
+ * No-op if the popover window doesn't exist yet.
+ */
+async function pushAgentsToPopover() {
+  if (!popoverWindow?.webview.rpc) return;
+  try {
+    const statuses = await checkAllAgentsStatus();
+    const agents = await readAgents();
+    const statusMap = new Map(statuses.map((s) => [s.id, s]));
+    const merged = agents.map((agent) => ({
+      ...agent,
+      status: statusMap.get(agent.id)?.status ?? "offline",
+      lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
+      errorMessage: statusMap.get(agent.id)?.errorMessage,
+    }));
+    (popoverWindow.webview.rpc as any).syncAgents(merged);
+  } catch (error) {
+    console.warn("Failed to push agents to popover:", error);
+  }
+}
+
+/**
  * Start periodic status updates for all agents
  */
 async function startStatusUpdates() {
@@ -273,8 +294,7 @@ async function startStatusUpdates() {
     statuses.forEach((status) => {
       agentStatusMap.set(status.id, status);
     });
-    const agents = await readAgents();
-    await syncAgentData(agents, statuses);
+    await pushAgentsToPopover();
     if (NATIVE_MENU) {
       updateTrayMenu();
     }
@@ -289,8 +309,7 @@ async function startStatusUpdates() {
       statuses.forEach((status) => {
         agentStatusMap.set(status.id, status);
       });
-      const agents = await readAgents();
-      await syncAgentData(agents, statuses);
+      await pushAgentsToPopover();
 
       // Update menu to reflect new statuses
       if (NATIVE_MENU) {

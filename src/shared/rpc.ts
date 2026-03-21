@@ -1,4 +1,5 @@
 // Shared RPC types for main window navigation
+import type { AgentStatus } from "./types";
 export type MainWindowRPCType = {
   bun: {
     requests: Record<string, never>;
@@ -57,6 +58,11 @@ export type TrayPopoverRPCType = {
   };
   webview: {
     requests: Record<string, never>;
-    messages: Record<string, never>;
+    messages: {
+      syncAgents: {
+        params: AgentStatus[];
+        response: void;
+      };
+    };
   };
 };

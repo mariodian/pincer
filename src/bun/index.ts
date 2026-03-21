@@ -1,10 +1,9 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
-import { checkAllAgentsStatus, initDatabase, readAgents } from "./agentService";
+import { initDatabase } from "./agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
 import { isMacOS as isMacOSFn } from "./utils/platform";
-import { syncAgentData } from "./utils/storage";
 import { getViewUrl } from "./utils/url";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 import { setMainWindow } from "./rpc/windowRegistry";
@@ -19,10 +18,6 @@ declare global {
 
 // Initialize database before any other operations
 await initDatabase();
-
-const agents = await readAgents();
-const statuses = await checkAllAgentsStatus();
-await syncAgentData(agents, statuses);
 
 // Create the main application window
 const url = await getViewUrl("index.html");

@@ -40,14 +40,29 @@
     };
     webview: {
       requests: Record<string, never>;
-      messages: Record<string, never>;
+      messages: {
+        syncAgents: {
+          params: PopoverAgentStatus[];
+          response: void;
+        };
+      };
     };
   };
 
   const rpc = Electroview.defineRPC<AgentRPCType>({
     handlers: {
       requests: {},
-      messages: {},
+      messages: {
+        syncAgents: ((data: PopoverAgentStatus[]) => {
+          agents = sortAgents(data);
+          localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(
+            data.map(({ status, lastChecked, errorMessage, ...agent }) => agent)
+          ));
+          localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(
+            data.map(({ id, status, lastChecked, errorMessage }) => ({ id, status, lastChecked, errorMessage }))
+          ));
+        }) as any,
+      },
     },
   });
 
