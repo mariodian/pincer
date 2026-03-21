@@ -12,7 +12,7 @@ import {
   readAgents,
   updateAgent,
 } from "./../agentService";
-import { pushOneStatusToWindows } from "../trayManager";
+import { pushOneStatusToWindows, pushOfflineStatusToWindows } from "../trayManager";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 
 type AgentMutationCallback = () => void;
@@ -63,7 +63,18 @@ export type AgentRPCType = {
   };
 };
 
-/** Register a callback fired after any agent add/update/delete. */
+/** Fields whose change should trigger an immediate health check. */
+const HEALTH_AFFECTING_FIELDS = [
+  "url",
+  "port",
+  "healthEndpoint",
+  "statusShape",
+  "type",
+] as const;
+
+/**
+ * Register a callback fired after any agent add/update/delete.
+ */
 export function setAgentMutationCallback(cb: AgentMutationCallback) {
   onAgentMutation = cb;
 }
@@ -87,10 +98,19 @@ export const agentRequestHandlers = {
   },
   updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
     const result = await updateAgent(id, updates);
-    if (result && updates.enabled === true) {
-      const status = await checkOneAgentStatus(id);
-      if (status) await pushOneStatusToWindows(status);
+
+    if (result) {
+      if (updates.enabled === false) {
+        await pushOfflineStatusToWindows(id);
+      } else if (
+        updates.enabled === true ||
+        HEALTH_AFFECTING_FIELDS.some((f) => f in updates)
+      ) {
+        const status = await checkOneAgentStatus(id);
+        if (status) await pushOneStatusToWindows(status);
+      }
     }
+
     if (onAgentMutation) onAgentMutation();
     return result;
   },

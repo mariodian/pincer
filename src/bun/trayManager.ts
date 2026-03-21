@@ -319,6 +319,46 @@ export async function pushOneStatusToWindows(
 }
 
 /**
+ * Mark an agent as offline immediately without making an HTTP request.
+ * Used when an agent is disabled so the UI dot turns gray right away.
+ */
+export async function pushOfflineStatusToWindows(id: number): Promise<void> {
+  const agents = await readAgents();
+
+  const offlineStatus: AgentStatusInfo = {
+    id,
+    status: "offline",
+    lastChecked: Date.now(),
+    errorMessage: undefined,
+  };
+
+  agentStatusMap.set(id, offlineStatus);
+
+  const merged = mergeAgentsWithStatuses(agents, [offlineStatus]);
+
+  if (popoverWindow?.webview.rpc) {
+    try {
+      (popoverWindow.webview.rpc as any).send.syncAgents(merged);
+    } catch (error) {
+      console.warn("Failed to push offline status to popover:", error);
+    }
+  }
+
+  const mainWindow = getMainWindow();
+  if (mainWindow?.webview.rpc) {
+    try {
+      (mainWindow.webview.rpc as any).send.syncAgents(merged);
+    } catch (error) {
+      console.warn("Failed to push offline status to main window:", error);
+    }
+  }
+
+  if (NATIVE_MENU) {
+    updateTrayMenu();
+  }
+}
+
+/**
  * Start periodic status updates for all agents
  */
 async function startStatusUpdates() {
