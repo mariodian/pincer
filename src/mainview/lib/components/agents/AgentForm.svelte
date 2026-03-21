@@ -73,8 +73,12 @@
     if (!url.trim()) {
       newErrors.url = "URL is required";
     } else {
+      let validationUrl = url.trim();
+      if (!validationUrl.match(/^https?:\/\//)) {
+        validationUrl = `http://${validationUrl}`;
+      }
       try {
-        const parsed = new URL(url.trim());
+        const parsed = new URL(validationUrl);
         if (!["http:", "https:"].includes(parsed.protocol)) {
           newErrors.url = "URL must use http or https";
         }
@@ -108,7 +112,7 @@
       const agentData = {
         type,
         name: name.trim(),
-        url: url.trim(),
+        url: url.trim().replace(/\/+$/, ""),
         port: parseInt(port, 10),
         enabled,
       };
@@ -212,7 +216,7 @@
         <Input
           id="url"
           type="text"
-          placeholder="http://localhost"
+          placeholder="http(s)://localhost"
           bind:value={url}
           aria-invalid={!!errors.url}
         />

@@ -82,4 +82,27 @@ export class SqliteAgentStorage implements AgentStorage {
 
     write();
   }
+
+  async insertAgent(agent: Omit<Agent, "id">): Promise<Agent> {
+    const { sqlite } = getDatabase();
+
+    const stmt = sqlite.prepare(
+      `INSERT INTO agents (type, name, url, port, enabled, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    );
+
+    const result = stmt.run(
+      agent.type,
+      agent.name,
+      agent.url,
+      agent.port,
+      agent.enabled ?? true,
+      Date.now(),
+    );
+
+    return {
+      ...agent,
+      id: result.lastInsertRowid as number,
+    };
+  }
 }

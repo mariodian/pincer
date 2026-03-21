@@ -30,16 +30,7 @@ export async function writeConfig(config: Partial<Config>): Promise<void> {
 }
 
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
-  const agents = await readAgents();
-  const newAgent: Agent = {
-    ...agent,
-    id: 0, // placeholder — actual ID assigned by writeAgents
-  };
-  agents.push(newAgent);
-  await writeAgents(agents);
-  // Re-read to get the DB-assigned ID
-  const updated = await readAgents();
-  return updated[updated.length - 1];
+  return agentStorage.insertAgent(agent);
 }
 
 export async function updateAgent(
@@ -92,8 +83,13 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       agentType.timeout ?? 5000,
     );
 
+    let baseUrl = agent.url.replace(/\/+$/, "");
+    if (!baseUrl.match(/^https?:\/\//)) {
+      baseUrl = `http://${baseUrl}`;
+    }
+
     const response = await fetch(
-      `${agent.url}:${agent.port}${agentType.healthEndpoint}`,
+      `${baseUrl}:${agent.port}${agentType.healthEndpoint}`,
       {
         method: agentType.healthMethod,
         signal: controller.signal,

@@ -88,4 +88,13 @@ export class JsonAgentStorage implements AgentStorage {
       throw error;
     }
   }
+
+  async insertAgent(agent: Omit<Agent, "id">): Promise<Agent> {
+    const agents = await this.readAgents();
+    const maxId = agents.reduce((max, a) => Math.max(max, a.id), 0);
+    const newAgent: Agent = { ...agent, id: maxId + 1 };
+    agents.push(newAgent);
+    await this.writeAgents(agents);
+    return newAgent;
+  }
 }
