@@ -5,12 +5,32 @@ export interface AgentTypeConfig {
   healthEndpoint: string;
   healthMethod: "GET" | "POST";
   headers?: Record<string, string>;
-  parseStatus: (json: unknown) => {
-    status: "ok" | "offline" | "error";
-    errorMessage?: string;
-  };
+  parseStatus: StatusParser;
   timeout?: number;
 }
+
+/** Signature for a health response parser. */
+export type StatusParser = (json: unknown) => {
+  status: "ok" | "error";
+  errorMessage?: string;
+};
+
+/** Preset options for how "custom" agents interpret their health response. */
+export const STATUS_SHAPE_OPTIONS = [
+  { value: "always_ok" as const, label: "Always OK (HTTP 200)" },
+  { value: "json_status" as const, label: "Check JSON { status: 'ok' }" },
+] as const;
+
+export type StatusShape = (typeof STATUS_SHAPE_OPTIONS)[number]["value"];
+
+/** Maps a status shape preset to its parser function. */
+export const STATUS_PARSERS: Record<StatusShape, StatusParser> = {
+  always_ok: (_json) => ({ status: "ok" }),
+  json_status: (json) => {
+    const data = json as { status?: string };
+    return data.status === "ok" ? { status: "ok" } : { status: "error" };
+  },
+};
 
 /**
  * Standard status parser for OpenClaw/OpenCrabs agents.
@@ -26,12 +46,12 @@ function parseStandardAgentStatus(json: unknown): {
 }
 
 export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
-  generic: {
-    id: "generic",
-    name: "Generic",
+  custom: {
+    id: "custom",
+    name: "Custom",
     healthEndpoint: "/health",
     healthMethod: "GET",
-    parseStatus: (_json) => ({ status: "ok" }),
+    parseStatus: STATUS_PARSERS.always_ok,
   },
   openclaw: {
     id: "openclaw",

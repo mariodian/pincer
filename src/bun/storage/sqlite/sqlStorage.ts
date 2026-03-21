@@ -3,9 +3,33 @@ import { getDatabase } from "./db";
 import { AgentStorage } from "../backend";
 import type { Agent } from "../../../shared/types";
 
-/**
- * Convert a DB row to the Agent interface.
- */
+type AgentFieldTuple = [
+  type: string,
+  name: string,
+  url: string,
+  port: number,
+  enabled: boolean,
+  healthEndpoint: string | null,
+  statusShape: string | null,
+];
+
+function agentToTuple(agent: Agent): AgentFieldTuple {
+  return [
+    agent.type,
+    agent.name,
+    agent.url,
+    agent.port,
+    agent.enabled ?? true,
+    agent.healthEndpoint ?? null,
+    agent.statusShape ?? null,
+  ];
+}
+
+const UPDATE_SET_CLAUSE =
+  "type = ?, name = ?, url = ?, port = ?, enabled = ?, health_endpoint = ?, status_shape = ?";
+const INSERT_SQL = `INSERT INTO agents (type, name, url, port, enabled, health_endpoint, status_shape, updated_at) VALUES (${UPDATE_SET_CLAUSE.replace(/=/g, "?,").replace(/\?=$/, "?")}, ?)`;
+const UPDATE_SQL = `UPDATE agents SET ${UPDATE_SET_CLAUSE}, updated_at = ? WHERE id = ?`;
+
 function rowToAgent(row: typeof agents.$inferSelect): Agent {
   return {
     id: row.id,
@@ -14,13 +38,14 @@ function rowToAgent(row: typeof agents.$inferSelect): Agent {
     url: row.url,
     port: row.port,
     enabled: row.enabled ?? true,
+    healthEndpoint: row.healthEndpoint ?? undefined,
+    statusShape: row.statusShape ?? undefined,
   };
 }
 
 export class SqliteAgentStorage implements AgentStorage {
   async readAgents(): Promise<Agent[]> {
     const { db } = getDatabase();
-
     const rows = db.select().from(agents).all();
     return rows.map(rowToAgent);
   }
@@ -28,46 +53,20 @@ export class SqliteAgentStorage implements AgentStorage {
   async writeAgents(agentList: Agent[]): Promise<void> {
     const { sqlite } = getDatabase();
 
-    // Use a raw SQLite transaction for atomicity
     const write = sqlite.transaction(() => {
       const now = new Date(Date.now());
-
-      const updateStmt = sqlite.prepare(
-        `UPDATE agents SET type = ?, name = ?, url = ?, port = ?, enabled = ?, updated_at = ?
-         WHERE id = ?`,
-      );
-
-      const insertStmt = sqlite.prepare(
-        `INSERT INTO agents (type, name, url, port, enabled, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      );
+      const updateStmt = sqlite.prepare(UPDATE_SQL);
+      const insertStmt = sqlite.prepare(INSERT_SQL);
 
       for (const agent of agentList) {
+        const values: AgentFieldTuple = agentToTuple(agent);
         if (agent.id > 0) {
-          // Existing agent — update
-          updateStmt.run(
-            agent.type,
-            agent.name,
-            agent.url,
-            agent.port,
-            agent.enabled ?? true,
-            now.getTime(),
-            agent.id,
-          );
+          updateStmt.run(...values, now.getTime(), agent.id);
         } else {
-          // New agent — let DB auto-increment the ID
-          insertStmt.run(
-            agent.type,
-            agent.name,
-            agent.url,
-            agent.port,
-            agent.enabled ?? true,
-            now.getTime(),
-          );
+          insertStmt.run(...values, now.getTime());
         }
       }
 
-      // Delete agents that are no longer in the list
       const existingIds = sqlite
         .query("SELECT id FROM agents")
         .all() as { id: number }[];
@@ -85,24 +84,9 @@ export class SqliteAgentStorage implements AgentStorage {
 
   async insertAgent(agent: Omit<Agent, "id">): Promise<Agent> {
     const { sqlite } = getDatabase();
-
-    const stmt = sqlite.prepare(
-      `INSERT INTO agents (type, name, url, port, enabled, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    );
-
-    const result = stmt.run(
-      agent.type,
-      agent.name,
-      agent.url,
-      agent.port,
-      agent.enabled ?? true,
-      Date.now(),
-    );
-
-    return {
-      ...agent,
-      id: result.lastInsertRowid as number,
-    };
+    const stmt = sqlite.prepare(INSERT_SQL);
+    const values: AgentFieldTuple = agentToTuple(agent as Agent);
+    const result = stmt.run(...values, Date.now());
+    return { ...agent, id: result.lastInsertRowid as number };
   }
 }

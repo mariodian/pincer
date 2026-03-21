@@ -65,8 +65,8 @@
 
   function getTypeName(type: string): string {
     switch (type) {
-      case "generic":
-        return "Generic";
+      case "custom":
+        return "Custom";
       case "openclaw":
         return "OpenClaw";
       case "opencrabs":

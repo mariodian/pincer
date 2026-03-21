@@ -1,24 +1,20 @@
 // Agent RPC - Shared RPC definition for agent management
 import { BrowserView } from "electrobun/bun";
+import { AgentStatusInfo } from "../../shared/types";
 import {
   addAgent,
   Agent,
   AgentStatus,
   checkAllAgentsStatus,
   deleteAgent,
+  getAgentTypeList,
   readAgents,
   updateAgent,
-  getAgentTypeList,
 } from "./../agentService";
-import { AgentStatusInfo } from "../../shared/types";
+import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;
-
-/** Register a callback fired after any agent add/update/delete. */
-export function setAgentMutationCallback(cb: AgentMutationCallback) {
-  onAgentMutation = cb;
-}
 
 export type AgentRPCType = {
   bun: {
@@ -29,7 +25,11 @@ export type AgentRPCType = {
       };
       getAgentTypes: {
         params: Record<string, never>;
-        response: { id: string; name: string }[];
+        response: {
+          id: string;
+          name: string;
+          statusShapeOptions: { value: string; label: string }[];
+        }[];
       };
       addAgent: {
         params: Omit<Agent, "id">;
@@ -61,12 +61,22 @@ export type AgentRPCType = {
   };
 };
 
+/** Register a callback fired after any agent add/update/delete. */
+export function setAgentMutationCallback(cb: AgentMutationCallback) {
+  onAgentMutation = cb;
+}
+
 export const agentRequestHandlers = {
   getAgents: async () => {
     return await readAgents();
   },
   getAgentTypes: async () => {
-    return getAgentTypeList();
+    const types = getAgentTypeList();
+    return types.map((t) => ({
+      ...t,
+      statusShapeOptions:
+        t.id === "custom" ? [...STATUS_SHAPE_OPTIONS] : [],
+    }));
   },
   addAgent: async ({ type, name, url, port, enabled }: Omit<Agent, "id">) => {
     const result = await addAgent({ type, name, url, port, enabled });

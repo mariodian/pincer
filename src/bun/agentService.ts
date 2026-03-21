@@ -8,7 +8,12 @@ import {
 } from "./storage/sqlite/configRepo";
 import { upsertHourlyStat } from "./storage/sqlite/statsRepo";
 import { initializeDatabase } from "./storage/sqlite/db";
-import { getAgentType } from "./agentTypes";
+import {
+  getAgentType,
+  STATUS_PARSERS,
+  type StatusShape,
+  type StatusParser,
+} from "./agentTypes";
 
 export type { Config } from "./storage/sqlite/configRepo";
 export type { Agent, AgentStatus, AgentStatusInfo } from "../shared/types";
@@ -76,29 +81,17 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
     };
   }
 
+  const config = resolveHealthConfig(agent);
+
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      agentType.timeout ?? 5000,
-    );
+    const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
-    let baseUrl = agent.url.replace(/\/+$/, "");
-    if (!baseUrl.match(/^https?:\/\//)) {
-      baseUrl = `http://${baseUrl}`;
-    }
-
-    const response = await fetch(
-      `${baseUrl}:${agent.port}${agentType.healthEndpoint}`,
-      {
-        method: agentType.healthMethod,
-        signal: controller.signal,
-        headers: {
-          Accept: "application/json",
-          ...agentType.headers,
-        },
-      },
-    );
+    const response = await fetch(config.url, {
+      method: config.method,
+      signal: controller.signal,
+      headers: config.headers,
+    });
 
     clearTimeout(timeoutId);
     const responseMs = Date.now() - startTime;
@@ -106,18 +99,16 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
     if (response.ok) {
       try {
         const data = await response.json();
-        const result = agentType.parseStatus(data);
-        const status = result.status;
-        upsertHourlyStat(agent.id, status, responseMs);
+        const result = config.parseStatus(data);
+        upsertHourlyStat(agent.id, result.status, responseMs);
         return {
           ...agent,
-          status,
+          status: result.status,
           lastChecked: Date.now(),
           errorMessage: result.errorMessage,
         };
       } catch {
-        // Response not valid JSON — fall back to type's parseStatus with null
-        const result = agentType.parseStatus(null);
+        const result = config.parseStatus(null);
         upsertHourlyStat(agent.id, result.status, responseMs);
         return {
           ...agent,
@@ -157,6 +148,38 @@ export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
     lastChecked,
     errorMessage,
   }));
+}
+
+export function resolveHealthConfig(
+  agent: Agent,
+): {
+  url: string;
+  method: "GET" | "POST";
+  headers: Record<string, string>;
+  timeout: number;
+  parseStatus: StatusParser;
+} {
+  let baseUrl = agent.url.replace(/\/+$/, "");
+  if (!baseUrl.match(/^https?:\/\//)) {
+    baseUrl = `http://${baseUrl}`;
+  }
+
+  const agentType = getAgentType(agent.type);
+  const endpoint = agent.healthEndpoint ?? agentType?.healthEndpoint ?? "/health";
+  const method = agentType?.healthMethod ?? "GET";
+  const headers = { Accept: "application/json", ...(agentType?.headers ?? {}) };
+  const timeout = agentType?.timeout ?? 5000;
+  const parseStatus = agent.statusShape
+    ? STATUS_PARSERS[agent.statusShape as StatusShape]
+    : (agentType?.parseStatus ?? STATUS_PARSERS.always_ok);
+
+  return {
+    url: `${baseUrl}:${agent.port}${endpoint}`,
+    method,
+    headers,
+    timeout,
+    parseStatus,
+  };
 }
 
 export { getAgentTypeList, getAgentType } from "./agentTypes";

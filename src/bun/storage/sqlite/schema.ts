@@ -15,6 +15,8 @@ export const agents = sqliteTable("agents", {
   url: text("url").notNull(),
   port: integer("port").notNull(),
   enabled: integer("enabled", { mode: "boolean" }).default(true),
+  healthEndpoint: text("health_endpoint"),
+  statusShape: text("status_shape"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
     sql`(unixepoch())`,
   ),

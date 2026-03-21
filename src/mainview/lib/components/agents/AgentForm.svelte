@@ -17,18 +17,27 @@
 
   const isEdit = $derived(agentId !== undefined);
 
-  let type = $state("generic");
+  let type = $state("openclaw");
   let name = $state("");
   let url = $state("");
   let port = $state("");
   let enabled = $state(true);
+  let healthEndpoint = $state("/health");
+  let statusShape = $state("always_ok");
 
   let loading = $state(false);
   let saving = $state(false);
   let errors = $state<Record<string, string>>({});
   let loadError = $state("");
 
-  let agentTypes = $state<{ id: string; name: string }[]>([]);
+  type AgentTypeInfo = {
+    id: string;
+    name: string;
+    statusShapeOptions: { value: string; label: string }[];
+  };
+  let agentTypes = $state<AgentTypeInfo[]>([]);
+
+  const isCustom = $derived(type === "custom");
 
   async function loadData() {
     if (!isInitialized()) return;
@@ -50,6 +59,8 @@
         url = agent.url;
         port = String(agent.port);
         enabled = agent.enabled ?? true;
+        healthEndpoint = agent.healthEndpoint ?? "/health";
+        statusShape = agent.statusShape ?? "always_ok";
       }
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -95,6 +106,10 @@
       newErrors.port = "Port must be 1-65535";
     }
 
+    if (isCustom && healthEndpoint.trim() && !healthEndpoint.trim().startsWith("/")) {
+      newErrors.healthEndpoint = "Health endpoint must start with /";
+    }
+
     errors = newErrors;
     return Object.keys(newErrors).length === 0;
   }
@@ -116,6 +131,8 @@
         url: url.trim().replace(/\/+$/, ""),
         port: parseInt(port, 10),
         enabled,
+        healthEndpoint: isCustom ? healthEndpoint.trim() || "/health" : undefined,
+        statusShape: isCustom ? statusShape : undefined,
       };
 
       let result: Agent | null = null;
@@ -199,11 +216,50 @@
           bind:value={type}
           class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
         >
-          {#each agentTypes as agentType (agentType.id)}
+          {#each [...agentTypes].sort((a, b) => a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0) as agentType (agentType.id)}
             <option value={agentType.id}>{agentType.name}</option>
           {/each}
         </select>
       </div>
+
+      {#if isCustom}
+        <div class="space-y-2">
+          <label for="healthEndpoint" class="text-sm font-medium">
+            Health Endpoint
+          </label>
+          <Input
+            id="healthEndpoint"
+            type="text"
+            placeholder="/health"
+            bind:value={healthEndpoint}
+            aria-invalid={!!errors.healthEndpoint}
+          />
+          {#if errors.healthEndpoint}
+            <p class="text-xs text-destructive">{errors.healthEndpoint}</p>
+          {/if}
+          <p class="text-xs text-muted-foreground">
+            Path checked for agent health (e.g. /health, /status)
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="statusShape" class="text-sm font-medium">
+            Status Detection
+          </label>
+          <select
+            id="statusShape"
+            bind:value={statusShape}
+            class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
+          >
+            {#each agentTypes.find((t) => t.id === "custom")?.statusShapeOptions ?? [] as option (option.value)}
+              <option value={option.value}>{option.label}</option>
+            {/each}
+          </select>
+          <p class="text-xs text-muted-foreground">
+            How to interpret the health endpoint response
+          </p>
+        </div>
+      {/if}
 
       <div class="space-y-2">
         <label for="name" class="text-sm font-medium">Name</label>

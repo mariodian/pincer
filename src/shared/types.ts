@@ -8,6 +8,8 @@ export interface Agent {
   url: string;
   port: number;
   enabled?: boolean;
+  healthEndpoint?: string;
+  statusShape?: string;
 }
 
 export interface AgentStatus extends Agent {
