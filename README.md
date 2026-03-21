@@ -1,103 +1,137 @@
-# Native macOS Vibrancy Electrobun App
+<div align="center">
+<h1>CrabMon</h1>
+</div>
 
-This project is centered on a custom native macOS window experience in Electrobun:
+Desktop monitoring app for local AI and LLM agents with tray-first controls,
+status checks, and quick navigation.
 
-- Native macOS vibrancy (`NSVisualEffectView`)
-- Native traffic-light button alignment with a custom draggable header
-- Native window shadow restoration on transparent windows
-- React/Tailwind UI kept simple so native effects stay visible
+CrabMon is built with Electrobun and Bun for desktop runtime, Svelte 5 for UI,
+and SQLite with Drizzle for persistence.
 
-<img width="1073" height="867" alt="image" src="https://github.com/user-attachments/assets/e6635725-9989-409e-a982-b0e469838d97" />
-
-
-## What makes this app special
-
-The default Electrobun APIs provide `titleBarStyle: "hiddenInset"` and `transparent: true`, but not a full public vibrancy API.  
-This project adds a tiny Objective-C bridge loaded via Bun FFI to apply:
-
-- `enableWindowVibrancy(windowPtr)`
-- `ensureWindowShadow(windowPtr)`
-- `setWindowTrafficLightsPosition(windowPtr, x, yFromTop)`
-
-## Key files
-
-- `src/bun/index.ts`: Electrobun `BrowserWindow` setup, FFI loading, traffic-light + native drag region tuning constants, app menu shortcuts.
-- `native/macos/window-effects.mm`: Cocoa native implementation (`NSVisualEffectView`, shadow, button positioning, native drag region).
-- `scripts/build-macos-effects.sh`: Builds `libMacWindowEffects.dylib`.
-- `electrobun.config.ts`: Copies the built dylib into the app bundle.
-- `src/mainview/App.tsx`: Header UI geometry aligned with native controls; native drag is handled by Cocoa overlay.
-
-## Build and run
+## Installation
 
 ```bash
+git clone <your-repo-url>
+cd crabControl
 bun install
-
-# Development (bundled assets flow)
-bun run dev
-
-# Development with Vite HMR
-bun run dev:hmr
-
-# Production-style build
-bun run build
-
-# Build for prod channel
-bun run build:prod
 ```
 
-## Build pipeline details
+## Configuration
 
-`bun run build` does:
+No required environment setup is needed for local development by default.
 
-1. `bun run build:native-effects`
-2. `vite build`
-3. `electrobun build`
+If you customize runtime behavior, keep these areas in sync:
 
-`build:native-effects` compiles:
+- App constants in src/bun/config.ts
+- Window behavior in src/bun/windowService.ts
+- Database schema in src/bun/storage/sqlite/schema.ts
 
-- Source: `native/macos/window-effects.mm`
-- Output: `src/bun/libMacWindowEffects.dylib`
-- Compiler: `xcrun clang++ -dynamiclib -fobjc-arc -framework Cocoa`
+After schema changes:
 
-On non-macOS hosts, the script creates a placeholder dylib so Electrobun copy steps still succeed.
+```bash
+bun run db:generate
+bun run db:push
+```
 
-## Traffic-light and header alignment
+## Usage
 
-Tune these constants in `src/bun/index.ts`:
+```bash
+# Full desktop dev flow
+bun run dev
 
-- `MAC_TRAFFIC_LIGHTS_X`
-- `MAC_TRAFFIC_LIGHTS_Y`
+# Fast renderer iteration with HMR + desktop runtime
+bun run dev:hmr
+```
 
-Tune header geometry in `src/mainview/App.tsx`:
+In development, non-main windows should load Vite URLs for HMR updates.
 
-- Header height (`h-*`)
-- Left padding reserved for native buttons (`pl-24`)
+## Build
 
-If you change header height/padding, adjust `MAC_TRAFFIC_LIGHTS_Y` (and possibly `X`) to keep native buttons visually centered in the faux title area.
+```bash
+# Production build
+bun run build
 
-## Draggable behavior
+# Production channel build
+bun run build:prod
 
-This project uses a native drag-region overlay (Cocoa view) for titlebar dragging:
+# Environment-based builds
+bun run build:canary
+bun run build:stable
+```
 
-- Native function: `setNativeWindowDragRegion(windowPtr, x, height)`
-- Constants:
-  - `MAC_NATIVE_DRAG_REGION_X`
-  - `MAC_NATIVE_DRAG_REGION_HEIGHT`
+## Scripts
 
-Why: this gives native titlebar drag behavior (including moving across Spaces) and avoids limitations of class-based JS drag forwarding.
+- bun run dev: Build native effects + renderer + app, then run Electrobun dev.
+- bun run dev:hmr: Run Vite HMR and Electrobun dev concurrently.
+- bun run hmr: Start Vite on port 5173.
+- bun run build:native-effects: Compile macOS native dylib.
+- bun run build: Build native effects + Vite + Electrobun.
+- bun run build:prod: Build using production channel.
+- bun run build:canary: Build using canary environment.
+- bun run build:stable: Build using stable environment.
+- bun run db:generate: Generate Drizzle migrations.
+- bun run db:push: Push schema to SQLite database.
+- bun run db:studio: Open Drizzle Studio.
 
-Note: `electrobun-webkit-app-region-drag` is intentionally not used in the current header.
+## Requirements
 
-## Runtime notes
+- Bun
+- Supported desktop platform (macOS, Windows, or Linux)
 
-- Native vibrancy depends on macOS transparency settings. If blur looks weak/off, check:
-  - System Settings -> Accessibility -> Display -> `Reduce transparency` (should be off)
-- This native bridge is macOS-specific. Other platforms fall back to normal behavior.
-- `Cmd+W` close behavior is wired through macOS application menu config in `src/bun/index.ts`.
+## Known Limitations
 
-## Libraries and APIs used
+- Native vibrancy/traffic-light customization is only available on macOS.
+- On Windows and Linux, CrabMon runs normally without native macOS effects.
+- The custom-designed tray menu is currently macOS-only; Windows and Linux use
+  the native tray menu fallback.
+- HMR for secondary windows requires Vite URL routing in development.
 
-- `electrobun` for desktop runtime and `BrowserWindow`
-- Bun FFI (`bun:ffi`) for loading custom native dylib
-- Cocoa/AppKit (`NSWindow`, `NSVisualEffectView`) in Objective-C++
-- `react`, `react-dom`, `tailwindcss`, `vite` for renderer UI
+## Development
+
+### Type Checking
+
+```bash
+bunx tsc --noEmit
+```
+
+### Database Workflow
+
+```bash
+bun run db:generate
+bun run db:push
+bun run db:studio
+```
+
+### Native macOS Effects
+
+```bash
+bun run build:native-effects
+```
+
+If native libraries are missing, the app logs a warning and continues with
+fallback behavior.
+
+These effects are optional and do not affect normal app functionality on
+Windows or Linux.
+
+### Project Structure
+
+- src/bun/: Main process, tray, window management, RPC, storage.
+- src/mainview/: Svelte renderer app and pages.
+- src/shared/: Shared types for main and renderer communication.
+- native/macos/: Objective-C++ native window effects.
+- scripts/: Build helper scripts.
+- drizzle/: Migration files.
+
+## Troubleshooting
+
+- Native dylib missing:
+  Run bun run build:native-effects.
+- HMR not updating in secondary windows:
+  Verify dev windows use http://localhost:5173/... URLs.
+- Weak vibrancy:
+  Check macOS Accessibility setting Reduce transparency.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
