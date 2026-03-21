@@ -36,42 +36,6 @@ export function readCachedAgents(): AgentStatus[] | null {
   }
 }
 
-/** Write agent definitions to localStorage. */
-export function writeCachedAgents(agents: Agent[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
-  } catch {
-    /* localStorage unavailable */
-  }
-}
-
-/** Write status info to localStorage. */
-export function writeCachedStatuses(statuses: AgentStatusInfo[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
-  } catch {
-    /* localStorage unavailable */
-  }
-}
-
-/** Add or update one status entry in localStorage. */
-export function upsertCachedStatus(status: AgentStatusInfo): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_STATUSES);
-    const statuses: AgentStatusInfo[] = raw ? JSON.parse(raw) : [];
-    const index = statuses.findIndex((s) => s.id === status.id);
-    if (index >= 0) {
-      statuses[index] = status;
-    } else {
-      statuses.push(status);
-    }
-    localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
-    notifyCacheListeners();
-  } catch {
-    /* localStorage unavailable */
-  }
-}
-
 /**
  * Write merged agent+status data to localStorage (split into both keys).
  * Called by the syncAgents handler in both windows.
@@ -104,24 +68,6 @@ export function syncAgentsToCacheWithOptions(
     if (options?.notifyListeners !== false) {
       notifyCacheListeners();
     }
-  } catch {
-    /* localStorage unavailable */
-  }
-}
-
-/** Add or update a single agent in the cached agents list. */
-export function updateCachedAgent(agent: Agent): void {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY_AGENTS);
-    const agents: Agent[] = stored ? JSON.parse(stored) : [];
-    const index = agents.findIndex((a) => a.id === agent.id);
-    if (index >= 0) {
-      agents[index] = agent;
-    } else {
-      agents.push(agent);
-    }
-    localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
-    notifyCacheListeners();
   } catch {
     /* localStorage unavailable */
   }

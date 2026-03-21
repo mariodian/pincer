@@ -1,19 +1,19 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
-import {
-  mergeAgentsWithStatuses,
-  sortAgentsByStatus,
-} from "../shared/agent-helpers";
+import { sortAgentsByStatus } from "../shared/agent-helpers";
 import { AgentStatusInfo } from "../shared/types";
 import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
+import {
+  initStatusSyncService,
+  getStatusSyncService,
+} from "./utils/agentSync";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
 import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
 import { navigateMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { broadcastSyncAgents } from "./utils/windowBroadcaster";
 import { applyMacOSWindowEffects, readWindowConfig } from "./windowService";
 
 const platformIsMacOS = isMacOS();
@@ -56,7 +56,6 @@ const NAV_MENU_ITEMS = [
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
-let agentStatusMap: Map<number, AgentStatusInfo> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;
 
@@ -65,14 +64,10 @@ let statusUpdatesStarted = false;
  * and optionally refresh the native tray menu.
  */
 async function refreshAndPush(updateMenu = true) {
+  const sync = getStatusSyncService();
   const statuses = await checkAllAgentsStatus();
-  statuses.forEach((status) => {
-    agentStatusMap.set(status.id, status);
-  });
-  await pushAgentsToAllWindows(statuses);
-  if (updateMenu && NATIVE_MENU) {
-    updateTrayMenu();
-  }
+  sync.updateStatusMap(statuses);
+  await sync.sync({ updateMenu: updateMenu && NATIVE_MENU });
 }
 
 /**
@@ -146,6 +141,7 @@ export async function initializeTray() {
         // Clear reference when closed
         popoverWindow.on("close", () => {
           popoverWindow = null;
+          getStatusSyncService().setPopoverWindow(null);
         });
       }
     } else if (
@@ -165,9 +161,9 @@ export async function initializeTray() {
       tray?.setTitle(` - Refreshing...`);
       try {
         const statuses = await checkAllAgentsStatus();
-        statuses.forEach((status) => {
-          agentStatusMap.set(status.id, status);
-        });
+        const sync = getStatusSyncService();
+        sync.updateStatusMap(statuses);
+        await sync.sync({ updateMenu: false });
         updateTrayMenu();
         tray?.setTitle(` - Updated!`);
         setTimeout(() => tray?.setTitle(``), 2000);
@@ -189,6 +185,15 @@ export async function initializeTray() {
     updateTrayMenu();
   }
 
+  // Initialize the status sync service
+  initStatusSyncService({
+    getMainWindow,
+    onMenuUpdate: () => {
+      if (NATIVE_MENU) updateTrayMenu();
+    },
+  });
+  getStatusSyncService().setPopoverWindow(popoverWindow);
+
   // Register popover refresh callback
   setRefreshCallback(() => refreshAndPush());
 
@@ -204,14 +209,18 @@ export async function updateTrayMenu() {
 
   try {
     const agents = await readAgents();
+    const sync = getStatusSyncService();
 
-    const agentsWithStatus = agents.map((agent) => ({
-      ...agent,
-      status: (agentStatusMap.get(agent.id)?.status ?? "offline") as
-        | "ok"
-        | "offline"
-        | "error",
-    }));
+    const agentsWithStatus = agents.map((agent) => {
+      const status = sync.getAgentStatus(agent.id);
+      return {
+        ...agent,
+        status: (status?.status ?? "offline") as
+          | "ok"
+          | "offline"
+          | "error",
+      };
+    });
 
     const sortedAgents = sortAgentsByStatus(agentsWithStatus);
 
@@ -219,7 +228,7 @@ export async function updateTrayMenu() {
 
     // Add agent items
     for (const agent of sortedAgents) {
-      const errorMessage = agentStatusMap.get(agent.id)?.errorMessage;
+      const errorMessage = sync.getAgentStatus(agent.id)?.errorMessage;
 
       let label = agent.name;
       let tooltip = `${agent.name}: ${agent.url}:${agent.port}`;
@@ -285,28 +294,13 @@ export async function updateTrayMenu() {
   }
 }
 
-async function pushAgentsToAllWindows(statuses: AgentStatusInfo[]) {
-  const agents = await readAgents();
-  const merged = mergeAgentsWithStatuses(agents, statuses);
-
-  await broadcastSyncAgents(merged, {
-    popoverWindow,
-    mainWindow: getMainWindow(),
-  });
-}
-
+/**
+ * Push current known statuses to all windows and optionally update menu.
+ * @deprecated Use StatusSyncService.sync() directly for more control
+ */
 export async function syncAgentsFromKnownStatuses(updateMenu = true) {
-  const agents = await readAgents();
-  const merged = mergeAgentsWithStatuses(
-    agents,
-    Array.from(agentStatusMap.values()),
-  );
-
-  await broadcastSyncAgents(merged, {
-    popoverWindow,
-    mainWindow: getMainWindow(),
-  });
-
+  const sync = getStatusSyncService();
+  await sync.pushKnownStatuses();
   if (updateMenu && NATIVE_MENU) {
     updateTrayMenu();
   }
@@ -315,70 +309,24 @@ export async function syncAgentsFromKnownStatuses(updateMenu = true) {
 /**
  * Push a single agent's status to all windows immediately (bypasses polling).
  * Used after toggling enabled state so the UI dot updates without waiting.
+ * @deprecated Use StatusSyncService.pushOneStatus() directly
  */
 export async function pushOneStatusToWindows(
   status: AgentStatusInfo,
 ): Promise<void> {
-  const agents = await readAgents();
-  agentStatusMap.set(status.id, status);
-  const merged = mergeAgentsWithStatuses(
-    agents,
-    Array.from(agentStatusMap.values()),
-  );
-
-  await broadcastSyncAgents(
-    merged,
-    {
-      popoverWindow,
-      mainWindow: getMainWindow(),
-    },
-    {
-      mainWindowRetryAttempts: 4,
-      mainWindowRetryDelayMs: 120,
-    },
-  );
-
-  if (NATIVE_MENU) {
-    updateTrayMenu();
-  }
+  const sync = getStatusSyncService();
+  await sync.pushOneStatus(status);
 }
 
 /**
  * Mark an agent as offline immediately without making an HTTP request.
  * Used when an agent is disabled so the UI dot turns gray right away.
+ * @deprecated Use StatusSyncService.markOffline() + sync() directly
  */
 export async function pushOfflineStatusToWindows(id: number): Promise<void> {
-  const agents = await readAgents();
-
-  const offlineStatus: AgentStatusInfo = {
-    id,
-    status: "offline",
-    lastChecked: Date.now(),
-    errorMessage: undefined,
-  };
-
-  agentStatusMap.set(id, offlineStatus);
-
-  const merged = mergeAgentsWithStatuses(
-    agents,
-    Array.from(agentStatusMap.values()),
-  );
-
-  await broadcastSyncAgents(
-    merged,
-    {
-      popoverWindow,
-      mainWindow: getMainWindow(),
-    },
-    {
-      mainWindowRetryAttempts: 4,
-      mainWindowRetryDelayMs: 120,
-    },
-  );
-
-  if (NATIVE_MENU) {
-    updateTrayMenu();
-  }
+  const sync = getStatusSyncService();
+  sync.markAgentOffline(id);
+  await sync.sync({ updateMenu: NATIVE_MENU });
 }
 
 /**
@@ -446,6 +394,5 @@ export function cleanupTray() {
     tray = null;
   }
 
-  agentStatusMap.clear();
   statusUpdatesStarted = false;
 }

@@ -3,10 +3,7 @@ import { BrowserView } from "electrobun/bun";
 import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
 import { AgentStatusInfo } from "../../shared/types";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
-import {
-  pushOfflineStatusToWindows,
-  pushOneStatusToWindows,
-} from "../trayManager";
+import { getStatusSyncService } from "../utils/agentSync";
 import {
   addAgent,
   Agent,
@@ -108,11 +105,13 @@ export const agentRequestHandlers = {
       statusShape,
     });
 
+    const sync = getStatusSyncService();
     if (result.enabled === false) {
-      await pushOfflineStatusToWindows(result.id);
+      sync.markAgentOffline(result.id);
+      await sync.sync();
     } else {
       const status = await checkOneAgentStatus(result.id);
-      if (status) await pushOneStatusToWindows(status);
+      if (status) await sync.pushOneStatus(status);
     }
 
     if (onAgentMutation) onAgentMutation();
@@ -122,14 +121,16 @@ export const agentRequestHandlers = {
     const result = await updateAgent(id, updates);
 
     if (result) {
+      const sync = getStatusSyncService();
       if (updates.enabled === false) {
-        await pushOfflineStatusToWindows(id);
+        sync.markAgentOffline(id);
+        await sync.sync();
       } else if (
         updates.enabled === true ||
         shouldTriggerHealthCheck(updates)
       ) {
         const status = await checkOneAgentStatus(id);
-        if (status) await pushOneStatusToWindows(status);
+        if (status) await sync.pushOneStatus(status);
       }
     }
 

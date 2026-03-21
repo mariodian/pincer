@@ -1,6 +1,7 @@
 // Agents Service - Handles agent CRUD and health checking
 import { agentStorage } from "./storage";
 import type { Agent, AgentStatus, AgentStatusInfo } from "../shared/types";
+import { normalizeUrl } from "../shared/agent-helpers";
 import {
   readConfig as readConfigFromDb,
   writeConfig as writeConfigToDb,
@@ -173,10 +174,7 @@ export function resolveHealthConfig(
   timeout: number;
   parseStatus: StatusParser;
 } {
-  let baseUrl = agent.url.replace(/\/+$/, "");
-  if (!baseUrl.match(/^https?:\/\//)) {
-    baseUrl = `http://${baseUrl}`;
-  }
+  const baseUrl = normalizeUrl(agent.url);
 
   const agentType = getAgentType(agent.type);
   const endpoint = agent.healthEndpoint ?? agentType?.healthEndpoint ?? "/health";

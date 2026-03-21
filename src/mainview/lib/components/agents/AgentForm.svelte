@@ -3,9 +3,8 @@
   import { Input } from "$lib/components/ui/input/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
-  import { updateCachedAgent, upsertCachedStatus } from "$lib/utils/storage";
-  import { shouldTriggerHealthCheck } from "$shared/agent-helpers";
-  import type { Agent, AgentStatusInfo } from "$shared/types";
+  import { normalizeUrl } from "$shared/agent-helpers";
+  import type { Agent } from "$shared/types";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
 
@@ -45,7 +44,7 @@
     return {
       type,
       name: name.trim(),
-      url: url.trim().replace(/\/+$/, ""),
+      url: normalizeUrl(url),
       port: parseInt(port, 10),
       enabled,
       healthEndpoint: isCustom ? healthEndpoint.trim() || "/health" : undefined,
@@ -132,12 +131,9 @@
     if (!url.trim()) {
       newErrors.url = "URL is required";
     } else {
-      let validationUrl = url.trim();
-      if (!validationUrl.match(/^https?:\/\//)) {
-        validationUrl = `http://${validationUrl}`;
-      }
       try {
-        const parsed = new URL(validationUrl);
+        const normalized = normalizeUrl(url);
+        const parsed = new URL(normalized);
         if (!["http:", "https:"].includes(parsed.protocol)) {
           newErrors.url = "URL must use http or https";
         }
@@ -178,8 +174,6 @@
       const rpc = getMainRPC();
       const agentData = buildNormalizedPayload();
 
-      let result: Agent | null = null;
-
       if (isEdit && agentId) {
         const initial = initialEditSnapshot ?? agentData;
         const updates = buildChangedFields(initial, agentData);
@@ -189,53 +183,12 @@
           return;
         }
 
-        result = await rpc.request.updateAgent([agentId, updates]);
-
-        if (result) {
-          if (updates.enabled === false) {
-            upsertCachedStatus({
-              id: result.id,
-              status: "offline",
-              lastChecked: Date.now(),
-              errorMessage: undefined,
-            });
-          } else if (
-            updates.enabled === true ||
-            shouldTriggerHealthCheck(updates)
-          ) {
-            const freshStatus: AgentStatusInfo | null =
-              await rpc.request.checkOneAgentStatus(result.id);
-            if (freshStatus) {
-              upsertCachedStatus(freshStatus);
-            }
-          }
-        }
+        await rpc.request.updateAgent([agentId, updates]);
       } else {
-        result = await rpc.request.addAgent(agentData);
-
-        if (result) {
-          if (result.enabled === false) {
-            upsertCachedStatus({
-              id: result.id,
-              status: "offline",
-              lastChecked: Date.now(),
-              errorMessage: undefined,
-            });
-          } else {
-            const freshStatus: AgentStatusInfo | null =
-              await rpc.request.checkOneAgentStatus(result.id);
-            if (freshStatus) {
-              upsertCachedStatus(freshStatus);
-            }
-          }
-        }
+        await rpc.request.addAgent(agentData);
       }
 
-      // Update localStorage cache so the agent list shows changes immediately
-      if (result) {
-        updateCachedAgent(result);
-      }
-
+      // Status sync is handled by main process via StatusSyncService
       onNavigate("/agents");
     } catch (error) {
       console.error("Failed to save agent:", error);

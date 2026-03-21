@@ -1,5 +1,17 @@
 import type { Agent, AgentStatus, AgentStatusInfo } from "./types";
 
+/**
+ * Normalize a URL by stripping trailing slashes and ensuring http:// prefix.
+ * Handles both bare hostnames (example.com) and full URLs (http://example.com/).
+ */
+export function normalizeUrl(url: string): string {
+  let normalized = url.trim().replace(/\/+$/, "");
+  if (!normalized.match(/^https?:\/\//)) {
+    normalized = `http://${normalized}`;
+  }
+  return normalized;
+}
+
 /** Fields whose change should trigger an immediate health check. */
 export const HEALTH_AFFECTING_FIELDS = [
   "url",
