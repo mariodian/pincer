@@ -27,6 +27,10 @@
           params: Record<string, never>;
           response: PopoverAgentStatus[];
         };
+        requestRefresh: {
+          params: Record<string, never>;
+          response: boolean;
+        };
         openMainWindow: {
           params: { page: string };
           response: boolean;
@@ -110,8 +114,8 @@
     });
   }
 
-  async function loadAgents() {
-    // Try localStorage first for instant display
+  function loadAgents() {
+    // Read from localStorage — data is pushed via syncAgents by trayManager
     try {
       const storedAgents = localStorage.getItem(STORAGE_KEY_AGENTS);
       const storedStatuses = localStorage.getItem(STORAGE_KEY_STATUSES);
@@ -127,26 +131,9 @@
             errorMessage: statusMap.get(agent.id)?.errorMessage,
           })),
         );
-        loading = false;
       }
     } catch {
       /* localStorage unavailable */
-    }
-
-    // Fetch fresh data from main process
-    try {
-      const freshAgents = await rpc.request.checkAllAgentsStatus({});
-      agents = sortAgents(freshAgents);
-
-      // Write to localStorage directly (no injection needed)
-      localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(
-        freshAgents.map(({ status, lastChecked, errorMessage, ...agent }) => agent)
-      ));
-      localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(
-        freshAgents.map(({ id, status, lastChecked, errorMessage }) => ({ id, status, lastChecked, errorMessage }))
-      ));
-    } catch (error) {
-      console.error("Failed to load agents:", error);
     } finally {
       loading = false;
     }
@@ -154,9 +141,6 @@
 
   $effect(() => {
     loadAgents();
-    const handler = () => loadAgents();
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
   });
 
   $effect(() => {
@@ -168,10 +152,9 @@
   async function handleRefresh() {
     isRefreshing = true;
     try {
-      await rpc.request.checkAllAgentsStatus({});
-      await loadAgents();
+      await rpc.request.requestRefresh({});
     } finally {
-      isRefreshing = false;
+      setTimeout(() => { isRefreshing = false; }, 500);
     }
   }
 

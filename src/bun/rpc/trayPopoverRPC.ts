@@ -1,24 +1,28 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
-import { checkAllAgentsStatus, readAgents } from "../agentService";
+import { readAgents } from "../agentService";
 import { getMainWindow } from "./windowRegistry";
 import { getViewUrl, stripHash } from "../utils/url";
 import type { TrayPopoverRPCType } from "../../shared/rpc";
 
-/** Fetch all agents enriched with their latest status. */
+type RefreshCallback = () => void;
+let onRefreshRequested: RefreshCallback | null = null;
+
+/** Register a callback for when the popover requests a refresh. */
+export function setRefreshCallback(cb: RefreshCallback) {
+  onRefreshRequested = cb;
+}
+
+/** Fetch all agents without triggering live status checks.
+ *  Status data is pushed to the popover via syncAgents from trayManager. */
 async function getAgentsWithStatus() {
-  const statuses = await checkAllAgentsStatus();
   const agents = await readAgents();
-  const statusMap = new Map(statuses.map((s) => [s.id, s]));
-  return agents.map((agent) => {
-    const status = statusMap.get(agent.id);
-    return {
-      ...agent,
-      status: status?.status ?? "offline",
-      lastChecked: status?.lastChecked ?? 0,
-      errorMessage: status?.errorMessage,
-    };
-  });
+  return agents.map((agent) => ({
+    ...agent,
+    status: "offline" as const,
+    lastChecked: 0,
+    errorMessage: undefined,
+  }));
 }
 
 export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
@@ -39,6 +43,12 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
       },
       quit: () => {
         Utils.quit();
+        return true;
+      },
+      requestRefresh: async () => {
+        if (onRefreshRequested) {
+          onRefreshRequested();
+        }
         return true;
       },
     },

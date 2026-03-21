@@ -2,7 +2,7 @@
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { checkAllAgentsStatus, readAgents, readConfig } from "./agentService";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
-import { trayPopoverRPC } from "./rpc/trayPopoverRPC";
+import { trayPopoverRPC, setRefreshCallback } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
 import { AgentStatusInfo } from "./storage/types";
 import { isMacOS } from "./utils/platform";
@@ -154,6 +154,22 @@ export async function initializeTray() {
     updateTrayMenu();
   }
 
+  // Register popover refresh callback
+  setRefreshCallback(async () => {
+    try {
+      const statuses = await checkAllAgentsStatus();
+      statuses.forEach((status) => {
+        agentStatusMap.set(status.id, status);
+      });
+      await pushAgentsToPopover(statuses);
+      if (NATIVE_MENU) {
+        updateTrayMenu();
+      }
+    } catch (error) {
+      console.error("Failed to refresh agent statuses:", error);
+    }
+  });
+
   // Start periodic status updates
   startStatusUpdates();
 }
@@ -257,10 +273,9 @@ export async function updateTrayMenu() {
  * Push merged agent+status data to the popover's localStorage via RPC.
  * No-op if the popover window doesn't exist yet.
  */
-async function pushAgentsToPopover() {
+async function pushAgentsToPopover(statuses: AgentStatusInfo[]) {
   if (!popoverWindow?.webview.rpc) return;
   try {
-    const statuses = await checkAllAgentsStatus();
     const agents = await readAgents();
     const statusMap = new Map(statuses.map((s) => [s.id, s]));
     const merged = agents.map((agent) => ({
@@ -294,7 +309,7 @@ async function startStatusUpdates() {
     statuses.forEach((status) => {
       agentStatusMap.set(status.id, status);
     });
-    await pushAgentsToPopover();
+    await pushAgentsToPopover(statuses);
     if (NATIVE_MENU) {
       updateTrayMenu();
     }
@@ -309,7 +324,7 @@ async function startStatusUpdates() {
       statuses.forEach((status) => {
         agentStatusMap.set(status.id, status);
       });
-      await pushAgentsToPopover();
+      await pushAgentsToPopover(statuses);
 
       // Update menu to reflect new statuses
       if (NATIVE_MENU) {

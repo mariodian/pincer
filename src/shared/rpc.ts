@@ -45,6 +45,10 @@ export type TrayPopoverRPCType = {
           errorMessage?: string;
         }[];
       };
+      requestRefresh: {
+        params: Record<string, never>;
+        response: boolean;
+      };
       openMainWindow: {
         params: { page: string };
         response: boolean;
