@@ -24,11 +24,14 @@
   let deletingId = $state<number | null>(null);
   let confirmDeleteId = $state<number | null>(null);
 
-  /** Load agents from localStorage cache. */
+  /** Load agents from localStorage cache, enforcing offline status for disabled agents. */
   function loadFromCache() {
     const cached = readCachedAgents();
     if (cached) {
-      agents = sortAgentsByStatus(cached);
+      const withForcedStatus = cached.map((a) =>
+        a.enabled === false ? { ...a, status: "offline" as const } : a,
+      );
+      agents = sortAgentsByStatus(withForcedStatus);
     }
   }
 
@@ -43,8 +46,8 @@
     loading = false;
 
     // Subscribe to backend sync pushes
-    onAgentSync(handleSync);
-    return () => offAgentSync(handleSync);
+    const key = onAgentSync(handleSync);
+    return () => offAgentSync(key);
   });
 
   function getStatusClass(status: string): string {

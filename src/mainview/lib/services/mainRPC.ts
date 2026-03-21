@@ -14,21 +14,32 @@ export type MainRPCType = {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let rpcInstance: any = null;
+// Module-level singleton — survives component unmount/remount within the same
+// renderer session. A Map instead of a Set allows stale callback refs (left
+// behind after HMR module replacement) to be cleaned up via delete().
+let rpcInstance: unknown = null;
 let initPromise: Promise<void> | null = null;
 
 type SyncCallback = () => void;
-const syncCallbacks = new Set<SyncCallback>();
+const syncCallbacks = new Map<string, SyncCallback>();
+let callbackKeyCounter = 0;
 
-/** Subscribe to agent data sync events (pushes from backend). */
-export function onAgentSync(callback: SyncCallback): void {
-  syncCallbacks.add(callback);
+/** Subscribe to agent data sync events. Returns the key to pass to offAgentSync. */
+export function onAgentSync(callback: SyncCallback): string {
+  const key = String(++callbackKeyCounter);
+  syncCallbacks.set(key, callback);
+  return key;
 }
 
-/** Unsubscribe from agent data sync events. */
-export function offAgentSync(callback: SyncCallback): void {
-  syncCallbacks.delete(callback);
+/** Unsubscribe using the key returned by onAgentSync. */
+export function offAgentSync(key: string): void {
+  syncCallbacks.delete(key);
+  // Purge any stale entries left by HMR module replacement.
+  for (const [k] of syncCallbacks) {
+    if (typeof (syncCallbacks.get(k)) !== "function") {
+      syncCallbacks.delete(k);
+    }
+  }
 }
 
 export function isInitialized(): boolean {
@@ -55,10 +66,13 @@ export async function initMainRPC(handlers: {
       handlers: {
         requests: {},
         messages: {
-          navigateTo: ({ params }) => handlers.navigateTo(params),
+          navigateTo: ({ params }: { params: { path: string } }) =>
+            handlers.navigateTo(params),
           syncAgents: ({ params }: { params: AgentStatus[] }) => {
             syncAgentsToCache(params);
-            syncCallbacks.forEach((cb) => cb());
+            for (const [, cb] of syncCallbacks) {
+              cb();
+            }
           },
         },
       },
