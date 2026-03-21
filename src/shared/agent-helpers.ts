@@ -39,13 +39,16 @@ export function mergeAgentsWithStatuses(
 }
 
 /**
- * Sort agents by status priority (ok first, error middle, offline last),
+ * Sort agents by enabled status (enabled first, disabled at bottom),
+ * then by status priority (ok first, error middle, offline last),
  * then alphabetically by name.
  */
-export function sortAgentsByStatus<T extends { status: string; name: string }>(
+export function sortAgentsByStatus<T extends { enabled?: boolean; status: string; name: string }>(
   list: T[],
 ): T[] {
   return [...list].sort((a, b) => {
+    const enabledDiff = Number(Boolean(b.enabled)) - Number(Boolean(a.enabled));
+    if (enabledDiff !== 0) return enabledDiff;
     const orderDiff = getStatusPriority(a.status) - getStatusPriority(b.status);
     if (orderDiff !== 0) return orderDiff;
     return a.name.localeCompare(b.name);
