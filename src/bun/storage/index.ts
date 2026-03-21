@@ -1,11 +1,11 @@
-import { JsonAgentStorage } from "./jsonStorage";
+import { SqliteAgentStorage } from "./sqlite/sqlStorage";
 import { AgentStorage } from "./backend";
 
 export type { AgentStorage } from "./backend";
-export { JsonAgentStorage } from "./jsonStorage";
+export { SqliteAgentStorage } from "./sqlite/sqlStorage";
 
 export function createAgentStorage(): AgentStorage {
-  return new JsonAgentStorage();
+  return new SqliteAgentStorage();
 }
 
-export const agentStorage: AgentStorage = new JsonAgentStorage();
+export const agentStorage: AgentStorage = new SqliteAgentStorage();

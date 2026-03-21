@@ -20,7 +20,7 @@ const NATIVE_MENU = !platformIsMacOS;
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
-let agentStatusMap: Map<string, AgentStatusInfo> = new Map();
+let agentStatusMap: Map<number, AgentStatusInfo> = new Map();
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 
 /**
@@ -159,7 +159,7 @@ export async function updateTrayMenu() {
     const agents = await readAgents();
 
     const sortedAgents = [...agents].sort((a, b) => {
-      const statusOrder = (id: string) => {
+      const statusOrder = (id: number) => {
         const s = agentStatusMap.get(id)?.status;
         if (s === "ok") return 0;
         if (s === "offline") return 2;

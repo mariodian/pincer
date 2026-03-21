@@ -1,10 +1,16 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
+  import { KEY_AGENTS, KEY_STATUSES } from "$bun/config";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
 
+  const suffix = window.location.hostname === "localhost" ? "_dev" : "";
+  const STORAGE_KEY_AGENTS = `${KEY_AGENTS}${suffix}`;
+  const STORAGE_KEY_STATUSES = `${KEY_STATUSES}${suffix}`;
+
   interface Agent {
-    id: string;
+    id: number;
+    type: string;
     name: string;
     url: string;
     port: number;
@@ -17,10 +23,16 @@
     errorMessage?: string;
   }
 
-  type AgentStatusInfo = Pick<
-    AgentStatus,
-    "id" | "status" | "lastChecked" | "errorMessage"
-  >;
+  type AgentStatusInfo = {
+    id: number;
+    name: string;
+    url: string;
+    port: number;
+    enabled?: boolean;
+    status: "ok" | "offline" | "error";
+    lastChecked: number;
+    errorMessage?: string;
+  };
 
   type AgentRPCType = {
     bun: {
@@ -102,12 +114,13 @@
   }
 
   async function loadAgents() {
+    // Try localStorage first for instant display
     try {
-      const storedAgents = localStorage.getItem("crabAgents");
-      const storedStatuses = localStorage.getItem("crabAgentStatuses");
+      const storedAgents = localStorage.getItem(STORAGE_KEY_AGENTS);
+      const storedStatuses = localStorage.getItem(STORAGE_KEY_STATUSES);
       if (storedAgents && storedStatuses) {
         const agentList: Agent[] = JSON.parse(storedAgents);
-        const statusList: AgentStatus[] = JSON.parse(storedStatuses);
+        const statusList: AgentStatusInfo[] = JSON.parse(storedStatuses);
         const statusMap = new Map(statusList.map((s) => [s.id, s]));
         agents = sortAgents(
           agentList.map((agent) => ({
@@ -118,41 +131,23 @@
           })),
         );
         loading = false;
-        return;
       }
     } catch {
-      /* fall through */
+      /* localStorage unavailable */
     }
 
-    loading = true;
+    // Fetch fresh data from main process
     try {
-      const storedAgents = localStorage.getItem("crabAgents");
-      if (storedAgents) {
-        const agentList: Agent[] = JSON.parse(storedAgents);
-        const statuses = await rpc.request.checkAllAgentsStatus({});
-        const statusMap = new Map(statuses.map((s) => [s.id, s]));
-        agents = sortAgents(
-          agentList.map((agent) => ({
-            ...agent,
-            status: statusMap.get(agent.id)?.status ?? "offline",
-            lastChecked: statusMap.get(agent.id)?.lastChecked ?? 0,
-            errorMessage: statusMap.get(agent.id)?.errorMessage,
-          })),
-        );
-      } else {
-        const statuses = await rpc.request.checkAllAgentsStatus({});
-        agents = sortAgents(
-          statuses.map((s) => ({
-            id: s.id,
-            name: "",
-            url: "",
-            port: 0,
-            status: s.status,
-            lastChecked: s.lastChecked,
-            errorMessage: s.errorMessage,
-          })) as AgentStatus[],
-        );
-      }
+      const freshAgents = await rpc.request.checkAllAgentsStatus({});
+      agents = sortAgents(freshAgents);
+
+      // Write to localStorage directly (no injection needed)
+      localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(
+        freshAgents.map(({ status, lastChecked, errorMessage, ...agent }) => agent)
+      ));
+      localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(
+        freshAgents.map(({ id, status, lastChecked, errorMessage }) => ({ id, status, lastChecked, errorMessage }))
+      ));
     } catch (error) {
       console.error("Failed to load agents:", error);
     } finally {

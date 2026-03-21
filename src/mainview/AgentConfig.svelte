@@ -2,7 +2,8 @@
   import { Electroview } from "electrobun/view";
 
   interface Agent {
-    id: string;
+    id: number;
+    type: string;
     name: string;
     url: string;
     port: number;
@@ -22,16 +23,20 @@
           params: Record<string, never>;
           response: Agent[];
         };
+        getAgentTypes: {
+          params: Record<string, never>;
+          response: { id: string; name: string }[];
+        };
         addAgent: {
           params: Omit<Agent, "id">;
           response: Agent;
         };
         updateAgent: {
-          params: [string, Partial<Agent>];
+          params: [number, Partial<Agent>];
           response: Agent | null;
         };
         deleteAgent: {
-          params: string;
+          params: number;
           response: boolean;
         };
         checkAllAgentsStatus: {
@@ -57,13 +62,23 @@
   new Electroview({ rpc });
 
   let agents = $state<Agent[]>([]);
-  let agentStatusMap = $state<Map<string, AgentStatus>>(new Map());
+  let agentStatusMap = $state<Map<number, AgentStatus>>(new Map());
+  let agentTypes = $state<{ id: string; name: string }[]>([]);
   let name = $state("");
+  let type = $state("generic");
   let url = $state("");
   let port = $state("");
-  let editingId = $state<string | null>(null);
+  let editingId = $state<number | null>(null);
   let statusMessage = $state("");
   let isLoading = $state(false);
+
+  async function loadAgentTypes() {
+    try {
+      agentTypes = await rpc.request.getAgentTypes({});
+    } catch (e) {
+      console.error("Error loading agent types:", e);
+    }
+  }
 
   async function loadAgents() {
     isLoading = true;
@@ -81,7 +96,7 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    if (!name || !url || !port) {
+    if (!name || !type || !url || !port) {
       statusMessage = "Please fill in all fields";
       return;
     }
@@ -104,7 +119,7 @@
           await loadAgents();
         }
       } else {
-        await rpc.request.addAgent({ name, url, port: portNum, enabled: true });
+        await rpc.request.addAgent({ type, name, url, port: portNum, enabled: true });
         statusMessage = "Agent added successfully";
         await loadAgents();
       }
@@ -120,18 +135,20 @@
   function resetForm() {
     editingId = null;
     name = "";
+    type = "generic";
     url = "";
     port = "";
   }
 
   function editAgent(agent: Agent) {
     editingId = agent.id;
+    type = agent.type;
     name = agent.name;
     url = agent.url;
     port = agent.port.toString();
   }
 
-  async function deleteAgent(id: string) {
+  async function deleteAgent(id: number) {
     if (!confirm("Are you sure you want to delete this agent?")) return;
     isLoading = true;
     try {
@@ -167,6 +184,7 @@
     }
   }
 
+  loadAgentTypes();
   loadAgents();
 </script>
 
@@ -188,6 +206,19 @@
         required
         disabled={isLoading}
       />
+    </div>
+    <div class="form-group">
+      <label for="agent-type">Type:</label>
+      <select
+        id="agent-type"
+        bind:value={type}
+        required
+        disabled={isLoading}
+      >
+        {#each agentTypes as agentType}
+          <option value={agentType.id}>{agentType.name}</option>
+        {/each}
+      </select>
     </div>
     <div class="form-group">
       <label for="agent-url">URL:</label>
@@ -229,6 +260,7 @@
         <tr>
           <th>Status</th>
           <th>Name</th>
+          <th>Type</th>
           <th>URL:Port</th>
           <th>Actions</th>
         </tr>
@@ -246,6 +278,7 @@
               </span>
             </td>
             <td>{agent.name}</td>
+            <td>{agent.type}</td>
             <td>{agent.url}:{agent.port}</td>
             <td class="agent-actions">
               <button

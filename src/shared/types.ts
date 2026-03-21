@@ -1,6 +1,7 @@
 // Shared types for RPC communication
 export interface Agent {
-  id: string;
+  id: number;
+  type: string;
   name: string;
   url: string;
   port: number;

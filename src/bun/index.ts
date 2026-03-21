@@ -1,5 +1,5 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
-import { checkAllAgentsStatus, readAgents } from "./agentService";
+import { checkAllAgentsStatus, initDatabase, readAgents } from "./agentService";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { systemRPC } from "./rpc/systemRPC";
 import { cleanupTray, initializeTray } from "./trayManager";
@@ -16,6 +16,9 @@ declare global {
     platform: string;
   }
 }
+
+// Initialize database before any other operations
+await initDatabase();
 
 const agents = await readAgents();
 const statuses = await checkAllAgentsStatus();
