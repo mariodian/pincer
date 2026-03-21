@@ -1,7 +1,12 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
+  import { KEY_AGENTS, KEY_STATUSES } from "$bun/config";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
+
+  const suffix = window.location.hostname === "localhost" ? "_dev" : "";
+  const STORAGE_KEY_AGENTS = `${KEY_AGENTS}${suffix}`;
+  const STORAGE_KEY_STATUSES = `${KEY_STATUSES}${suffix}`;
 
   interface Agent {
     id: number;
@@ -104,8 +109,8 @@
 
   async function loadAgents() {
     try {
-      const storedAgents = localStorage.getItem("crabAgents");
-      const storedStatuses = localStorage.getItem("crabAgentStatuses");
+      const storedAgents = localStorage.getItem(STORAGE_KEY_AGENTS);
+      const storedStatuses = localStorage.getItem(STORAGE_KEY_STATUSES);
       if (storedAgents && storedStatuses) {
         const agentList: Agent[] = JSON.parse(storedAgents);
         const statusList: AgentStatus[] = JSON.parse(storedStatuses);
@@ -127,7 +132,7 @@
 
     loading = true;
     try {
-      const storedAgents = localStorage.getItem("crabAgents");
+      const storedAgents = localStorage.getItem(STORAGE_KEY_AGENTS);
       if (storedAgents) {
         const agentList: Agent[] = JSON.parse(storedAgents);
         const statuses = await rpc.request.checkAllAgentsStatus({});
