@@ -1,10 +1,10 @@
 import {
   index,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
-  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -31,7 +31,6 @@ export const config = sqliteTable("config", {
 export const stats = sqliteTable(
   "stats",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
     agentId: integer("agent_id").notNull(),
     hourTimestamp: integer("hour_timestamp").notNull(),
     totalChecks: integer("total_checks").notNull(),
@@ -42,7 +41,7 @@ export const stats = sqliteTable(
     avgResponseMs: real("avg_response_ms").notNull(),
   },
   (table) => [
-    uniqueIndex("idx_stats_agent_hour").on(table.agentId, table.hourTimestamp),
+    primaryKey({ columns: [table.agentId, table.hourTimestamp] }),
     index("idx_stats_hour").on(table.hourTimestamp),
   ],
 );
