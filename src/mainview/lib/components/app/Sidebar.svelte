@@ -8,8 +8,11 @@
     SettingsIcon,
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
+  import packageJson from "../../../../../package.json";
   import NavMain from "./NavMain.svelte";
   import NavSecondary from "./NavSecondary.svelte";
+
+  const appVersion = packageJson.version;
 
   const menuItems = {
     navMain: [
@@ -24,25 +27,39 @@
   <Sidebar.Header>
     <Sidebar.Menu>
       <Sidebar.MenuItem>
-        <Sidebar.MenuButton size="lg">
-          {#snippet child({ props })}
-            <a href="##" {...props}>
-              <div
-                class={[
-                  "flex items-center justify-center",
-                  "bg-sidebar-primary",
-                  "text-sidebar-primary-foreground",
-                  "aspect-square size-8 rounded-lg",
-                ]}
-              >
-                <HugeiconsIcon icon={CrabIcon} strokeWidth={2} />
-              </div>
-              <div class="flex flex-col gap-0.5 leading-none">
-                <span class="font-medium">{APP_NAME}</span>
-              </div>
-            </a>
-          {/snippet}
-        </Sidebar.MenuButton>
+        <div
+          class={[
+            "flex w-full items-center gap-2 h-12 p-2",
+            "h-12 text-sm ",
+            "overflow-hidden outline-hidden",
+            "transition-[width,height,padding]",
+            "group-data-[collapsible=icon]:p-0!",
+          ]}
+        >
+          <div
+            class={[
+              "flex items-center justify-center",
+              "bg-sidebar-primary",
+              "text-sidebar-primary-foreground",
+              "transition-[width,height,padding]",
+              "aspect-square rounded-lg",
+              "size-10 group-data-[collapsible=icon]:size-8!",
+            ]}
+          >
+            <HugeiconsIcon
+              icon={CrabIcon}
+              strokeWidth={2}
+              class={[
+                "transition-[width,height,padding]",
+                "group-data-[collapsible=icon]:size-4!",
+              ].join(" ")}
+            />
+          </div>
+          <div class="flex flex-col gap-0.2 leading-none">
+            <span class=" font-bold text-base">{APP_NAME}</span>
+            <span class="text-xs text-black/50">v{appVersion}</span>
+          </div>
+        </div>
       </Sidebar.MenuItem>
     </Sidebar.Menu>
   </Sidebar.Header>
