@@ -1,9 +1,8 @@
 // Agent RPC - Shared RPC definition for agent management
-import { STATUS_SHAPE_OPTIONS } from "$bun/agentTypes";
-import { getStatusSyncService } from "$bun/services/statusSyncService";
-import { shouldTriggerHealthCheck } from "$shared/agent-helpers";
-import { AgentStatusInfo } from "$shared/types";
 import { BrowserView } from "electrobun/bun";
+import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
+import { AgentStatusInfo } from "../../shared/types";
+import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 import {
   addAgent,
   Agent,
@@ -15,6 +14,7 @@ import {
   readAgents,
   updateAgent,
 } from "../services/agentService";
+import { getStatusSyncService } from "../services/statusSyncService";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;

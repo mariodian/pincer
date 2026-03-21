@@ -1,13 +1,13 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
-import { POPOVER_WINDOW, TRAY_ICON_PATH } from "$bun/config";
-import { setAgentMutationCallback } from "$bun/rpc/agentRPC";
-import { setRefreshCallback, trayPopoverRPC } from "$bun/rpc/trayPopoverRPC";
-import { getMainWindow } from "$bun/rpc/windowRegistry";
-import { readAgents } from "$bun/services/agentService";
-import { refreshAndPush } from "$bun/services/statusService";
-import { sortAgentsByStatus } from "$shared/agent-helpers";
-import { AgentStatusInfo } from "$shared/types";
 import { BrowserWindow, Tray } from "electrobun/bun";
+import { sortAgentsByStatus } from "../shared/agent-helpers";
+import { AgentStatusInfo } from "../shared/types";
+import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
+import { setAgentMutationCallback } from "./rpc/agentRPC";
+import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
+import { getMainWindow } from "./rpc/windowRegistry";
+import { readAgents } from "./services/agentService";
+import { refreshAndPush } from "./services/statusService";
 import {
   getStatusSyncService,
   initStatusSyncService,
