@@ -3,7 +3,7 @@ import type { BrowserWindow } from "electrobun/bun";
 
 let mainWindowRef: BrowserWindow | null = null;
 
-export function setMainWindow(win: BrowserWindow): void {
+export function setMainWindow(win: BrowserWindow | null): void {
   mainWindowRef = win;
 }
 

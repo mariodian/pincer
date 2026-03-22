@@ -5,11 +5,13 @@ import { getDatabase } from "./db";
 export interface Config {
   pollingInterval: number;
   retentionDays: number;
+  openMainWindow: boolean;
 }
 
 const DEFAULT_CONFIG: Config = {
   pollingInterval: 30000,
   retentionDays: 90,
+  openMainWindow: true,
 };
 
 /**
@@ -53,6 +55,7 @@ export function readConfig(): Config {
     retentionDays:
       parseInt(getConfigValue("retentionDays") ?? "", 10) ||
       DEFAULT_CONFIG.retentionDays,
+    openMainWindow: getConfigValue("openMainWindow") === "1",
   };
 }
 
@@ -67,6 +70,10 @@ export function writeConfig(config: Partial<Config>): void {
   if (config.retentionDays !== undefined) {
     setConfigValue("retentionDays", String(config.retentionDays));
   }
+
+  if (config.openMainWindow !== undefined) {
+    setConfigValue("openMainWindow", String(config.openMainWindow));
+  }
 }
 
 /**
@@ -74,4 +81,18 @@ export function writeConfig(config: Partial<Config>): void {
  */
 export function getPollingInterval(): number {
   return readConfig().pollingInterval;
+}
+
+/**
+ * Get whether the main window should open at startup.
+ */
+export function getOpenMainWindow(): boolean {
+  return readConfig().openMainWindow;
+}
+
+/**
+ * Set whether the main window should open at startup.
+ */
+export function setOpenMainWindow(value: boolean): void {
+  setConfigValue("openMainWindow", String(value));
 }

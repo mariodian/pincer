@@ -10,6 +10,9 @@ export default {
     identifier: "com.mariodian.crabmonitor",
     version: packageJson.version,
   },
+  runtime: {
+    exitOnLastWindowClosed: false, // keep running when all windows are closed
+  },
   build: {
     // Vite builds to dist/, we copy from there
     copy: {

@@ -13,7 +13,7 @@ import {
   initStatusSyncService,
 } from "./services/statusSyncService";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
-import { navigateMainWindow } from "./utils/navigation";
+import { showMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
@@ -148,7 +148,7 @@ export async function initializeTray() {
           : action === "dashboard"
             ? ""
             : action;
-      await navigateMainWindow(route);
+      await showMainWindow(route);
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
       tray?.setTitle(` - Refreshing...`);

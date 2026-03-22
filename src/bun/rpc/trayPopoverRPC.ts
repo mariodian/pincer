@@ -1,7 +1,7 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
 import { readAgents } from "../services/agentService";
-import { navigateMainWindow } from "../utils/navigation";
+import { showMainWindow } from "../utils/navigation";
 import type { TrayPopoverRPCType } from "../../shared/rpc";
 
 type RefreshCallback = () => void;
@@ -30,7 +30,7 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
       getAgents: getAgentsWithStatus,
       checkAllAgentsStatus: getAgentsWithStatus,
       openMainWindow: async ({ page }) => {
-        await navigateMainWindow(page);
+        await showMainWindow(page);
         return true;
       },
       quit: () => {

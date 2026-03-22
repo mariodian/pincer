@@ -14,6 +14,7 @@ let sqliteInstance: Database | null = null;
 const DEFAULT_CONFIG = {
   pollingInterval: "30000",
   retentionDays: "90",
+  openMainWindow: "true",
 };
 
 function getMigrationDir(): string {
