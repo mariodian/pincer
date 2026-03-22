@@ -1,5 +1,6 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
+import { initLogger, logger } from "./services/loggerService";
 import { agentRequestHandlers } from "./rpc/agentRPC";
 import {
   setRendererReadyCallback,
@@ -95,6 +96,9 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   return mainWindow;
 }
 
+// Initialize logger first (reads channel, env vars, sets up file logging)
+await initLogger();
+
 // Initialize database before any other operations
 await initDatabase();
 
@@ -121,4 +125,4 @@ if (getSettings().openMainWindow) {
   await createMainWindow();
 }
 
-console.log("CrabControl started!");
+logger.info("app", "CrabControl started!");

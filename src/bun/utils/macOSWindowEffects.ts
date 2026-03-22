@@ -3,6 +3,7 @@ import { dlopen, FFIType, type Pointer } from "bun:ffi";
 import { BrowserWindow } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { logger } from "../services/loggerService";
 import type { WindowConfig, WindowName } from "./windowConfig";
 
 export type WindowAppearance = "system" | "light" | "dark";
@@ -60,7 +61,8 @@ function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
   const dylibPath = join(import.meta.dir, "libs", "libMacWindowEffects.dylib");
 
   if (!existsSync(dylibPath)) {
-    console.warn(
+    logger.warn(
+      "native",
       `Native macOS effects lib not found at ${dylibPath}. Falling back to transparent-only mode.`,
     );
     return null;
@@ -94,7 +96,7 @@ function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
       },
     }) as unknown as MacWindowEffectsLibrary;
   } catch (error) {
-    console.warn("Failed to load native macOS effects lib:", error);
+    logger.warn("native", "Failed to load native macOS effects lib:", error);
     return null;
   }
 
@@ -226,10 +228,11 @@ export function applyMacOSWindowEffects(
     // Initial alignment once the window is fully created and laid out.
     scheduleAlignMacOSControls(120);
 
-    console.log(
+    logger.info(
+      "native",
       `macOS effects applied (window=${windowName}, vibrancy=${vibrancyEnabled}, appearance=${appearanceEnabled}, shadow=${shadowEnabled}, trafficLights=${windowConfig.trafficLights}, nativeDrag=${windowConfig.nativeDragRegion}, theme=${windowAppearance})`,
     );
   } catch (error) {
-    console.warn("Failed to apply native macOS effects:", error);
+    logger.warn("native", "Failed to apply native macOS effects:", error);
   }
 }

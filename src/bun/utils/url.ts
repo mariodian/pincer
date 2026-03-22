@@ -1,4 +1,5 @@
 import { Updater } from "electrobun/bun";
+import { logger } from "../services/loggerService";
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
@@ -9,16 +10,13 @@ export async function getViewUrl(pagePath = "index.html"): Promise<string> {
   if (channel === "dev") {
     try {
       await fetch(DEV_SERVER_URL, { method: "HEAD" });
-      console.log(`HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`);
-      console.log(`View URL: ${DEV_SERVER_URL}/${pagePath}`);
+      logger.info("url", `HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`);
       return `${DEV_SERVER_URL}/${pagePath}`;
     } catch {
-      console.log(
-        "Vite dev server not running. Run 'bun run dev:hmr' for HMR support.",
-      );
+      logger.info("url", "Vite dev server not running. Run 'bun run dev:hmr' for HMR support.");
     }
   }
-  console.log(`View URL: views://mainview/${pagePath}`);
+  logger.debug("url", `View URL: views://mainview/${pagePath}`);
   return `views://mainview/${pagePath}`;
 }
 

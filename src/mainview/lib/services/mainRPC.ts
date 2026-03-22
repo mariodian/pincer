@@ -2,6 +2,7 @@ import type { AgentRPCType } from "$bun/rpc/agentRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import { syncAgentsToCache } from "$lib/utils/storage";
 import type { AgentStatus } from "$shared/types";
+import type { LogEntry } from "$shared/rpc";
 
 export type MainRPCType = {
   bun: {
@@ -27,6 +28,19 @@ let initPromise: Promise<void> | null = null;
 type SyncCallback = () => void;
 const syncCallbacks = new Map<string, SyncCallback>();
 let callbackKeyCounter = 0;
+
+// Log storage for pushed log entries (warn/error from main process)
+const logMessages: LogEntry[] = [];
+
+/** Get all pushed log messages. For future UI consumption. */
+export function getLogMessages(): readonly LogEntry[] {
+  return logMessages;
+}
+
+/** Clear all pushed log messages. */
+export function clearLogMessages(): void {
+  logMessages.length = 0;
+}
 
 /** Subscribe to agent data sync events. Returns the key to pass to offAgentSync. */
 export function onAgentSync(callback: SyncCallback): string {
@@ -87,6 +101,9 @@ export async function initMainRPC(handlers: {
             for (const [, cb] of syncCallbacks) {
               cb();
             }
+          }) as any,
+          pushLog: ((entry: LogEntry) => {
+            logMessages.push(entry);
           }) as any,
         },
       },

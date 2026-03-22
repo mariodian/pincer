@@ -88,10 +88,38 @@ import { agentsTable } from "./schema";               // Relative
 
 ### Error Handling
 
-- `try`/`catch` for all sync/async I/O; log context via `console.error()` before rethrowing
-- `console.warn()` for recoverable issues only (e.g., missing native library → graceful fallback)
+- `try`/`catch` for all sync/async I/O; log context via `logger.error()` before rethrowing
+- `logger.warn()` for recoverable issues only (e.g., missing native library → graceful fallback)
 - In native FFI bridging: check library existence before loading; never swallow errors
 - Use `error instanceof Error ? error.message : String(error)` for error messages
+
+### Logging
+
+Use `logger` from `src/bun/services/loggerService.ts` instead of raw `console.*` in the main process (`src/bun/`).
+
+```ts
+import { logger } from "./services/loggerService";
+
+logger.debug("component", "Detailed info for dev debugging");
+logger.info("component", "Notable event");
+logger.warn("component", "Recoverable issue:", error);
+logger.error("component", "Critical failure:", error);
+```
+
+**Channel behavior:**
+
+| Channel | Console | File (`userData/logs/app.log`) | Renderer RPC |
+|---------|---------|------|-------------|
+| `dev` | All levels | Off | Off |
+| `canary`/`stable` | Silent | All levels | warn + error |
+
+**Env var overrides** (set before `bun run dev`):
+
+```bash
+LOG_LEVEL=debug bun run dev          # override min log level (debug|info|warn|error)
+LOG_TO_FILE=true bun run dev         # force file logging even in dev
+LOG_LEVEL=warn LOG_TO_FILE=true bun run dev   # combine
+```
 
 ---
 
@@ -101,7 +129,7 @@ import { agentsTable } from "./schema";               // Relative
 src/
   bun/            Main process (Electrobun, FFI, native integration)
     rpc/          RPC method definitions & type maps
-    services/     Business logic (agentService, statusService, statusSyncService)
+    services/     Business logic (agentService, statusService, statusSyncService, loggerService)
     storage/      Storage abstraction → SQLite/Drizzle implementation
     utils/        Utilities (platform detection, native effects, window config)
   mainview/       Svelte UI renderer

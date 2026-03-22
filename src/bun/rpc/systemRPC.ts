@@ -39,6 +39,15 @@ export type SystemRPCType = {
     requests: Record<string, never>;
     messages: {
       navigateTo: { params: { path: string }; response: void };
+      pushLog: {
+        params: {
+          level: "warn" | "error";
+          component: string;
+          message: string;
+          timestamp: string;
+        };
+        response: void;
+      };
     };
   };
 };
@@ -72,6 +81,9 @@ export const systemRPC = BrowserView.defineRPC<SystemRPCType>({
     messages: {
       navigateTo: () => {
         // Navigation is handled in the webview (App.svelte)
+      },
+      pushLog: () => {
+        // Log push is handled in the webview (mainRPC.ts)
       },
     },
   },

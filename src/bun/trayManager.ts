@@ -7,6 +7,7 @@ import { setAgentMutationCallback } from "./rpc/agentRPC";
 import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
 import { readAgents } from "./services/agentService";
+import { logger } from "./services/loggerService";
 import { refreshAndPush } from "./services/statusService";
 import {
   getStatusSyncService,
@@ -76,7 +77,7 @@ export async function initializeTray() {
 
   // Set up click handler
   tray.on("tray-clicked", async (event: unknown) => {
-    console.log("Tray clicked event:", JSON.stringify(event));
+    logger.debug("tray", "Tray clicked event:", JSON.stringify(event));
     const action = (event as { data?: { action?: string } })?.data?.action;
 
     if (action === "") {
@@ -158,7 +159,7 @@ export async function initializeTray() {
         tray?.setTitle(` - Updated!`);
         setTimeout(() => tray?.setTitle(``), 2000);
       } catch (error) {
-        console.error("Failed to refresh agent statuses:", error);
+        logger.error("tray", "Failed to refresh agent statuses:", error);
         tray?.setTitle(` - Error!`);
         setTimeout(() => tray?.setTitle(``), 2000);
       }
@@ -166,7 +167,7 @@ export async function initializeTray() {
       // Agent menu item clicked
       const agentId = action.substring(6); // Remove "agent:" prefix
       // Could open agent URL or show details
-      console.log(`Agent clicked: ${agentId}`);
+      logger.debug("tray", `Agent clicked: ${agentId}`);
     }
   });
 
@@ -291,7 +292,7 @@ export async function updateTrayMenu() {
     // Set the menu
     tray.setMenu(menuItems);
   } catch (error) {
-    console.error("Failed to update tray menu:", error);
+    logger.error("tray", "Failed to update tray menu:", error);
 
     // Show error menu
     if (tray) {

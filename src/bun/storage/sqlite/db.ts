@@ -5,6 +5,7 @@ import { PATHS, Utils } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { logger } from "../../services/loggerService";
 import { ensureAppDataDir } from "../../utils/fs";
 import { settingsGeneral } from "./schema";
 
@@ -61,12 +62,12 @@ export async function initializeDatabase(): Promise<{
   const { db, sqlite } = getDatabase();
   const migrationDir = getMigrationDir();
 
-  console.log("Migration directory:", migrationDir);
+  logger.debug("db", "Migration directory:", migrationDir);
 
   // Run migrations if the drizzle migrations directory exists
   try {
     migrate(db, { migrationsFolder: migrationDir });
-    console.log("Database migrations applied successfully");
+    logger.info("db", "Database migrations applied successfully");
   } catch (error) {
     // Only ignore "missing journal" — that means no migrations exist yet
     // (first run with empty folder, or migrations not yet generated)
@@ -74,9 +75,9 @@ export async function initializeDatabase(): Promise<{
       error instanceof Error &&
       error.message.includes("Can't find meta/_journal.json file")
     ) {
-      console.log("No migration journal found, skipping migrations");
+      logger.info("db", "No migration journal found, skipping migrations");
     } else {
-      console.error("Migration error:", error);
+      logger.error("db", "Migration error:", error);
       throw error;
     }
   }
@@ -88,7 +89,7 @@ export async function initializeDatabase(): Promise<{
       .onConflictDoNothing()
       .run();
   } catch (error) {
-    console.warn("Failed to seed settings_general:", error);
+    logger.warn("db", "Failed to seed settings_general:", error);
   }
 
   // Start the pruning job
@@ -119,8 +120,8 @@ async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
 
     db.run(`DELETE FROM stats WHERE hour_timestamp < ${cutoffTimestamp}`);
 
-    console.log(`Pruned stats older than ${retentionDays} days`);
+    logger.info("db", `Pruned stats older than ${retentionDays} days`);
   } catch (error) {
-    console.warn("Failed to prune old stats:", error);
+    logger.warn("db", "Failed to prune old stats:", error);
   }
 }

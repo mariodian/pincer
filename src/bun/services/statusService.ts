@@ -1,4 +1,5 @@
 // Status Service - Centralized status polling for agent monitoring
+import { logger } from "./loggerService";
 import { checkAllAgentsStatus } from "./agentService";
 import { getSettings } from "../storage/sqlite/settingsRepo";
 import {
@@ -36,7 +37,7 @@ async function startStatusUpdates() {
   try {
     await refreshAndPush();
   } catch (error) {
-    console.error("Failed to update agent statuses:", error);
+    logger.error("status", "Failed to update agent statuses:", error);
   }
 
   // Start periodic updates
@@ -44,7 +45,7 @@ async function startStatusUpdates() {
     try {
       await refreshAndPush();
     } catch (error) {
-      console.error("Failed to update agent statuses:", error);
+      logger.error("status", "Failed to update agent statuses:", error);
     }
   }, interval);
 }

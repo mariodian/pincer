@@ -1,5 +1,6 @@
 import type { BrowserWindow } from "electrobun/bun";
 import type { AgentStatus } from "../../shared/types";
+import { logger } from "../services/loggerService";
 
 type BroadcastTargets = {
   popoverWindow?: BrowserWindow | null;
@@ -71,7 +72,7 @@ async function sendSyncAgentsWithRetry(
   }
 
   if (lastError && options?.warnOnFailure !== false) {
-    console.warn(`Failed to push agents to ${label}:`, lastError);
+    logger.warn("broadcast", `Failed to push agents to ${label}:`, lastError);
   }
 }
 

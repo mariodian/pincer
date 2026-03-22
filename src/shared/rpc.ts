@@ -1,6 +1,13 @@
 // Shared RPC types for tray popover
 import type { AgentStatus } from "./types";
 
+export type LogEntry = {
+  level: "warn" | "error";
+  component: string;
+  message: string;
+  timestamp: string;
+};
+
 export type MainWindowRPCType = {
   bun: {
     requests: Record<string, never>;
@@ -11,6 +18,10 @@ export type MainWindowRPCType = {
     messages: {
       navigateTo: {
         params: { path: string };
+        response: void;
+      };
+      pushLog: {
+        params: LogEntry;
         response: void;
       };
     };
