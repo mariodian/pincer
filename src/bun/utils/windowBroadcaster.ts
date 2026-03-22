@@ -36,11 +36,17 @@ async function sendSyncAgentsWithRetry(
   attempts = 1,
   retryDelayMs = 0,
   options?: SendOptions,
+  getWindow?: () => unknown,
 ): Promise<void> {
   let lastError: unknown = null;
 
   for (let i = 0; i < attempts; i += 1) {
     try {
+      // If the window doesn't exist at all, skip silently
+      if (getWindow && !getWindow()) {
+        return;
+      }
+
       const rpc = getRpc() as {
         send?: { syncAgents?: (data: AgentStatus[]) => void };
       } | null;
@@ -95,5 +101,6 @@ export async function broadcastSyncAgents(
     {
       warnOnFailure: true,
     },
+    () => targets.mainWindow,
   );
 }

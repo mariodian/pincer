@@ -101,6 +101,9 @@ await initDatabase();
 // Initialize tray icon
 await initializeTray();
 
+// Hide dock icon immediately — shown later only if main window is created
+Utils.setDockIconVisible(false);
+
 setRendererReadyCallback(({ view }) => {
   if (view === "main") {
     void syncAgentsFromKnownStatuses(false);
@@ -114,6 +117,7 @@ void beginStatusUpdates();
 
 // Conditionally create the main window on startup
 if (getSettings().openMainWindow) {
+  Utils.setDockIconVisible(true);
   await createMainWindow();
 }
 
