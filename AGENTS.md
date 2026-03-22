@@ -21,6 +21,76 @@
 
 ---
 
+## Database Migrations
+
+The project uses **Drizzle ORM** with SQLite. The app runs `migrate()` on startup, applying any pending migration files automatically.
+
+### Creating a new migration
+
+```bash
+# 1. Sync dev.db baseline (copy real DB if dev.db is stale or missing)
+cp ~/Library/Application\ Support/com.mariodian.crabmonitor/dev/app.db ./drizzle/dev.db
+
+# 2. Make schema changes to src/bun/storage/sqlite/schema.ts
+
+# 3. Generate migration (drizzle-kit diffs schema.ts against dev.db)
+bun run db:generate
+
+# 4. Apply to real DB (run the app)
+bun run dev
+
+# 5. Re-sync dev.db for next round
+cp ~/Library/Application\ Support/com.mariodian.crabmonitor/dev/app.db ./drizzle/dev.db
+```
+
+`drizzle/dev.db` is in `.gitignore` — it's a local artifact used only for generating migrations.
+
+### Data migrations (moving data between tables)
+
+`drizzle-kit generate` only produces DDL (CREATE/DROP/ALTER). If a migration
+needs to move data between tables (e.g. replacing a KV table with typed columns):
+
+1. Let `drizzle-kit generate` create the migration (correct hashes + journal)
+2. Edit the generated `.sql` file:
+   - Add INSERT/UPDATE statements for data migration (between CREATE and DROP)
+   - Use `WHERE EXISTS` guards so the migration works on both upgrade and fresh install
+3. Test on a copy of the real database before deploying
+
+Example pattern (replacing a key-value `config` table with typed `settings_general`):
+
+```sql
+CREATE TABLE `settings_general` (...);
+--> statement-breakpoint
+INSERT INTO `settings_general` (`id`)
+  SELECT 1 WHERE EXISTS (SELECT 1 FROM `config`);
+--> statement-breakpoint
+UPDATE `settings_general` SET
+  `polling_interval` = COALESCE((SELECT CAST(`value` AS INTEGER) FROM `config` WHERE `key` = 'pollingInterval'), 30000)
+  WHERE EXISTS (SELECT 1 FROM `config`);
+--> statement-breakpoint
+DROP TABLE IF EXISTS `config`;
+```
+
+### Rules
+
+- NEVER manually create migration files or edit `_journal.json` by hand
+- Let `drizzle-kit generate` produce the base migration with correct hashes
+- Data migrations go in the generated `.sql` file, not in app code
+- `drizzle/dev.db` is in `.gitignore` — it's a local artifact, not committed
+- After every migration, re-sync dev.db from the real database
+- Test data migrations on a copy of the real database before running the app
+
+### Settings tables
+
+Settings are stored in typed single-row tables named `settings_<category>`:
+- `settings_general` — polling interval, retention days, open on startup
+- Future categories: `settings_privacy`, `settings_shortcuts`, etc.
+
+Each table has a single row (`id = 1`, enforced by app logic). Access via
+`src/bun/storage/sqlite/settingsRepo.ts` using typed `getSettings()`/`updateSettings()`.
+
+---
+
 ## Code Style
 
 ### TypeScript

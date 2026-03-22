@@ -13,9 +13,9 @@ let sqliteInstance: Database | null = null;
 function getMigrationDir(): string {
   // Resolve from this file's URL so it works in both dev and packaged contexts.
   // Dev: file:///.../src/bun/storage/sqlite/db.ts       → .../drizzle/migrations  (5 up)
-  // Packaged: file:///.../bun/storage/sqlite/db.ts       → .../drizzle/migrations  (3 up)
+  // Packaged: file:///.../app/bun/index.js               → .../drizzle/migrations  (4 up)
   const thisFile = fileURLToPath(import.meta.url);
-  const depth = import.meta.url.includes("/src/") ? 5 : 3;
+  const depth = import.meta.url.includes("/src/") ? 5 : 2;
   const root = join(thisFile, ...Array(depth).fill(".."));
   return join(root, "drizzle", "migrations");
 }
@@ -54,27 +54,35 @@ export async function initializeDatabase(): Promise<{
   const { db, sqlite } = getDatabase();
   const migrationDir = getMigrationDir();
 
+  console.log("Migration directory:", migrationDir);
+
   // Run migrations if the drizzle migrations directory exists
   try {
     migrate(db, { migrationsFolder: migrationDir });
     console.log("Database migrations applied successfully");
   } catch (error) {
-    // If migrations folder is missing or has no journal file, that's fine
-    // (e.g. first run with empty folder, or migrations not yet generated)
+    // Only ignore "missing journal" — that means no migrations exist yet
+    // (first run with empty folder, or migrations not yet generated)
     if (
       error instanceof Error &&
-      !error.message.includes("Can't find meta/_journal.json file")
+      error.message.includes("Can't find meta/_journal.json file")
     ) {
+      console.log("No migration journal found, skipping migrations");
+    } else {
       console.error("Migration error:", error);
       throw error;
     }
   }
 
   // Seed the settings_general row if it doesn't exist (first run without migration)
-  db.insert(settingsGeneral)
-    .values({ id: 1 })
-    .onConflictDoNothing()
-    .run();
+  try {
+    db.insert(settingsGeneral)
+      .values({ id: 1 })
+      .onConflictDoNothing()
+      .run();
+  } catch (error) {
+    console.warn("Failed to seed settings_general:", error);
+  }
 
   // Start the pruning job
   startPruningJob(db);
