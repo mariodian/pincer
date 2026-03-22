@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
   import type { AgentStatus } from "$shared/types";
-  import { getStatusColorClass, getStatusLabel, sortAgentsByStatus } from "$shared/agent-helpers";
+  import { sortAgentsByStatus } from "$shared/agent-helpers";
   import type { TrayPopoverRPCType } from "$shared/rpc";
   import { onAgentSync, offAgentSync, triggerSyncCallbacks } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
@@ -102,13 +102,36 @@
     await rpc.request.quit({});
   }
 
-  function getAgentTitle(agent: AgentStatus): string {
-    const statusText = getStatusLabel(agent.status);
-    let tooltip = `Status: ${statusText}`;
-    if (agent.errorMessage && agent.status !== "ok") {
-      tooltip += `\nError: ${agent.errorMessage}`;
+  function getStatusClass(status: string): string | string[] {
+    switch (status) {
+      case "ok":
+        return ["status-online", "bg-green-600 dark:bg-green-500"];
+      case "error":
+        return "animate-pulse bg-orange-400 dark:bg-orange-300";
+      case "offline":
+      default:
+        return "bg-black/20 dark:bg-white/20";
     }
+  }
+
+  function getAgentTitle(agent: AgentStatus): string {
+    let tooltip = "";
+
+    // Add status indicator
+    switch (agent.status) {
+      case "ok":
+        tooltip += "Status: Online";
+        break;
+      case "offline":
+        tooltip += `Status: Offline${agent.errorMessage ? `\nError: ${agent.errorMessage}` : ""}`;
+        break;
+      case "error":
+        tooltip += `Status: Error${agent.errorMessage ? `\nError: ${agent.errorMessage}` : ""}`;
+        break;
+    }
+
     const lines = [agent.name, `${agent.url}:${agent.port}`, tooltip];
+
     return lines.join("\n");
   }
 </script>
@@ -182,8 +205,7 @@
             class={[
               "shrink-0 ml-1",
               "w-2.5 h-2.5 rounded-full",
-              getStatusColorClass(agent.status),
-              agent.status === "ok" ? "status-online" : "",
+              getStatusClass(agent.status),
             ]}
           ></span>
           <div class={["flex flex-col ml-1", "min-w-0"]}>

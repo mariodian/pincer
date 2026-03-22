@@ -5,8 +5,6 @@
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
   import {
     createAgentSyncSignature,
-    getStatusColorClass,
-    getStatusLabel,
     sortAgentsByStatus,
   } from "$shared/agent-helpers";
   import type { AgentStatus } from "$shared/types";
@@ -64,6 +62,22 @@
     const key = onAgentSync(handleSync);
     return () => offAgentSync(key);
   });
+
+  function getStatusClass(status: string): string {
+    switch (status) {
+      case "ok":
+        return "bg-green-500 dark:bg-green-400 shadow-[0_0_6px_var(--color-green-500)]";
+      case "error":
+        return "bg-orange-400 dark:bg-orange-300 animate-pulse";
+      case "offline":
+      default:
+        return "bg-muted-foreground/30";
+    }
+  }
+
+  function getStatusLabel(status: string): string {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
 
   function getTypeName(type: string): string {
     switch (type) {
@@ -184,8 +198,7 @@
             <span
               class={[
                 "shrink-0 size-3 rounded-full transition-all",
-                getStatusColorClass(agent.status),
-                agent.status === "ok" ? "shadow-[0_0_6px_var(--color-green-500)]" : "",
+                getStatusClass(agent.status),
               ]}
               title={getStatusLabel(agent.status)}
             ></span>

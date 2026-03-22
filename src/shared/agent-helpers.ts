@@ -73,27 +73,6 @@ export function shouldTriggerHealthCheck(updates: Partial<Agent>): boolean {
 }
 
 /**
- * Core Tailwind color classes for agent status indicators.
- * Components may append additional styling (shadows, animation) as needed.
- */
-export function getStatusColorClass(status: string): string {
-  switch (status) {
-    case "ok":
-      return "bg-green-500 dark:bg-green-400";
-    case "error":
-      return "bg-orange-400 dark:bg-orange-300 animate-pulse";
-    case "offline":
-    default:
-      return "bg-muted-foreground/30";
-  }
-}
-
-/** Capitalized human-readable status label. */
-export function getStatusLabel(status: string): string {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-/**
  * Build a stable signature used to detect meaningful agent-list changes.
  * Intentionally ignores `lastChecked` so periodic polls don't trigger no-op UI refreshes.
  */
