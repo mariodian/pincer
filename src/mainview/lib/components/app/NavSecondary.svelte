@@ -41,7 +41,6 @@
   });
 
   $effect(() => {
-    console.log("Sidebar state:", sidebar.state);
     if (sidebar.state === "collapsed") {
       setTimeout(() => {
         shouldFlex = true;

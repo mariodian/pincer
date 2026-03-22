@@ -17,7 +17,11 @@ function getMigrationDir(): string {
   if (import.meta.url.includes("/src/")) {
     let dir = fileURLToPath(import.meta.url);
     while (true) {
-      dir = join(dir, "..");
+      const parent = join(dir, "..");
+      if (parent === dir) {
+        throw new Error("Could not find drizzle/migrations directory");
+      }
+      dir = parent;
       if (existsSync(join(dir, "drizzle", "migrations", "meta", "_journal.json"))) {
         return join(dir, "drizzle", "migrations");
       }

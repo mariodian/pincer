@@ -8,26 +8,6 @@ export type LogEntry = {
   timestamp: string;
 };
 
-export type MainWindowRPCType = {
-  bun: {
-    requests: Record<string, never>;
-    messages: Record<string, never>;
-  };
-  webview: {
-    requests: Record<string, never>;
-    messages: {
-      navigateTo: {
-        params: { path: string };
-        response: void;
-      };
-      pushLog: {
-        params: LogEntry;
-        response: void;
-      };
-    };
-  };
-};
-
 export type TrayPopoverRPCType = {
   bun: {
     requests: {

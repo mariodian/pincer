@@ -1,7 +1,6 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
 import { sortAgentsByStatus } from "../shared/agent-helpers";
-import { AgentStatusInfo } from "../shared/types";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
 import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
@@ -318,29 +317,6 @@ export async function syncAgentsFromKnownStatuses(updateMenu = true) {
   if (updateMenu && NATIVE_MENU) {
     updateTrayMenu();
   }
-}
-
-/**
- * Push a single agent's status to all windows immediately (bypasses polling).
- * Used after toggling enabled state so the UI dot updates without waiting.
- * @deprecated Use StatusSyncService.pushOneStatus() directly
- */
-export async function pushOneStatusToWindows(
-  status: AgentStatusInfo,
-): Promise<void> {
-  const sync = getStatusSyncService();
-  await sync.pushOneStatus(status);
-}
-
-/**
- * Mark an agent as offline immediately without making an HTTP request.
- * Used when an agent is disabled so the UI dot turns gray right away.
- * @deprecated Use StatusSyncService.markOffline() + sync() directly
- */
-export async function pushOfflineStatusToWindows(id: number): Promise<void> {
-  const sync = getStatusSyncService();
-  sync.markAgentOffline(id);
-  await sync.sync({ updateMenu: NATIVE_MENU });
 }
 
 /**

@@ -1,5 +1,4 @@
 // Agent RPC - Shared RPC definition for agent management
-import { BrowserView } from "electrobun/bun";
 import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
 import { AgentStatusInfo } from "../../shared/types";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
@@ -149,10 +148,3 @@ export const agentRequestHandlers = {
     return await checkOneAgentStatus(id);
   },
 };
-
-export const agentRPC = BrowserView.defineRPC<AgentRPCType>({
-  handlers: {
-    requests: agentRequestHandlers,
-    messages: {},
-  },
-});
