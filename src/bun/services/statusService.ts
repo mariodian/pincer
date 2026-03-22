@@ -1,5 +1,6 @@
 // Status Service - Centralized status polling for agent monitoring
-import { checkAllAgentsStatus, readConfig } from "./agentService";
+import { checkAllAgentsStatus } from "./agentService";
+import { getSettings } from "../storage/sqlite/settingsRepo";
 import {
   getStatusSyncService,
 } from "./statusSyncService";
@@ -28,8 +29,8 @@ async function startStatusUpdates() {
   }
 
   // Read config for polling interval
-  const config = await readConfig();
-  const interval = config.pollingInterval || 30000;
+  const { pollingInterval } = getSettings();
+  const interval = pollingInterval || 30000;
 
   // Update status immediately
   try {

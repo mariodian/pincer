@@ -25,9 +25,11 @@ export const agents = sqliteTable("agents", {
   ),
 });
 
-export const config = sqliteTable("config", {
-  key: text("key").primaryKey(),
-  value: text("value").notNull(),
+export const settingsGeneral = sqliteTable("settings_general", {
+  id: integer("id").primaryKey().default(1),
+  pollingInterval: integer("polling_interval").notNull().default(30000),
+  retentionDays: integer("retention_days").notNull().default(90),
+  openMainWindow: integer("open_main_window", { mode: "boolean" }).notNull().default(true),
 });
 
 export const stats = sqliteTable(

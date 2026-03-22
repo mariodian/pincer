@@ -3,10 +3,10 @@ import { agentStorage } from "../storage";
 import type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
 import { normalizeUrl } from "../../shared/agent-helpers";
 import {
-  readConfig as readConfigFromDb,
-  writeConfig as writeConfigToDb,
-  type Config,
-} from "../storage/sqlite/configRepo";
+  getSettings as getSettingsFromDb,
+  updateSettings as updateSettingsToDb,
+  type Settings,
+} from "../storage/sqlite/settingsRepo";
 import { upsertHourlyStat } from "../storage/sqlite/statsRepo";
 import { initializeDatabase } from "../storage/sqlite/db";
 import {
@@ -16,7 +16,7 @@ import {
   type StatusParser,
 } from "../agentTypes";
 
-export type { Config } from "../storage/sqlite/configRepo";
+export type { Settings } from "../storage/sqlite/settingsRepo";
 export type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
 
 export async function readAgents(): Promise<Agent[]> {
@@ -27,12 +27,12 @@ export async function writeAgents(agents: Agent[]): Promise<void> {
   return agentStorage.writeAgents(agents);
 }
 
-export async function readConfig(): Promise<Config> {
-  return readConfigFromDb();
+export async function getSettings(): Promise<Settings> {
+  return getSettingsFromDb();
 }
 
-export async function writeConfig(config: Partial<Config>): Promise<void> {
-  writeConfigToDb(config);
+export async function updateSettings(partial: Partial<Settings>): Promise<void> {
+  updateSettingsToDb(partial);
 }
 
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {

@@ -1,21 +1,14 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { sql } from "drizzle-orm";
 import { Utils } from "electrobun/bun";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureAppDataDir } from "../../utils/fs";
-import { config as configTable } from "./schema";
+import { settingsGeneral } from "./schema";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 let sqliteInstance: Database | null = null;
-
-const DEFAULT_CONFIG = {
-  pollingInterval: "30000",
-  retentionDays: "90",
-  openMainWindow: "true",
-};
 
 function getMigrationDir(): string {
   // Resolve from this file's URL so it works in both dev and packaged contexts.
@@ -77,13 +70,11 @@ export async function initializeDatabase(): Promise<{
     }
   }
 
-  // Seed default config values if they don't exist
-  for (const [key, value] of Object.entries(DEFAULT_CONFIG)) {
-    db.insert(configTable)
-      .values({ key, value })
-      .onConflictDoNothing()
-      .run();
-  }
+  // Seed the settings_general row if it doesn't exist (first run without migration)
+  db.insert(settingsGeneral)
+    .values({ id: 1 })
+    .onConflictDoNothing()
+    .run();
 
   // Start the pruning job
   startPruningJob(db);
@@ -102,20 +93,16 @@ function startPruningJob(db: ReturnType<typeof drizzle>): void {
 
 async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
   try {
-    const retentionRow = db
-      .select({ value: configTable.value })
-      .from(configTable)
-      .where(sql`${configTable.key} = 'retentionDays'`)
-      .get();
-
-    const retentionDays = parseInt(retentionRow?.value ?? "90", 10);
+    // Import lazily to avoid circular dependency at module load time
+    const { getSettings } = await import("./settingsRepo");
+    const { retentionDays } = getSettings();
 
     // retentionDays === 0 means never prune
     if (retentionDays === 0) return;
 
     const cutoffTimestamp = Math.floor(Date.now() / 1000) - retentionDays * 86400;
 
-    db.run(sql`DELETE FROM stats WHERE hour_timestamp < ${cutoffTimestamp}`);
+    db.run(`DELETE FROM stats WHERE hour_timestamp < ${cutoffTimestamp}`);
 
     console.log(`Pruned stats older than ${retentionDays} days`);
   } catch (error) {

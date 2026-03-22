@@ -12,7 +12,7 @@ import { beginStatusUpdates } from "./services/statusService";
 import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { isMacOS as isMacOSFn } from "./utils/platform";
-import { getOpenMainWindow } from "./storage/sqlite/configRepo";
+import { getSettings } from "./storage/sqlite/settingsRepo";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
@@ -113,7 +113,7 @@ setRendererReadyCallback(({ view }) => {
 void beginStatusUpdates();
 
 // Conditionally create the main window on startup
-if (getOpenMainWindow()) {
+if (getSettings().openMainWindow) {
   await createMainWindow();
 }
 
