@@ -1,7 +1,8 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { Utils } from "electrobun/bun";
+import { PATHS, Utils } from "electrobun/bun";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureAppDataDir } from "../../utils/fs";
@@ -11,13 +12,19 @@ let dbInstance: ReturnType<typeof drizzle> | null = null;
 let sqliteInstance: Database | null = null;
 
 function getMigrationDir(): string {
-  // Resolve from this file's URL so it works in both dev and packaged contexts.
-  // Dev: file:///.../src/bun/storage/sqlite/db.ts       → .../drizzle/migrations  (5 up)
-  // Packaged: file:///.../app/bun/index.js               → .../drizzle/migrations  (4 up)
-  const thisFile = fileURLToPath(import.meta.url);
-  const depth = import.meta.url.includes("/src/") ? 5 : 2;
-  const root = join(thisFile, ...Array(depth).fill(".."));
-  return join(root, "drizzle", "migrations");
+  // In source context, walk up from this file until we find drizzle/migrations
+  if (import.meta.url.includes("/src/")) {
+    let dir = fileURLToPath(import.meta.url);
+    while (true) {
+      dir = join(dir, "..");
+      if (existsSync(join(dir, "drizzle", "migrations", "meta", "_journal.json"))) {
+        return join(dir, "drizzle", "migrations");
+      }
+    }
+  }
+
+  // In bundled context, derive from VIEWS_FOLDER (VIEWS_FOLDER = RESOURCES_FOLDER + '/app/views')
+  return join(PATHS.VIEWS_FOLDER, "..", "..", "app", "drizzle", "migrations");
 }
 
 function getDbPath(): string {
