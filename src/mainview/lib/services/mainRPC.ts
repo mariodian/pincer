@@ -81,6 +81,17 @@ export function isInitialized(): boolean {
   return rpcInstance !== null;
 }
 
+/** Wait until the RPC instance is ready. Safe to call before initMainRPC(). */
+export async function whenReady(): Promise<void> {
+  if (rpcInstance) return;
+  if (!initPromise) {
+    throw new Error(
+      "Main RPC not initializing. Call initMainRPC() first.",
+    );
+  }
+  await initPromise;
+}
+
 export function getMainRPC(): { request: MainRPCRequests } {
   if (!rpcInstance) {
     throw new Error("Main RPC not initialized. Call initMainRPC() first.");

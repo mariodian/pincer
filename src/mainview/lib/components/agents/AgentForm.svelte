@@ -2,7 +2,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
+  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { normalizeUrl } from "$shared/agent-helpers";
   import type { Agent } from "$shared/types";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
@@ -74,9 +74,8 @@
   }
 
   async function loadData() {
-    if (!isInitialized()) return;
-
     try {
+      await whenReady();
       const rpc = getMainRPC();
       const types = await rpc.request.getAgentTypes({});
       agentTypes = types;

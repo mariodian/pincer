@@ -3,7 +3,7 @@
   import { Label } from "$lib/components/ui/label/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { Switch } from "$lib/components/ui/switch/index.js";
-  import { getMainRPC, isInitialized } from "$lib/services/mainRPC";
+  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import type { Settings } from "$shared/types";
 
   interface Props {
@@ -24,9 +24,8 @@
   let savedRetentionDays = $state(90);
 
   async function loadSettings() {
-    if (!isInitialized()) return;
-
     try {
+      await whenReady();
       const rpc = getMainRPC();
       const settings: Settings = await rpc.request.getSettings({});
 
@@ -48,8 +47,6 @@
   });
 
   async function saveField(updates: Partial<Settings>) {
-    if (!isInitialized()) return;
-
     onSaveStatus("saving");
     try {
       const rpc = getMainRPC();
