@@ -9,22 +9,9 @@ export interface Settings {
 
 /**
  * Read the general settings from the database.
- * Returns defaults if the table doesn't exist yet (e.g., before migration runs).
+ * Returns defaults for any unset fields.
  */
 export function getSettings(): Settings {
-  const { sqlite } = getDatabase();
-
-  // Guard: table may not exist if migration hasn't run yet
-  const exists = sqlite
-    .query(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='settings_general'",
-    )
-    .get();
-
-  if (!exists) {
-    return { pollingInterval: 30000, retentionDays: 90, openMainWindow: true };
-  }
-
   const { db } = getDatabase();
   const row = db.select().from(settingsGeneral).get();
 
