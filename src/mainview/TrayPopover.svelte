@@ -12,13 +12,15 @@
     handlers: {
       requests: {},
       messages: {
-        syncAgents: ({ params }: { params: AgentStatus[] }) => {
+        // syncAgents is sent via rpc.send from the main process,
+        // which passes the payload directly (not wrapped in { params: ... }).
+        syncAgents: ((data: AgentStatus[]) => {
           if (typeof localStorage !== "undefined") {
-            syncAgentsToCache(params);
+            syncAgentsToCache(data);
           }
-          agents = sortAgentsByStatus(params);
+          agents = sortAgentsByStatus(data);
           triggerSyncCallbacks();
-        },
+        }) as any,
       },
     },
   });

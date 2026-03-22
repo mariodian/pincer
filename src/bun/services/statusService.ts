@@ -16,8 +16,10 @@ let statusUpdatesStarted = false;
 export async function refreshAndPush(updateMenu = true) {
   const sync = getStatusSyncService();
   const statuses = await checkAllAgentsStatus();
+  logger.debug("status", `Polled ${statuses.length} agent(s)`);
   sync.updateStatusMap(statuses);
   await sync.sync({ updateMenu });
+  logger.debug("status", "Status sync pushed to all windows");
 }
 
 /**
@@ -32,6 +34,8 @@ async function startStatusUpdates() {
   // Read config for polling interval
   const { pollingInterval } = getSettings();
   const interval = pollingInterval || 30000;
+
+  logger.debug("status", `Starting status polling every ${interval}ms`);
 
   // Update status immediately
   try {

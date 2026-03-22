@@ -98,18 +98,21 @@ export async function initMainRPC(handlers: {
         messages: {
           navigateTo: ({ params }: { params: { path: string } }) =>
             handlers.navigateTo(params),
-          syncAgents: ({ params }: { params: AgentStatus[] }) => {
+          // syncAgents and pushLog are sent via rpc.send from the main process,
+          // which passes the payload directly (not wrapped in { params: ... }).
+          // The framework type expects { params: T } but runtime passes T.
+          syncAgents: ((data: AgentStatus[]) => {
             if (typeof localStorage !== "undefined") {
-              syncAgentsToCache(params);
+              syncAgentsToCache(data);
             }
 
             for (const [, cb] of syncCallbacks) {
               cb();
             }
-          },
-          pushLog: ({ params }: { params: LogEntry }) => {
-            logMessages.push(params);
-          },
+          }) as any,
+          pushLog: ((entry: LogEntry) => {
+            logMessages.push(entry);
+          }) as any,
         },
       },
     });
