@@ -4,25 +4,31 @@ import { syncAgentsToCache } from "$lib/utils/storage";
 import type { AgentStatus } from "$shared/types";
 import type { LogEntry } from "$shared/rpc";
 
-export type MainRPCType = {
-  bun: {
-    requests: SystemRPCType["bun"]["requests"] &
-      AgentRPCType["bun"]["requests"];
-    messages: SystemRPCType["bun"]["messages"] &
-      AgentRPCType["bun"]["messages"];
-  };
-  webview: {
-    requests: SystemRPCType["webview"]["requests"] &
-      AgentRPCType["webview"]["requests"];
-    messages: SystemRPCType["webview"]["messages"] &
-      AgentRPCType["webview"]["messages"];
-  };
+/** Composed RPC type: system messages (navigateTo, pushLog) + agent messages (syncAgents) + all requests. */
+export type MainRPCType = SystemRPCType & AgentRPCType;
+
+/** The typed request object available via getMainRPC().request */
+export type MainRPCRequests = {
+  [K in keyof (SystemRPCType["bun"]["requests"] &
+    AgentRPCType["bun"]["requests"])]: (
+    ...args: (SystemRPCType["bun"]["requests"] &
+      AgentRPCType["bun"]["requests"])[K] extends { params: infer P }
+      ? [P]
+      : []
+  ) => Promise<
+    (SystemRPCType["bun"]["requests"] &
+      AgentRPCType["bun"]["requests"])[K] extends { response: infer R }
+      ? R
+      : never
+  >;
 };
 
 // Module-level singleton — survives component unmount/remount within the same
 // renderer session. A Map instead of a Set allows stale callback refs (left
 // behind after HMR module replacement) to be cleaned up via delete().
-let rpcInstance: unknown = null;
+// The framework's defineRPC returns a proxy-based RPC object; its internal type
+// doesn't match our typed request surface, so we cast at the assignment boundary.
+let rpcInstance: { request: MainRPCRequests } | null = null;
 let initPromise: Promise<void> | null = null;
 
 type SyncCallback = () => void;
@@ -71,8 +77,7 @@ export function isInitialized(): boolean {
   return rpcInstance !== null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getMainRPC(): any {
+export function getMainRPC(): { request: MainRPCRequests } {
   if (!rpcInstance) {
     throw new Error("Main RPC not initialized. Call initMainRPC() first.");
   }
@@ -93,24 +98,24 @@ export async function initMainRPC(handlers: {
         messages: {
           navigateTo: ({ params }: { params: { path: string } }) =>
             handlers.navigateTo(params),
-          syncAgents: ((data: AgentStatus[]) => {
+          syncAgents: ({ params }: { params: AgentStatus[] }) => {
             if (typeof localStorage !== "undefined") {
-              syncAgentsToCache(data);
+              syncAgentsToCache(params);
             }
 
             for (const [, cb] of syncCallbacks) {
               cb();
             }
-          }) as any,
-          pushLog: ((entry: LogEntry) => {
-            logMessages.push(entry);
-          }) as any,
+          },
+          pushLog: ({ params }: { params: LogEntry }) => {
+            logMessages.push(params);
+          },
         },
       },
     });
 
     new Electroview({ rpc });
-    rpcInstance = rpc;
+    rpcInstance = rpc as unknown as { request: MainRPCRequests };
   })();
 
   return initPromise;

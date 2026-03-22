@@ -47,16 +47,6 @@ export function readCachedAgents(): AgentStatus[] | null {
  * Called by the syncAgents handler in both windows.
  */
 export function syncAgentsToCache(data: AgentStatus[]): void {
-  syncAgentsToCacheWithOptions(data, { notifyListeners: true });
-}
-
-/**
- * Same as syncAgentsToCache but allows suppressing cache listeners for no-op updates.
- */
-export function syncAgentsToCacheWithOptions(
-  data: AgentStatus[],
-  options?: { notifyListeners?: boolean },
-): void {
   try {
     const agents: Agent[] = data.map(
       ({ status, lastChecked, errorMessage, ...agent }) => agent,
@@ -71,9 +61,6 @@ export function syncAgentsToCacheWithOptions(
     );
     localStorage.setItem(STORAGE_KEY_AGENTS, JSON.stringify(agents));
     localStorage.setItem(STORAGE_KEY_STATUSES, JSON.stringify(statuses));
-    if (options?.notifyListeners !== false) {
-      notifyCacheListeners();
-    }
   } catch (e) {
     warnStorage("syncAgentsToCache failed", e);
   }
@@ -100,28 +87,7 @@ export function removeCachedAgent(id: number): void {
         JSON.stringify(statuses.filter((s) => s.id !== id)),
       );
     }
-
-    notifyCacheListeners();
   } catch (e) {
     warnStorage("removeCachedAgent failed", e);
   }
-}
-
-// ── Cache change subscription ──────────────────────────────────────────
-
-type CacheListener = () => void;
-const cacheListeners = new Set<CacheListener>();
-
-/** Subscribe to cache changes (same-tab notifications). */
-export function onAgentCacheChange(callback: CacheListener): void {
-  cacheListeners.add(callback);
-}
-
-/** Unsubscribe from cache changes. */
-export function offAgentCacheChange(callback: CacheListener): void {
-  cacheListeners.delete(callback);
-}
-
-function notifyCacheListeners(): void {
-  cacheListeners.forEach((cb) => cb());
 }

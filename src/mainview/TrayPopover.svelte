@@ -1,60 +1,24 @@
 <script lang="ts">
   import { Electroview } from "electrobun/view";
   import type { AgentStatus } from "$shared/types";
-  import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import { getStatusColorClass, getStatusLabel, sortAgentsByStatus } from "$shared/agent-helpers";
+  import type { TrayPopoverRPCType } from "$shared/rpc";
   import { onAgentSync, offAgentSync, triggerSyncCallbacks } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
 
-  type AgentRPCType = {
-    bun: {
-      requests: {
-        getAgents: {
-          params: Record<string, never>;
-          response: AgentStatus[];
-        };
-        checkAllAgentsStatus: {
-          params: Record<string, never>;
-          response: AgentStatus[];
-        };
-        requestRefresh: {
-          params: Record<string, never>;
-          response: boolean;
-        };
-        openMainWindow: {
-          params: { page: string };
-          response: boolean;
-        };
-        quit: {
-          params: Record<string, never>;
-          response: boolean;
-        };
-      };
-      messages: Record<string, never>;
-    };
-    webview: {
-      requests: Record<string, never>;
-      messages: {
-        syncAgents: {
-          params: AgentStatus[];
-          response: void;
-        };
-      };
-    };
-  };
-
-  const rpc = Electroview.defineRPC<AgentRPCType>({
+  const rpc = Electroview.defineRPC<TrayPopoverRPCType>({
     handlers: {
       requests: {},
       messages: {
-        syncAgents: ((data: AgentStatus[]) => {
+        syncAgents: ({ params }: { params: AgentStatus[] }) => {
           if (typeof localStorage !== "undefined") {
-            syncAgentsToCache(data);
+            syncAgentsToCache(params);
           }
-          agents = sortAgentsByStatus(data);
+          agents = sortAgentsByStatus(params);
           triggerSyncCallbacks();
-        }) as any,
+        },
       },
     },
   });
@@ -136,36 +100,13 @@
     await rpc.request.quit({});
   }
 
-  function getStatusClass(status: string): string | string[] {
-    switch (status) {
-      case "ok":
-        return ["status-online", "bg-green-600 dark:bg-green-500"];
-      case "error":
-        return "animate-pulse bg-orange-400 dark:bg-orange-300";
-      case "offline":
-      default:
-        return "bg-black/20 dark:bg-white/20";
-    }
-  }
-
   function getAgentTitle(agent: AgentStatus): string {
-    let tooltip = "";
-
-    // Add status indicator
-    switch (agent.status) {
-      case "ok":
-        tooltip += "Status: Online";
-        break;
-      case "offline":
-        tooltip += `Status: Offline${agent.errorMessage ? `\nError: ${agent.errorMessage}` : ""}`;
-        break;
-      case "error":
-        tooltip += `Status: Error${agent.errorMessage ? `\nError: ${agent.errorMessage}` : ""}`;
-        break;
+    const statusText = getStatusLabel(agent.status);
+    let tooltip = `Status: ${statusText}`;
+    if (agent.errorMessage && agent.status !== "ok") {
+      tooltip += `\nError: ${agent.errorMessage}`;
     }
-
     const lines = [agent.name, `${agent.url}:${agent.port}`, tooltip];
-
     return lines.join("\n");
   }
 </script>
@@ -239,7 +180,8 @@
             class={[
               "shrink-0 ml-1",
               "w-2.5 h-2.5 rounded-full",
-              getStatusClass(agent.status),
+              getStatusColorClass(agent.status),
+              agent.status === "ok" ? "status-online" : "",
             ]}
           ></span>
           <div class={["flex flex-col ml-1", "min-w-0"]}>

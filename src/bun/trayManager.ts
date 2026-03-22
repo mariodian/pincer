@@ -1,6 +1,6 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray } from "electrobun/bun";
-import { sortAgentsByStatus } from "../shared/agent-helpers";
+import { getStatusLabel, sortAgentsByStatus } from "../shared/agent-helpers";
 import { AgentStatusInfo } from "../shared/types";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
@@ -224,22 +224,16 @@ function buildAgentMenuItem(
   },
   errorMessage?: string,
 ): TrayMenuItem {
-  let label = agent.name;
-  let tooltip = `${agent.name}: ${agent.url}:${agent.port}`;
-
-  switch (agent.status) {
-    case "ok":
-      label = `● ${agent.name}`;
-      tooltip += "\nStatus: Online";
-      break;
-    case "offline":
-      label = `○ ${agent.name}`;
-      tooltip += `\nStatus: Offline${errorMessage ? `\nError: ${errorMessage}` : ""}`;
-      break;
-    case "error":
-      label = `✗ ${agent.name}`;
-      tooltip += `\nStatus: Error${errorMessage ? `\nError: ${errorMessage}` : ""}`;
-      break;
+  const statusSymbols: Record<string, string> = {
+    ok: "●",
+    offline: "○",
+    error: "✗",
+  };
+  const symbol = statusSymbols[agent.status] ?? "○";
+  const label = `${symbol} ${agent.name}`;
+  let tooltip = `${agent.name}: ${agent.url}:${agent.port}\nStatus: ${getStatusLabel(agent.status)}`;
+  if (agent.status !== "ok" && errorMessage) {
+    tooltip += `\nError: ${errorMessage}`;
   }
 
   return {
