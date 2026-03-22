@@ -1,5 +1,8 @@
 # CrabControl Agent Guidelines
 
+> **Important:** This is an **Electrobun** desktop app (NOT Electron). Do not use Electron APIs or patterns.
+> Full Electrobun API reference: https://blackboard.sh/electrobun/llms.txt
+
 ## Build, Lint, and Test Commands
 
 | Command | Description |
@@ -17,77 +20,35 @@
 | `bun test <file>` | Run a single test file |
 | `bun test --grep "<pattern>"` | Run tests matching a pattern |
 
-> No test framework is currently configured. Use **Vitest** or **Bun test** (`bun test`) when adding tests.
+> No test framework configured. Use **Vitest** or **Bun test** (`bun test`) when adding tests.
 
 ---
 
 ## Database Migrations
 
-The project uses **Drizzle ORM** with SQLite. The app runs `migrate()` on startup, applying any pending migration files automatically.
+Uses **Drizzle ORM** with SQLite. `migrate()` runs on startup.
 
-### Creating a new migration
+### Workflow
 
 ```bash
-# 1. Sync dev.db baseline (copy real DB if dev.db is stale or missing)
 cp ~/Library/Application\ Support/com.mariodian.crabmonitor/dev/app.db ./drizzle/dev.db
-
-# 2. Make schema changes to src/bun/storage/sqlite/schema.ts
-
-# 3. Generate migration (drizzle-kit diffs schema.ts against dev.db)
-bun run db:generate
-
-# 4. Apply to real DB (run the app)
-bun run dev
-
-# 5. Re-sync dev.db for next round
+# Edit src/bun/storage/sqlite/schema.ts
+bun run db:generate   # drizzle-kit diffs schema.ts against dev.db
+bun run dev           # applies pending migrations on startup
 cp ~/Library/Application\ Support/com.mariodian.crabmonitor/dev/app.db ./drizzle/dev.db
-```
-
-`drizzle/dev.db` is in `.gitignore` — it's a local artifact used only for generating migrations.
-
-### Data migrations (moving data between tables)
-
-`drizzle-kit generate` only produces DDL (CREATE/DROP/ALTER). If a migration
-needs to move data between tables (e.g. replacing a KV table with typed columns):
-
-1. Let `drizzle-kit generate` create the migration (correct hashes + journal)
-2. Edit the generated `.sql` file:
-   - Add INSERT/UPDATE statements for data migration (between CREATE and DROP)
-   - Use `WHERE EXISTS` guards so the migration works on both upgrade and fresh install
-3. Test on a copy of the real database before deploying
-
-Example pattern (replacing a key-value `config` table with typed `settings_general`):
-
-```sql
-CREATE TABLE `settings_general` (...);
---> statement-breakpoint
-INSERT INTO `settings_general` (`id`)
-  SELECT 1 WHERE EXISTS (SELECT 1 FROM `config`);
---> statement-breakpoint
-UPDATE `settings_general` SET
-  `polling_interval` = COALESCE((SELECT CAST(`value` AS INTEGER) FROM `config` WHERE `key` = 'pollingInterval'), 30000)
-  WHERE EXISTS (SELECT 1 FROM `config`);
---> statement-breakpoint
-DROP TABLE IF EXISTS `config`;
 ```
 
 ### Rules
 
-- NEVER manually create migration files or edit `_journal.json` by hand
+- NEVER manually create migration files or edit `_journal.json`
 - Let `drizzle-kit generate` produce the base migration with correct hashes
-- Data migrations go in the generated `.sql` file, not in app code
-- `drizzle/dev.db` is in `.gitignore` — it's a local artifact, not committed
-- After every migration, re-sync dev.db from the real database
-- Test data migrations on a copy of the real database before running the app
+- For data migrations: edit the generated `.sql` — add INSERT/UPDATE between CREATE and DROP with `WHERE EXISTS` guards for fresh-install compatibility
+- `drizzle/dev.db` is in `.gitignore` — re-sync from real DB after every migration
+- Test data migrations on a copy of the real database before deploying
 
 ### Settings tables
 
-Settings are stored in typed single-row tables named `settings_<category>`:
-- `settings_general` — polling interval, retention days, open on startup
-- Future categories: `settings_privacy`, `settings_shortcuts`, etc.
-
-Each table has a single row (`id = 1`, enforced by app logic). Access via
-`src/bun/storage/sqlite/settingsRepo.ts` using typed `getSettings()`/`updateSettings()`.
+Settings use typed single-row tables named `settings_<category>` (e.g., `settings_general`). Single row (`id = 1`, enforced by app logic). Access via `src/bun/storage/sqlite/settingsRepo.ts` using `getSettings()`/`updateSettings()`.
 
 ---
 
@@ -98,44 +59,39 @@ Each table has a single row (`id = 1`, enforced by app logic). Access via
 - Target ES2020, strict mode on (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`)
 - ES modules only; `const`/`let` (never `var`); `async`/`await` for promises
 - Specify return types on public/exported functions
+- Double quotes for strings; semicolons required
 - Wrap I/O and native calls in `try`/`catch` with contextual logging before rethrowing
 
 ### Imports
 
-Order: **(1)** external libraries, **(2)** path-aliased internal modules, **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components.
+Order: **(1)** external libraries, **(2)** path-aliased internal modules (`$lib`, `$bun`, `$shared`), **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components. Use `import type` inline for type-only imports. Add `.js` extensions in Svelte component imports (e.g., `"$lib/components/ui/button/index.js"`).
 
 ```ts
-// External
-import { BrowserView } from "electrobun/bun";
+import { BrowserView } from "electrobun/bun";       // External
 import { eq } from "drizzle-orm";
-
-// Aliased internal
-import type { Agent } from "$shared/types";
-
-// Relative
-import { agentsTable } from "./schema";
+import type { Agent } from "$shared/types";           // Aliased
+import { agentsTable } from "./schema";               // Relative
 ```
-
-Path aliases (tsconfig + vite): `$lib` → `src/mainview/lib`, `$bun` → `src/bun`, `$shared` → `src/shared`.
 
 ### Formatting & Naming
 
-2-space indent, semicolons, 80–100 char lines, trailing commas in multi-line literals/params.
+2-space indent, 80–100 char lines, trailing commas in multi-line literals/params.
 
 | Type | Convention | Example |
 | --- | --- | --- |
 | Constants | `UPPER_SNAKE_CASE` | `MAC_TRAFFIC_LIGHTS_X` |
 | Variables/functions | `camelCase` | `applyMacOSWindowEffects` |
 | Types/interfaces | `PascalCase` | `WindowEffects`, `AgentStatus` |
-| Files | `kebab-case.ts` (services/configs), `PascalCase.svelte` (components) | `windowService.ts`, `App.svelte` |
+| Files | `kebab-case.ts` (services/utils), `PascalCase.svelte` (components) | `windowService.ts`, `App.svelte` |
 | Booleans | `is`/`has`/`can` prefix | `isMacOS`, `hasFocus` |
 | Event handlers | `handle` prefix | `handleClick`, `handleSubmit` |
 
 ### Error Handling
 
 - `try`/`catch` for all sync/async I/O; log context via `console.error()` before rethrowing
-- `console.warn()` for recoverable issues only
+- `console.warn()` for recoverable issues only (e.g., missing native library → graceful fallback)
 - In native FFI bridging: check library existence before loading; never swallow errors
+- Use `error instanceof Error ? error.message : String(error)` for error messages
 
 ---
 
@@ -145,17 +101,18 @@ Path aliases (tsconfig + vite): `$lib` → `src/mainview/lib`, `$bun` → `src/b
 src/
   bun/            Main process (Electrobun, FFI, native integration)
     rpc/          RPC method definitions & type maps
-    storage/      Storage abstraction (AgentStorage interface → JSON impl, future Libsql)
-    utils/        Utility functions
-  mainview/       Svelte UI — entry points, pages, assets
+    services/     Business logic (agentService, statusService, statusSyncService)
+    storage/      Storage abstraction → SQLite/Drizzle implementation
+    utils/        Utilities (platform detection, native effects, window config)
+  mainview/       Svelte UI renderer
     lib/
       components/ Reusable UI primitives (shadcn-style) + app-specific components
-      pages/      Route-level page components
+      pages/      Route-level pages (Dashboard, Agents, Settings)
+      services/   Renderer-side RPC client
     ui/           Top-level wrappers (Window.svelte, Button.svelte)
-  shared/         Shared types for RPC communication (types.ts, rpc.ts, agent-helpers.ts)
-  resources/      Static assets
-native/macos/     Objective-C++ window effects implementation
-scripts/          Build scripts
+  shared/         Shared types for main↔renderer (types.ts, rpc.ts, agent-helpers.ts)
+native/macos/     Objective-C++ window effects (vibrancy, traffic-light positioning)
+scripts/          Build scripts (build-macos-effects.sh)
 ```
 
 Key configs: `electrobun.config.ts` (packaging), `vite.config.js` (3 entry points, root: `src/mainview`), `tsconfig.json` (strict, aliases), `drizzle.config.ts` (SQLite schema).
@@ -164,7 +121,7 @@ Key configs: `electrobun.config.ts` (packaging), `vite.config.js` (3 entry point
 
 ## Technology Stack
 
-Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, `$effect`; event syntax: `onclick={handler}`) · Styling: **Tailwind CSS v4** (`@tailwindcss/vite`, scoped by default) · Build: **Vite** · DB: **Drizzle ORM + SQLite** · Native: **Objective-C++ via Bun FFI**
+Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, `$effect`) · Styling: **Tailwind CSS v4** (`@tailwindcss/vite`) · Components: **shadcn-svelte** (via `bits-ui`) · Build: **Vite** · DB: **Drizzle ORM + SQLite** · Native: **Objective-C++ via Bun FFI**
 
 ---
 
@@ -181,7 +138,7 @@ Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, 
 ## Svelte 5 Conventions
 
 - Reactivity via runes: `$state`, `$derived`, `$effect` (no stores unless cross-component)
-- Props via `export let` (legacy-compatible) or runes `$props()` syntax
+- Props via `$props()` with typed interface; destructure on declaration
 - Events: `onclick={handler}` (no colon prefix — Svelte 5 syntax)
 - Keep components small and single-responsibility; pages in `lib/pages/`, UI primitives in `lib/components/ui/`
 - CSS scoped by default; Tailwind utility classes; use `cn()` from `$lib/utils` for conditional classes
