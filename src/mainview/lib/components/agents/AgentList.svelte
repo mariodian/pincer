@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Item from "$lib/components/ui/item/index.js";
+  import { PageHeader } from "$lib/components/ui/page-header/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getMainRPC, offAgentSync, onAgentSync } from "$lib/services/mainRPC";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
@@ -16,16 +17,14 @@
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import { onMount } from "svelte";
-  import { fade } from "svelte/transition";
-
-  const TRANSITION_DURATION = 300;
 
   interface Props {
     onNavigate: (path: string) => void;
     prevPath?: string;
+    currentPath?: string;
   }
 
-  let { onNavigate, prevPath = "/" }: Props = $props();
+  let { onNavigate, prevPath = "/", currentPath = "/agents" }: Props = $props();
 
   let agents = $state<AgentStatus[]>([]);
   let loading = $state(true);
@@ -120,162 +119,158 @@
 </script>
 
 <div class="flex flex-col h-full">
-  <div class="flex items-center justify-between mb-6">
-    <div
-      class={[
-        prevPath.startsWith("/agents/") &&
-          "transition-all animate-in slide-in-from-right-11 duration-300",
-      ]}
-    >
-      <h1 class="text-2xl font-semibold tracking-tight">Agents</h1>
-      <p class="text-sm text-muted-foreground mt-1">
-        Manage your monitored services
-      </p>
-    </div>
-    <Button onclick={() => onNavigate("/agents/add")}>
-      <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-      Add Agent
-    </Button>
-  </div>
-
-  {#if loading}
-    <div class="flex flex-col gap-3">
-      {#each [1, 2, 3] as _}
-        <div
-          class="flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card"
-        >
-          <Skeleton class="size-3 rounded-full" />
-          <div class="flex-1 space-y-2">
-            <Skeleton class="h-4 w-32" />
-            <Skeleton class="h-3 w-48" />
-          </div>
-          <div class="flex gap-1">
-            <Skeleton class="size-8 rounded-md" />
-            <Skeleton class="size-8 rounded-md" />
-          </div>
-        </div>
-      {/each}
-    </div>
-  {:else if agents.length === 0}
-    <div
-      class="flex flex-col items-center justify-center flex-1 text-center py-16"
-    >
-      <div class="rounded-full bg-muted p-4 mb-4">
-        <HugeiconsIcon
-          icon={Add01Icon}
-          class="size-6 text-muted-foreground"
-          strokeWidth={2}
-        />
-      </div>
-      <h3 class="text-lg font-medium mb-1">No agents yet</h3>
-      <p class="text-sm text-muted-foreground mb-4 max-w-sm">
-        Add your first agent to start monitoring services.
-      </p>
+  <PageHeader
+    title="Agents"
+    description="Manage your monitored services"
+    {prevPath}
+    {currentPath}
+  >
+    {#snippet actions()}
       <Button onclick={() => onNavigate("/agents/add")}>
         <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
         Add Agent
       </Button>
-    </div>
-  {:else}
-    <div
-      in:fade={{ duration: TRANSITION_DURATION }}
-      class="flex flex-col gap-2"
-    >
-      {#each agents as agent (agent.id)}
-        <Item.Root
-          variant="outline"
-          class={[
-            "group",
-            "h-18 transition-colors duration-150",
-            confirmDeleteId === agent.id
-              ? "border-destructive bg-destructive/5 dark:bg-destructive/10"
-              : "",
-          ]}
-        >
-          {#if confirmDeleteId === agent.id}
-            <Item.Content>
-              <span class="text-sm text-destructive font-medium">
-                Delete agent {agent.name}? This can't be undone.
-              </span>
-            </Item.Content>
-            <Item.Actions>
-              <Button
-                variant="destructive"
-                size="sm"
-                onclick={() => handleDelete(agent)}
-                disabled={deletingId === agent.id}
-              >
-                Yes, delete
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onclick={() => (confirmDeleteId = null)}
-              >
-                Cancel
-              </Button>
-            </Item.Actions>
-          {:else}
-            <Item.Media class="h-full">
-              <span
-                class={[
-                  "shrink-0 size-3 rounded-full transition-all",
-                  getStatusClass(agent.status),
-                ]}
-                title={getStatusLabel(agent.status)}
-              ></span>
-            </Item.Media>
+    {/snippet}
+  </PageHeader>
 
-            <Item.Content>
-              <div class="flex items-center gap-2">
-                <Item.Title>{agent.name}</Item.Title>
-                <span
-                  class="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium"
-                >
-                  {getTypeName(agent.type)}
+  <div class="starting:opacity-0 animate-in fade-in duration-500">
+    {#if loading}
+      <div class="flex flex-col gap-3">
+        {#each [1, 2, 3] as _}
+          <div
+            class="flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card"
+          >
+            <Skeleton class="size-3 rounded-full" />
+            <div class="flex-1 space-y-2">
+              <Skeleton class="h-4 w-32" />
+              <Skeleton class="h-3 w-48" />
+            </div>
+            <div class="flex gap-1">
+              <Skeleton class="size-8 rounded-md" />
+              <Skeleton class="size-8 rounded-md" />
+            </div>
+          </div>
+        {/each}
+      </div>
+    {:else if agents.length === 0}
+      <div
+        class="flex flex-col items-center justify-center flex-1 text-center py-16"
+      >
+        <div class="rounded-full bg-muted p-4 mb-4">
+          <HugeiconsIcon
+            icon={Add01Icon}
+            class="size-6 text-muted-foreground"
+            strokeWidth={2}
+          />
+        </div>
+        <h3 class="text-lg font-medium mb-1">No agents yet</h3>
+        <p class="text-sm text-muted-foreground mb-4 max-w-sm">
+          Add your first agent to start monitoring services.
+        </p>
+        <Button onclick={() => onNavigate("/agents/add")}>
+          <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+          Add Agent
+        </Button>
+      </div>
+    {:else}
+      <div class="flex flex-col gap-2">
+        {#each agents as agent (agent.id)}
+          <Item.Root
+            variant="outline"
+            class={[
+              "group",
+              "h-18 transition-colors duration-150",
+              confirmDeleteId === agent.id
+                ? "border-destructive bg-destructive/5 dark:bg-destructive/10"
+                : "",
+            ]}
+          >
+            {#if confirmDeleteId === agent.id}
+              <Item.Content>
+                <span class="text-sm text-destructive font-medium">
+                  Delete agent {agent.name}? This can't be undone.
                 </span>
-                {#if !agent.enabled}
-                  <span
-                    class="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium"
-                  >
-                    Disabled
-                  </span>
-                {/if}
-              </div>
-              <Item.Description class="text-xs"
-                >{stripProtocol(agent.url)}:{agent.port}</Item.Description
-              >
-            </Item.Content>
+              </Item.Content>
+              <Item.Actions>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onclick={() => handleDelete(agent)}
+                  disabled={deletingId === agent.id}
+                >
+                  Yes, delete
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onclick={() => (confirmDeleteId = null)}
+                >
+                  Cancel
+                </Button>
+              </Item.Actions>
+            {:else}
+              <Item.Media class="h-full">
+                <span
+                  class={[
+                    "shrink-0 size-3 rounded-full transition-all",
+                    getStatusClass(agent.status),
+                  ]}
+                  title={getStatusLabel(agent.status)}
+                ></span>
+              </Item.Media>
 
-            <Item.Actions>
-              <div
-                class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onclick={() => onNavigate(`/agents/${agent.id}`)}
-                  title="Edit agent"
+              <Item.Content>
+                <div class="flex items-center gap-2">
+                  <Item.Title>{agent.name}</Item.Title>
+                  <span
+                    class="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium"
+                  >
+                    {getTypeName(agent.type)}
+                  </span>
+                  {#if !agent.enabled}
+                    <span
+                      class="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium"
+                    >
+                      Disabled
+                    </span>
+                  {/if}
+                </div>
+                <Item.Description class="text-xs"
+                  >{stripProtocol(agent.url)}:{agent.port}</Item.Description
                 >
-                  <HugeiconsIcon icon={Edit01Icon} strokeWidth={2} />
-                  <span class="sr-only">Edit</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onclick={() => (confirmDeleteId = agent.id)}
-                  disabled={confirmDeleteId !== null || deletingId === agent.id}
-                  title="Delete agent"
-                  class="hover:text-destructive hover:bg-destructive/10"
+              </Item.Content>
+
+              <Item.Actions>
+                <div
+                  class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
-                  <span class="sr-only">Delete</span>
-                </Button>
-              </div>
-            </Item.Actions>
-          {/if}
-        </Item.Root>
-      {/each}
-    </div>
-  {/if}
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onclick={() => onNavigate(`/agents/${agent.id}`)}
+                    title="Edit agent"
+                  >
+                    <HugeiconsIcon icon={Edit01Icon} strokeWidth={2} />
+                    <span class="sr-only">Edit</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onclick={() => (confirmDeleteId = agent.id)}
+                    disabled={confirmDeleteId !== null ||
+                      deletingId === agent.id}
+                    title="Delete agent"
+                    class="hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+                    <span class="sr-only">Delete</span>
+                  </Button>
+                </div>
+              </Item.Actions>
+            {/if}
+          </Item.Root>
+        {/each}
+      </div>
+    {/if}
+  </div>
 </div>

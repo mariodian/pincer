@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { router, push } from "@bmlt-enabled/svelte-spa-router";
-  import AgentList from "$lib/components/agents/AgentList.svelte";
   import AgentForm from "$lib/components/agents/AgentForm.svelte";
+  import AgentList from "$lib/components/agents/AgentList.svelte";
   import { previousRoute } from "$lib/services/navigationStore";
+  import { push, router } from "@bmlt-enabled/svelte-spa-router";
 
   let currentPath = $state(router.location);
 
@@ -17,7 +17,8 @@
 
   let view = $derived.by(() => {
     if (currentPath === "/agents/add") return "add";
-    if (currentPath.match(/^\/agents\/\d+$/) && agentId !== undefined) return "edit";
+    if (currentPath.match(/^\/agents\/\d+$/) && agentId !== undefined)
+      return "edit";
     return "list";
   });
 
@@ -29,9 +30,9 @@
 </script>
 
 {#if view === "add"}
-  <AgentForm {prevPath} onNavigate={navigate} />
+  <AgentForm {prevPath} {currentPath} onNavigate={navigate} />
 {:else if view === "edit" && agentId !== undefined}
-  <AgentForm {prevPath} {agentId} onNavigate={navigate} />
+  <AgentForm {prevPath} {currentPath} {agentId} onNavigate={navigate} />
 {:else}
-  <AgentList {prevPath} onNavigate={navigate} />
+  <AgentList {prevPath} {currentPath} onNavigate={navigate} />
 {/if}
