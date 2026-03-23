@@ -1,14 +1,15 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Checkbox } from "$lib/components/ui/checkbox";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
+  import * as Select from "$lib/components/ui/select";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { normalizeUrl } from "$shared/agent-helpers";
   import type { Agent } from "$shared/types";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
+  import { Switch } from "../ui/switch/";
 
   interface Props {
     agentId?: number;
@@ -19,10 +20,10 @@
 
   const isEdit = $derived(agentId !== undefined);
 
-  let type = $state("openclaw");
+  let type = $state("");
   let name = $state("");
   let url = $state("");
-  let port = $state("");
+  let port = $state("18790");
   let enabled = $state(true);
   let healthEndpoint = $state("/health");
   let statusShape = $state("always_ok");
@@ -39,6 +40,10 @@
   };
   let agentTypes = $state<AgentTypeInfo[]>([]);
   let initialEditSnapshot = $state<Omit<Agent, "id"> | null>(null);
+
+  const triggerContent = $derived(
+    agentTypes.find((f) => f.id === type)?.name ?? "Select an agent type",
+  );
 
   const isCustom = $derived(type === "custom");
 
@@ -259,15 +264,19 @@
 
       <div class="space-y-2">
         <Label for="type">Type</Label>
-        <select
-          id="type"
-          bind:value={type}
-          class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
-        >
-          {#each [...agentTypes].sort( (a, b) => (a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0), ) as agentType (agentType.id)}
-            <option value={agentType.id}>{agentType.name}</option>
-          {/each}
-        </select>
+        <Select.Root type="single" name="type" bind:value={type}>
+          <Select.Trigger class="w-56">{triggerContent}</Select.Trigger>
+          <Select.Content id="type">
+            <Select.Group>
+              <Select.Label>Agents</Select.Label>
+              {#each [...agentTypes].sort( (a, b) => (a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0), ) as agentType (agentType.id)}
+                <Select.Item value={agentType.id} label="{agentType.name}}">
+                  {agentType.name}
+                </Select.Item>
+              {/each}
+            </Select.Group>
+          </Select.Content>
+        </Select.Root>
       </div>
 
       {#if isCustom}
@@ -337,7 +346,7 @@
         {/if}
       </div>
 
-      <div class="space-y-2">
+      <div class="space-y-2 w-28">
         <Label for="port" class="text-sm font-medium">Port</Label>
         <Input
           id="port"
@@ -353,10 +362,24 @@
         {/if}
       </div>
 
-      <div class="flex items-center gap-2">
-        <Checkbox id="enabled" bind:checked={enabled} />
-        <Label for="enabled">Enabled</Label>
-      </div>
+      <Label
+        for="open-main-window"
+        class={[
+          "flex items-center justify-between gap-3 rounded-lg border p-4",
+          "hover:bg-accent/50",
+          "has-[[aria-checked=true]]:border-blue-200 has-[[aria-checked=true]]:bg-blue-50",
+          "dark:has-[[aria-checked=true]]:border-blue-900/50 dark:has-[[aria-checked=true]]:bg-blue-950/50",
+        ]}
+      >
+        <div class="grid gap-1.5 font-normal">
+          <p class="text-sm leading-none font-medium">Monitor Agent</p>
+          <p class="text-xs text-muted-foreground">
+            An enabled agent will be actively monitored. Disable to pause
+            monitoring without losing configuration.
+          </p>
+        </div>
+        <Switch id="open-main-window" bind:checked={enabled} />
+      </Label>
 
       <div class="flex gap-3 pt-2">
         <Button type="submit" disabled={saving}>
