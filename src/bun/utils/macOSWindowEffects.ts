@@ -10,6 +10,11 @@ export type WindowAppearance = "system" | "light" | "dark";
 
 type MacWindowEffectsLibrary = {
   symbols: {
+    setWindowMinSize: (
+      windowPtr: Pointer,
+      width?: number,
+      height?: number,
+    ) => boolean;
     enableWindowVibrancy: (
       windowPtr: Pointer,
       titleBarTransparent: boolean,
@@ -70,6 +75,10 @@ function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
 
   try {
     macWindowEffectsLib = dlopen(dylibPath, {
+      setWindowMinSize: {
+        args: [FFIType.ptr, FFIType.f64, FFIType.f64],
+        returns: FFIType.bool,
+      },
       enableWindowVibrancy: {
         args: [FFIType.ptr, FFIType.bool, FFIType.i32],
         returns: FFIType.bool,
@@ -164,6 +173,11 @@ export function applyMacOSWindowEffects(
   const windowAppearance = getWindowAppearance(windowName);
 
   try {
+    const minSizeSet = lib.symbols.setWindowMinSize(
+      mainWindow.ptr,
+      windowConfig.minWidth,
+      windowConfig.minHeight,
+    );
     const vibrancyEnabled = windowConfig.vibrancy
       ? lib.symbols.enableWindowVibrancy(
           mainWindow.ptr,
@@ -230,7 +244,7 @@ export function applyMacOSWindowEffects(
 
     logger.info(
       "native",
-      `macOS effects applied (window=${windowName}, vibrancy=${vibrancyEnabled}, appearance=${appearanceEnabled}, shadow=${shadowEnabled}, trafficLights=${windowConfig.trafficLights}, nativeDrag=${windowConfig.nativeDragRegion}, theme=${windowAppearance})`,
+      `macOS effects applied (window=${windowName}, minSize=${minSizeSet}, vibrancy=${vibrancyEnabled}, appearance=${appearanceEnabled}, shadow=${shadowEnabled}, trafficLights=${windowConfig.trafficLights}, nativeDrag=${windowConfig.nativeDragRegion}, theme=${windowAppearance})`,
     );
   } catch (error) {
     logger.warn("native", "Failed to apply native macOS effects:", error);

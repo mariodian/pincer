@@ -1,7 +1,11 @@
 // Window dimensions
-export const MAIN_WINDOW = { width: 900, height: 700 };
+export const MAIN_WINDOW = {
+  width: 900,
+  height: 700,
+  minWidth: 600,
+  minHeight: 400,
+};
 export const POPOVER_WINDOW = { width: 250, height: 300 };
-export const SETTINGS_WINDOW = { minWidth: 600, minHeight: 400 };
 
 // Tray
 export const APP_NAME = "CrabMon";

@@ -1,6 +1,5 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
-import { initLogger, logger } from "./services/loggerService";
 import { agentRequestHandlers } from "./rpc/agentRPC";
 import { settingsRequestHandlers } from "./rpc/settingsRPC";
 import {
@@ -10,11 +9,12 @@ import {
 } from "./rpc/systemRPC";
 import { setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
+import { initLogger, logger } from "./services/loggerService";
 import { beginStatusUpdates } from "./services/statusService";
+import { getSettings } from "./storage/sqlite/settingsRepo";
 import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { isMacOS as isMacOSFn } from "./utils/platform";
-import { getSettings } from "./storage/sqlite/settingsRepo";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
@@ -53,8 +53,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
     ),
     y: Math.round(
       primaryDisplay.bounds.y +
-        (primaryDisplay.bounds.height - windowHeight) /
-          2,
+        (primaryDisplay.bounds.height - windowHeight) / 2,
     ),
   };
 
@@ -94,6 +93,28 @@ export async function createMainWindow(): Promise<BrowserWindow> {
     Utils.setDockIconVisible(false);
     setMainWindow(null);
   });
+
+  // On non-macOS platforms, enforce minimum window size by listening to resize events
+  // MacOS handles this natively via the setWindowMinSize call
+  let resizeTimeout: Timer | null = null;
+  if (!isMacOS) {
+    mainWindow.on("resize", (event: any) => {
+      const { x, y, width, height } = event.data;
+
+      if (width < MAIN_WINDOW.minWidth || height < MAIN_WINDOW.minHeight) {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          mainWindow.setFrame(
+            x,
+            y,
+            Math.max(width, MAIN_WINDOW.minWidth),
+            Math.max(height, MAIN_WINDOW.minHeight),
+          );
+          resizeTimeout = null;
+        }, 150);
+      }
+    });
+  }
 
   return mainWindow;
 }

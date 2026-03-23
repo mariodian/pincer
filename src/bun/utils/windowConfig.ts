@@ -1,5 +1,6 @@
 // Window Service - Shared window configuration and types
 
+import { MAIN_WINDOW } from "../config";
 
 export interface WindowConfig {
   titleBarStyle: "hiddenInset" | "hidden" | "default";
@@ -12,6 +13,8 @@ export interface WindowConfig {
   nativeDragRegion: boolean;
   nativeDragRegionX: number;
   nativeDragRegionHeight: number;
+  minWidth?: number;
+  minHeight?: number;
 }
 
 export type WindowName = "main" | "popover";
@@ -28,6 +31,8 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
     nativeDragRegion: false,
     nativeDragRegionX: 92,
     nativeDragRegionHeight: 40,
+    minWidth: MAIN_WINDOW.minWidth,
+    minHeight: MAIN_WINDOW.minHeight,
   },
   popover: {
     titleBarStyle: "hiddenInset",
