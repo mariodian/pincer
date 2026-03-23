@@ -175,7 +175,7 @@
     {:else}
       <div class="flex flex-col gap-2 h-full overflow-x-hidden">
         {#each agents as agent (agent.id)}
-          <div class="min-h-18 relative">
+          <div class="relative">
             <div
               class={[
                 "absolute w-full",
@@ -188,7 +188,7 @@
                 variant="outline"
                 class={[
                   "group",
-                  "h-full w-full",
+                  "min-h-18 h-full w-full",
                   "border-destructive bg-destructive/5 dark:bg-destructive/10",
                 ]}
               >
@@ -226,8 +226,11 @@
                   : "left-0 duration-300",
               ]}
             >
-              <Item.Root variant="outline" class={["group", "h-full w-full"]}>
-                <Item.Media class="min-h-8">
+              <Item.Root
+                variant="outline"
+                class={["group", "min-h-18 h-full w-full"]}
+              >
+                <Item.Media class="min-h-9">
                   <span
                     class={[
                       "shrink-0 size-3 rounded-full transition-all",

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { link, push, router } from "@bmlt-enabled/svelte-spa-router";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+  import { link, push, router } from "@bmlt-enabled/svelte-spa-router";
   import { Add01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
@@ -33,7 +33,7 @@
           <Sidebar.MenuItem class="flex items-center gap-2">
             <Sidebar.MenuButton
               class="min-w-8 duration-200 ease-linear"
-              tooltipContent="Quick create"
+              tooltipContent="Agents"
               isActive={isActive(item.url)}
             >
               {#snippet child({ props })}
@@ -55,7 +55,10 @@
           </Sidebar.MenuItem>
         {:else}
           <Sidebar.MenuItem>
-            <Sidebar.MenuButton tooltipContent={item.title} isActive={isActive(item.url)}>
+            <Sidebar.MenuButton
+              tooltipContent={item.title}
+              isActive={isActive(item.url)}
+            >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
                   <HugeiconsIcon icon={item.icon} strokeWidth={2} />
