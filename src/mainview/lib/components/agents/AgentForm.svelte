@@ -1,15 +1,14 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
   import * as Select from "$lib/components/ui/select";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { normalizeUrl } from "$shared/agent-helpers";
   import type { Agent } from "$shared/types";
   import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
-  import { Switch } from "../ui/switch/";
 
   interface Props {
     agentId?: number;
@@ -362,24 +361,14 @@
         {/if}
       </div>
 
-      <Label
-        for="open-main-window"
-        class={[
-          "flex items-center justify-between gap-3 rounded-lg border p-4",
-          "hover:bg-accent/50",
-          "has-[[aria-checked=true]]:border-blue-200 has-[[aria-checked=true]]:bg-blue-50",
-          "dark:has-[[aria-checked=true]]:border-blue-900/50 dark:has-[[aria-checked=true]]:bg-blue-950/50",
-        ]}
-      >
-        <div class="grid gap-1.5 font-normal">
-          <p class="text-sm leading-none font-medium">Monitor Agent</p>
-          <p class="text-xs text-muted-foreground">
-            An enabled agent will be actively monitored. Disable to pause
-            monitoring without losing configuration.
-          </p>
-        </div>
-        <Switch id="open-main-window" bind:checked={enabled} />
-      </Label>
+      <SwitchCard
+        id="monitor-agent"
+        title="Monitor Agent"
+        description="An enabled agent will be actively monitored. Disable to pause
+          monitoring without losing configuration."
+        bind:checked={enabled}
+        variant="blue"
+      />
 
       <div class="flex gap-3 pt-2">
         <Button type="submit" disabled={saving}>

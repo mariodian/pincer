@@ -2,7 +2,7 @@
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { Switch } from "$lib/components/ui/switch";
+  import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import type { Settings } from "$shared/types";
 
@@ -150,29 +150,14 @@
       </p>
     </div>
 
-    <Label
-      for="open-main-window"
-      class={[
-        "flex items-center justify-between gap-3 rounded-lg border p-4",
-        "hover:bg-accent/50",
-        "has-[[aria-checked=true]]:border-blue-200 has-[[aria-checked=true]]:bg-blue-50",
-        "dark:has-[[aria-checked=true]]:border-blue-900/50 dark:has-[[aria-checked=true]]:bg-blue-950/50",
-      ]}
-    >
-      <div class="grid gap-1.5 font-normal">
-        <p class="text-sm leading-none font-medium">
-          Open main window on startup
-        </p>
-        <p class="text-xs text-muted-foreground">
-          Show the application window when CrabControl launches.
-        </p>
-      </div>
-      <Switch
-        id="open-main-window"
-        checked={openMainWindow}
-        onCheckedChange={handleMainWindowChange}
-      />
-    </Label>
+    <SwitchCard
+      id="open-main-window"
+      title="Open main window on startup"
+      description="Show the application window when CrabControl launches."
+      checked={openMainWindow}
+      onCheckedChange={handleMainWindowChange}
+      variant="blue"
+    />
     <!--
     <div
       class="flex items-center justify-between rounded-lg border border-border/50 p-4"
