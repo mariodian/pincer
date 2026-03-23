@@ -127,7 +127,7 @@
         bind:value={pollingIntervalSec}
         onblur={handlePollingBlur}
         onkeydown={handlePollingKeydown}
-        class="w-full"
+        class="w-20"
       />
       <p class="text-xs text-muted-foreground">
         How often to check agent health status.
@@ -143,7 +143,7 @@
         bind:value={retentionDays}
         onblur={handleRetentionBlur}
         onkeydown={handleRetentionKeydown}
-        class="w-full"
+        class="w-20"
       />
       <p class="text-xs text-muted-foreground">
         Days to keep historical stats. Set to 0 to keep forever.
@@ -153,28 +153,9 @@
     <SwitchCard
       id="open-main-window"
       title="Open main window on startup"
-      description="Show the application window when CrabControl launches."
+      description="Show the application window when CrabControl launches. If disabled, the app will run in the background and can be accessed from the system tray."
       checked={openMainWindow}
       onCheckedChange={handleMainWindowChange}
-      variant="blue"
     />
-    <!--
-    <div
-      class="flex items-center justify-between rounded-lg border border-border/50 p-4"
-    >
-      <div class="space-y-0.5">
-        <Label for="open-main-window" class="cursor-pointer">
-          Open main window on startup
-        </Label>
-        <p class="text-xs text-muted-foreground">
-          Show the application window when CrabControl launches.
-        </p>
-      </div>
-      <Switch
-        id="open-main-window"
-        checked={openMainWindow}
-        onCheckedChange={handleMainWindowChange}
-      />
-    </div> -->
   </div>
 {/if}
