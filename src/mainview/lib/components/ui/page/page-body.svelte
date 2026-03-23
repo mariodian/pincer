@@ -11,7 +11,7 @@
 </script>
 
 <div
-  class="starting:opacity-0 animate-in fade-in"
+  class="starting:opacity-0 animate-in fade-in h-full min-w-96 overflow-auto"
   style="animation-duration: {animationDuration}ms;"
 >
   {@render children?.()}

@@ -18,6 +18,7 @@
     ...restProps
   }: Omit<ComponentProps<typeof MenuButton>, "size"> & {
     onclick?: (e: MouseEvent) => void;
+    disabled?: boolean;
     size?:
       | SidebarMenuButtonSize
       | "icon"

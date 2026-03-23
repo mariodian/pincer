@@ -12,6 +12,7 @@
 
   const sidebar = useSidebar();
   let shouldFlex = $state(false);
+  let shouldDisableSidebarTrigger = $state(false);
 
   let currentLocation = $state(router.location);
 
@@ -56,6 +57,14 @@
   }: {
     items: { title: string; url: string; icon: IconSvgElement }[];
   } & WithoutChildren<ComponentProps<typeof Sidebar.Group>> = $props();
+
+  window.addEventListener("resize", () => {
+    if (sidebar.isMobile) {
+      shouldDisableSidebarTrigger = true;
+    } else {
+      shouldDisableSidebarTrigger = false;
+    }
+  });
 </script>
 
 <Sidebar.Group {...restProps}>
@@ -160,7 +169,11 @@
             ]}
           >
             <Sidebar.MenuItem>
-              <Sidebar.Trigger tooltipContent="Open sidebar" size="icon-sm" />
+              <Sidebar.Trigger
+                disabled={!!shouldDisableSidebarTrigger}
+                tooltipContent="Open sidebar"
+                size="icon-sm"
+              />
             </Sidebar.MenuItem>
           </div>
         {:else}
