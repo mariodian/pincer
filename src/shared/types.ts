@@ -24,3 +24,9 @@ export interface AgentStatusInfo {
   lastChecked: number;
   errorMessage?: string;
 }
+
+export interface Settings {
+  pollingInterval: number;
+  retentionDays: number;
+  openMainWindow: boolean;
+}

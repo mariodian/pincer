@@ -2,6 +2,7 @@ import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { initLogger, logger } from "./services/loggerService";
 import { agentRequestHandlers } from "./rpc/agentRPC";
+import { settingsRequestHandlers } from "./rpc/settingsRPC";
 import {
   setRendererReadyCallback,
   systemRPC,
@@ -32,6 +33,7 @@ const combinedRPC = systemRPC;
 combinedRPC.setRequestHandler({
   ...systemRequestHandlers,
   ...agentRequestHandlers,
+  ...settingsRequestHandlers,
 });
 
 /**

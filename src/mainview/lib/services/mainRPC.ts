@@ -1,23 +1,27 @@
 import type { AgentRPCType } from "$bun/rpc/agentRPC";
+import type { SettingsRPCType } from "$bun/rpc/settingsRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import { syncAgentsToCache } from "$lib/utils/storage";
 import type { AgentStatus } from "$shared/types";
 import type { LogEntry } from "$shared/rpc";
 
-/** Composed RPC type: system messages (navigateTo, pushLog) + agent messages (syncAgents) + all requests. */
-export type MainRPCType = SystemRPCType & AgentRPCType;
+/** Composed RPC type: system + agent + settings requests and messages. */
+export type MainRPCType = SystemRPCType & AgentRPCType & SettingsRPCType;
 
 /** The typed request object available via getMainRPC().request */
 export type MainRPCRequests = {
   [K in keyof (SystemRPCType["bun"]["requests"] &
-    AgentRPCType["bun"]["requests"])]: (
+    AgentRPCType["bun"]["requests"] &
+    SettingsRPCType["bun"]["requests"])]: (
     ...args: (SystemRPCType["bun"]["requests"] &
-      AgentRPCType["bun"]["requests"])[K] extends { params: infer P }
+      AgentRPCType["bun"]["requests"] &
+      SettingsRPCType["bun"]["requests"])[K] extends { params: infer P }
       ? [P]
       : []
   ) => Promise<
     (SystemRPCType["bun"]["requests"] &
-      AgentRPCType["bun"]["requests"])[K] extends { response: infer R }
+      AgentRPCType["bun"]["requests"] &
+      SettingsRPCType["bun"]["requests"])[K] extends { response: infer R }
       ? R
       : never
   >;
@@ -75,6 +79,17 @@ export function triggerSyncCallbacks(): void {
 
 export function isInitialized(): boolean {
   return rpcInstance !== null;
+}
+
+/** Wait until the RPC instance is ready. Safe to call before initMainRPC(). */
+export async function whenReady(): Promise<void> {
+  if (rpcInstance) return;
+  if (!initPromise) {
+    throw new Error(
+      "Main RPC not initializing. Call initMainRPC() first.",
+    );
+  }
+  await initPromise;
 }
 
 export function getMainRPC(): { request: MainRPCRequests } {
