@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
+  import * as Item from "$lib/components/ui/item/index.js";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getMainRPC, offAgentSync, onAgentSync } from "$lib/services/mainRPC";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
@@ -165,19 +166,23 @@
   {:else}
     <div class="flex flex-col gap-2">
       {#each agents as agent (agent.id)}
-        <div
+        <Item.Root
+          variant="outline"
           class={[
-            "group flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors min-h-18",
+            "group",
+            "h-18 transition-colors duration-150",
             confirmDeleteId === agent.id
-              ? "border-destructive"
-              : "border-border/50",
+              ? "border-destructive bg-destructive/5 dark:bg-destructive/10"
+              : "",
           ]}
         >
           {#if confirmDeleteId === agent.id}
-            <span class="flex-1 text-sm text-destructive font-medium">
-              Delete agent {agent.name}? This can't be undone.
-            </span>
-            <div class="flex gap-1">
+            <Item.Content>
+              <span class="text-sm text-destructive font-medium">
+                Delete agent {agent.name}? This can't be undone.
+              </span>
+            </Item.Content>
+            <Item.Actions>
               <Button
                 variant="destructive"
                 size="sm"
@@ -187,25 +192,27 @@
                 Yes, delete
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onclick={() => (confirmDeleteId = null)}
               >
                 Cancel
               </Button>
-            </div>
+            </Item.Actions>
           {:else}
-            <span
-              class={[
-                "shrink-0 size-3 rounded-full transition-all",
-                getStatusClass(agent.status),
-              ]}
-              title={getStatusLabel(agent.status)}
-            ></span>
+            <Item.Media class="h-full">
+              <span
+                class={[
+                  "shrink-0 size-3 rounded-full transition-all",
+                  getStatusClass(agent.status),
+                ]}
+                title={getStatusLabel(agent.status)}
+              ></span>
+            </Item.Media>
 
-            <div class="flex-1 min-w-0">
+            <Item.Content>
               <div class="flex items-center gap-2">
-                <span class="font-medium text-sm truncate">{agent.name}</span>
+                <Item.Title>{agent.name}</Item.Title>
                 <span
                   class="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium"
                 >
@@ -219,37 +226,39 @@
                   </span>
                 {/if}
               </div>
-              <span class="text-xs text-muted-foreground truncate block mt-0.5">
-                {agent.url}:{agent.port}
-              </span>
-            </div>
+              <Item.Description class="text-xs"
+                >{agent.url}:{agent.port}</Item.Description
+              >
+            </Item.Content>
 
-            <div
-              class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onclick={() => onNavigate(`/agents/${agent.id}`)}
-                title="Edit agent"
+            <Item.Actions>
+              <div
+                class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                <HugeiconsIcon icon={Edit01Icon} strokeWidth={2} />
-                <span class="sr-only">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onclick={() => (confirmDeleteId = agent.id)}
-                disabled={confirmDeleteId !== null || deletingId === agent.id}
-                title="Delete agent"
-                class="hover:text-destructive hover:bg-destructive/10"
-              >
-                <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
-                <span class="sr-only">Delete</span>
-              </Button>
-            </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onclick={() => onNavigate(`/agents/${agent.id}`)}
+                  title="Edit agent"
+                >
+                  <HugeiconsIcon icon={Edit01Icon} strokeWidth={2} />
+                  <span class="sr-only">Edit</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onclick={() => (confirmDeleteId = agent.id)}
+                  disabled={confirmDeleteId !== null || deletingId === agent.id}
+                  title="Delete agent"
+                  class="hover:text-destructive hover:bg-destructive/10"
+                >
+                  <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+                  <span class="sr-only">Delete</span>
+                </Button>
+              </div>
+            </Item.Actions>
           {/if}
-        </div>
+        </Item.Root>
       {/each}
     </div>
   {/if}

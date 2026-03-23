@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button/index.js";
-  import { Input } from "$lib/components/ui/input/index.js";
-  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+  import { Button } from "$lib/components/ui/button";
+  import { Checkbox } from "$lib/components/ui/checkbox";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { normalizeUrl } from "$shared/agent-helpers";
   import type { Agent } from "$shared/types";
@@ -256,7 +258,7 @@
       {/if}
 
       <div class="space-y-2">
-        <label for="type" class="text-sm font-medium">Type</label>
+        <Label for="type">Type</Label>
         <select
           id="type"
           bind:value={type}
@@ -270,9 +272,9 @@
 
       {#if isCustom}
         <div class="space-y-2">
-          <label for="healthEndpoint" class="text-sm font-medium">
+          <Label for="healthEndpoint" class="text-sm font-medium">
             Health Endpoint
-          </label>
+          </Label>
           <Input
             id="healthEndpoint"
             type="text"
@@ -289,9 +291,9 @@
         </div>
 
         <div class="space-y-2">
-          <label for="statusShape" class="text-sm font-medium">
+          <Label for="statusShape" class="text-sm font-medium">
             Status Detection
-          </label>
+          </Label>
           <select
             id="statusShape"
             bind:value={statusShape}
@@ -308,7 +310,7 @@
       {/if}
 
       <div class="space-y-2">
-        <label for="name" class="text-sm font-medium">Name</label>
+        <Label for="name" class="text-sm font-medium">Name</Label>
         <Input
           id="name"
           type="text"
@@ -322,7 +324,7 @@
       </div>
 
       <div class="space-y-2">
-        <label for="url" class="text-sm font-medium">URL</label>
+        <Label for="url" class="text-sm font-medium">URL</Label>
         <Input
           id="url"
           type="text"
@@ -336,7 +338,7 @@
       </div>
 
       <div class="space-y-2">
-        <label for="port" class="text-sm font-medium">Port</label>
+        <Label for="port" class="text-sm font-medium">Port</Label>
         <Input
           id="port"
           type="number"
@@ -352,15 +354,8 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <input
-          id="enabled"
-          type="checkbox"
-          bind:checked={enabled}
-          class="size-4 rounded border-input accent-primary"
-        />
-        <label for="enabled" class="text-sm font-medium cursor-pointer"
-          >Enabled</label
-        >
+        <Checkbox id="enabled" bind:checked={enabled} />
+        <Label for="enabled">Enabled</Label>
       </div>
 
       <div class="flex gap-3 pt-2">
