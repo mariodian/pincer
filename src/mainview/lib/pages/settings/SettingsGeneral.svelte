@@ -96,68 +96,66 @@
   }
 </script>
 
-<div class="starting:opacity-0 animate-in fade-in duration-300">
-  {#if loading}
-    <div class="space-y-6 max-w-lg">
-      <div class="space-y-2">
-        <Skeleton class="h-4 w-32" />
-        <Skeleton class="h-9 w-full" />
-        <Skeleton class="h-3 w-48" />
-      </div>
-      <div class="space-y-2">
-        <Skeleton class="h-4 w-28" />
-        <Skeleton class="h-9 w-full" />
-        <Skeleton class="h-3 w-56" />
-      </div>
-      <div class="flex items-center justify-between">
-        <div class="space-y-2">
-          <Skeleton class="h-4 w-40" />
-          <Skeleton class="h-3 w-52" />
-        </div>
-        <Skeleton class="h-[18px] w-[32px] rounded-full" />
-      </div>
+{#if loading}
+  <div class="space-y-6 max-w-lg">
+    <div class="space-y-2">
+      <Skeleton class="h-4 w-32" />
+      <Skeleton class="h-9 w-full" />
+      <Skeleton class="h-3 w-48" />
     </div>
-  {:else}
-    <div class="space-y-6 max-w-lg">
+    <div class="space-y-2">
+      <Skeleton class="h-4 w-28" />
+      <Skeleton class="h-9 w-full" />
+      <Skeleton class="h-3 w-56" />
+    </div>
+    <div class="flex items-center justify-between">
       <div class="space-y-2">
-        <Label for="polling-interval">Polling interval (seconds)</Label>
-        <Input
-          id="polling-interval"
-          type="number"
-          min="1"
-          bind:value={pollingIntervalSec}
-          onblur={handlePollingBlur}
-          onkeydown={handlePollingKeydown}
-          class="w-20"
-        />
-        <p class="text-xs text-muted-foreground">
-          How often to check agent health status.
-        </p>
+        <Skeleton class="h-4 w-40" />
+        <Skeleton class="h-3 w-52" />
       </div>
-
-      <div class="space-y-2">
-        <Label for="retention-days">Data retention (days)</Label>
-        <Input
-          id="retention-days"
-          type="number"
-          min="0"
-          bind:value={retentionDays}
-          onblur={handleRetentionBlur}
-          onkeydown={handleRetentionKeydown}
-          class="w-20"
-        />
-        <p class="text-xs text-muted-foreground">
-          Days to keep historical stats. Set to 0 to keep forever.
-        </p>
-      </div>
-
-      <SwitchCard
-        id="open-main-window"
-        title="Open main window on startup"
-        description="Show the application window when CrabControl launches. If disabled, the app will run in the background and can be accessed from the system tray."
-        checked={openMainWindow}
-        onCheckedChange={handleMainWindowChange}
+      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+    </div>
+  </div>
+{:else}
+  <div class="space-y-6 max-w-lg">
+    <div class="space-y-2">
+      <Label for="polling-interval">Polling interval (seconds)</Label>
+      <Input
+        id="polling-interval"
+        type="number"
+        min="1"
+        bind:value={pollingIntervalSec}
+        onblur={handlePollingBlur}
+        onkeydown={handlePollingKeydown}
+        class="w-20"
       />
+      <p class="text-xs text-muted-foreground">
+        How often to check agent health status.
+      </p>
     </div>
-  {/if}
-</div>
+
+    <div class="space-y-2">
+      <Label for="retention-days">Data retention (days)</Label>
+      <Input
+        id="retention-days"
+        type="number"
+        min="0"
+        bind:value={retentionDays}
+        onblur={handleRetentionBlur}
+        onkeydown={handleRetentionKeydown}
+        class="w-20"
+      />
+      <p class="text-xs text-muted-foreground">
+        Days to keep historical stats. Set to 0 to keep forever.
+      </p>
+    </div>
+
+    <SwitchCard
+      id="open-main-window"
+      title="Open main window on startup"
+      description="Show the application window when CrabControl launches. If disabled, the app will run in the background and can be accessed from the system tray."
+      checked={openMainWindow}
+      onCheckedChange={handleMainWindowChange}
+    />
+  </div>
+{/if}

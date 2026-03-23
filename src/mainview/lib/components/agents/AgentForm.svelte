@@ -2,7 +2,7 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { PageHeader } from "$lib/components/ui/page-header";
+  import { PageBody, PageHeader } from "$lib/components/ui/page";
   import * as Select from "$lib/components/ui/select";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { SwitchCard } from "$lib/components/ui/switch-card";
@@ -223,7 +223,7 @@
     onBack={() => onNavigate("/agents")}
   />
 
-  <div class="starting:opacity-0 animate-in fade-in duration-500">
+  <PageBody>
     {#if loadError}
       <div
         class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
@@ -381,5 +381,5 @@
         </div>
       </form>
     {/if}
-  </div>
+  </PageBody>
 </div>

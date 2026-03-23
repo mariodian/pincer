@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Item from "$lib/components/ui/item/index.js";
-  import { PageHeader } from "$lib/components/ui/page-header/index.js";
+  import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getMainRPC, offAgentSync, onAgentSync } from "$lib/services/mainRPC";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
@@ -133,7 +133,7 @@
     {/snippet}
   </PageHeader>
 
-  <div class="starting:opacity-0 animate-in fade-in duration-500">
+  <PageBody>
     {#if loading}
       <div class="flex flex-col gap-3">
         {#each [1, 2, 3] as _}
@@ -272,5 +272,5 @@
         {/each}
       </div>
     {/if}
-  </div>
+  </PageBody>
 </div>

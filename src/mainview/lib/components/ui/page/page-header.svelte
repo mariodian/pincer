@@ -13,6 +13,7 @@
     onBack,
     actions,
     children,
+    animationDuration = 300,
   }: {
     title: string;
     description?: string;
@@ -22,6 +23,7 @@
     onBack?: () => void;
     actions?: Snippet;
     children?: Snippet;
+    animationDuration?: number;
   } = $props();
 
   let animationClass = $derived.by(() => {
@@ -54,8 +56,9 @@
     <div
       class={[
         "flex items-center gap-3 ",
-        animationClass && `transition-all duration-300 ${animationClass}`,
+        animationClass && `transition-all ${animationClass}`,
       ]}
+      style="animation-duration: {animationDuration}ms;"
     >
       {#if showBack}
         <Button variant="ghost" size="icon-sm" onclick={onBack}>

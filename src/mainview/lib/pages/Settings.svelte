@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { PageHeader } from "$lib/components/ui/page-header/index.js";
+  import { PageBody, PageHeader } from "$lib/components/ui/page";
   import * as Tabs from "$lib/components/ui/tabs";
   import { previousRoute } from "$lib/services/navigationStore";
   import { router } from "@bmlt-enabled/svelte-spa-router";
@@ -66,7 +66,7 @@
     {/snippet}
   </PageHeader>
 
-  <div class="starting:opacity-0 animate-in fade-in duration-300">
+  <PageBody>
     <Tabs.Root bind:value={activeTab} class="flex-1">
       <Tabs.List class="mb-6">
         <Tabs.Trigger value="general">General</Tabs.Trigger>
@@ -81,5 +81,5 @@
         <p class="text-sm text-muted-foreground">Coming soon.</p>
       </Tabs.Content>
     </Tabs.Root>
-  </div>
+  </PageBody>
 </div>
