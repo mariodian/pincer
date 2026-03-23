@@ -123,7 +123,6 @@
   <div class="flex items-center justify-between mb-6">
     <div
       class={[
-        "flex items-center gap-3 mb-6",
         prevPath.startsWith("/agents/") &&
           "transition-all animate-in slide-in-from-right-11 duration-300",
       ]}
@@ -178,7 +177,6 @@
       </Button>
     </div>
   {:else}
-    <p>prev path: {prevPath}</p>
     <div
       in:fade={{ duration: TRANSITION_DURATION }}
       class="flex flex-col gap-2"
