@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Input } from "$lib/components/ui/input/index.js";
-  import { Label } from "$lib/components/ui/label/index.js";
-  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { Switch } from "$lib/components/ui/switch/index.js";
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
+  import { Skeleton } from "$lib/components/ui/skeleton";
+  import { Switch } from "$lib/components/ui/switch";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import type { Settings } from "$shared/types";
 
@@ -150,7 +150,33 @@
       </p>
     </div>
 
-    <div class="flex items-center justify-between rounded-lg border border-border/50 p-4">
+    <Label
+      for="open-main-window"
+      class={[
+        "flex items-center justify-between gap-3 rounded-lg border p-4",
+        "hover:bg-accent/50",
+        "has-[[aria-checked=true]]:border-blue-200 has-[[aria-checked=true]]:bg-blue-50",
+        "dark:has-[[aria-checked=true]]:border-blue-900/50 dark:has-[[aria-checked=true]]:bg-blue-950/50",
+      ]}
+    >
+      <div class="grid gap-1.5 font-normal">
+        <p class="text-sm leading-none font-medium">
+          Open main window on startup
+        </p>
+        <p class="text-xs text-muted-foreground">
+          Show the application window when CrabControl launches.
+        </p>
+      </div>
+      <Switch
+        id="open-main-window"
+        checked={openMainWindow}
+        onCheckedChange={handleMainWindowChange}
+      />
+    </Label>
+    <!--
+    <div
+      class="flex items-center justify-between rounded-lg border border-border/50 p-4"
+    >
       <div class="space-y-0.5">
         <Label for="open-main-window" class="cursor-pointer">
           Open main window on startup
@@ -164,6 +190,6 @@
         checked={openMainWindow}
         onCheckedChange={handleMainWindowChange}
       />
-    </div>
+    </div> -->
   </div>
 {/if}
