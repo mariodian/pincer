@@ -205,25 +205,32 @@
   }
 </script>
 
-<div class="flex flex-col h-full max-w-lg">
-  <div class="flex items-center gap-3 mb-6">
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      onclick={() => onNavigate("/agents")}
+<div class="transition ease-in flex flex-col h-full max-w-lg">
+  <div class="overflow-hidden">
+    <div
+      class={[
+        "flex items-center gap-3 mb-6",
+        "transition-all animate-in slide-in-from-left-11 duration-300",
+      ]}
     >
-      <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-      <span class="sr-only">Back</span>
-    </Button>
-    <div>
-      <h1 class="text-2xl font-semibold tracking-tight">
-        {isEdit ? "Edit Agent" : "Add Agent"}
-      </h1>
-      <p class="text-sm text-muted-foreground mt-1">
-        {isEdit
-          ? "Update the agent configuration."
-          : "Configure a new service to monitor."}
-      </p>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onclick={() => onNavigate("/agents")}
+      >
+        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+        <span class="sr-only">Back</span>
+      </Button>
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">
+          {isEdit ? "Edit Agent" : "Add Agent"}
+        </h1>
+        <p class="text-sm text-muted-foreground mt-1">
+          {isEdit
+            ? "Update the agent configuration."
+            : "Configure a new service to monitor."}
+        </p>
+      </div>
     </div>
   </div>
 
@@ -263,10 +270,9 @@
       {/if}
 
       <div class="space-y-2">
-        <Label for="type">Type</Label>
         <Select.Root type="single" name="type" bind:value={type}>
           <Select.Trigger class="w-56">{triggerContent}</Select.Trigger>
-          <Select.Content id="type">
+          <Select.Content>
             <Select.Group>
               <Select.Label>Agents</Select.Label>
               {#each [...agentTypes].sort( (a, b) => (a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0), ) as agentType (agentType.id)}

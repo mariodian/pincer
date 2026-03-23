@@ -130,9 +130,13 @@
         break;
     }
 
-    const lines = [agent.name, `${agent.url}:${agent.port}`, tooltip];
+    const lines = [agent.name, `${stripProtocol(agent.url)}:${agent.port}`, tooltip];
 
     return lines.join("\n");
+  }
+
+  function stripProtocol(url: string): string {
+    return url.replace(/^https?:\/\//, "");
   }
 </script>
 
@@ -221,7 +225,7 @@
                 "agent-time",
                 "text-[11px]",
                 "text-black/50 dark:text-white/60",
-              ]}>{agent.url}:{agent.port}</span
+              ]}>{stripProtocol(agent.url)}:{agent.port}</span
             >
           </div>
         </div>

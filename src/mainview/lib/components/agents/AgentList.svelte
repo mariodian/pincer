@@ -93,6 +93,10 @@
     }
   }
 
+  function stripProtocol(url: string): string {
+    return url.replace(/^https?:\/\//, "");
+  }
+
   async function handleDelete(agent: AgentStatus) {
     if (deletingId !== null) return;
     deletingId = agent.id;
@@ -113,7 +117,12 @@
 
 <div class="flex flex-col h-full">
   <div class="flex items-center justify-between mb-6">
-    <div>
+    <div
+      class={[
+        "flex items-center gap-3 mb-6",
+        "transition-all animate-in slide-in-from-right-11 duration-300",
+      ]}
+    >
       <h1 class="text-2xl font-semibold tracking-tight">Agents</h1>
       <p class="text-sm text-muted-foreground mt-1">
         Manage your monitored services
@@ -227,7 +236,7 @@
                 {/if}
               </div>
               <Item.Description class="text-xs"
-                >{agent.url}:{agent.port}</Item.Description
+                >{stripProtocol(agent.url)}:{agent.port}</Item.Description
               >
             </Item.Content>
 
