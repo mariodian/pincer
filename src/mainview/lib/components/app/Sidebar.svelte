@@ -56,8 +56,11 @@
             />
           </div>
           <div class="flex flex-col gap-0.2 leading-none">
-            <span class=" font-bold text-base">{APP_NAME}</span>
-            <span class="text-xs text-black/50">v{appVersion}</span>
+            <span class="font-bold text-base">{APP_NAME}</span>
+            <span
+              class="text-xs text-sidebar-foreground/50 dark:text-sidebar-foreground/50"
+              >v{appVersion}</span
+            >
           </div>
         </div>
       </Sidebar.MenuItem>
