@@ -14,9 +14,10 @@
   interface Props {
     agentId?: number;
     onNavigate: (path: string) => void;
+    prevPath?: string;
   }
 
-  let { agentId, onNavigate }: Props = $props();
+  let { agentId, onNavigate, prevPath = "/" }: Props = $props();
 
   const isEdit = $derived(agentId !== undefined);
 
@@ -210,7 +211,8 @@
     <div
       class={[
         "flex items-center gap-3 mb-6",
-        "transition-all animate-in slide-in-from-left-11 duration-300",
+        prevPath === "/agents" &&
+          "transition-all animate-in slide-in-from-left-11 duration-300",
       ]}
     >
       <Button

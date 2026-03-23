@@ -2,6 +2,7 @@
   import { router, push } from "@bmlt-enabled/svelte-spa-router";
   import AgentList from "$lib/components/agents/AgentList.svelte";
   import AgentForm from "$lib/components/agents/AgentForm.svelte";
+  import { previousRoute } from "$lib/services/navigationStore";
 
   let currentPath = $state(router.location);
 
@@ -20,15 +21,17 @@
     return "list";
   });
 
+  let prevPath = $derived($previousRoute);
+
   function navigate(path: string) {
     push(path);
   }
 </script>
 
 {#if view === "add"}
-  <AgentForm onNavigate={navigate} />
+  <AgentForm {prevPath} onNavigate={navigate} />
 {:else if view === "edit" && agentId !== undefined}
-  <AgentForm {agentId} onNavigate={navigate} />
+  <AgentForm {prevPath} {agentId} onNavigate={navigate} />
 {:else}
-  <AgentList onNavigate={navigate} />
+  <AgentList {prevPath} onNavigate={navigate} />
 {/if}

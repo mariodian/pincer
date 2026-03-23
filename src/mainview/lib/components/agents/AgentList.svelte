@@ -16,12 +16,16 @@
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import { onMount } from "svelte";
+  import { fade } from "svelte/transition";
+
+  const TRANSITION_DURATION = 300;
 
   interface Props {
     onNavigate: (path: string) => void;
+    prevPath?: string;
   }
 
-  let { onNavigate }: Props = $props();
+  let { onNavigate, prevPath = "/" }: Props = $props();
 
   let agents = $state<AgentStatus[]>([]);
   let loading = $state(true);
@@ -120,7 +124,8 @@
     <div
       class={[
         "flex items-center gap-3 mb-6",
-        "transition-all animate-in slide-in-from-right-11 duration-300",
+        prevPath.startsWith("/agents/") &&
+          "transition-all animate-in slide-in-from-right-11 duration-300",
       ]}
     >
       <h1 class="text-2xl font-semibold tracking-tight">Agents</h1>
@@ -173,7 +178,11 @@
       </Button>
     </div>
   {:else}
-    <div class="flex flex-col gap-2">
+    <p>prev path: {prevPath}</p>
+    <div
+      in:fade={{ duration: TRANSITION_DURATION }}
+      class="flex flex-col gap-2"
+    >
       {#each agents as agent (agent.id)}
         <Item.Root
           variant="outline"
