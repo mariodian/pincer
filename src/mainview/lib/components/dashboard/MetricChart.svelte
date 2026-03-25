@@ -110,7 +110,7 @@
       No data for this period.
     </div>
   {:else}
-    <div class="min-h-[200px] w-full">
+    <div class="min-h-50 w-full">
       {#if chartType === "line"}
         <LineChart
           {data}

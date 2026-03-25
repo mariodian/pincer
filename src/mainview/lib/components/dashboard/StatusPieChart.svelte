@@ -29,6 +29,12 @@
     class: className,
   }: Props = $props();
 
+  const colors = {
+    ok: "var(--color-green-500)",
+    offline: "var(--color-yellow-400)",
+    error: "color-mix(var(--secondary) 30%, var(--primary) 40%)",
+  };
+
   // Aggregate status counts for selected agents
   const statusData = $derived.by(() => {
     let okTotal = 0;
@@ -44,9 +50,9 @@
     }
 
     return [
-      { status: "ok", count: okTotal, color: "var(--chart-1)" },
-      { status: "offline", count: offlineTotal, color: "var(--chart-7)" },
-      { status: "error", count: errorTotal, color: "var(--chart-6)" },
+      { status: "ok", count: okTotal, color: colors.ok },
+      { status: "offline", count: offlineTotal, color: colors.offline },
+      { status: "error", count: errorTotal, color: colors.error },
     ].filter((d) => d.count > 0);
   });
 
@@ -58,9 +64,9 @@
       config[`agent_${agent.id}`] = { label: agent.name, color: agent.color };
     }
     return {
-      ok: { label: "OK", color: "var(--chart-1)" },
-      offline: { label: "Offline", color: "var(--chart-7)" },
-      error: { label: "Error", color: "var(--chart-6)" },
+      ok: { label: "OK", color: colors.ok },
+      offline: { label: "Offline", color: colors.offline },
+      error: { label: "Error", color: colors.error },
       ...config,
     } satisfies Chart.ChartConfig;
   });
@@ -87,6 +93,7 @@
         key="status"
         value="count"
         innerRadius={60}
+        cRange={[colors.ok, colors.offline, colors.error]}
         props={{
           pie: {
             padAngle: 3,
