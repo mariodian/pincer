@@ -1,7 +1,8 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import { link, push, router } from "@bmlt-enabled/svelte-spa-router";
+  import { currentRoute } from "$lib/services/navigationStore";
+  import { link, push } from "@bmlt-enabled/svelte-spa-router";
   import { Add01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
@@ -11,11 +12,7 @@
   }: { items: { title: string; url: string; icon: IconSvgElement }[] } =
     $props();
 
-  let currentLocation = $state(router.location);
-
-  $effect(() => {
-    currentLocation = router.location;
-  });
+  let currentLocation = $derived($currentRoute);
 
   function isActive(url: string): boolean {
     if (url === "/") {

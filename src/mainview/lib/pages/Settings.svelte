@@ -1,16 +1,10 @@
 <script lang="ts">
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import * as Tabs from "$lib/components/ui/tabs";
-  import { previousRoute } from "$lib/services/navigationStore";
-  import { router } from "@bmlt-enabled/svelte-spa-router";
+  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import SettingsGeneral from "./settings/SettingsGeneral.svelte";
 
-  let currentPath = $state(router.location);
-
-  $effect(() => {
-    currentPath = router.location;
-  });
-
+  let currentPath = $derived($currentRoute);
   let prevPath = $derived($previousRoute);
 
   let activeTab = $state("general");

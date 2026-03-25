@@ -28,8 +28,11 @@
 
   let animationClass = $derived.by(() => {
     // Helper: get path depth (number of segments)
-    const getDepth = (path: string) =>
-      path.replace(/\/$/, "").split("/").filter(Boolean).length;
+    // Treat root / as depth 1 (main page like /agents or /settings)
+    const getDepth = (path: string) => {
+      if (path === "/") return 1;
+      return path.replace(/\/$/, "").split("/").filter(Boolean).length;
+    };
 
     const prevDepth = getDepth(prevPath);
     const currentDepth = getDepth(currentPath);

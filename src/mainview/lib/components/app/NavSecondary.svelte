@@ -3,7 +3,8 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { useSidebar } from "$lib/components/ui/sidebar";
   import type { WithoutChildren } from "$lib/utils";
-  import { link, router } from "@bmlt-enabled/svelte-spa-router";
+  import { currentRoute } from "$lib/services/navigationStore";
+  import { link } from "@bmlt-enabled/svelte-spa-router";
   import { Moon02Icon, SunIcon, Tick01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
   import { HugeiconsIcon } from "@hugeicons/svelte";
@@ -14,11 +15,7 @@
   let shouldFlex = $state(false);
   let shouldDisableSidebarTrigger = $state(false);
 
-  let currentLocation = $state(router.location);
-
-  $effect(() => {
-    currentLocation = router.location;
-  });
+  let currentLocation = $derived($currentRoute);
 
   function isActive(url: string): boolean {
     return currentLocation === url;

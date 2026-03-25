@@ -7,6 +7,7 @@
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import type {
     AgentWithColor,
     DashboardStats,
@@ -21,6 +22,9 @@
     { value: "7d", label: "7d" },
     { value: "30d", label: "30d" },
   ];
+
+  let currentPath = $derived($currentRoute);
+  let prevPath = $derived($previousRoute);
 
   // State
   let loading = $state(true);
@@ -233,6 +237,8 @@
   <PageHeader
     title="Dashboard"
     description="Monitor agent health and performance"
+    {prevPath}
+    {currentPath}
   >
     {#snippet actions()}
       <div class="flex items-center gap-1 rounded-lg border p-1">

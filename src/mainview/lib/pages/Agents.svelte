@@ -1,14 +1,10 @@
 <script lang="ts">
   import AgentForm from "$lib/components/agents/AgentForm.svelte";
   import AgentList from "$lib/components/agents/AgentList.svelte";
-  import { previousRoute } from "$lib/services/navigationStore";
-  import { push, router } from "@bmlt-enabled/svelte-spa-router";
+  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import { push } from "@bmlt-enabled/svelte-spa-router";
 
-  let currentPath = $state(router.location);
-
-  $effect(() => {
-    currentPath = router.location;
-  });
+  let currentPath = $derived($currentRoute);
 
   let agentId = $derived.by(() => {
     const match = currentPath.match(/^\/agents\/(\d+)$/);
