@@ -80,6 +80,11 @@
     ...(xFormat ? { format: xFormat } : {}),
     ticks: data.length > 0 ? Math.max(1, Math.ceil(data.length / maxTicks)) : 1,
   });
+
+  // Tooltip config — format x-axis values in tooltip header
+  const tooltipConfig = $derived(
+    xFormat ? { header: { format: xFormat } } : {},
+  );
 </script>
 
 <div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
@@ -108,6 +113,7 @@
           props={{
             xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
+            tooltip: tooltipConfig,
           }}
         />
       {:else if chartType === "bar"}
@@ -121,6 +127,7 @@
           props={{
             xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
+            tooltip: tooltipConfig,
           }}
         />
       {:else if chartType === "area"}
@@ -131,6 +138,7 @@
           props={{
             xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
+            tooltip: tooltipConfig,
           }}
         />
       {/if}
