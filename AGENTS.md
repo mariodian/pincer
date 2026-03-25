@@ -16,7 +16,7 @@
 | `bun run db:generate` | Generate Drizzle migration files |
 | `bun run db:push` | Push schema to SQLite (dev only) |
 | `bun run db:studio` | Open Drizzle Studio UI |
-| `bunx tsc --noEmit` | Type checking (strict mode; no ESLint configured) |
+| `bun run typecheck` | Type checking for `.svelte` + `.ts` files (uses `svelte-check`) |
 | `bun test <file>` | Run a single test file |
 | `bun test --grep "<pattern>"` | Run tests matching a pattern |
 

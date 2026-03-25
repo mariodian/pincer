@@ -13,6 +13,7 @@
     "build:canary": "bun run build --env=canary",
     "build:stable": "bun run build --env=stable",
     "start": "bun run dev",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "db:generate": "bunx drizzle-kit generate",
     "db:push": "bunx drizzle-kit push",
     "db:studio": "bunx drizzle-kit studio"
@@ -38,6 +39,7 @@
     "drizzle-kit": "^0.31.10",
     "layerchart": "2.0.0-next.43",
     "svelte": "^5.0.0",
+    "svelte-check": "^4.4.5",
     "tailwind-merge": "^3.5.0",
     "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.2.0",
