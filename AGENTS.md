@@ -5,20 +5,20 @@
 
 ## Build, Lint, and Test Commands
 
-| Command | Description |
-| --- | --- |
-| `bun run dev` | Build native dylib, Vite, and start Electrobun dev server |
-| `bun run dev:hmr` | Vite HMR (port 5173) + dev server concurrently |
-| `bun run dev:web` | Vite dev server only (no Electrobun) |
-| `bun run build:native-effects` | Compile macOS native dylib (required before dev/build) |
-| `bun run build` | Full production build: native dylib + Vite + electrobun |
-| `bun run build:canary` / `build:stable` | Environment-specific production builds |
-| `bun run db:generate` | Generate Drizzle migration files |
-| `bun run db:push` | Push schema to SQLite (dev only) |
-| `bun run db:studio` | Open Drizzle Studio UI |
-| `bun run typecheck` | Type checking for `.svelte` + `.ts` files (uses `svelte-check`) |
-| `bun test <file>` | Run a single test file |
-| `bun test --grep "<pattern>"` | Run tests matching a pattern |
+| Command                                 | Description                                                     |
+| --------------------------------------- | --------------------------------------------------------------- |
+| `bun run dev`                           | Build native dylib, Vite, and start Electrobun dev server       |
+| `bun run dev:hmr`                       | Vite HMR (port 5173) + dev server concurrently                  |
+| `bun run dev:web`                       | Vite dev server only (no Electrobun)                            |
+| `bun run build:native-effects`          | Compile macOS native dylib (required before dev/build)          |
+| `bun run build`                         | Full production build: native dylib + Vite + electrobun         |
+| `bun run build:canary` / `build:stable` | Environment-specific production builds                          |
+| `bun run db:generate`                   | Generate Drizzle migration files                                |
+| `bun run db:push`                       | Push schema to SQLite (dev only)                                |
+| `bun run db:studio`                     | Open Drizzle Studio UI                                          |
+| `bun run typecheck`                     | Type checking for `.svelte` + `.ts` files (uses `svelte-check`) |
+| `bun test <file>`                       | Run a single test file                                          |
+| `bun test --grep "<pattern>"`           | Run tests matching a pattern                                    |
 
 > No test framework configured. Use **Vitest** or **Bun test** (`bun test`) when adding tests.
 
@@ -67,24 +67,24 @@ Settings use typed single-row tables named `settings_<category>` (e.g., `setting
 Order: **(1)** external libraries, **(2)** path-aliased internal modules (`$lib`, `$bun`, `$shared`), **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components. Use `import type` inline for type-only imports. Add `.js` extensions in Svelte component imports (e.g., `"$lib/components/ui/button/index.js"`).
 
 ```ts
-import { BrowserView } from "electrobun/bun";       // External
+import { BrowserView } from "electrobun/bun"; // External
 import { eq } from "drizzle-orm";
-import type { Agent } from "$shared/types";           // Aliased
-import { agentsTable } from "./schema";               // Relative
+import type { Agent } from "$shared/types"; // Aliased
+import { agentsTable } from "./schema"; // Relative
 ```
 
 ### Formatting & Naming
 
 2-space indent, 80–100 char lines, trailing commas in multi-line literals/params.
 
-| Type | Convention | Example |
-| --- | --- | --- |
-| Constants | `UPPER_SNAKE_CASE` | `MAC_TRAFFIC_LIGHTS_X` |
-| Variables/functions | `camelCase` | `applyMacOSWindowEffects` |
-| Types/interfaces | `PascalCase` | `WindowEffects`, `AgentStatus` |
-| Files | `kebab-case.ts` (services/utils), `PascalCase.svelte` (components) | `windowService.ts`, `App.svelte` |
-| Booleans | `is`/`has`/`can` prefix | `isMacOS`, `hasFocus` |
-| Event handlers | `handle` prefix | `handleClick`, `handleSubmit` |
+| Type                | Convention                                                         | Example                          |
+| ------------------- | ------------------------------------------------------------------ | -------------------------------- |
+| Constants           | `UPPER_SNAKE_CASE`                                                 | `MAC_TRAFFIC_LIGHTS_X`           |
+| Variables/functions | `camelCase`                                                        | `applyMacOSWindowEffects`        |
+| Types/interfaces    | `PascalCase`                                                       | `WindowEffects`, `AgentStatus`   |
+| Files               | `kebab-case.ts` (services/utils), `PascalCase.svelte` (components) | `windowService.ts`, `App.svelte` |
+| Booleans            | `is`/`has`/`can` prefix                                            | `isMacOS`, `hasFocus`            |
+| Event handlers      | `handle` prefix                                                    | `handleClick`, `handleSubmit`    |
 
 ### Error Handling
 
@@ -108,10 +108,10 @@ logger.error("component", "Critical failure:", error);
 
 **Channel behavior:**
 
-| Channel | Console | File (`userData/logs/app.log`) | Renderer RPC |
-|---------|---------|------|-------------|
-| `dev` | All levels | Off | Off |
-| `canary`/`stable` | Silent | All levels | warn + error |
+| Channel           | Console    | File (`userData/logs/app.log`) | Renderer RPC |
+| ----------------- | ---------- | ------------------------------ | ------------ |
+| `dev`             | All levels | Off                            | Off          |
+| `canary`/`stable` | Silent     | All levels                     | warn + error |
 
 **Env var overrides** (set before `bun run dev`):
 
@@ -183,11 +183,11 @@ Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, 
 
 ## Debugging
 
-| Issue | Fix |
-| --- | --- |
-| Native dylib not found | `bun run build:native-effects` |
-| Port 5173 in use | Kill existing Vite process or change port in `vite.config.js` |
-| HMR not working | Use `bun run dev:hmr` for concurrent Vite + Electrobun |
-| Main process logs | Terminal output |
-| Renderer logs | Browser DevTools in Electrobun windows |
-| Native crashes | macOS Console app → crash logs |
+| Issue                  | Fix                                                           |
+| ---------------------- | ------------------------------------------------------------- |
+| Native dylib not found | `bun run build:native-effects`                                |
+| Port 5173 in use       | Kill existing Vite process or change port in `vite.config.js` |
+| HMR not working        | Use `bun run dev:hmr` for concurrent Vite + Electrobun        |
+| Main process logs      | Terminal output                                               |
+| Renderer logs          | Browser DevTools in Electrobun windows                        |
+| Native crashes         | macOS Console app → crash logs                                |
