@@ -35,6 +35,7 @@
   // Per-chart agent filter state
   let selectedUptime = $state<number[]>([]);
   let selectedResponse = $state<number[]>([]);
+  let selectedResponseBar = $state<number[]>([]);
   let selectedStatus = $state<number[]>([]);
 
   // Chart data — computed explicitly in fetchData() to avoid
@@ -77,6 +78,7 @@
       const allIds = result.agents.map((a) => a.id);
       if (selectedUptime.length === 0) selectedUptime = allIds;
       if (selectedResponse.length === 0) selectedResponse = allIds;
+      if (selectedResponseBar.length === 0) selectedResponseBar = allIds;
       if (selectedStatus.length === 0) selectedStatus = allIds;
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
@@ -108,6 +110,15 @@
       selectedResponse = [...selectedResponse, id];
     } else {
       selectedResponse = selectedResponse.filter((sid) => sid !== id);
+    }
+  }
+
+  function toggleResponseBar(id: number) {
+    const idx = selectedResponseBar.indexOf(id);
+    if (idx === -1) {
+      selectedResponseBar = [...selectedResponseBar, id];
+    } else {
+      selectedResponseBar = selectedResponseBar.filter((sid) => sid !== id);
     }
   }
 
@@ -313,7 +324,7 @@
             with different visualizations for the same data.
           -->
           <MetricChart
-            chartType="line"
+            chartType="area"
             title="Uptime % Over Time"
             description="Agent availability over the selected period"
             data={uptimeData}
@@ -324,6 +335,15 @@
             yPrefix="uptime"
             xFormat={xAxisFormat}
             yFormat={formatUptime}
+          />
+
+          <StatusPieChart
+            title="Status Distribution"
+            description="Aggregate ok / offline / error counts"
+            timeSeries={stats.timeSeries}
+            agents={stats.agents}
+            selectedIds={selectedStatus}
+            onToggleAgent={toggleStatus}
           />
 
           <MetricChart
@@ -340,15 +360,6 @@
             yFormat={formatMs}
           />
 
-          <StatusPieChart
-            title="Status Distribution"
-            description="Aggregate ok / offline / error counts"
-            timeSeries={stats.timeSeries}
-            agents={stats.agents}
-            selectedIds={selectedStatus}
-            onToggleAgent={toggleStatus}
-          />
-
           <MetricChart
             chartType="bar"
             title="Response Time (Bar)"
@@ -356,8 +367,8 @@
             data={responseData}
             xKey="hourTimestamp"
             agents={stats.agents}
-            selectedIds={selectedResponse}
-            onToggleAgent={toggleResponse}
+            selectedIds={selectedResponseBar}
+            onToggleAgent={toggleResponseBar}
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
