@@ -49,16 +49,25 @@
       stats = result;
 
       // Compute chart data explicitly (avoids $derived reactivity issues)
-      uptimeData = pivotTimeSeries(
+      let uptimePivoted = pivotTimeSeries(
         result.timeSeries,
         result.agents,
         "uptimePct",
       );
-      responseData = pivotTimeSeries(
+      let responsePivoted = pivotTimeSeries(
         result.timeSeries,
         result.agents,
         "avgResponseMs",
       );
+
+      // Aggregate to daily for longer time ranges
+      if (timeRange !== "24h") {
+        uptimePivoted = aggregateByDay(uptimePivoted);
+        responsePivoted = aggregateByDay(responsePivoted);
+      }
+
+      uptimeData = uptimePivoted;
+      responseData = responsePivoted;
 
       // Initialize all agents as selected if empty
       const allIds = result.agents.map((a) => a.id);
@@ -137,6 +146,46 @@
     return Array.from(byHour.values()).sort(
       (a, b) => (a.hourTimestamp as number) - (b.hourTimestamp as number),
     );
+  }
+
+  // Aggregate hourly pivoted data to daily averages
+  function aggregateByDay(
+    rows: Record<string, unknown>[],
+  ): Record<string, unknown>[] {
+    const DAY = 86400;
+    const byDay = new Map<
+      number,
+      { values: Record<string, number[]>; ts: number }
+    >();
+
+    for (const row of rows) {
+      const dayTs = Math.floor((row.hourTimestamp as number) / DAY) * DAY;
+      if (!byDay.has(dayTs)) {
+        byDay.set(dayTs, { values: {}, ts: dayTs });
+      }
+      const bucket = byDay.get(dayTs)!;
+      for (const [key, val] of Object.entries(row)) {
+        if (key === "hourTimestamp") continue;
+        if (typeof val === "number") {
+          if (!bucket.values[key]) bucket.values[key] = [];
+          bucket.values[key].push(val);
+        }
+      }
+    }
+
+    return Array.from(byDay.values())
+      .map(({ values, ts }) => {
+        const row: Record<string, unknown> = { hourTimestamp: ts };
+        for (const [key, vals] of Object.entries(values)) {
+          row[key] =
+            Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) /
+            100;
+        }
+        return row;
+      })
+      .sort(
+        (a, b) => (a.hourTimestamp as number) - (b.hourTimestamp as number),
+      );
   }
 
   // X-axis formatters
