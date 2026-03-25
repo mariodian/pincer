@@ -38,35 +38,6 @@
   let uptimeData = $state<Record<string, unknown>[]>([]);
   let responseData = $state<Record<string, unknown>[]>([]);
 
-  // // DEBUG: bogus test data to verify chart rendering works
-  // function generateTestData(): {
-  //   uptime: Record<string, unknown>[];
-  //   response: Record<string, unknown>[];
-  // } {
-  //   const now = Math.floor(Date.now() / 1000);
-  //   const uptime: Record<string, unknown>[] = [];
-  //   const response: Record<string, unknown>[] = [];
-  //   for (let i = 23; i >= 0; i--) {
-  //     const ts = now - i * 3600;
-  //     uptime.push({
-  //       hourTimestamp: ts,
-  //       uptime_1: 90 + Math.random() * 10,
-  //       uptime_2: 85 + Math.random() * 15,
-  //     });
-  //     response.push({
-  //       hourTimestamp: ts,
-  //       response_1: 50 + Math.random() * 100,
-  //       response_2: 30 + Math.random() * 80,
-  //     });
-  //   }
-  //   return { uptime, response };
-  // }
-
-  // // Populate with test data immediately so charts render on mount
-  // const testData = generateTestData();
-  // uptimeData = testData.uptime;
-  // responseData = testData.response;
-
   // Fetch data
   async function fetchData() {
     loading = true;
