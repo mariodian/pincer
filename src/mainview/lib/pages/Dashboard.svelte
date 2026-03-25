@@ -17,6 +17,7 @@
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
+  const DEFAULT_TIME_RANGE: TimeRange = "7d";
   const TIME_RANGES: TimeRangeOption[] = [
     { value: "24h", label: "24h" },
     { value: "7d", label: "7d" },
@@ -30,7 +31,7 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let stats = $state<DashboardStats | null>(null);
-  let timeRange = $state<TimeRange>("24h");
+  let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
 
   // Per-chart agent filter state
   let selectedUptime = $state<number[]>([]);

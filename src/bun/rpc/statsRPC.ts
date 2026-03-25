@@ -1,13 +1,14 @@
 // Stats RPC - Shared RPC definition for dashboard statistics
-import { getAllAgentStats } from "../storage/sqlite/statsRepo";
-import { readAgents } from "../services/agentService";
 import type {
+  AgentWithColor,
+  DashboardKpis,
   DashboardStats,
   TimeRange,
-  AgentWithColor,
   TimeSeriesPoint,
-  DashboardKpis,
 } from "../../shared/rpc";
+import { stringToOklch } from "../../shared/string-helpers";
+import { readAgents } from "../services/agentService";
+import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -56,11 +57,16 @@ export const statsRequestHandlers = {
     const agents = await readAgents();
     const rawStats = getAllAgentStats(from, to);
 
-    // Assign colors to agents in stable order
+    // Assign colors to agents (consistent based on name)
+    // Fallback to predefined colors if stringToOklch fails for any reason (e.g. invalid name)
     const agentColors: AgentWithColor[] = agents.map((a, i) => ({
       id: a.id,
       name: a.name,
-      color: CHART_COLORS[i % CHART_COLORS.length],
+      color:
+        stringToOklch(a.name, {
+          lightness: [0.6, 0.9],
+          chroma: [0.12, 0.18],
+        }) || CHART_COLORS[i % CHART_COLORS.length],
     }));
 
     // Map raw stats to shared type
@@ -90,12 +96,17 @@ export const statsRequestHandlers = {
     const enabledAgents = agents.filter((a) => a.enabled !== false);
 
     const kpis: DashboardKpis = {
-      avgUptime: statRowCount > 0 ? Math.round((totalUptime / statRowCount) * 100) / 100 : 100,
+      avgUptime:
+        statRowCount > 0
+          ? Math.round((totalUptime / statRowCount) * 100) / 100
+          : 100,
       totalAgents: agents.length,
       activeAgents: enabledAgents.length,
       incidentCount: totalIncidents,
       avgResponseMs:
-        statRowCount > 0 ? Math.round(totalResponseMs / statRowCount * 100) / 100 : 0,
+        statRowCount > 0
+          ? Math.round((totalResponseMs / statRowCount) * 100) / 100
+          : 0,
     };
 
     return {

@@ -55,9 +55,9 @@ export function mergeAgentsWithStatuses(
  * then by status priority (ok first, error middle, offline last),
  * then alphabetically by name.
  */
-export function sortAgentsByStatus<T extends { enabled?: boolean; status: string; name: string }>(
-  list: T[],
-): T[] {
+export function sortAgentsByStatus<
+  T extends { enabled?: boolean; status: string; name: string },
+>(list: T[]): T[] {
   return [...list].sort((a, b) => {
     const enabledDiff = Number(Boolean(b.enabled)) - Number(Boolean(a.enabled));
     if (enabledDiff !== 0) return enabledDiff;
