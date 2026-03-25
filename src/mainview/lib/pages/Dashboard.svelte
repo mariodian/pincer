@@ -300,14 +300,14 @@
 
       <!-- Charts -->
       {#if loading}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Skeleton class="h-[300px] w-full rounded-lg" />
-          <Skeleton class="h-[300px] w-full rounded-lg" />
-          <Skeleton class="h-[300px] w-full rounded-lg" />
-          <Skeleton class="h-[300px] w-full rounded-lg" />
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <Skeleton class="h-75 w-full rounded-lg" />
+          <Skeleton class="h-75 w-full rounded-lg" />
+          <Skeleton class="h-75 w-full rounded-lg" />
+          <Skeleton class="h-75 w-full rounded-lg" />
         </div>
       {:else if stats && stats.agents.length > 0}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <!--
             chartType: change "line" to "bar" or "area" to experiment
             with different visualizations for the same data.
