@@ -127,7 +127,9 @@
 
     for (const point of series) {
       if (!byHour.has(point.hourTimestamp)) {
-        byHour.set(point.hourTimestamp, { hourTimestamp: point.hourTimestamp });
+        byHour.set(point.hourTimestamp, {
+          hourTimestamp: new Date(point.hourTimestamp * 1000),
+        });
       }
       const row = byHour.get(point.hourTimestamp)!;
       row[`${prefix}_${point.agentId}`] = point[valueKey];
@@ -144,7 +146,9 @@
     }
 
     return Array.from(byHour.values()).sort(
-      (a, b) => (a.hourTimestamp as number) - (b.hourTimestamp as number),
+      (a, b) =>
+        (a.hourTimestamp as Date).getTime() -
+        (b.hourTimestamp as Date).getTime(),
     );
   }
 
@@ -152,14 +156,15 @@
   function aggregateByDay(
     rows: Record<string, unknown>[],
   ): Record<string, unknown>[] {
-    const DAY = 86400;
+    const DAY_MS = 86400000;
     const byDay = new Map<
       number,
       { values: Record<string, number[]>; ts: number }
     >();
 
     for (const row of rows) {
-      const dayTs = Math.floor((row.hourTimestamp as number) / DAY) * DAY;
+      const dayTs =
+        Math.floor((row.hourTimestamp as Date).getTime() / DAY_MS) * DAY_MS;
       if (!byDay.has(dayTs)) {
         byDay.set(dayTs, { values: {}, ts: dayTs });
       }
@@ -175,7 +180,7 @@
 
     return Array.from(byDay.values())
       .map(({ values, ts }) => {
-        const row: Record<string, unknown> = { hourTimestamp: ts };
+        const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
         for (const [key, vals] of Object.entries(values)) {
           row[key] =
             Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) /
@@ -184,20 +189,20 @@
         return row;
       })
       .sort(
-        (a, b) => (a.hourTimestamp as number) - (b.hourTimestamp as number),
+        (a, b) =>
+          (a.hourTimestamp as Date).getTime() -
+          (b.hourTimestamp as Date).getTime(),
       );
   }
 
-  // X-axis formatters
+  // X-axis formatters (values are Date objects since pivot converts timestamps)
   function formatHour(val: unknown): string {
-    const ts = Number(val) * 1000;
-    const d = new Date(ts);
+    const d = val instanceof Date ? val : new Date(Number(val) * 1000);
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
   function formatDay(val: unknown): string {
-    const ts = Number(val) * 1000;
-    const d = new Date(ts);
+    const d = val instanceof Date ? val : new Date(Number(val) * 1000);
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 

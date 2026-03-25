@@ -1,5 +1,5 @@
 <script lang="ts">
-  import * as Chart from "$lib/components/ui/chart/index.js";
+  import * as Chart from "$lib/components/ui/chart";
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
   import { PieChart } from "layerchart";
@@ -81,7 +81,7 @@
       No data for this period.
     </div>
   {:else}
-    <Chart.Container config={chartConfig} class="min-h-[200px] w-full">
+    <Chart.Container config={chartConfig} class="min-h-50 w-full">
       <PieChart
         data={statusData}
         key="status"
@@ -104,7 +104,7 @@
       {#each statusData as item (item.status)}
         <div class="flex items-center gap-1.5 text-xs">
           <span
-            class="size-2.5 rounded-[2px]"
+            class="size-2.5 rounded-xs"
             style="background-color: {item.color};"
           ></span>
           <span class="text-muted-foreground capitalize">{item.status}</span>
