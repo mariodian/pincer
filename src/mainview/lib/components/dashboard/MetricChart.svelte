@@ -73,12 +73,18 @@
       });
   });
 
-  // X-axis config with tick limit to prevent crowding
-  // For band scales, layerchart's `ticks` means "show every Nth value",
-  // so we convert maxTicks (desired label count) to the correct step
-  const xAxisConfig = $derived({
-    ...(xFormat ? { format: xFormat } : {}),
-    ticks: data.length > 0 ? Math.max(1, Math.ceil(data.length / maxTicks)) : 1,
+  // X-axis config — use explicit tickValues array for reliable tick count
+  // across both band and time scales
+  const xAxisConfig = $derived.by(() => {
+    const base: Record<string, unknown> = {};
+    if (xFormat) base.format = xFormat;
+    if (data.length > maxTicks) {
+      const step = Math.ceil(data.length / maxTicks);
+      base.tickValues = data
+        .filter((_, i) => i % step === 0)
+        .map((d) => d[xKey]);
+    }
+    return base;
   });
 
   // Tooltip config — format x-axis values in tooltip header
