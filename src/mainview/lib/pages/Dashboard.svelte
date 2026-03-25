@@ -29,6 +29,11 @@
   let selectedResponse = $state<number[]>([]);
   let selectedStatus = $state<number[]>([]);
 
+  // Chart data — computed explicitly in fetchData() to avoid
+  // Svelte 5 $derived reactivity issues with $state proxy tracking
+  let uptimeData = $state<Record<string, unknown>[]>([]);
+  let responseData = $state<Record<string, unknown>[]>([]);
+
   // Fetch data
   async function fetchData() {
     loading = true;
@@ -38,6 +43,14 @@
       const rpc = getMainRPC();
       const result = await rpc.request.getDashboardStats({ range: timeRange });
       stats = result;
+
+      // Compute chart data explicitly (avoids $derived reactivity issues)
+      uptimeData = pivotTimeSeries(result.timeSeries, result.agents, "uptimePct");
+      responseData = pivotTimeSeries(
+        result.timeSeries,
+        result.agents,
+        "avgResponseMs",
+      );
 
       // Initialize all agents as selected if empty
       const allIds = result.agents.map((a) => a.id);
@@ -117,17 +130,6 @@
       (a, b) => (a.hourTimestamp as number) - (b.hourTimestamp as number),
     );
   }
-
-  // Derived chart data
-  let uptimeData = $derived(
-    stats ? pivotTimeSeries(stats.timeSeries, stats.agents, "uptimePct") : [],
-  );
-
-  let responseData = $derived(
-    stats
-      ? pivotTimeSeries(stats.timeSeries, stats.agents, "avgResponseMs")
-      : [],
-  );
 
   // X-axis formatters
   function formatHour(val: unknown): string {

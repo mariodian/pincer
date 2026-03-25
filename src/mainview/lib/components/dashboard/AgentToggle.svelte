@@ -16,12 +16,13 @@
   );
 
   function handleToggleAll() {
-    // If all selected, deselect all (handled by consumer toggling each)
-    // If not all selected, select all
+    // Snapshot the derived value so it doesn't change mid-loop
+    // when each onToggle() call updates selectedIds reactively
+    const shouldDeselect = allSelected;
     for (const agent of agents) {
-      if (!allSelected && !selectedIds.includes(agent.id)) {
+      if (!shouldDeselect && !selectedIds.includes(agent.id)) {
         onToggle(agent.id);
-      } else if (allSelected && selectedIds.includes(agent.id)) {
+      } else if (shouldDeselect && selectedIds.includes(agent.id)) {
         onToggle(agent.id);
       }
     }

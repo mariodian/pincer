@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { cn } from "$lib/utils.js";
   import * as Chart from "$lib/components/ui/chart/index.js";
+  import { cn } from "$lib/utils.js";
+  import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
   import { PieChart } from "layerchart";
   import AgentToggle from "./AgentToggle.svelte";
-  import type { AgentWithColor } from "$shared/rpc";
-  import type { TimeSeriesPoint } from "$shared/rpc";
 
   interface Props {
     title: string;
@@ -51,9 +50,7 @@
     ].filter((d) => d.count > 0);
   });
 
-  const totalCount = $derived(
-    statusData.reduce((sum, d) => sum + d.count, 0),
-  );
+  const totalCount = $derived(statusData.reduce((sum, d) => sum + d.count, 0));
 
   const chartConfig = $derived.by(() => {
     const config: Record<string, { label: string; color: string }> = {};
@@ -111,7 +108,9 @@
             style="background-color: {item.color};"
           ></span>
           <span class="text-muted-foreground capitalize">{item.status}</span>
-          <span class="font-mono font-medium">{item.count.toLocaleString()}</span>
+          <span class="font-mono font-medium"
+            >{item.count.toLocaleString()}</span
+          >
         </div>
       {/each}
     </div>

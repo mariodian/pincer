@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { cn } from "$lib/utils.js";
   import * as Chart from "$lib/components/ui/chart/index.js";
-  import { BarChart, LineChart, AreaChart } from "layerchart";
-  import { scaleBand } from "d3-scale";
-  import AgentToggle from "./AgentToggle.svelte";
+  import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
+  import { scaleBand } from "d3-scale";
+  import { AreaChart, BarChart, LineChart } from "layerchart";
   import type { Snippet } from "svelte";
+  import AgentToggle from "./AgentToggle.svelte";
 
   export type ChartType = "line" | "bar" | "area";
 
@@ -93,10 +93,7 @@
       No data for this period.
     </div>
   {:else}
-    <Chart.Container
-      config={chartConfig}
-      class="min-h-[200px] w-full"
-    >
+    <Chart.Container config={chartConfig} class="min-h-[200px] w-full">
       {#if chartType === "line"}
         <LineChart
           {data}
@@ -160,9 +157,5 @@
     </Chart.Container>
   {/if}
 
-  <AgentToggle
-    {agents}
-    {selectedIds}
-    onToggle={onToggleAgent}
-  />
+  <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />
 </div>
