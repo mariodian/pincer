@@ -1,12 +1,16 @@
 <script lang="ts">
+  import {
+    KpiCard,
+    MetricChart,
+    StatusPieChart,
+  } from "$lib/components/dashboard";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { KpiCard, MetricChart, StatusPieChart } from "$lib/components/dashboard";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import type {
+    AgentWithColor,
     DashboardStats,
     TimeRange,
-    AgentWithColor,
     TimeSeriesPoint,
   } from "$shared/rpc";
 
@@ -34,6 +38,35 @@
   let uptimeData = $state<Record<string, unknown>[]>([]);
   let responseData = $state<Record<string, unknown>[]>([]);
 
+  // // DEBUG: bogus test data to verify chart rendering works
+  // function generateTestData(): {
+  //   uptime: Record<string, unknown>[];
+  //   response: Record<string, unknown>[];
+  // } {
+  //   const now = Math.floor(Date.now() / 1000);
+  //   const uptime: Record<string, unknown>[] = [];
+  //   const response: Record<string, unknown>[] = [];
+  //   for (let i = 23; i >= 0; i--) {
+  //     const ts = now - i * 3600;
+  //     uptime.push({
+  //       hourTimestamp: ts,
+  //       uptime_1: 90 + Math.random() * 10,
+  //       uptime_2: 85 + Math.random() * 15,
+  //     });
+  //     response.push({
+  //       hourTimestamp: ts,
+  //       response_1: 50 + Math.random() * 100,
+  //       response_2: 30 + Math.random() * 80,
+  //     });
+  //   }
+  //   return { uptime, response };
+  // }
+
+  // // Populate with test data immediately so charts render on mount
+  // const testData = generateTestData();
+  // uptimeData = testData.uptime;
+  // responseData = testData.response;
+
   // Fetch data
   async function fetchData() {
     loading = true;
@@ -45,7 +78,11 @@
       stats = result;
 
       // Compute chart data explicitly (avoids $derived reactivity issues)
-      uptimeData = pivotTimeSeries(result.timeSeries, result.agents, "uptimePct");
+      uptimeData = pivotTimeSeries(
+        result.timeSeries,
+        result.agents,
+        "uptimePct",
+      );
       responseData = pivotTimeSeries(
         result.timeSeries,
         result.agents,
@@ -144,9 +181,7 @@
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 
-  let xAxisFormat = $derived(
-    timeRange === "24h" ? formatHour : formatDay,
-  );
+  let xAxisFormat = $derived(timeRange === "24h" ? formatHour : formatDay);
 
   function formatUptime(val: unknown): string {
     return `${val}%`;
@@ -170,7 +205,10 @@
 </script>
 
 <div class="flex flex-col h-full">
-  <PageHeader title="Dashboard" description="Monitor agent health and performance">
+  <PageHeader
+    title="Dashboard"
+    description="Monitor agent health and performance"
+  >
     {#snippet actions()}
       <div class="flex items-center gap-1 rounded-lg border p-1">
         {#each TIME_RANGES as tr}
@@ -193,7 +231,9 @@
 
   <PageBody>
     {#if error}
-      <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+      <div
+        class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
+      >
         Failed to load dashboard data: {error}
       </div>
     {:else}
@@ -293,7 +333,9 @@
           />
         </div>
       {:else}
-        <div class="rounded-lg border p-8 text-center text-sm text-muted-foreground">
+        <div
+          class="rounded-lg border p-8 text-center text-sm text-muted-foreground"
+        >
           No agents configured yet. Add an agent to start collecting stats.
         </div>
       {/if}

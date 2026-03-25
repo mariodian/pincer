@@ -1,10 +1,8 @@
 <script lang="ts">
-  import * as Chart from "$lib/components/ui/chart/index.js";
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
   import { scaleBand } from "d3-scale";
   import { AreaChart, BarChart, LineChart } from "layerchart";
-  import type { Snippet } from "svelte";
   import AgentToggle from "./AgentToggle.svelte";
 
   export type ChartType = "line" | "bar" | "area";
@@ -29,8 +27,6 @@
     xFormat?: (val: unknown) => string;
     /** Optional formatter for y-axis ticks */
     yFormat?: (val: unknown) => string;
-    /** Tooltip snippet */
-    tooltip?: Snippet;
     /** Extra class on the chart card */
     class?: string;
   }
@@ -47,7 +43,6 @@
     yPrefix,
     xFormat,
     yFormat,
-    tooltip,
     class: className,
   }: Props = $props();
 
@@ -93,7 +88,7 @@
       No data for this period.
     </div>
   {:else}
-    <Chart.Container config={chartConfig} class="min-h-[200px] w-full">
+    <div class="min-h-[200px] w-full">
       {#if chartType === "line"}
         <LineChart
           {data}
@@ -103,15 +98,7 @@
             xAxis: xFormat ? { format: xFormat } : {},
             yAxis: yFormat ? { format: yFormat } : {},
           }}
-        >
-          {#if tooltip}
-            {@render tooltip()}
-          {:else}
-            {#snippet tooltip()}
-              <Chart.Tooltip />
-            {/snippet}
-          {/if}
-        </LineChart>
+        />
       {:else if chartType === "bar"}
         <BarChart
           {data}
@@ -126,15 +113,7 @@
               : { tickSpacing: 60 },
             yAxis: yFormat ? { format: yFormat } : {},
           }}
-        >
-          {#if tooltip}
-            {@render tooltip()}
-          {:else}
-            {#snippet tooltip()}
-              <Chart.Tooltip />
-            {/snippet}
-          {/if}
-        </BarChart>
+        />
       {:else if chartType === "area"}
         <AreaChart
           {data}
@@ -144,17 +123,9 @@
             xAxis: xFormat ? { format: xFormat } : {},
             yAxis: yFormat ? { format: yFormat } : {},
           }}
-        >
-          {#if tooltip}
-            {@render tooltip()}
-          {:else}
-            {#snippet tooltip()}
-              <Chart.Tooltip />
-            {/snippet}
-          {/if}
-        </AreaChart>
+        />
       {/if}
-    </Chart.Container>
+    </div>
   {/if}
 
   <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />
