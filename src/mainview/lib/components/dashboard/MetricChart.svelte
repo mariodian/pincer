@@ -27,6 +27,8 @@
     xFormat?: (val: unknown) => string;
     /** Optional formatter for y-axis ticks */
     yFormat?: (val: unknown) => string;
+    /** Maximum number of x-axis labels to show */
+    maxTicks?: number;
     /** Extra class on the chart card */
     class?: string;
   }
@@ -43,6 +45,7 @@
     yPrefix,
     xFormat,
     yFormat,
+    maxTicks = 8,
     class: className,
   }: Props = $props();
 
@@ -68,6 +71,14 @@
           color: chartConfig[key]?.color ?? agent.color,
         };
       });
+  });
+
+  // X-axis config with tick limit to prevent crowding
+  // For band scales, layerchart's `ticks` means "show every Nth value",
+  // so we convert maxTicks (desired label count) to the correct step
+  const xAxisConfig = $derived({
+    ...(xFormat ? { format: xFormat } : {}),
+    ticks: data.length > 0 ? Math.max(1, Math.ceil(data.length / maxTicks)) : 1,
   });
 </script>
 
@@ -95,7 +106,7 @@
           x={xKey}
           {series}
           props={{
-            xAxis: xFormat ? { format: xFormat } : {},
+            xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
           }}
         />
@@ -108,9 +119,7 @@
           seriesLayout="group"
           {series}
           props={{
-            xAxis: xFormat
-              ? { format: xFormat, tickSpacing: 60 }
-              : { tickSpacing: 60 },
+            xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
           }}
         />
@@ -120,7 +129,7 @@
           x={xKey}
           {series}
           props={{
-            xAxis: xFormat ? { format: xFormat } : {},
+            xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
           }}
         />
