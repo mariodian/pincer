@@ -2,15 +2,9 @@
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
   import { scaleBand } from "d3-scale";
-  import { curveCatmullRom, curveLinear } from "d3-shape";
-  import {
-    Area,
-    AreaChart,
-    BarChart,
-    LinearGradient,
-    LineChart,
-    Spline,
-  } from "layerchart";
+  import { curveCatmullRom } from "d3-shape";
+  import { Area, AreaChart, BarChart, LinearGradient } from "layerchart";
+  import LineChart from "../charts/LineChart.svelte";
   import AgentToggle from "./AgentToggle.svelte";
 
   export type ChartType = "line" | "bar" | "area";
@@ -208,85 +202,15 @@
       No data for this period.
     </div>
   {:else}
-    <div class="min-h-70 w-full">
+    <div class="min-h-75 w-full">
       {#if chartType === "line"}
         <LineChart
           {data}
-          x={xKey}
-          // yNice={4}
-          // yDomain={[
-          //   -2,
-          //   Math.max(
-          //     ...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0)),
-          //   ) * 1.1,
-          // ]}
           {series}
-          brush={true}
-          props={{
-            spline: {
-              strokeWidth: 3,
-              curve: curveLinear,
-            },
-            xAxis: xAxisConfig,
-            yAxis: yFormat ? { format: yFormat } : {},
-            tooltip: tooltipConfig,
-          }}
-        >
-          {#snippet belowMarks()}
-            {#each series as s}
-              <Spline
-                data={data.filter(function (d) {
-                  console.log(s.key, d[s.key]);
-                  return typeof d[s.key] !== "undefined";
-                })}
-                y={(d) => d[s.key]}
-                class="[stroke-dasharray:3,3]"
-                stroke={s.color}
-                strokeWidth={3}
-                curve={curveLinear}
-              />
-              <!-- {@const segments = lineSegments[s.key]}
-
-              {#each segments?.dashed ?? [] as segmentData}
-                <Spline
-                  data={segmentData}
-                  y={(d) => Number(d[s.key])}
-                  class="[stroke-dasharray:3,3]"
-                  // curve={curveCatmullRom}
-                  stroke={s.color}
-                  strokeWidth={3}
-                />
-              {/each} -->
-            {/each}
-          {/snippet}
-          <!-- {#snippet marks({})}
-            <LinearGradient
-              // stops={ticks(1, 0, 10).map(temperatureColor.interpolator())}
-              stops={[
-                [200, "var(--color-red-500)"],
-                // [8, "color-mix(var(--color-red-500) 80%, white)"],
-                // [6, "color-mix(var(--color-yellow-500) 60%, white)"],
-                // [4, "color-mix(var(--color-green-500) 40%, white)"],
-                [200, "var(--color-green-500)"],
-              ]}
-              class="from-red-500 to-green-500"
-              units="userSpaceOnUse"
-              vertical
-            >
-              {#snippet children({ gradient })}
-                {#each series as s}
-                  <Spline
-                    y={(d) => d[s.key]}
-                    // Add a line for each series with a gradient stroke
-                    stroke={gradient}
-                    strokeWidth={3}
-                    curve={curveCatmullRom}
-                  />
-                {/each}
-              {/snippet}
-            </LinearGradient>
-          {/snippet} -->
-        </LineChart>
+          x={xKey}
+          xAxis={xAxisConfig}
+          yAxis={yFormat ? { format: yFormat } : {}}
+        />
       {:else if chartType === "bar"}
         <BarChart
           {data}

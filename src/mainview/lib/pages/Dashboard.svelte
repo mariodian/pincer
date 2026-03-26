@@ -1,9 +1,6 @@
 <script lang="ts">
-  import {
-    KpiCard,
-    MetricChart,
-    StatusPieChart,
-  } from "$lib/components/dashboard";
+  import { KpiCard, StatusPieChart } from "$lib/components/dashboard";
+  import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
@@ -361,7 +358,15 @@
           <!--
             chartType: change "line" to "bar" or "area" to experiment
             with different visualizations for the same data.
-          -->
+            -->
+          <!-- <LineChart
+            data={uptimeData}
+            series={stats.agents}
+            xKey="date"
+            xAxis={xAxisFormat}
+            yAxis={formatUptime}
+          /> -->
+
           <MetricChart
             chartType="line"
             title="Uptime % Over Time"
