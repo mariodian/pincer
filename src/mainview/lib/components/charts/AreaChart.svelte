@@ -135,27 +135,15 @@
     {#if gaps}
       {#each series as s}
         {#each lineGaps[s.key] ?? [] as gapData}
-          {#if highlightKey === s.key}
-            <Spline
-              data={gapData}
-              y={(d) => Number(d[s.key])}
-              class="[stroke-dasharray:3,3]"
-              stroke={s.color}
-              strokeWidth={strokeWidth + 1}
-              opacity={1}
-              curve={curveCatmullRom}
-            />
-          {:else}
-            <Spline
-              data={gapData}
-              y={(d) => Number(d[s.key])}
-              class="[stroke-dasharray:3,3]"
-              stroke={s.color}
-              {strokeWidth}
-              opacity={0.5}
-              curve={curveCatmullRom.alpha(0.5)}
-            />
-          {/if}
+          <Spline
+            data={gapData}
+            y={(d) => Number(d[s.key])}
+            class="[stroke-dasharray:3,3]"
+            stroke={s.color}
+            {strokeWidth}
+            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+            curve={curveCatmullRom}
+          />
         {/each}
       {/each}
     {/if}
@@ -175,7 +163,7 @@
     {/if}
   {/snippet}
 
-  {#snippet marks({ getAreaProps })}
+  {#snippet marks({ getAreaProps, highlightKey })}
     {#if colorGradient}
       {#each series as s, i}
         <LinearGradient
@@ -192,8 +180,13 @@
               {...getAreaProps(s, i)}
               y1={(d) => d[s.key]}
               // line={{ class: "stroke-2 stroke-primary/50" }}
+              line={{
+                stroke: s.color,
+                strokeWidth: strokeWidth,
+                opacity: highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1,
+              }}
               fill={gradient}
-              line={{ stroke: s.color, strokeWidth: 3 }}
+              // line={{ stroke: s.color, strokeWidth: 3 }}
               curve={curveCatmullRom}
             />
           {/snippet}
@@ -205,7 +198,11 @@
           {...getAreaProps(s, i)}
           y1={(d) => d[s.key]}
           fill={s.color}
-          line={{ stroke: s.color, strokeWidth: 3 }}
+          line={{
+            stroke: s.color,
+            strokeWidth: strokeWidth,
+            opacity: highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1,
+          }}
           curve={curveCatmullRom}
         />
       {/each}
