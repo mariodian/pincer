@@ -65,6 +65,11 @@
 
       // Insert null rows for missing hours so chart shows gaps
       uptimePivoted = fillHourlySlots(uptimePivoted, result.agents, "uptime");
+      responsePivoted = fillHourlySlots(
+        responsePivoted,
+        result.agents,
+        "response",
+      );
 
       // Aggregate to daily for longer time ranges
       if (timeRange !== "24h") {
@@ -394,6 +399,7 @@
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
+            gaps={true}
           />
 
           <StatusPieChart

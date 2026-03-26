@@ -13,6 +13,7 @@
     strokeWidth?: number;
     gaps?: boolean;
     colorGradient?: boolean;
+    height?: number;
     // class?: string;
   }
 
@@ -29,6 +30,7 @@
     gaps = false,
     colorGradient = false,
     strokeWidth = 3,
+    height = 300,
     // class: className,
   }: Props = $props();
 
@@ -118,8 +120,8 @@
   {yDomain}
   {series}
   {padding}
+  {height}
   brush
-  height={400}
   props={{
     highlight: { points: { r: 8, strokeWidth: 8 } },
     spline: {

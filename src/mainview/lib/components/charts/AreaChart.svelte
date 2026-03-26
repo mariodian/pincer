@@ -13,6 +13,7 @@
     strokeWidth?: number;
     gaps?: boolean;
     colorGradient?: boolean;
+    height?: number;
     // class?: string;
   }
 
@@ -29,6 +30,7 @@
     gaps = false,
     colorGradient = false,
     strokeWidth = 3,
+    height = 300,
     // class: className,
   }: Props = $props();
 
@@ -118,8 +120,8 @@
   {yDomain}
   {series}
   {padding}
+  {height}
   brush
-  height={400}
   props={{
     highlight: { points: { r: 8, strokeWidth: 8 } },
     area: {
@@ -168,11 +170,13 @@
       {#each series as s, i}
         <LinearGradient
           stops={[
-            `color-mix(${s.color} 80%, transparent)`,
+            s.color,
+            // `color-mix(${s.color} 100%, transparent)`,
+            // `color-mix(${s.color} 100%, transparent)`,
+            // `color-mix(${s.color} 70%, transparent)`,
             `color-mix(${s.color} 50%, transparent)`,
-            `color-mix(${s.color} 40%, transparent)`,
           ]}
-          units="userSpaceOnUse"
+          // units="userSpaceOnUse"
           vertical
         >
           {#snippet children({ gradient })}
