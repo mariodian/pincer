@@ -67,11 +67,9 @@
       );
 
       // Insert null rows for missing hours so chart shows gaps
-      uptimePivoted = fillHourlySlots(
-        uptimePivoted,
-        result.agents,
-        "uptime",
-      );
+      uptimePivoted = fillHourlySlots(uptimePivoted, result.agents, "uptime");
+
+      console.log(uptimePivoted);
 
       // Aggregate to daily for longer time ranges
       if (timeRange !== "24h") {
@@ -365,7 +363,7 @@
             with different visualizations for the same data.
           -->
           <MetricChart
-            chartType="area"
+            chartType="line"
             title="Uptime % Over Time"
             description="Agent availability over the selected period"
             data={uptimeData}
