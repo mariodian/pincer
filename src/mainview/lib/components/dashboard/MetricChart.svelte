@@ -120,7 +120,7 @@
 
   {#if data.length === 0 || series.length === 0}
     <div
-      class="flex aspect-video items-center justify-center text-sm text-muted-foreground"
+      class="flex flex-1 items-center justify-center text-sm text-muted-foreground"
     >
       No data for this period.
     </div>
