@@ -3,8 +3,8 @@
   import type { AgentWithColor } from "$shared/rpc";
   import { scaleBand } from "d3-scale";
   import { BarChart } from "layerchart";
-  import AreaChart from "../charts/AreaChart.svelte";
-  import LineChart from "../charts/LineChart.svelte";
+  import GapAreaChart from "../charts/GapAreaChart.svelte";
+  import GapLineChart from "../charts/GapLineChart.svelte";
   import AgentToggle from "./AgentToggle.svelte";
 
   export type ChartType = "line" | "bar" | "area";
@@ -120,7 +120,7 @@
   {:else}
     <div class="min-h-75 w-full">
       {#if chartType === "line"}
-        <LineChart
+        <GapLineChart
           {data}
           {series}
           x={xKey}
@@ -145,7 +145,7 @@
           }}
         />
       {:else if chartType === "area"}
-        <AreaChart
+        <GapAreaChart
           {data}
           {series}
           x={xKey}

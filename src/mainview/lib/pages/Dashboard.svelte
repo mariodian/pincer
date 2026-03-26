@@ -411,7 +411,7 @@
             onToggleAgent={toggleStatus}
           />
 
-          <!-- <MetricChart
+          <MetricChart
             chartType="bar"
             title="Response Time (Bar)"
             description="Compare response times visually"
@@ -423,7 +423,7 @@
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
-          /> -->
+          />
         </div>
       {:else}
         <div
