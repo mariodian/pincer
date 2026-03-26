@@ -1,6 +1,6 @@
 <script lang="ts">
   import { curveCatmullRom } from "d3-shape";
-  import { Labels, LineChart, Spline } from "layerchart";
+  import { Labels, LinearGradient, LineChart, Spline } from "layerchart";
 
   interface Props {
     data: Record<string, unknown>[];
@@ -10,20 +10,13 @@
     yAxis?: Record<string, unknown>;
     tooltip?: Record<string, unknown>;
     padding?: number;
+    strokeWidth?: number;
     gaps?: boolean;
+    colorGradient?: boolean;
     // class?: string;
   }
 
   type LineSegments = Record<string, unknown>[][];
-
-  // interface LineSegments {
-  //   solid: Record<string, unknown>[][];
-  //   dashed: Record<string, unknown>[][];
-  // }
-
-  // interface LineSegments {
-  //   dashed: Record<string, unknown>[][];
-  // }
 
   let {
     data,
@@ -34,6 +27,8 @@
     tooltip,
     padding = 24,
     gaps,
+    colorGradient = false,
+    strokeWidth = 3,
     // class: className,
   }: Props = $props();
 
@@ -161,16 +156,17 @@
     tooltip: tooltip,
   }}
 >
-  {#snippet belowMarks()}
+  {#snippet belowMarks({ getSplineProps })}
     {#if gaps}
-      {#each series as s}
+      {#each series as s, i}
         {#each lineGaps[s.key] ?? [] as gapData}
           <Spline
+            {...getSplineProps(s, i)}
             data={gapData}
             y={(d) => Number(d[s.key])}
             class="[stroke-dasharray:3,3]"
             stroke={s.color}
-            strokeWidth={3}
+            {strokeWidth}
           />
         {/each}
       {/each}
@@ -190,31 +186,39 @@
       {/if}
     {/if}
   {/snippet}
-  <!-- {#snippet marks({})}
-            <LinearGradient
-              // stops={ticks(1, 0, 10).map(temperatureColor.interpolator())}
-              stops={[
-                [200, "var(--color-red-500)"],
-                // [8, "color-mix(var(--color-red-500) 80%, white)"],
-                // [6, "color-mix(var(--color-yellow-500) 60%, white)"],
-                // [4, "color-mix(var(--color-green-500) 40%, white)"],
-                [200, "var(--color-green-500)"],
-              ]}
-              class="from-red-500 to-green-500"
-              units="userSpaceOnUse"
-              vertical
-            >
-              {#snippet children({ gradient })}
-                {#each series as s}
-                  <Spline
-                    y={(d) => d[s.key]}
-                    // Add a line for each series with a gradient stroke
-                    stroke={gradient}
-                    strokeWidth={3}
-                    curve={curveCatmullRom}
-                  />
-                {/each}
-              {/snippet}
-            </LinearGradient>
-          {/snippet} -->
+  {#snippet marks({ getSplineProps })}
+    {#if colorGradient}
+      {#each series as s, i}
+        <LinearGradient
+          stops={[
+            `color-mix(${s.color} 80%, transparent)`,
+            `color-mix(${s.color} 50%, transparent)`,
+            `color-mix(${s.color} 40%, transparent)`,
+          ]}
+          units="userSpaceOnUse"
+          vertical
+        >
+          {#snippet children({ gradient })}
+            <Spline
+              {...getSplineProps(s, i)}
+              y={(d) => d[s.key]}
+              stroke={gradient}
+              {strokeWidth}
+              curve={curveCatmullRom}
+            />
+          {/snippet}
+        </LinearGradient>
+      {/each}
+    {:else}
+      {#each series as s, i}
+        <Spline
+          {...getSplineProps(s, i)}
+          y={(d) => d[s.key]}
+          stroke={s.color}
+          {strokeWidth}
+          curve={curveCatmullRom}
+        />
+      {/each}
+    {/if}
+  {/snippet}
 </LineChart>

@@ -34,6 +34,8 @@
     /** Extra class on the chart card */
     class?: string;
     gaps?: boolean;
+    gradient?: boolean;
+    strokeWidth?: number;
   }
 
   let {
@@ -51,6 +53,8 @@
     maxTicks = 8,
     class: className,
     gaps = false,
+    gradient = false,
+    strokeWidth = 3,
   }: Props = $props();
 
   // Build chart config from agents
@@ -93,9 +97,7 @@
 
   // Tooltip config — format x-axis values in tooltip header
   const tooltipConfig = $derived(
-    xFormat
-      ? { header: { format: xFormat }, mode: "voronoi" }
-      : { mode: "voronoi" },
+    xFormat ? { header: { format: xFormat } } : {},
   );
 </script>
 
@@ -109,7 +111,7 @@
     </div>
   </div>
 
-  {#if data.length === 0}
+  {#if data.length === 0 || series.length === 0}
     <div
       class="flex aspect-video items-center justify-center text-sm text-muted-foreground"
     >
@@ -125,6 +127,8 @@
           xAxis={xAxisConfig}
           yAxis={yFormat ? { format: yFormat } : {}}
           {gaps}
+          colorGradient={gradient}
+          {strokeWidth}
         />
       {:else if chartType === "bar"}
         <BarChart

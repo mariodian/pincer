@@ -66,8 +66,6 @@
       // Insert null rows for missing hours so chart shows gaps
       uptimePivoted = fillHourlySlots(uptimePivoted, result.agents, "uptime");
 
-      // console.log(uptimePivoted);
-
       // Aggregate to daily for longer time ranges
       if (timeRange !== "24h") {
         uptimePivoted = aggregateByDay(uptimePivoted);
@@ -105,8 +103,6 @@
     } else {
       selectedUptime = selectedUptime.filter((sid) => sid !== id);
     }
-
-    console.log("Selected uptime agents:", selectedUptime);
   }
 
   function toggleResponse(id: number) {
@@ -201,8 +197,6 @@
         filled.push(row);
       }
     }
-
-    console.log("Filled hourly slots:", filled);
 
     return filled;
   }
@@ -384,6 +378,8 @@
             xFormat={xAxisFormat}
             yFormat={formatUptime}
             gaps={true}
+            gradient={true}
+            strokeWidth={3}
           />
 
           <MetricChart
