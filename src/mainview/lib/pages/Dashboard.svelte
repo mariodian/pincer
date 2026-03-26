@@ -69,7 +69,7 @@
       // Insert null rows for missing hours so chart shows gaps
       uptimePivoted = fillHourlySlots(uptimePivoted, result.agents, "uptime");
 
-      console.log(uptimePivoted);
+      // console.log(uptimePivoted);
 
       // Aggregate to daily for longer time ranges
       if (timeRange !== "24h") {
@@ -385,7 +385,7 @@
             onToggleAgent={toggleStatus}
           />
 
-          <MetricChart
+          <!-- <MetricChart
             chartType="line"
             title="Response Time"
             description="Average response time per agent"
@@ -411,7 +411,7 @@
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
-          />
+          /> -->
         </div>
       {:else}
         <div

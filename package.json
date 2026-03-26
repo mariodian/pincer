@@ -38,7 +38,7 @@
     "clsx": "^2.1.1",
     "concurrently": "^9.1.0",
     "drizzle-kit": "^0.31.10",
-    "layerchart": "2.0.0-next.43",
+    "layerchart": "^2.0.0-next.46",
     "svelte": "^5.0.0",
     "svelte-check": "^4.4.5",
     "tailwind-merge": "^3.5.0",

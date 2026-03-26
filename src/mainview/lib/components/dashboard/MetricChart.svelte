@@ -2,7 +2,7 @@
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
   import { scaleBand } from "d3-scale";
-  import { curveCatmullRom } from "d3-shape";
+  import { curveCatmullRom, curveLinear } from "d3-shape";
   import {
     Area,
     AreaChart,
@@ -213,19 +213,19 @@
         <LineChart
           {data}
           x={xKey}
-          yNice={4}
-          yDomain={[
-            -2,
-            Math.max(
-              ...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0)),
-            ) * 1.1,
-          ]}
+          // yNice={4}
+          // yDomain={[
+          //   -2,
+          //   Math.max(
+          //     ...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0)),
+          //   ) * 1.1,
+          // ]}
           {series}
           brush={true}
           props={{
             spline: {
               strokeWidth: 3,
-              curve: curveCatmullRom,
+              curve: curveLinear,
             },
             xAxis: xAxisConfig,
             yAxis: yFormat ? { format: yFormat } : {},
@@ -234,7 +234,18 @@
         >
           {#snippet belowMarks()}
             {#each series as s}
-              {@const segments = lineSegments[s.key]}
+              <Spline
+                data={data.filter(function (d) {
+                  console.log(s.key, d[s.key]);
+                  return typeof d[s.key] !== "undefined";
+                })}
+                y={(d) => d[s.key]}
+                class="[stroke-dasharray:3,3]"
+                stroke={s.color}
+                strokeWidth={3}
+                curve={curveLinear}
+              />
+              <!-- {@const segments = lineSegments[s.key]}
 
               {#each segments?.dashed ?? [] as segmentData}
                 <Spline
@@ -245,7 +256,7 @@
                   stroke={s.color}
                   strokeWidth={3}
                 />
-              {/each}
+              {/each} -->
             {/each}
           {/snippet}
           <!-- {#snippet marks({})}
