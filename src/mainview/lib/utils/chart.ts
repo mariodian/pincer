@@ -54,3 +54,33 @@ export function buildSeriesGaps(
 
   return dashed;
 }
+
+export function buildAllSeriesGaps(
+  data: Record<string, unknown>[],
+  series: { key: string }[],
+  gaps: boolean,
+): Record<string, LineSegments> {
+  const out: Record<string, LineSegments> = {};
+  if (gaps) {
+    for (const s of series) {
+      out[s.key] = buildSeriesGaps(data, s.key);
+    }
+  }
+  return out;
+}
+
+export function computeYDomain(
+  data: Record<string, unknown>[],
+  series: { key: string }[],
+): [number, number] {
+  const values = data.flatMap((d) =>
+    series
+      .map((s) => toFiniteNumber(d[s.key]))
+      .filter((v): v is number => v !== null),
+  );
+
+  const dataMin = values.length > 0 ? Math.min(...values) : 0;
+  const dataMax = values.length > 0 ? Math.max(...values) : 100;
+
+  return [Math.min(0, dataMin) - 5, Math.max(100, dataMax) + 5];
+}

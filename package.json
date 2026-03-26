@@ -12,6 +12,7 @@
     "build": "bun run build:native-effects && vite build && electrobun build",
     "build:canary": "bun run build --env=canary",
     "build:stable": "bun run build --env=stable",
+    "postbuild": "bunx prettier --write ./dist",
     "start": "bun run dev",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "db:generate": "bunx drizzle-kit generate",
