@@ -425,6 +425,7 @@
             agents={chartAgents}
             selectedIds={selectedStatus}
             onToggleAgent={toggleStatus}
+            height={200}
           />
 
           <MetricChart

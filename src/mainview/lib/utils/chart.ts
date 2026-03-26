@@ -82,5 +82,5 @@ export function computeYDomain(
   const dataMin = values.length > 0 ? Math.min(...values) : 0;
   const dataMax = values.length > 0 ? Math.max(...values) : 100;
 
-  return [Math.min(0, dataMin) - 5, Math.max(100, dataMax) + 5];
+  return [dataMin - 5, dataMax + 5];
 }

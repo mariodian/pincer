@@ -16,6 +16,7 @@
     selectedIds: number[];
     /** Toggle an agent on/off */
     onToggleAgent: (id: number) => void;
+    height: number;
     class?: string;
   }
 
@@ -26,6 +27,7 @@
     agents,
     selectedIds,
     onToggleAgent,
+    height = 300,
     class: className,
   }: Props = $props();
 
@@ -80,7 +82,7 @@
       key="status"
       value="count"
       cRange={[colors.ok, colors.offline, colors.error]}
-      height={180}
+      {height}
       range={[-90, 90]}
       outerRadius={160}
       innerRadius={-20}
