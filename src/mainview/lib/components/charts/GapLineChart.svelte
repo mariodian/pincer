@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { curveCatmullRom } from "d3-shape";
-  import { Labels, LinearGradient, LineChart, Spline } from "layerchart";
   import type { LineSegments } from "$lib/utils/chart.js";
   import { buildSeriesGaps, toFiniteNumber } from "$lib/utils/chart.js";
+  import { curveCatmullRom } from "d3-shape";
+  import { LinearGradient, LineChart, Spline } from "layerchart";
 
   interface Props {
     data: Record<string, unknown>[];
@@ -93,23 +93,6 @@
           />
         {/each}
       {/each}
-    {/if}
-  {/snippet}
-
-  {#snippet aboveMarks({ getLabelsProps, series, highlightKey, context })}
-    {#if highlightKey}
-      {@const activeSeriesIndex = series.findIndex(
-        (s) => s.key === highlightKey,
-      )}
-      {#if activeSeriesIndex !== -1 && context?.tooltip?.data}
-        <Labels
-          {...getLabelsProps(
-            { ...series[activeSeriesIndex], data: [context.tooltip.data] },
-            activeSeriesIndex,
-          )}
-          offset={10}
-        />
-      {/if}
     {/if}
   {/snippet}
   {#snippet marks({ getSplineProps })}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { curveCatmullRom } from "d3-shape";
-  import { Area, AreaChart, Labels, LinearGradient, Spline } from "layerchart";
+  import { Area, AreaChart, LinearGradient, Spline } from "layerchart";
   import type { LineSegments } from "$lib/utils/chart.js";
   import { buildSeriesGaps, toFiniteNumber } from "$lib/utils/chart.js";
 
@@ -93,23 +93,6 @@
           />
         {/each}
       {/each}
-    {/if}
-  {/snippet}
-
-  {#snippet aboveMarks({ getLabelsProps, series, highlightKey, context })}
-    {#if highlightKey}
-      {@const activeSeriesIndex = series.findIndex(
-        (s) => s.key === highlightKey,
-      )}
-      {#if activeSeriesIndex !== -1 && context?.tooltip?.data}
-        <Labels
-          {...getLabelsProps(
-            { ...series[activeSeriesIndex], data: [context.tooltip.data] },
-            activeSeriesIndex,
-          )}
-          offset={10}
-        />
-      {/if}
     {/if}
   {/snippet}
 

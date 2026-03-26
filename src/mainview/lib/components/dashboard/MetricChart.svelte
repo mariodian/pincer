@@ -36,6 +36,7 @@
     gaps?: boolean;
     gradient?: boolean;
     strokeWidth?: number;
+    padding?: number;
   }
 
   let {
@@ -55,6 +56,7 @@
     gaps = false,
     gradient = false,
     strokeWidth = 3,
+    padding,
   }: Props = $props();
 
   // Build chart config from agents
@@ -131,6 +133,7 @@
           {gaps}
           colorGradient={gradient}
           {strokeWidth}
+          {padding}
         />
       {:else if chartType === "bar"}
         <BarChart
@@ -156,6 +159,7 @@
           {gaps}
           colorGradient={gradient}
           {strokeWidth}
+          {padding}
         />
       {/if}
     </div>
