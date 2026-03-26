@@ -3,7 +3,11 @@
   import type { AgentStatus } from "$shared/types";
   import { sortAgentsByStatus } from "$shared/agent-helpers";
   import type { TrayPopoverRPCType } from "$shared/rpc";
-  import { onAgentSync, offAgentSync, triggerSyncCallbacks } from "$lib/services/mainRPC";
+  import {
+    onAgentSync,
+    offAgentSync,
+    triggerSyncCallbacks,
+  } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
   import "./tray-popover.css";
   import Button from "./ui/Button.svelte";
@@ -86,7 +90,9 @@
     try {
       await rpc.request.requestRefresh({});
     } finally {
-      setTimeout(() => { isRefreshing = false; }, 500);
+      setTimeout(() => {
+        isRefreshing = false;
+      }, 500);
     }
   }
 
@@ -130,7 +136,11 @@
         break;
     }
 
-    const lines = [agent.name, `${stripProtocol(agent.url)}:${agent.port}`, tooltip];
+    const lines = [
+      agent.name,
+      `${stripProtocol(agent.url)}:${agent.port}`,
+      tooltip,
+    ];
 
     return lines.join("\n");
   }
@@ -255,8 +265,8 @@
 
 <style>
   .popover {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     box-sizing: border-box;
   }
 

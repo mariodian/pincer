@@ -1,6 +1,13 @@
 // Logger Service - Channel-aware logging with file output and renderer push
 import { Updater, Utils } from "electrobun/bun";
-import { appendFileSync, existsSync, renameSync, statSync, mkdirSync, unlinkSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  renameSync,
+  statSync,
+  mkdirSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 import { getMainWindow } from "../rpc/windowRegistry";
 
@@ -63,18 +70,24 @@ function writeToFile(line: string): void {
   appendFileSync(logFilePath, line + "\n");
 }
 
-function pushToRenderer(level: "warn" | "error", component: string, message: string): void {
+function pushToRenderer(
+  level: "warn" | "error",
+  component: string,
+  message: string,
+): void {
   const mainWindow = getMainWindow();
   if (!mainWindow) return;
 
   try {
     const rpc = mainWindow.webview.rpc as {
-      send?: { pushLog?: (data: {
-        level: string;
-        component: string;
-        message: string;
-        timestamp: string;
-      }) => void };
+      send?: {
+        pushLog?: (data: {
+          level: string;
+          component: string;
+          message: string;
+          timestamp: string;
+        }) => void;
+      };
     } | null;
 
     rpc?.send?.pushLog?.({
@@ -88,22 +101,41 @@ function pushToRenderer(level: "warn" | "error", component: string, message: str
   }
 }
 
-function formatLine(level: LogLevel, component: string, message: string, data: unknown[]): string {
+function formatLine(
+  level: LogLevel,
+  component: string,
+  message: string,
+  data: unknown[],
+): string {
   const timestamp = new Date().toISOString();
   const label = LEVEL_LABELS[level];
-  const extra = data.length > 0 ? " " + data.map((d) => typeof d === "string" ? d : JSON.stringify(d)).join(" ") : "";
+  const extra =
+    data.length > 0
+      ? " " +
+        data
+          .map((d) => (typeof d === "string" ? d : JSON.stringify(d)))
+          .join(" ")
+      : "";
   return `[${timestamp}] [${label}] [${component}] ${message}${extra}`;
 }
 
-function log(level: LogLevel, component: string, message: string, ...data: unknown[]): void {
+function log(
+  level: LogLevel,
+  component: string,
+  message: string,
+  ...data: unknown[]
+): void {
   if (LOG_LEVELS[level] < LOG_LEVELS[minLevel]) return;
 
   const line = formatLine(level, component, message, data);
 
   if (channel === "dev") {
-    const method = level === "error" ? console.error
-      : level === "warn" ? console.warn
-      : console.log;
+    const method =
+      level === "error"
+        ? console.error
+        : level === "warn"
+          ? console.warn
+          : console.log;
     method(line);
   }
 
@@ -148,7 +180,11 @@ export async function initLogger(): Promise<void> {
   }
 
   // Log initialization
-  log("info", "logger", `Initialized (channel=${channel}, level=${minLevel}, file=${fileLoggingEnabled ? logFilePath : "off"})`);
+  log(
+    "info",
+    "logger",
+    `Initialized (channel=${channel}, level=${minLevel}, file=${fileLoggingEnabled ? logFilePath : "off"})`,
+  );
 }
 
 export function getLogFilePath(): string {
@@ -159,9 +195,13 @@ export function getLogFilePath(): string {
 }
 
 export const logger = {
-  debug: (component: string, message: string, ...data: unknown[]) => log("debug", component, message, ...data),
-  info: (component: string, message: string, ...data: unknown[]) => log("info", component, message, ...data),
-  warn: (component: string, message: string, ...data: unknown[]) => log("warn", component, message, ...data),
-  error: (component: string, message: string, ...data: unknown[]) => log("error", component, message, ...data),
+  debug: (component: string, message: string, ...data: unknown[]) =>
+    log("debug", component, message, ...data),
+  info: (component: string, message: string, ...data: unknown[]) =>
+    log("info", component, message, ...data),
+  warn: (component: string, message: string, ...data: unknown[]) =>
+    log("warn", component, message, ...data),
+  error: (component: string, message: string, ...data: unknown[]) =>
+    log("error", component, message, ...data),
   getLogFilePath,
 };

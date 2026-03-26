@@ -26,8 +26,13 @@ function agentToTuple(agent: Agent): AgentFieldTuple {
 }
 
 const AGENT_COLUMNS = [
-  "type", "name", "url", "port", "enabled",
-  "health_endpoint", "status_shape",
+  "type",
+  "name",
+  "url",
+  "port",
+  "enabled",
+  "health_endpoint",
+  "status_shape",
 ] as const;
 
 const AGENT_PLACEHOLDERS = AGENT_COLUMNS.map(() => "?").join(", ");
@@ -73,10 +78,12 @@ export class SqliteAgentStorage implements AgentStorage {
         }
       }
 
-      const existingIds = sqlite
-        .query("SELECT id FROM agents")
-        .all() as { id: number }[];
-      const newIds = new Set(agentList.filter((a) => a.id > 0).map((a) => a.id));
+      const existingIds = sqlite.query("SELECT id FROM agents").all() as {
+        id: number;
+      }[];
+      const newIds = new Set(
+        agentList.filter((a) => a.id > 0).map((a) => a.id),
+      );
 
       for (const row of existingIds) {
         if (!newIds.has(row.id)) {

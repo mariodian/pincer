@@ -2,9 +2,7 @@
 import { logger } from "./loggerService";
 import { checkAllAgentsStatus } from "./agentService";
 import { getSettings } from "../storage/sqlite/settingsRepo";
-import {
-  getStatusSyncService,
-} from "./statusSyncService";
+import { getStatusSyncService } from "./statusSyncService";
 
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;

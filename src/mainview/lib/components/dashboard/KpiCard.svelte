@@ -10,17 +10,19 @@
     class?: string;
   }
 
-  let { title, value, subtitle, loading = false, class: className }: Props =
-    $props();
+  let {
+    title,
+    value,
+    subtitle,
+    loading = false,
+    class: className,
+  }: Props = $props();
 </script>
 
-<div
-  class={cn(
-    "rounded-lg border bg-card p-4 flex flex-col gap-1",
-    className,
-  )}
->
-  <span class="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+<div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-1", className)}>
+  <span
+    class="text-xs font-medium text-muted-foreground uppercase tracking-wide"
+  >
     {title}
   </span>
   {#if loading}

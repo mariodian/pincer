@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
+/* @import "layerchart/shadcn-svelte.css"; */
 /* @plugin "@tailwindcss/forms"; */
 
 @custom-variant dark (&:where(.dark, .dark *));

@@ -31,7 +31,9 @@ export async function getSettings(): Promise<Settings> {
   return getSettingsFromDb();
 }
 
-export async function updateSettings(partial: Partial<Settings>): Promise<void> {
+export async function updateSettings(
+  partial: Partial<Settings>,
+): Promise<void> {
   updateSettingsToDb(partial);
 }
 
@@ -139,7 +141,9 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   }
 }
 
-export async function checkOneAgentStatus(id: number): Promise<AgentStatusInfo | null> {
+export async function checkOneAgentStatus(
+  id: number,
+): Promise<AgentStatusInfo | null> {
   const agents = await readAgents();
   const agent = agents.find((a) => a.id === id);
   if (!agent) return null;
@@ -165,9 +169,7 @@ export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
   }));
 }
 
-export function resolveHealthConfig(
-  agent: Agent,
-): {
+export function resolveHealthConfig(agent: Agent): {
   url: string;
   method: "GET" | "POST";
   headers: Record<string, string>;
@@ -177,7 +179,8 @@ export function resolveHealthConfig(
   const baseUrl = normalizeUrl(agent.url);
 
   const agentType = getAgentType(agent.type);
-  const endpoint = agent.healthEndpoint ?? agentType?.healthEndpoint ?? "/health";
+  const endpoint =
+    agent.healthEndpoint ?? agentType?.healthEndpoint ?? "/health";
   const method = agentType?.healthMethod ?? "GET";
   const headers = { Accept: "application/json", ...(agentType?.headers ?? {}) };
   const timeout = agentType?.timeout ?? 5000;

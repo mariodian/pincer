@@ -22,7 +22,9 @@ function getMigrationDir(): string {
         throw new Error("Could not find drizzle/migrations directory");
       }
       dir = parent;
-      if (existsSync(join(dir, "drizzle", "migrations", "meta", "_journal.json"))) {
+      if (
+        existsSync(join(dir, "drizzle", "migrations", "meta", "_journal.json"))
+      ) {
         return join(dir, "drizzle", "migrations");
       }
     }
@@ -88,10 +90,7 @@ export async function initializeDatabase(): Promise<{
 
   // Seed the settings_general row if it doesn't exist (first run without migration)
   try {
-    db.insert(settingsGeneral)
-      .values({ id: 1 })
-      .onConflictDoNothing()
-      .run();
+    db.insert(settingsGeneral).values({ id: 1 }).onConflictDoNothing().run();
   } catch (error) {
     logger.warn("db", "Failed to seed settings_general:", error);
   }
@@ -106,9 +105,12 @@ function startPruningJob(db: ReturnType<typeof drizzle>): void {
   // Run pruning on startup, then every 24 hours
   pruneOldStats(db);
 
-  setInterval(() => {
-    pruneOldStats(db);
-  }, 24 * 60 * 60 * 1000);
+  setInterval(
+    () => {
+      pruneOldStats(db);
+    },
+    24 * 60 * 60 * 1000,
+  );
 }
 
 async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
@@ -120,7 +122,8 @@ async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
     // retentionDays === 0 means never prune
     if (retentionDays === 0) return;
 
-    const cutoffTimestamp = Math.floor(Date.now() / 1000) - retentionDays * 86400;
+    const cutoffTimestamp =
+      Math.floor(Date.now() / 1000) - retentionDays * 86400;
 
     db.run(`DELETE FROM stats WHERE hour_timestamp < ${cutoffTimestamp}`);
 

@@ -90,10 +90,7 @@ export class StatusSyncService {
    * This is the main synchronization method used by most callers.
    */
   async sync(options: SyncOptions = {}): Promise<void> {
-    const {
-      updateMenu = true,
-      retry = {},
-    } = options;
+    const { updateMenu = true, retry = {} } = options;
 
     const agents = await readAgents();
     const merged = mergeAgentsWithStatuses(
@@ -117,7 +114,9 @@ export class StatusSyncService {
    * Push current known statuses to all windows immediately.
    * Uses retry for main window but skips if target missing.
    */
-  async pushKnownStatuses(options?: { retry?: { attempts?: number; delayMs?: number } }): Promise<void> {
+  async pushKnownStatuses(options?: {
+    retry?: { attempts?: number; delayMs?: number };
+  }): Promise<void> {
     const agents = await readAgents();
     const merged = mergeAgentsWithStatuses(
       agents,
@@ -125,7 +124,8 @@ export class StatusSyncService {
     );
 
     await broadcastSyncAgents(merged, this.getTargets(), {
-      mainWindowRetryAttempts: options?.retry?.attempts ?? DEFAULT_RETRY_ATTEMPTS,
+      mainWindowRetryAttempts:
+        options?.retry?.attempts ?? DEFAULT_RETRY_ATTEMPTS,
       mainWindowRetryDelayMs: options?.retry?.delayMs ?? DEFAULT_RETRY_DELAY_MS,
     });
   }
@@ -171,7 +171,9 @@ let instance: StatusSyncService | null = null;
 
 export function getStatusSyncService(): StatusSyncService {
   if (!instance) {
-    throw new Error("StatusSyncService not initialized. Call initStatusSyncService() first.");
+    throw new Error(
+      "StatusSyncService not initialized. Call initStatusSyncService() first.",
+    );
   }
   return instance;
 }

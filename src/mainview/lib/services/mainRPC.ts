@@ -7,7 +7,10 @@ import type { AgentStatus } from "$shared/types";
 import type { LogEntry } from "$shared/rpc";
 
 /** Composed RPC type: system + agent + settings + stats requests and messages. */
-export type MainRPCType = SystemRPCType & AgentRPCType & SettingsRPCType & StatsRPCType;
+export type MainRPCType = SystemRPCType &
+  AgentRPCType &
+  SettingsRPCType &
+  StatsRPCType;
 
 /** The typed request object available via getMainRPC().request */
 export type MainRPCRequests = {
@@ -89,9 +92,7 @@ export function isInitialized(): boolean {
 export async function whenReady(): Promise<void> {
   if (rpcInstance) return;
   if (!initPromise) {
-    throw new Error(
-      "Main RPC not initializing. Call initMainRPC() first.",
-    );
+    throw new Error("Main RPC not initializing. Call initMainRPC() first.");
   }
   await initPromise;
 }

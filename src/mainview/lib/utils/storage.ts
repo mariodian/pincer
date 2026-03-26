@@ -20,7 +20,10 @@ const STORAGE_KEY_STATUSES = getStorageKey(KEY_STATUSES);
 
 /** Log storage operations at warn level for easier debugging. */
 function warnStorage(context: string, error: unknown): void {
-  console.warn(`[storage] ${context}:`, error instanceof Error ? error.message : error);
+  console.warn(
+    `[storage] ${context}:`,
+    error instanceof Error ? error.message : error,
+  );
 }
 
 /**

@@ -10,10 +10,16 @@ export async function getViewUrl(pagePath = "index.html"): Promise<string> {
   if (channel === "dev") {
     try {
       await fetch(DEV_SERVER_URL, { method: "HEAD" });
-      logger.info("url", `HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`);
+      logger.info(
+        "url",
+        `HMR enabled: Using Vite dev server at ${DEV_SERVER_URL}`,
+      );
       return `${DEV_SERVER_URL}/${pagePath}`;
     } catch {
-      logger.info("url", "Vite dev server not running. Run 'bun run dev:hmr' for HMR support.");
+      logger.info(
+        "url",
+        "Vite dev server not running. Run 'bun run dev:hmr' for HMR support.",
+      );
     }
   }
   logger.debug("url", `View URL: views://mainview/${pagePath}`);
