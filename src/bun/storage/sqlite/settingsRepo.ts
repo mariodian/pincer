@@ -5,6 +5,7 @@ export interface Settings {
   pollingInterval: number;
   retentionDays: number;
   openMainWindow: boolean;
+  showDisabledAgents: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ export function getSettings(): Settings {
     pollingInterval: row?.pollingInterval ?? 30000,
     retentionDays: row?.retentionDays ?? 90,
     openMainWindow: row?.openMainWindow ?? true,
+    showDisabledAgents: row?.showDisabledAgents ?? false,
   };
 }
 
@@ -37,6 +39,9 @@ export function updateSettings(partial: Partial<Settings>): void {
   }
   if (partial.openMainWindow !== undefined) {
     set.openMainWindow = partial.openMainWindow;
+  }
+  if (partial.showDisabledAgents !== undefined) {
+    set.showDisabledAgents = partial.showDisabledAgents;
   }
 
   if (Object.keys(set).length > 0) {

@@ -14,6 +14,7 @@ export interface AgentWithColor {
   id: number;
   name: string;
   color: string;
+  enabled: boolean;
 }
 
 export interface TimeSeriesPoint {

@@ -29,4 +29,5 @@ export interface Settings {
   pollingInterval: number;
   retentionDays: number;
   openMainWindow: boolean;
+  showDisabledAgents: boolean;
 }

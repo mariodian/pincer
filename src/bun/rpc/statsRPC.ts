@@ -62,6 +62,7 @@ export const statsRequestHandlers = {
     const agentColors: AgentWithColor[] = agents.map((a, i) => ({
       id: a.id,
       name: a.name,
+      enabled: a.enabled !== false,
       color:
         stringToOklch(a.name, {
           lightness: [0.6, 0.9],

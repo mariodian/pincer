@@ -1,0 +1,1 @@
+ALTER TABLE `settings_general` ADD `show_disabled_agents` integer DEFAULT false NOT NULL;

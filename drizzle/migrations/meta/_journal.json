@@ -36,6 +36,13 @@
       "when": 1774173033201,
       "tag": "0004_migrate_config_to_settings_general",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1774530586829,
+      "tag": "0005_premium_celestials",
+      "breakpoints": true
     }
   ]
 }

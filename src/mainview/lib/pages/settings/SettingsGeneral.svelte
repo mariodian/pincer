@@ -18,6 +18,7 @@
   let pollingIntervalSec = $state(30);
   let retentionDays = $state(90);
   let openMainWindow = $state(true);
+  let showDisabledAgents = $state(false);
 
   // Track last-saved values to detect changes on blur
   let savedPollingIntervalSec = $state(30);
@@ -32,6 +33,7 @@
       pollingIntervalSec = Math.round(settings.pollingInterval / 1000);
       retentionDays = settings.retentionDays;
       openMainWindow = settings.openMainWindow;
+      showDisabledAgents = settings.showDisabledAgents;
 
       savedPollingIntervalSec = pollingIntervalSec;
       savedRetentionDays = retentionDays;
@@ -94,6 +96,11 @@
     openMainWindow = checked;
     await saveField({ openMainWindow: checked });
   }
+
+  async function handleShowDisabledAgentsChange(checked: boolean) {
+    showDisabledAgents = checked;
+    await saveField({ showDisabledAgents: checked });
+  }
 </script>
 
 {#if loading}
@@ -112,6 +119,13 @@
       <div class="space-y-2">
         <Skeleton class="h-4 w-40" />
         <Skeleton class="h-3 w-52" />
+      </div>
+      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+    </div>
+    <div class="flex items-center justify-between">
+      <div class="space-y-2">
+        <Skeleton class="h-4 w-48" />
+        <Skeleton class="h-3 w-64" />
       </div>
       <Skeleton class="h-[18px] w-[32px] rounded-full" />
     </div>
@@ -156,6 +170,14 @@
       description="Show the application window when CrabControl launches. If disabled, the app will run in the background and can be accessed from the system tray."
       checked={openMainWindow}
       onCheckedChange={handleMainWindowChange}
+    />
+
+    <SwitchCard
+      id="show-disabled-agents"
+      title="Show disabled agents in dashboard"
+      description="Include data from disabled agents in dashboard charts and KPIs. Historical data is preserved even when disabled."
+      checked={showDisabledAgents}
+      onCheckedChange={handleShowDisabledAgentsChange}
     />
   </div>
 {/if}

@@ -30,6 +30,7 @@ export const settingsGeneral = sqliteTable("settings_general", {
   pollingInterval: integer("polling_interval").notNull().default(30000),
   retentionDays: integer("retention_days").notNull().default(90),
   openMainWindow: integer("open_main_window", { mode: "boolean" }).notNull().default(true),
+  showDisabledAgents: integer("show_disabled_agents", { mode: "boolean" }).notNull().default(false),
 });
 
 export const stats = sqliteTable(

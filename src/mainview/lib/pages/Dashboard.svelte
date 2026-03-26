@@ -11,6 +11,7 @@
     TimeRange,
     TimeSeriesPoint,
   } from "$shared/rpc";
+  import type { Settings } from "$shared/types";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -29,6 +30,7 @@
   let error = $state<string | null>(null);
   let stats = $state<DashboardStats | null>(null);
   let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
+  let showDisabledAgents = $state(false);
 
   // Per-chart agent filter state
   let selectedUptime = $state<number[]>([]);
@@ -40,6 +42,8 @@
   // Svelte 5 $derived reactivity issues with $state proxy tracking
   let uptimeData = $state<Record<string, unknown>[]>([]);
   let responseData = $state<Record<string, unknown>[]>([]);
+  let chartAgents = $state<AgentWithColor[]>([]);
+  let chartTimeSeries = $state<TimeSeriesPoint[]>([]);
 
   // Fetch data
   async function fetchData() {
@@ -48,26 +52,43 @@
     try {
       await whenReady();
       const rpc = getMainRPC();
-      const result = await rpc.request.getDashboardStats({ range: timeRange });
+
+      // Fetch settings and stats in parallel
+      const [settings, result] = await Promise.all([
+        rpc.request.getSettings({}) as Promise<Settings>,
+        rpc.request.getDashboardStats({ range: timeRange }),
+      ]);
+
+      showDisabledAgents = settings.showDisabledAgents;
       stats = result;
+
+      // Filter disabled agents on the client side
+      chartAgents = showDisabledAgents
+        ? result.agents
+        : result.agents.filter((a) => a.enabled !== false);
+      chartTimeSeries = showDisabledAgents
+        ? result.timeSeries
+        : result.timeSeries.filter((p) =>
+            chartAgents.some((a) => a.id === p.agentId),
+          );
 
       // Compute chart data explicitly (avoids $derived reactivity issues)
       let uptimePivoted = pivotTimeSeries(
-        result.timeSeries,
-        result.agents,
+        chartTimeSeries,
+        chartAgents,
         "uptimePct",
       );
       let responsePivoted = pivotTimeSeries(
-        result.timeSeries,
-        result.agents,
+        chartTimeSeries,
+        chartAgents,
         "avgResponseMs",
       );
 
       // Insert null rows for missing hours so chart shows gaps
-      uptimePivoted = fillHourlySlots(uptimePivoted, result.agents, "uptime");
+      uptimePivoted = fillHourlySlots(uptimePivoted, chartAgents, "uptime");
       responsePivoted = fillHourlySlots(
         responsePivoted,
-        result.agents,
+        chartAgents,
         "response",
       );
 
@@ -80,8 +101,8 @@
       uptimeData = uptimePivoted;
       responseData = responsePivoted;
 
-      // Initialize all agents as selected if empty
-      const allIds = result.agents.map((a) => a.id);
+      // Initialize all visible agents as selected if empty
+      const allIds = chartAgents.map((a) => a.id);
       if (selectedUptime.length === 0) selectedUptime = allIds;
       if (selectedResponse.length === 0) selectedResponse = allIds;
       if (selectedResponseBar.length === 0) selectedResponseBar = allIds;
@@ -323,7 +344,7 @@
         <KpiCard
           title="Avg Uptime"
           value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
-          subtitle="Across all agents"
+          subtitle={showDisabledAgents ? "Across all agents" : "Across enabled agents"}
           {loading}
         />
         <KpiCard
@@ -343,7 +364,7 @@
         <KpiCard
           title="Avg Response"
           value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
-          subtitle="Across all agents"
+          subtitle={showDisabledAgents ? "Across all agents" : "Across enabled agents"}
           {loading}
         />
       </div>
@@ -356,7 +377,7 @@
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
         </div>
-      {:else if stats && stats.agents.length > 0}
+      {:else if stats && chartAgents.length > 0}
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <!--
             chartType: change "line" to "bar" or "area" to experiment
@@ -376,7 +397,7 @@
             description="Agent availability over the selected period"
             data={uptimeData}
             xKey="hourTimestamp"
-            agents={stats.agents}
+            agents={chartAgents}
             selectedIds={selectedUptime}
             onToggleAgent={toggleUptime}
             yPrefix="uptime"
@@ -393,7 +414,7 @@
             description="Average response time per agent"
             data={responseData}
             xKey="hourTimestamp"
-            agents={stats.agents}
+            agents={chartAgents}
             selectedIds={selectedResponse}
             onToggleAgent={toggleResponse}
             yPrefix="response"
@@ -405,8 +426,8 @@
           <StatusPieChart
             title="Status Distribution"
             description="Aggregate ok / offline / error counts"
-            timeSeries={stats.timeSeries}
-            agents={stats.agents}
+            timeSeries={chartTimeSeries}
+            agents={chartAgents}
             selectedIds={selectedStatus}
             onToggleAgent={toggleStatus}
           />
@@ -417,7 +438,7 @@
             description="Compare response times visually"
             data={responseData}
             xKey="hourTimestamp"
-            agents={stats.agents}
+            agents={chartAgents}
             selectedIds={selectedResponseBar}
             onToggleAgent={toggleResponseBar}
             yPrefix="response"
