@@ -98,52 +98,27 @@
     return out;
   });
 
-  // const domainMinMax = $derived.by(() => {
-  //   let min = Infinity;
-  //   let max = -Infinity;
-  //   for (const d of data) {
-  //     for (const s of series) {
-  //       const val = Number(d[s.key]);
-  //       if (isNaN(val)) continue;
-  //       if (val < min) min = val;
-  //       if (val > max) max = val;
-  //     }
-  //   }
-  //   return [min - 1, max + 1];
-  // });
+  const yDomain = $derived.by<[number, number]>(() => {
+    const values = data.flatMap((d) =>
+      series
+        .map((s) => toFiniteNumber(d[s.key]))
+        .filter((v): v is number => v !== null),
+    );
 
-  // brush={true}
-  // {padding}
-  // height={300}
-  // props={{
-  //   highlight: { points: { r: 8, strokeWidth: 4 } },
-  //   spline: {
-  //     strokeWidth: 3,
-  //     curve: curveLinear,
-  //   },
-  //   xAxis: xAxis,
-  //   yAxis: yAxis,
-  //   tooltip: tooltip,
-  // }}
+    const dataMin = values.length > 0 ? Math.min(...values) : 0;
+    const dataMax = values.length > 0 ? Math.max(...values) : 100;
+
+    return [Math.min(0, dataMin) - 5, Math.max(100, dataMax) + 5];
+  });
 </script>
 
 <LineChart
   {data}
   {x}
-  // xNice
-  // yNice={6}
-  // xNice
-  yNice={4}
-  // yDomain={domainMinMax}
-  yDomain={[
-    -2,
-    data &&
-      Math.max(
-        ...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0)),
-      ) * 1.1,
-  ]}
+  {yDomain}
   {series}
   {padding}
+  brush
   height={400}
   props={{
     highlight: { points: { r: 8, strokeWidth: 8 } },
@@ -167,6 +142,7 @@
             class="[stroke-dasharray:3,3]"
             stroke={s.color}
             {strokeWidth}
+            curve={curveCatmullRom.alpha(0.5)}
           />
         {/each}
       {/each}
