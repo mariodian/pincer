@@ -347,7 +347,9 @@
         <KpiCard
           title="Avg Uptime"
           value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
-          subtitle={showDisabledAgents ? "Across all agents" : "Across enabled agents"}
+          subtitle={showDisabledAgents
+            ? "Across all agents"
+            : "Across enabled agents"}
           {loading}
         />
         <KpiCard
@@ -367,7 +369,9 @@
         <KpiCard
           title="Avg Response"
           value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
-          subtitle={showDisabledAgents ? "Across all agents" : "Across enabled agents"}
+          subtitle={showDisabledAgents
+            ? "Across all agents"
+            : "Across enabled agents"}
           {loading}
         />
       </div>
@@ -382,18 +386,6 @@
         </div>
       {:else if stats && chartAgents.length > 0}
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <!--
-            chartType: change "line" to "bar" or "area" to experiment
-            with different visualizations for the same data.
-            -->
-          <!-- <LineChart
-            data={uptimeData}
-            series={stats.agents}
-            xKey="date"
-            xAxis={xAxisFormat}
-            yAxis={formatUptime}
-          /> -->
-
           <MetricChart
             chartType="area"
             title="Uptime % Over Time"

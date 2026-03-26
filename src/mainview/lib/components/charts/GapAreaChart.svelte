@@ -96,14 +96,17 @@
     {/if}
   {/snippet}
 
-  {#snippet aboveMarks({ getLabelsProps, series, highlightKey })}
+  {#snippet aboveMarks({ getLabelsProps, series, highlightKey, context })}
     {#if highlightKey}
       {@const activeSeriesIndex = series.findIndex(
         (s) => s.key === highlightKey,
       )}
-      {#if activeSeriesIndex !== -1}
+      {#if activeSeriesIndex !== -1 && context?.tooltip?.data}
         <Labels
-          {...getLabelsProps(series[activeSeriesIndex], activeSeriesIndex)}
+          {...getLabelsProps(
+            { ...series[activeSeriesIndex], data: [context.tooltip.data] },
+            activeSeriesIndex,
+          )}
           offset={10}
         />
       {/if}
