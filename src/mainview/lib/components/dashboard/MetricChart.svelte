@@ -81,16 +81,18 @@
       });
   });
 
-  // X-axis config — use explicit tickValues array for reliable tick count
-  // across both band and time scales
+  // X-axis config — bar charts (band scale) need explicit tickValues to
+  // limit label density; line/area (time scale) handle tick positioning
+  // automatically via D3's smart time tick intervals
   const xAxisConfig = $derived.by(() => {
     const base: Record<string, unknown> = {};
     if (xFormat) base.format = xFormat;
-    if (data.length > maxTicks) {
+    if (chartType === "bar" && data.length > maxTicks) {
       const step = Math.ceil(data.length / maxTicks);
-      base.tickValues = data
-        .filter((_, i) => i % step === 0)
-        .map((d) => d[xKey]);
+      base.ticks = data.filter((_, i) => i % step === 0).map((d) => d[xKey]);
+      // base.tickValues = data
+      //   .filter((_, i) => i % step === 0)
+      //   .map((d) => d[xKey]);
     }
     return base;
   });

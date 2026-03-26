@@ -231,19 +231,22 @@
   function aggregateByDay(
     rows: Record<string, unknown>[],
   ): Record<string, unknown>[] {
-    const DAY_MS = 86400000;
     const byDay = new Map<
       number,
       { values: Record<string, number[]>; ts: number }
     >();
 
     for (const row of rows) {
-      const dayTs =
-        Math.floor((row.hourTimestamp as Date).getTime() / DAY_MS) * DAY_MS;
-      if (!byDay.has(dayTs)) {
-        byDay.set(dayTs, { values: {}, ts: dayTs });
+      const d = row.hourTimestamp as Date;
+      const localMidnight = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate(),
+      ).getTime();
+      if (!byDay.has(localMidnight)) {
+        byDay.set(localMidnight, { values: {}, ts: localMidnight });
       }
-      const bucket = byDay.get(dayTs)!;
+      const bucket = byDay.get(localMidnight)!;
       for (const [key, val] of Object.entries(row)) {
         if (key === "hourTimestamp") continue;
         if (typeof val === "number") {
