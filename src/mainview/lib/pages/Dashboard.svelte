@@ -105,6 +105,8 @@
     } else {
       selectedUptime = selectedUptime.filter((sid) => sid !== id);
     }
+
+    console.log("Selected uptime agents:", selectedUptime);
   }
 
   function toggleResponse(id: number) {
@@ -199,6 +201,8 @@
         filled.push(row);
       }
     }
+
+    console.log("Filled hourly slots:", filled);
 
     return filled;
   }
@@ -379,18 +383,10 @@
             yPrefix="uptime"
             xFormat={xAxisFormat}
             yFormat={formatUptime}
+            gaps={true}
           />
 
-          <StatusPieChart
-            title="Status Distribution"
-            description="Aggregate ok / offline / error counts"
-            timeSeries={stats.timeSeries}
-            agents={stats.agents}
-            selectedIds={selectedStatus}
-            onToggleAgent={toggleStatus}
-          />
-
-          <!-- <MetricChart
+          <MetricChart
             chartType="line"
             title="Response Time"
             description="Average response time per agent"
@@ -404,7 +400,16 @@
             yFormat={formatMs}
           />
 
-          <MetricChart
+          <StatusPieChart
+            title="Status Distribution"
+            description="Aggregate ok / offline / error counts"
+            timeSeries={stats.timeSeries}
+            agents={stats.agents}
+            selectedIds={selectedStatus}
+            onToggleAgent={toggleStatus}
+          />
+
+          <!-- <MetricChart
             chartType="bar"
             title="Response Time (Bar)"
             description="Compare response times visually"

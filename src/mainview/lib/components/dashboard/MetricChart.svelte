@@ -33,6 +33,7 @@
     maxTicks?: number;
     /** Extra class on the chart card */
     class?: string;
+    gaps?: boolean;
   }
 
   let {
@@ -49,6 +50,7 @@
     yFormat,
     maxTicks = 8,
     class: className,
+    gaps = false,
   }: Props = $props();
 
   // Build chart config from agents
@@ -95,94 +97,6 @@
       ? { header: { format: xFormat }, mode: "voronoi" }
       : { mode: "voronoi" },
   );
-
-  interface LineSegments {
-    solid: Record<string, unknown>[][];
-    dashed: Record<string, unknown>[][];
-  }
-
-  function toFiniteNumber(value: unknown): number | null {
-    if (value === null || typeof value === "undefined") return null;
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function buildSeriesSegments(
-    rows: Record<string, unknown>[],
-    key: string,
-  ): LineSegments {
-    const solid: Record<string, unknown>[][] = [];
-    const dashed: Record<string, unknown>[][] = [];
-
-    const values = rows.map((row) => toFiniteNumber(row[key]));
-
-    // Build solid segments from contiguous runs of non-null values.
-    let currentSolid: Record<string, unknown>[] = [];
-    for (let i = 0; i < rows.length; i++) {
-      const value = values[i];
-      if (value !== null) {
-        currentSolid.push(rows[i]);
-        continue;
-      }
-
-      if (currentSolid.length >= 2) {
-        solid.push(currentSolid);
-      }
-      currentSolid = [];
-    }
-    if (currentSolid.length >= 2) {
-      solid.push(currentSolid);
-    }
-
-    // Build dashed segments for null runs bounded by known values.
-    let i = 0;
-    while (i < rows.length) {
-      if (values[i] !== null) {
-        i += 1;
-        continue;
-      }
-
-      const start = i;
-      while (i < rows.length && values[i] === null) {
-        i += 1;
-      }
-      const end = i - 1;
-
-      const left = start - 1;
-      const right = end + 1;
-      if (
-        left >= 0 &&
-        right < rows.length &&
-        values[left] !== null &&
-        values[right] !== null
-      ) {
-        const y0 = values[left] as number;
-        const y1 = values[right] as number;
-        const span = right - left;
-
-        const segment: Record<string, unknown>[] = [];
-        for (let idx = left; idx <= right; idx++) {
-          const t = (idx - left) / span;
-          const interpolated = y0 + (y1 - y0) * t;
-          segment.push({ ...rows[idx], [key]: interpolated });
-        }
-
-        if (segment.length >= 2) {
-          dashed.push(segment);
-        }
-      }
-    }
-
-    return { solid, dashed };
-  }
-
-  const lineSegments = $derived.by(() => {
-    const out: Record<string, LineSegments> = {};
-    for (const s of series) {
-      out[s.key] = buildSeriesSegments(data, s.key);
-    }
-    return out;
-  });
 </script>
 
 <div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
@@ -210,6 +124,7 @@
           x={xKey}
           xAxis={xAxisConfig}
           yAxis={yFormat ? { format: yFormat } : {}}
+          {gaps}
         />
       {:else if chartType === "bar"}
         <BarChart

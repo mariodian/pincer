@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { curveLinear } from "d3-shape";
+  import { curveCatmullRom } from "d3-shape";
   import { Labels, LineChart, Spline } from "layerchart";
 
   interface Props {
@@ -10,8 +10,20 @@
     yAxis?: Record<string, unknown>;
     tooltip?: Record<string, unknown>;
     padding?: number;
+    gaps?: boolean;
     // class?: string;
   }
+
+  type LineSegments = Record<string, unknown>[][];
+
+  // interface LineSegments {
+  //   solid: Record<string, unknown>[][];
+  //   dashed: Record<string, unknown>[][];
+  // }
+
+  // interface LineSegments {
+  //   dashed: Record<string, unknown>[][];
+  // }
 
   let {
     data,
@@ -21,22 +33,89 @@
     yAxis,
     tooltip,
     padding = 24,
+    gaps,
     // class: className,
   }: Props = $props();
 
-  const domainMinMax = $derived.by(() => {
-    let min = Infinity;
-    let max = -Infinity;
-    for (const d of data) {
-      for (const s of series) {
-        const val = Number(d[s.key]);
-        if (isNaN(val)) continue;
-        if (val < min) min = val;
-        if (val > max) max = val;
+  function toFiniteNumber(value: unknown): number | null {
+    if (value === null || typeof value === "undefined") return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function buildSeriesGaps(
+    rows: Record<string, unknown>[],
+    key: string,
+  ): LineSegments {
+    const dashed: LineSegments = [];
+    const values = rows.map((row) => toFiniteNumber(row[key]));
+
+    // Build dashed segments for null runs bounded by known values.
+    let i = 0;
+    while (i < rows.length) {
+      if (values[i] !== null) {
+        i += 1;
+        continue;
+      }
+
+      const start = i;
+      while (i < rows.length && values[i] === null) {
+        i += 1;
+      }
+      const end = i - 1;
+
+      const left = start - 1;
+      const right = end + 1;
+      if (
+        left >= 0 &&
+        right < rows.length &&
+        values[left] !== null &&
+        values[right] !== null
+      ) {
+        const y0 = values[left] as number;
+        const y1 = values[right] as number;
+        const span = right - left;
+
+        const segment: Record<string, unknown>[] = [];
+        for (let idx = left; idx <= right; idx++) {
+          const t = (idx - left) / span;
+          const interpolated = y0 + (y1 - y0) * t;
+          segment.push({ ...rows[idx], [key]: interpolated });
+        }
+
+        if (segment.length >= 2) {
+          dashed.push(segment);
+        }
       }
     }
-    return [min - 1, max + 1];
+
+    return dashed;
+  }
+
+  const lineGaps = $derived.by<Record<string, LineSegments>>(() => {
+    const out: Record<string, LineSegments> = {};
+    if (gaps) {
+      for (const s of series) {
+        out[s.key] = buildSeriesGaps(data, s.key);
+      }
+    }
+
+    return out;
   });
+
+  // const domainMinMax = $derived.by(() => {
+  //   let min = Infinity;
+  //   let max = -Infinity;
+  //   for (const d of data) {
+  //     for (const s of series) {
+  //       const val = Number(d[s.key]);
+  //       if (isNaN(val)) continue;
+  //       if (val < min) min = val;
+  //       if (val > max) max = val;
+  //     }
+  //   }
+  //   return [min - 1, max + 1];
+  // });
 
   // brush={true}
   // {padding}
@@ -56,15 +135,18 @@
 <LineChart
   {data}
   {x}
+  // xNice
   // yNice={6}
   // xNice
-  // yNice={4}
+  yNice={4}
   // yDomain={domainMinMax}
-  // yDomain={[
-  //   -2,
-  //   Math.max(...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0))) *
-  //     1.1,
-  // ]}
+  yDomain={[
+    -2,
+    data &&
+      Math.max(
+        ...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0)),
+      ) * 1.1,
+  ]}
   {series}
   {padding}
   height={400}
@@ -72,7 +154,7 @@
     highlight: { points: { r: 8, strokeWidth: 8 } },
     spline: {
       strokeWidth: 3,
-      curve: curveLinear,
+      curve: curveCatmullRom,
     },
     xAxis: xAxis,
     yAxis: yAxis,
@@ -80,41 +162,32 @@
   }}
 >
   {#snippet belowMarks()}
-    {#each series as s}
-      <Spline
-        data={data.filter(function (d) {
-          console.log(s.key, d[s.key]);
-          return typeof d[s.key] !== "undefined";
-        })}
-        y={(d) => d[s.key]}
-        class="[stroke-dasharray:3,3]"
-        stroke={s.color}
-        strokeWidth={3}
-        curve={curveLinear}
-      />
-      <!-- {@const segments = lineSegments[s.key]}
-
-              {#each segments?.dashed ?? [] as segmentData}
-                <Spline
-                  data={segmentData}
-                  y={(d) => Number(d[s.key])}
-                  class="[stroke-dasharray:3,3]"
-                  // curve={curveCatmullRom}
-                  stroke={s.color}
-                  strokeWidth={3}
-                />
-              {/each} -->
-    {/each}
+    {#if gaps}
+      {#each series as s}
+        {#each lineGaps[s.key] ?? [] as gapData}
+          <Spline
+            data={gapData}
+            y={(d) => Number(d[s.key])}
+            class="[stroke-dasharray:3,3]"
+            stroke={s.color}
+            strokeWidth={3}
+          />
+        {/each}
+      {/each}
+    {/if}
   {/snippet}
+
   {#snippet aboveMarks({ getLabelsProps, series, highlightKey })}
     {#if highlightKey}
       {@const activeSeriesIndex = series.findIndex(
         (s) => s.key === highlightKey,
       )}
-      <Labels
-        {...getLabelsProps(series[activeSeriesIndex], activeSeriesIndex)}
-        offset={10}
-      />
+      {#if activeSeriesIndex !== -1}
+        <Labels
+          {...getLabelsProps(series[activeSeriesIndex], activeSeriesIndex)}
+          offset={10}
+        />
+      {/if}
     {/if}
   {/snippet}
   <!-- {#snippet marks({})}
