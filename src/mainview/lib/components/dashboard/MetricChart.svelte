@@ -99,10 +99,11 @@
     return base;
   });
 
-  // Tooltip config — format x-axis values in tooltip header
-  const tooltipConfig = $derived(
-    xFormat ? { header: { format: xFormat } } : {},
-  );
+  // Tooltip config — format x-axis values in tooltip header, round values to integers
+  const tooltipConfig = $derived({
+    ...(xFormat ? { header: { format: xFormat } } : {}),
+    item: { format: "integer" as const },
+  });
 </script>
 
 <div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
@@ -130,6 +131,7 @@
           x={xKey}
           xAxis={xAxisConfig}
           yAxis={yFormat ? { format: yFormat } : {}}
+          tooltip={tooltipConfig}
           {gaps}
           colorGradient={gradient}
           {strokeWidth}
@@ -156,6 +158,7 @@
           x={xKey}
           xAxis={xAxisConfig}
           yAxis={yFormat ? { format: yFormat } : {}}
+          tooltip={tooltipConfig}
           {gaps}
           colorGradient={gradient}
           {strokeWidth}

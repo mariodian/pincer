@@ -148,7 +148,7 @@
 							</div>
 							{#if item.value !== undefined}
 								<span class="text-foreground font-mono font-medium tabular-nums">
-									{item.value.toLocaleString()}
+									{Math.round(Number(item.value)).toLocaleString()}
 								</span>
 							{/if}
 						</div>
