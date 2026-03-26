@@ -1,8 +1,8 @@
 <script lang="ts">
-  import * as Chart from "$lib/components/ui/chart";
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
-  import { PieChart } from "layerchart";
+  import { format } from "@layerstack/utils";
+  import { PieChart, Text } from "layerchart";
   import AgentToggle from "./AgentToggle.svelte";
 
   interface Props {
@@ -50,26 +50,13 @@
     }
 
     return [
-      { status: "ok", count: okTotal, color: colors.ok },
-      { status: "offline", count: offlineTotal, color: colors.offline },
-      { status: "error", count: errorTotal, color: colors.error },
+      { status: "OK", count: okTotal, color: colors.ok },
+      { status: "Offline", count: offlineTotal, color: colors.offline },
+      { status: "Error", count: errorTotal, color: colors.error },
     ].filter((d) => d.count > 0);
   });
 
   const totalCount = $derived(statusData.reduce((sum, d) => sum + d.count, 0));
-
-  const chartConfig = $derived.by(() => {
-    const config: Record<string, { label: string; color: string }> = {};
-    for (const agent of agents) {
-      config[`agent_${agent.id}`] = { label: agent.name, color: agent.color };
-    }
-    return {
-      ok: { label: "OK", color: colors.ok },
-      offline: { label: "Offline", color: colors.offline },
-      error: { label: "Error", color: colors.error },
-      ...config,
-    } satisfies Chart.ChartConfig;
-  });
 </script>
 
 <div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
@@ -87,40 +74,44 @@
       No data for this period.
     </div>
   {:else}
-    <Chart.Container config={chartConfig} class="min-h-50 w-full">
-      <PieChart
-        data={statusData}
-        key="status"
-        value="count"
-        innerRadius={60}
-        cRange={[colors.ok, colors.offline, colors.error]}
-        props={{
-          pie: {
-            padAngle: 3,
-          },
-        }}
-      >
-        {#snippet tooltip()}
-          <Chart.Tooltip />
-        {/snippet}
-      </PieChart>
-    </Chart.Container>
-
-    <!-- Legend -->
-    <div class="flex flex-wrap gap-4 justify-center">
-      {#each statusData as item (item.status)}
-        <div class="flex items-center gap-1.5 text-xs">
-          <span
-            class="size-2.5 rounded-xs"
-            style="background-color: {item.color};"
-          ></span>
-          <span class="text-muted-foreground capitalize">{item.status}</span>
-          <span class="font-mono font-medium"
-            >{item.count.toLocaleString()}</span
-          >
-        </div>
-      {/each}
-    </div>
+    <!-- <Chart.Container config={chartConfig} class="min-h-50 w-full"> -->
+    <PieChart
+      data={statusData}
+      key="status"
+      value="count"
+      cRange={[colors.ok, colors.offline, colors.error]}
+      height={180}
+      range={[-90, 90]}
+      outerRadius={160}
+      innerRadius={-20}
+      cornerRadius={10}
+      padAngle={0.02}
+      props={{ group: { y: 160 / 2 } }}
+      padding={{ right: 80, top: 40, bottom: 40 }}
+      legend={{
+        placement: "right",
+        orientation: "vertical",
+        variant: "swatches",
+      }}
+      // height={300}
+    >
+      {#snippet aboveMarks()}
+        <Text
+          value={format(totalCount)}
+          textAnchor="middle"
+          verticalAnchor="middle"
+          class="text-4xl font-semibold"
+          dy={8}
+        />
+        <Text
+          value="Total"
+          textAnchor="middle"
+          verticalAnchor="middle"
+          class="text-sm font-medium text-muted-foreground"
+          dy={32}
+        />
+      {/snippet}
+    </PieChart>
   {/if}
 
   <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />

@@ -37,6 +37,7 @@
     gradient?: boolean;
     strokeWidth?: number;
     padding?: number;
+    height?: number;
   }
 
   let {
@@ -53,10 +54,11 @@
     yFormat,
     maxTicks = 8,
     class: className,
-    gaps = false,
-    gradient = false,
-    strokeWidth = 3,
+    gaps,
+    gradient,
+    strokeWidth,
     padding,
+    height,
   }: Props = $props();
 
   // Build chart config from agents
@@ -123,7 +125,7 @@
       No data for this period.
     </div>
   {:else}
-    <div class="min-h-75 w-full">
+    <div class="w-full">
       {#if chartType === "line"}
         <GapLineChart
           {data}
@@ -136,6 +138,7 @@
           colorGradient={gradient}
           {strokeWidth}
           {padding}
+          {height}
         />
       {:else if chartType === "bar"}
         <BarChart
@@ -150,6 +153,7 @@
             yAxis: yFormat ? { format: yFormat } : {},
             tooltip: tooltipConfig,
           }}
+          {height}
         />
       {:else if chartType === "area"}
         <GapAreaChart
@@ -163,6 +167,7 @@
           colorGradient={gradient}
           {strokeWidth}
           {padding}
+          {height}
         />
       {/if}
     </div>

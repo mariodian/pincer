@@ -439,6 +439,7 @@
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
+            height={200}
           />
         </div>
       {:else}
