@@ -66,6 +66,13 @@
         "avgResponseMs",
       );
 
+      // Insert null rows for missing hours so chart shows gaps
+      uptimePivoted = fillHourlySlots(
+        uptimePivoted,
+        result.agents,
+        "uptime",
+      );
+
       // Aggregate to daily for longer time ranges
       if (timeRange !== "24h") {
         uptimePivoted = aggregateByDay(uptimePivoted);
@@ -166,6 +173,39 @@
         (a.hourTimestamp as Date).getTime() -
         (b.hourTimestamp as Date).getTime(),
     );
+  }
+
+  // Insert null rows for missing hours between first and last data point
+  function fillHourlySlots(
+    rows: Record<string, unknown>[],
+    agents: AgentWithColor[],
+    yPrefix: string,
+  ): Record<string, unknown>[] {
+    if (rows.length <= 1) return rows;
+
+    const HOUR = 3600000;
+    const first = (rows[0].hourTimestamp as Date).getTime();
+    const last = (rows[rows.length - 1].hourTimestamp as Date).getTime();
+
+    const existing = new Map<number, Record<string, unknown>>();
+    for (const row of rows) {
+      existing.set((row.hourTimestamp as Date).getTime(), row);
+    }
+
+    const filled: Record<string, unknown>[] = [];
+    for (let ts = first; ts <= last; ts += HOUR) {
+      if (existing.has(ts)) {
+        filled.push(existing.get(ts)!);
+      } else {
+        const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
+        for (const agent of agents) {
+          row[`${yPrefix}_${agent.id}`] = null;
+        }
+        filled.push(row);
+      }
+    }
+
+    return filled;
   }
 
   // Aggregate hourly pivoted data to daily averages
