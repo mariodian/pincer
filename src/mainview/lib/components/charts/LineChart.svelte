@@ -26,7 +26,7 @@
     yAxis,
     tooltip,
     padding = 24,
-    gaps,
+    gaps = false,
     colorGradient = false,
     strokeWidth = 3,
     // class: className,
