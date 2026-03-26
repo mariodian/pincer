@@ -366,7 +366,7 @@
           /> -->
 
           <MetricChart
-            chartType="line"
+            chartType="area"
             title="Uptime % Over Time"
             description="Agent availability over the selected period"
             data={uptimeData}

@@ -2,8 +2,8 @@
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
   import { scaleBand } from "d3-scale";
-  import { curveCatmullRom } from "d3-shape";
-  import { Area, AreaChart, BarChart, LinearGradient } from "layerchart";
+  import { BarChart } from "layerchart";
+  import AreaChart from "../charts/AreaChart.svelte";
   import LineChart from "../charts/LineChart.svelte";
   import AgentToggle from "./AgentToggle.svelte";
 
@@ -147,67 +147,14 @@
       {:else if chartType === "area"}
         <AreaChart
           {data}
-          // yNice={4}
-          // yNice={4}
-          xNice={3600}
-          // Round x-axis to nearest hour for better label formatting
-          yDomain={[-10, 110]}
-          // yDomain={[
-          //   -10,
-          //   Math.max(
-          //     ...data.flatMap((d) => series.map((s) => Number(d[s.key]) || 0)),
-          //   ) * 1.05,
-          // ]}
-          padding={{ left: 20, bottom: 24 }}
-          x={xKey}
           {series}
-          // radial
-          props={{
-            area: {
-              line: { strokeWidth: 3 },
-              curve: curveCatmullRom,
-            },
-            xAxis: xAxisConfig,
-            yAxis: yFormat ? { format: yFormat } : {},
-            tooltip: tooltipConfig,
-          }}
-        >
-          {#snippet marks({})}
-            {#each series as s}
-              <LinearGradient
-                // stops={ticks(1, 0, 10).map(temperatureColor.interpolator())}
-                // stops={[series.map((s) => `white ${s.color}`)]}
-                stops={[
-                  // [10, `${s.color}`],
-                  // s.color,
-                  `color-mix(${s.color} 80%, transparent)`,
-                  `color-mix(${s.color} 50%, transparent)`,
-                  `color-mix(${s.color} 40%, transparent)`,
-                  // `color-mix(${s.color} 75%, transparent)`,
-                  // `color-mix(${s.color} 60%, transparent)`,
-                  // `color-mix(${s.color} 50%, transparent)`,
-                  // "transparent",
-                  // [7, `color-mix(${s.color} 80%, transparent)`],
-                  // [5, `color-mix(var(--color-yellow-500) 60%, black)`],
-                  // [2, `color-mix(${s.color} 30%, transparent)`],
-                ]}
-                // class={`from-[${s.color}] to-primary/10`}
-                units="userSpaceOnUse"
-                vertical
-              >
-                {#snippet children({ gradient })}
-                  <Area
-                    y1={(d) => d[s.key]}
-                    // line={{ class: "stroke-2 stroke-primary/50" }}
-                    line={{ stroke: s.color, strokeWidth: 3 }}
-                    curve={curveCatmullRom}
-                    fill={gradient}
-                  />
-                {/snippet}
-              </LinearGradient>
-            {/each}
-          {/snippet}
-        </AreaChart>
+          x={xKey}
+          xAxis={xAxisConfig}
+          yAxis={yFormat ? { format: yFormat } : {}}
+          {gaps}
+          colorGradient={gradient}
+          {strokeWidth}
+        />
       {/if}
     </div>
   {/if}
