@@ -378,14 +378,14 @@
 
       <!-- Charts -->
       {#if loading}
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-4 gap-4">
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
         </div>
       {:else if stats && chartAgents.length > 0}
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-4 gap-4">
           <MetricChart
             chartType="area"
             title="Uptime % Over Time"
