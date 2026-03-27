@@ -173,9 +173,10 @@
         </Button>
       </div>
     {:else}
-      <div class="flex flex-col gap-2 h-full overflow-x-hidden">
+      <!-- <div class="flex flex-col gap-2 h-full overflow-x-hidden"> -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-x-hidden">
         {#each agents as agent (agent.id)}
-          <div class="relative">
+          <div class="relative overflow-x-hidden">
             <div
               class={[
                 "absolute w-full",

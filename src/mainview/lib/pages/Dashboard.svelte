@@ -362,6 +362,11 @@
         />
         <KpiCard
           title="Incidents"
+          class={[
+            "from-red-600/90 to-red-800/90 bg-linear-180", // gradient
+            "border border-red-800",
+            "text-white",
+          ].join(" ")}
           value={stats ? stats.kpis.incidentCount : "—"}
           subtitle="Offline + Error checks"
           {loading}
