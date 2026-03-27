@@ -229,7 +229,13 @@
             >
               <Item.Root
                 variant="outline"
-                class={["group", "min-h-18 h-full w-full"]}
+                class={[
+                  "group",
+                  "bg-background",
+                  // "bg-white dark:bg-black",
+                  // "bg-primary-foreground/50 dark:bg-primary/5",
+                  "min-h-18 h-full w-full",
+                ]}
               >
                 <Item.Media class="min-h-9">
                   <span

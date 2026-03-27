@@ -2,6 +2,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import { currentRoute } from "$lib/services/navigationStore";
+  import { isActiveUrl } from "$lib/utils/url.js";
   import { link, push } from "@bmlt-enabled/svelte-spa-router";
   import { Add01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
@@ -13,13 +14,6 @@
     $props();
 
   let currentLocation = $derived($currentRoute);
-
-  function isActive(url: string): boolean {
-    if (url === "/") {
-      return currentLocation === "/";
-    }
-    return currentLocation === url || currentLocation.startsWith(url + "/");
-  }
 </script>
 
 <Sidebar.Group>
@@ -31,7 +25,7 @@
             <Sidebar.MenuButton
               class="min-w-8 duration-200 ease-linear"
               tooltipContent="Agents"
-              isActive={isActive(item.url)}
+              isActive={isActiveUrl(currentLocation, item.url)}
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
@@ -54,7 +48,7 @@
           <Sidebar.MenuItem>
             <Sidebar.MenuButton
               tooltipContent={item.title}
-              isActive={isActive(item.url)}
+              isActive={isActiveUrl(currentLocation, item.url)}
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>

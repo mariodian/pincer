@@ -2,8 +2,9 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { useSidebar } from "$lib/components/ui/sidebar";
-  import type { WithoutChildren } from "$lib/utils";
   import { currentRoute } from "$lib/services/navigationStore";
+  import { cn, type WithoutChildren } from "$lib/utils";
+  import { isActiveUrl } from "$lib/utils/url.js";
   import { link } from "@bmlt-enabled/svelte-spa-router";
   import { Moon02Icon, SunIcon, Tick01Icon } from "@hugeicons/core-free-icons";
   import type { IconSvgElement } from "@hugeicons/svelte";
@@ -17,9 +18,6 @@
 
   let currentLocation = $derived($currentRoute);
 
-  function isActive(url: string): boolean {
-    return currentLocation === url;
-  }
   const selectedThemeLabel = $derived.by(() => {
     const preferred = userPrefersMode.current;
     if (preferred === "light") {
@@ -74,7 +72,7 @@
             <Sidebar.MenuButton
               class="min-w-8 duration-200 ease-linear"
               tooltipContent={item.title}
-              isActive={isActive(item.url)}
+              isActive={isActiveUrl(currentLocation, item.url)}
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
@@ -92,7 +90,11 @@
                   class="flex-1 group-sidebar-expanded/settings:flex-1"
                 >
                   <Sidebar.MenuButton
-                    class="min-w-8 duration-200 ease-linear"
+                    class={cn([
+                      "min-w-8",
+                      "duration-200 ease-linear",
+                      "[&_svg]:transition-transform! [&_svg]:duration-300",
+                    ])}
                     tooltipContent={selectedThemeLabel}
                   >
                     {#snippet child({ props })}
@@ -100,18 +102,20 @@
                         <HugeiconsIcon
                           icon={SunIcon}
                           strokeWidth={2}
-                          class={[
-                            "h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all!",
+                          class={cn([
+                            "h-[1.2rem] w-[1.2rem]",
+                            "scale-100 rotate-0",
                             "dark:scale-0 dark:-rotate-90",
-                          ].join(" ")}
+                          ])}
                         />
                         <HugeiconsIcon
                           icon={Moon02Icon}
                           strokeWidth={2}
-                          class={[
-                            "absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all!",
+                          class={cn([
+                            "absolute h-[1.2rem] w-[1.2rem]",
+                            "scale-0 rotate-90",
                             "dark:scale-100 dark:rotate-0",
-                          ].join(" ")}
+                          ])}
                         />
                         <span>{selectedThemeLabel}</span>
                       </div>
@@ -146,12 +150,12 @@
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
               <div
-                class={[
+                class={cn([
                   "transition-all duration-150 overflow-hidden",
                   shouldFlex
                     ? "max-w-0 opacity-0 pointer-events-none"
                     : "max-w-10 opacity-100",
-                ]}
+                ])}
               >
                 <Sidebar.Trigger size="icon-sm" />
               </div>
@@ -159,12 +163,12 @@
           </div>
 
           <div
-            class={[
+            class={cn([
               "transition-all duration-150 overflow-hidden",
               shouldFlex
                 ? "max-h-10 opacity-100"
                 : "max-h-0 opacity-0 mt-0 pointer-events-none",
-            ]}
+            ])}
           >
             <Sidebar.MenuItem>
               <Sidebar.Trigger

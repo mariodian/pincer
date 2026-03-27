@@ -1,12 +1,11 @@
 <script lang="ts">
   import AppSidebar from "$lib/components/app/Sidebar.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import Agents from "$lib/pages/Agents.svelte";
   import Dashboard from "$lib/pages/Dashboard.svelte";
   import Settings from "$lib/pages/Settings.svelte";
-  import { router } from "@bmlt-enabled/svelte-spa-router";
-  import Router from "@bmlt-enabled/svelte-spa-router";
+  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import Router, { router } from "@bmlt-enabled/svelte-spa-router";
   import { ModeWatcher } from "mode-watcher";
   import { TRAY_TITLE } from "../bun/config";
   import "./app.css";
@@ -22,14 +21,14 @@
     "/settings": Settings,
   };
 
-  let trackedPath = $state(router.location);
+  let trackedPath = $state<string | undefined>(undefined);
 
   $effect(() => {
-    if (router.location !== trackedPath) {
+    if (trackedPath !== undefined && router.location !== trackedPath) {
       previousRoute.set(trackedPath);
-      currentRoute.set(router.location);
-      trackedPath = router.location;
     }
+    currentRoute.set(router.location);
+    trackedPath = router.location;
   });
 </script>
 
@@ -41,9 +40,12 @@
   <Sidebar.Provider>
     <AppSidebar />
     <main
+      data-slot="content"
       class={[
         "w-full m-1.5 py-5 px-4",
-        "rounded-xl bg-background",
+        "rounded-xl",
+        // "rounded-xl bg-zinc-50 dark:bg-background",
+        // "rounded-xl bg-gray-50 dark:bg-background",
         "shadow-xs shadow-black/5 dark:shadow-black/20",
       ]}
     >
@@ -51,3 +53,15 @@
     </main>
   </Sidebar.Provider>
 </Window>
+
+<style>
+  :global(body) {
+    background-color: var(--body-background);
+  }
+  :global([data-slot="content"]) {
+    background-color: var(--body-background);
+  }
+  :global(input, textarea, select, [data-slot="select-trigger"]) {
+    background-color: var(--input-background);
+  }
+</style>

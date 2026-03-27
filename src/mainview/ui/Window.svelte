@@ -149,6 +149,9 @@
   :global(body[data-os="macos"] [data-slot="sidebar-container"]) {
     border: none !important;
   }
+  :global(body:not([data-os="macos"]) [data-slot="content"]) {
+    box-shadow: none !important;
+  }
   /* macOS light */
   :global(html:not(.dark) body[data-os="macos"]) {
     background-color: oklch(94.974% 0.01133 320.903 / 0.35);

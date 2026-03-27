@@ -315,7 +315,7 @@
     {currentPath}
   >
     {#snippet actions()}
-      <div class="flex items-center gap-1 rounded-lg border p-1">
+      <div class="flex items-center gap-1 rounded-lg border bg-background p-1">
         {#each TIME_RANGES as tr}
           <button
             type="button"
