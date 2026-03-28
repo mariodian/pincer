@@ -42,14 +42,16 @@
         class: cn([
           "border-blue-700/60 bg-blue-600",
           "dark:border-blue-700 dark:bg-blue-800",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },
       {
         color: "green",
         gradient: false,
         class: cn([
-          "border-green-700/60 bg-green-600",
-          "dark:border-green-700 dark:bg-green-800",
+          "border-emerald-700/60 bg-emerald-600",
+          "dark:border-emerald-600 dark:bg-emerald-700",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },
       {
@@ -58,22 +60,25 @@
         class: cn([
           "border-red-700/60 bg-red-600",
           "dark:border-red-700 dark:bg-red-800",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },
       {
         color: "orange",
         gradient: false,
         class: cn([
-          "border-orange-700/60 bg-orange-600",
-          "dark:border-orange-700 dark:bg-orange-800",
+          "border-amber-600/60 bg-amber-500",
+          "dark:border-amber-500 dark:bg-amber-600",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },
       {
         color: "yellow",
         gradient: false,
         class: cn([
-          "border-yellow-600/60 bg-yellow-500",
-          "dark:border-yellow-700 dark:bg-yellow-700",
+          "border-amber-500/60 bg-amber-400",
+          "dark:border-amber-300",
+          "text-yellow-950 text-shadow-xs text-shadow-white/15",
         ]),
       },
       {
@@ -126,7 +131,7 @@
         gradient: true,
         class: cn([
           "bg-radial bg-radial-orange",
-          "border-amber-600/50 dark:border-amber-500/50",
+          "border-amber-600/50 dark:border-amber-600/70",
           "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },

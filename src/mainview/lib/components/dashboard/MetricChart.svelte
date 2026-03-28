@@ -35,7 +35,8 @@
     gaps?: boolean;
     gradient?: boolean;
     strokeWidth?: number;
-    padding?: number;
+    // padding?: ReturnType<typeof defaultChartPadding>;
+    padding?: { top?: number; right?: number; bottom?: number; left?: number };
     height?: number;
   }
 
@@ -119,12 +120,16 @@
 
   {#if data.length === 0 || series.length === 0}
     <div
-      class="flex flex-1 items-center justify-center text-sm text-muted-foreground"
+      class={[
+        "min-h-50",
+        "flex flex-1 items-center justify-center",
+        "text-sm text-muted-foreground",
+      ]}
     >
       No data for this period.
     </div>
   {:else}
-    <div class="w-full">
+    <div class="w-full min-h-50 lg:h-60">
       {#if chartType === "line"}
         <GapLineChart
           {data}
@@ -149,6 +154,7 @@
           tooltip={tooltipConfig}
           colorGradient={gradient}
           {strokeWidth}
+          {padding}
           {height}
         />
       {:else if chartType === "area"}

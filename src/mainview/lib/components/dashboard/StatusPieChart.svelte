@@ -2,8 +2,10 @@
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
   import { format } from "@layerstack/utils";
-  import { PieChart, Text } from "layerchart";
+  import { defaultChartPadding, PieChart, Text } from "layerchart";
   import AgentToggle from "./AgentToggle.svelte";
+
+  const DEFAULT_PADDING = 24;
 
   interface Props {
     title: string;
@@ -17,6 +19,7 @@
     /** Toggle an agent on/off */
     onToggleAgent: (id: number) => void;
     height: number;
+    padding?: { top?: number; right?: number; bottom?: number; left?: number };
     class?: string;
   }
 
@@ -28,6 +31,7 @@
     selectedIds,
     onToggleAgent,
     height = 300,
+    padding,
     class: className,
   }: Props = $props();
 
@@ -59,6 +63,18 @@
   });
 
   const totalCount = $derived(statusData.reduce((sum, d) => sum + d.count, 0));
+  const chartHeight = $derived(Math.max(160, height));
+  // Scale font size with chart height, between 20 and 48
+  const fontSize = $derived(Math.min(Math.max(20, chartHeight / 7), 48));
+
+  /*
+   * Calculate inner and outer radius based on chart height to maintain good proportions.
+   * Inner radius is a small fraction of the chart height, while outer radius is larger but capped.
+   */
+  const innerRadius = $derived(
+    Math.min(Math.max(-20, 0 - chartHeight / 16), -10),
+  );
+  const outerRadius = $derived(Math.min(Math.max(100, chartHeight / 1.7), 180));
 </script>
 
 <div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
@@ -71,49 +87,63 @@
 
   {#if totalCount === 0}
     <div
-      class="flex flex-1 items-center justify-center text-sm text-muted-foreground"
+      class={[
+        "min-h-50",
+        "flex flex-1 items-center justify-center",
+        "text-sm text-muted-foreground",
+      ]}
     >
       No data for this period.
     </div>
   {:else}
-    <!-- <Chart.Container config={chartConfig} class="min-h-50 w-full"> -->
-    <PieChart
-      data={statusData}
-      key="status"
-      value="count"
-      cRange={[colors.ok, colors.offline, colors.error]}
-      {height}
-      range={[-90, 90]}
-      outerRadius={160}
-      innerRadius={-20}
-      cornerRadius={10}
-      padAngle={0.02}
-      props={{ group: { y: 160 / 2 } }}
-      padding={{ right: 80, top: 40, bottom: 40 }}
-      legend={{
-        placement: "right",
-        orientation: "vertical",
-        variant: "swatches",
-      }}
-      // height={300}
-    >
-      {#snippet aboveMarks()}
-        <Text
-          value={format(totalCount)}
-          textAnchor="middle"
-          verticalAnchor="middle"
-          class="text-4xl font-semibold"
-          dy={8}
-        />
-        <Text
-          value="Total"
-          textAnchor="middle"
-          verticalAnchor="middle"
-          class="text-sm font-medium text-muted-foreground"
-          dy={32}
-        />
-      {/snippet}
-    </PieChart>
+    <div class="w-full h-50 lg:h-60">
+      <PieChart
+        data={statusData}
+        key="status"
+        value="count"
+        cRange={[colors.ok, colors.offline, colors.error]}
+        // height={chartHeight}
+        range={[-90, 90]}
+        {outerRadius}
+        {innerRadius}
+        cornerRadius={chartHeight / 20}
+        padAngle={0.02}
+        props={{ group: { y: chartHeight / 4 + 25 } }}
+        padding={{
+          ...defaultChartPadding({
+            top: DEFAULT_PADDING,
+            right: DEFAULT_PADDING,
+            bottom: DEFAULT_PADDING,
+            left: DEFAULT_PADDING,
+          }),
+          ...padding,
+        }}
+        // padding={{ right: 80, top: 40, bottom: 40 }}
+        legend={{
+          placement: "right",
+          orientation: "vertical",
+          variant: "swatches",
+        }}
+      >
+        {#snippet aboveMarks()}
+          <Text
+            value={format(totalCount)}
+            textAnchor="middle"
+            verticalAnchor="middle"
+            class="font-semibold"
+            font-size={fontSize}
+            dy={fontSize * 0.6}
+          />
+          <Text
+            value="Total"
+            textAnchor="middle"
+            verticalAnchor="middle"
+            class="text-sm font-medium text-muted-foreground"
+            dy={fontSize * 0.9 + 14}
+          />
+        {/snippet}
+      </PieChart>
+    </div>
   {/if}
 
   <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />

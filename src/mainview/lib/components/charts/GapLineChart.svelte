@@ -1,7 +1,14 @@
 <script lang="ts">
   import { buildAllSeriesGaps, computeYDomain } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
-  import { LinearGradient, LineChart, Spline } from "layerchart";
+  import {
+    defaultChartPadding,
+    LinearGradient,
+    LineChart,
+    Spline,
+  } from "layerchart";
+
+  const DEFAULT_PADDING = 24;
 
   interface Props {
     data: Record<string, unknown>[];
@@ -10,12 +17,12 @@
     xAxis?: Record<string, unknown>;
     yAxis?: Record<string, unknown>;
     tooltip?: Record<string, unknown>;
-    padding?: number;
+    // padding?: ReturnType<typeof defaultChartPadding>;
+    padding?: { top?: number; right?: number; bottom?: number; left?: number };
     strokeWidth?: number;
     gaps?: boolean;
     colorGradient?: boolean;
     height?: number;
-    // class?: string;
   }
 
   let {
@@ -25,12 +32,11 @@
     xAxis,
     yAxis,
     tooltip,
-    padding = 24,
+    padding,
     gaps = false,
     colorGradient = false,
     strokeWidth = 3,
-    height = 300,
-    // class: className,
+    height,
   }: Props = $props();
 
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
@@ -42,7 +48,15 @@
   {x}
   {yDomain}
   {series}
-  {padding}
+  padding={{
+    ...defaultChartPadding({
+      top: DEFAULT_PADDING,
+      right: DEFAULT_PADDING,
+      bottom: DEFAULT_PADDING,
+      left: DEFAULT_PADDING,
+    }),
+    ...padding,
+  }}
   {height}
   brush
   props={{

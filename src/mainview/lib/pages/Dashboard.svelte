@@ -60,6 +60,9 @@
     loading = true;
     error = null;
     try {
+      // TEMP: Simulate slow network (remove later)
+      // await new Promise((resolve) => setTimeout(resolve, 3000));
+
       await whenReady();
       const rpc = getMainRPC();
 
@@ -353,7 +356,7 @@
       </div>
     {:else}
       <!-- KPI Row -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
         <KpiCard
           title="Agents"
           color="blue"
@@ -412,17 +415,20 @@
       </div>
 
       <!-- Charts -->
-      {#if loading}
-        <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-4 gap-4">
+      <div
+        class={[
+          "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
+          "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
+        ]}
+      >
+        {#if loading}
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
-        </div>
-      {:else if stats && chartAgents.length > 0}
-        <div class="grid grid-cols-1 xl:grid-cols-2 3xl:grid-cols-4 gap-4">
+        {:else if stats && chartAgents.length > 0}
           <MetricChart
-            chartType="area"
+            chartType="line"
             title="Uptime % Over Time"
             description="Agent availability over the selected period"
             data={uptimeData}
@@ -433,6 +439,12 @@
             yPrefix="uptime"
             xFormat={xAxisFormat}
             yFormat={formatUptime}
+            padding={{
+              left: 32,
+              right: 20,
+              bottom: 40,
+              top: 20,
+            }}
             gaps={true}
             gradient={true}
             strokeWidth={3}
@@ -450,6 +462,12 @@
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
+            padding={{
+              left: 40,
+              right: 20,
+              top: 20,
+              bottom: 40,
+            }}
             gaps={true}
           />
 
@@ -461,6 +479,7 @@
             selectedIds={selectedStatus}
             onToggleAgent={toggleStatus}
             height={200}
+            padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
           />
 
           <MetricChart
@@ -475,18 +494,23 @@
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
-            height={200}
+            padding={{
+              left: 0,
+              right: 0,
+              top: 20,
+              bottom: 32,
+            }}
             gradient={true}
             strokeWidth={1}
           />
-        </div>
-      {:else}
-        <div
-          class="rounded-lg border p-8 text-center text-sm text-muted-foreground"
-        >
-          No agents configured yet. Add an agent to start collecting stats.
-        </div>
-      {/if}
+        {:else}
+          <div
+            class="rounded-lg border p-8 text-center text-sm text-muted-foreground"
+          >
+            No agents configured yet. Add an agent to start collecting stats.
+          </div>
+        {/if}
+      </div>
     {/if}
   </PageBody>
 </div>

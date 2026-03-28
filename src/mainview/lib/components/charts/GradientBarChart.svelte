@@ -1,6 +1,13 @@
 <script lang="ts">
   import { scaleBand } from "d3-scale";
-  import { BarChart, Bars, LinearGradient } from "layerchart";
+  import {
+    BarChart,
+    Bars,
+    defaultChartPadding,
+    LinearGradient,
+  } from "layerchart";
+
+  const DEFAULT_PADDING = 24;
 
   interface Props {
     data: Record<string, unknown>[];
@@ -12,6 +19,8 @@
     colorGradient?: boolean;
     strokeWidth?: number;
     height?: number;
+    padding?: { top?: number; right?: number; bottom?: number; left?: number };
+    // padding?: ReturnType<typeof defaultChartPadding>;
   }
 
   let {
@@ -23,7 +32,8 @@
     tooltip,
     colorGradient = false,
     strokeWidth = 0,
-    height = 300,
+    height,
+    padding,
   }: Props = $props();
 </script>
 
@@ -33,6 +43,15 @@
   {x}
   {series}
   {height}
+  padding={{
+    ...defaultChartPadding({
+      top: DEFAULT_PADDING,
+      right: DEFAULT_PADDING,
+      bottom: DEFAULT_PADDING,
+      left: DEFAULT_PADDING,
+    }),
+    ...padding,
+  }}
   axis="x"
   seriesLayout="group"
   props={{
