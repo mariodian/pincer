@@ -136,6 +136,14 @@ export async function initializeTray() {
           popoverWindow = null;
           getStatusSyncService().setPopoverWindow(null);
         });
+
+        // Close popover when it loses focus
+        popoverWindow.on("blur", () => {
+          if (popoverWindow) {
+            popoverWindow.close();
+            popoverWindow = null;
+          }
+        });
       }
     } else if (
       action === "configure" ||
