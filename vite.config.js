@@ -23,6 +23,12 @@ export default defineConfig({
         main: resolve(__dirname, "src/mainview/index.html"),
         trayPopover: resolve(__dirname, "src/mainview/tray-popover.html"),
       },
+      output: {
+        manualChunks: {
+          "layerchart": ["layerchart"],
+          "d3": ["d3-array", "d3-scale", "d3-shape"],
+        },
+      },
     },
   },
   server: {
