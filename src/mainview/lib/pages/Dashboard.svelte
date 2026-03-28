@@ -446,6 +446,8 @@
             xFormat={xAxisFormat}
             yFormat={formatMs}
             height={200}
+            gradient={true}
+            strokeWidth={1}
           />
         </div>
       {:else}

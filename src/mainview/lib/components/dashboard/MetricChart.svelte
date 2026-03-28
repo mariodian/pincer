@@ -1,10 +1,9 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
-  import { scaleBand } from "d3-scale";
-  import { BarChart } from "layerchart";
   import GapAreaChart from "../charts/GapAreaChart.svelte";
   import GapLineChart from "../charts/GapLineChart.svelte";
+  import GradientBarChart from "../charts/GradientBarChart.svelte";
   import AgentToggle from "./AgentToggle.svelte";
 
   export type ChartType = "line" | "bar" | "area";
@@ -141,18 +140,15 @@
           {height}
         />
       {:else if chartType === "bar"}
-        <BarChart
+        <GradientBarChart
           {data}
-          xScale={scaleBand().padding(0.15)}
-          x={xKey}
-          axis="x"
-          seriesLayout="group"
           {series}
-          props={{
-            xAxis: xAxisConfig,
-            yAxis: yFormat ? { format: yFormat } : {},
-            tooltip: tooltipConfig,
-          }}
+          x={xKey}
+          xAxis={xAxisConfig}
+          yAxis={yFormat ? { format: yFormat } : {}}
+          tooltip={tooltipConfig}
+          colorGradient={gradient}
+          {strokeWidth}
           {height}
         />
       {:else if chartType === "area"}
