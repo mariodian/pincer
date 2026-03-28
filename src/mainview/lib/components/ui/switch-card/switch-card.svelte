@@ -7,47 +7,70 @@
   // aria-expanded:bg-muted aria-expanded:text-foreground shadow-xs",
 
   export const switchCardVariants = tv({
-    base: "flex items-center justify-between gap-3 rounded-lg border p-4 hover:bg-accent/50 font-normal transition-colors",
+    base: cn([
+      "flex items-center justify-between gap-3 p-4",
+      "rounded-lg border shadow-xs transition-colors",
+      "has-[[aria-checked=false]]:saturate-50"
+    ]),
     variants: {
       variant: {
-        default: [
-          "has-[[aria-checked=true]]:border-ring has-[[aria-checked=true]]:bg-muted",
+        default: cn([
+          "border-ring/30 bg-muted",
           "[&_[data-slot=description]]:text-muted-foreground",
-        ],
-        blue: [
-          "has-[[aria-checked=true]]:border-blue-200 has-[[aria-checked=true]]:bg-blue-50",
-          "dark:has-[[aria-checked=true]]:border-blue-900/50 dark:has-[[aria-checked=true]]:bg-blue-950/50",
-          "[&_[data-slot=description]]:text-blue-950/60 dark:[&_[data-slot=description]]:text-blue-100/60",
-        ],
-        green: [
-          "has-[[aria-checked=true]]:border-green-200 has-[[aria-checked=true]]:bg-green-50",
-          "dark:has-[[aria-checked=true]]:border-green-900/50 dark:has-[[aria-checked=true]]:bg-green-950/50",
-          "[&_[data-slot=description]]:text-green-950/60 dark:[&_[data-slot=description]]:text-green-100/60",
-        ],
-        destructive: [
-          "has-[[aria-checked=true]]:border-destructive/20 has-[[aria-checked=true]]:bg-destructive/5",
-          "dark:has-[[aria-checked=true]]:bg-destructive/10",
-          "[&_[data-slot=description]]:text-red-950/60 dark:[&_[data-slot=description]]:text-red-100/60",
-        ],
-        secondary: [
-          "has-[[aria-checked=true]]:border-border has-[[aria-checked=true]]:bg-secondary/50",
-          "[&_[data-slot=description]]:text-secondary-foreground/60 dark:[&_[data-slot=description]]:text-secondary-foreground/40",
-        ],
-        ghost: [
-          "border-transparent has-[[aria-checked=true]]:bg-accent/50 has-[[aria-checked=true]]:shadow-xs",
-          "[&_[data-slot=description]]:text-foreground/60 dark:[&_[data-slot=description]]:text-foreground/40",
-        ],
+          "has-[[aria-checked=false]]:bg-muted/50",
+          "has-[[aria-checked=false]]:border-ring/20 has-[[aria-checked=false]]:bg-muted/20",
+          "dark:has-[[aria-checked=false]]:bg-muted/40",
+          "has-[[aria-checked=false]]:saturate-100",
+          "has-[[aria-checked=false]]:brightness-100",
+
+        ]),
+        blue: cn([
+          "border-blue-300/50 bg-blue-300/30",
+          "dark:border-blue-900/70 dark:bg-blue-900/50",
+          "[&_[data-slot=description]]:text-blue-950/60",
+          "dark:[&_[data-slot=description]]:text-blue-100/60",
+
+        ]),
+        green: cn([
+          "border-green-300/50 bg-green-300/30",
+          "dark:border-green-900/70 dark:bg-green-900/50",
+          "[&_[data-slot=description]]:text-green-950/60",
+          "dark:[&_[data-slot=description]]:text-green-100/60",
+        ]),
+        destructive: cn([
+          "border-red-300/50 bg-red-300/30",
+          "dark:border-red-900/70 dark:bg-red-900/50",
+          "[&_[data-slot=description]]:text-red-950/60",
+          "dark:[&_[data-slot=description]]:text-red-100/60",
+        ]),
+        secondary: cn([
+          "border-border bg-secondary",
+          "dark:border-border/50",
+          "[&_[data-slot=description]]:text-secondary-foreground/60",
+          "dark:[&_[data-slot=description]]:text-secondary-foreground/40",
+          "has-[[aria-checked=false]]:bg-secondary/50",
+          "has-[[aria-checked=false]]:saturate-100",
+          "has-[[aria-checked=false]]:brightness-100",
+        ]),
+        ghost: cn([
+          "border-transparent bg-accent",
+          "[&_[data-slot=description]]:text-foreground/60",
+          "dark:[&_[data-slot=description]]:text-foreground/40",
+          "has-[[aria-checked=false]]:bg-accent/50",
+          "has-[[aria-checked=false]]:saturate-100",
+          "has-[[aria-checked=false]]:brightness-100",
+        ]),
       },
       size: {
-        default: [
+        default: cn([
           "[&_[data-slot=title]]:text-sm [&_[data-slot=description]]:text-[13px]",
           "[&_[data-slot=description]]:leading-4.5",
-        ],
-        lg: [
+        ]),
+        lg: cn([
           "[&_div]:gap-3",
           "[&_[data-slot=title]]:text-base [&_[data-slot=description]]:text-sm",
           "py-6 px-5",
-        ],
+        ]),
       },
     },
     defaultVariants: {
@@ -64,7 +87,7 @@
 
 <script lang="ts">
   import { Label } from "$lib/components/ui/label/index.js";
-  import { Switch } from "$lib/components/ui/switch/index.js";
+  import Switch from "../switch/switch.svelte";
 
   let {
     id,
