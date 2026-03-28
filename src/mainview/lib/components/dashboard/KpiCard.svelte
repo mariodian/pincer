@@ -97,10 +97,18 @@
         gradient: true,
         class: cn([
           "bg-radial bg-radial-green",
-          "dark:border-green-700 dark:border-emerald-600/50",
-          "text-primary-foreground dark:text-primary",
-          // "border-green-700",
-          // "text-primary-foreground",
+          "border-emerald-700/50 dark:border-emerald-600/50",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
+        ]),
+      },
+      {
+        color: "blue",
+        gradient: true,
+        class: cn([
+          "bg-radial bg-radial-blue",
+          "border-blue-700/50 dark:border-blue-600/50",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
+          // "text-white text-shadow-xs",
         ]),
       },
       {
@@ -108,12 +116,9 @@
         gradient: true,
         class: cn([
           "bg-radial bg-radial-red",
-          "dark:border-red-700 dark:border-rose-600/50",
+          "border-rose-600/50 dark:border-rose-600/50",
           "text-primary-foreground dark:text-primary",
-          // "from-red-700 to-red-600",
-          // "dark:from-red-800 dark:to-red-700",
-          // "border-red-700",
-          // "text-primary-foreground dark:text-primary",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },
       {
@@ -121,12 +126,8 @@
         gradient: true,
         class: cn([
           "bg-radial bg-radial-orange",
-          "border-orange-400 dark:border-amber-500/50",
-          "text-primary-foreground dark:text-primary",
-          // "from-orange-500 to-orange-400",
-          // "dark:from-orange-700 dark:to-orange-600",
-          // "border-orange-500 dark:border-orange-600",
-          // "text-primary-foreground",
+          "border-amber-600/50 dark:border-amber-500/50",
+          "text-primary-foreground dark:text-primary text-shadow-xs",
         ]),
       },
       {
@@ -134,12 +135,8 @@
         gradient: true,
         class: cn([
           "bg-radial bg-radial-yellow",
-          "border-yellow-300 dark:border-amber-300/50",
-          "text-primary-foreground dark:text-primary",
-          // "from-yellow-400 to-yellow-300",
-          // "dark:from-yellow-600 dark:to-yellow-500",
-          // "border-yellow-400 dark:border-yellow-500",
-          // "text-primary-foreground",
+          "border-amber-400/50 dark:border-amber-400/50",
+          "text-yellow-950 text-shadow-xs text-shadow-white/15",
         ]),
       },
       {
@@ -201,12 +198,12 @@
       <Skeleton class="h-3 w-24 mt-0.5" />
     {/if}
   {:else}
-    <span class="text-xs font-medium uppercase tracking-wide opacity-70">
+    <span class="text-xs font-medium uppercase tracking-wide opacity-80">
       {title}
     </span>
     <span class="text-2xl font-semibold tracking-tight">{value}</span>
     {#if subtitle}
-      <span class="text-xs opacity-70">{subtitle}</span>
+      <span class="text-xs opacity-75">{subtitle}</span>
     {/if}
   {/if}
 </div>

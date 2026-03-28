@@ -15,6 +15,16 @@
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
+  const MAX_RESPONSE_TIMES = {
+    ok: 100,
+    meh: 500,
+  };
+
+  const MIN_UPTIME_THRESHOLDS = {
+    ok: 99,
+    meh: 50,
+  };
+
   const DEFAULT_TIME_RANGE: TimeRange = "7d";
   const TIME_RANGES: TimeRangeOption[] = [
     { value: "24h", label: "24h" },
@@ -346,61 +356,57 @@
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <KpiCard
           title="Agents"
-          // color="secondary"
-          // gradient
+          color="blue"
+          gradient
           value={stats
             ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
             : "—"}
           subtitle="Active / Total"
           {loading}
         />
+
         <KpiCard
           title="Avg Uptime"
-          color="yellow"
+          color={(stats &&
+            (stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.meh
+              ? "destructive"
+              : stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.ok
+                ? "yellow"
+                : "green")) ||
+            "default"}
           gradient
-          direction="to-180"
           value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
           subtitle={showDisabledAgents
             ? "Across all agents"
             : "Across enabled agents"}
           {loading}
         />
-        <KpiCard
-          title="Avg Uptime"
-          color="orange"
-          gradient
-          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
-          subtitle={showDisabledAgents
-            ? "Across all agents"
-            : "Across enabled agents"}
-          {loading}
-        />
-        <KpiCard
-          title="Avg Uptime"
-          color="green"
-          gradient
-          direction="to-90"
-          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
-          subtitle={showDisabledAgents
-            ? "Across all agents"
-            : "Across enabled agents"}
-          {loading}
-        />
-        <KpiCard
-          title="Incidents"
-          color="destructive"
-          gradient
-          value={stats ? stats.kpis.incidentCount : "—"}
-          subtitle="Offline + Error checks"
-          {loading}
-        />
+
         <KpiCard
           title="Avg Response"
-          // gradient
+          color={(stats &&
+            (stats.kpis.avgResponseMs > MAX_RESPONSE_TIMES.meh
+              ? "destructive"
+              : stats.kpis.avgResponseMs > MAX_RESPONSE_TIMES.ok
+                ? "yellow"
+                : "green")) ||
+            "default"}
+          gradient
           value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
           subtitle={showDisabledAgents
             ? "Across all agents"
             : "Across enabled agents"}
+          {loading}
+        />
+
+        <KpiCard
+          title="Incidents"
+          color={stats && stats.kpis.incidentCount > 0
+            ? "destructive"
+            : "green"}
+          gradient
+          value={stats ? stats.kpis.incidentCount : "—"}
+          subtitle="Offline + Error checks"
           {loading}
         />
       </div>

@@ -249,29 +249,65 @@
   --radial-base-to: var(--color-emerald-600);
 }
 
+@utility bg-radial-blue {
+  --radial-1: color-mix(in oklch, var(--color-sky-600) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-blue-900) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-sky-600) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-blue-400) 30%, transparent);
+  --radial-base-from: var(--color-blue-800);
+  --radial-base-to: var(--color-sky-600);
+}
+
 @utility bg-radial-red {
-  --radial-1: color-mix(in oklch, var(--color-rose-600) 85%, transparent);
-  --radial-2: color-mix(in oklch, var(--color-red-900) 55%, transparent);
-  --radial-3: color-mix(in oklch, var(--color-rose-600) 85%, transparent);
-  --radial-4: color-mix(in oklch, var(--color-red-400) 30%, transparent);
-  --radial-base-from: var(--color-red-800);
-  --radial-base-to: var(--color-rose-600);
+  --radial-1: color-mix(in oklch, var(--color-rose-500) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-red-800) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-rose-500) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-red-300) 30%, transparent);
+  --radial-base-from: var(--color-red-700);
+  --radial-base-to: var(--color-rose-500);
+
+  &:where(.dark, .dark *) {
+    --radial-1: color-mix(in oklch, var(--color-rose-600) 85%, transparent);
+    --radial-2: color-mix(in oklch, var(--color-red-900) 55%, transparent);
+    --radial-3: color-mix(in oklch, var(--color-rose-600) 85%, transparent);
+    --radial-4: color-mix(in oklch, var(--color-red-400) 30%, transparent);
+    --radial-base-from: var(--color-red-800);
+    --radial-base-to: var(--color-rose-600);
+  }
 }
 
 @utility bg-radial-orange {
-  --radial-1: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
-  --radial-2: color-mix(in oklch, var(--color-orange-800) 55%, transparent);
-  --radial-3: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
-  --radial-4: color-mix(in oklch, var(--color-orange-300) 30%, transparent);
-  --radial-base-from: var(--color-orange-700);
-  --radial-base-to: var(--color-amber-500);
+  --radial-1: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-orange-700) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-orange-200) 30%, transparent);
+  --radial-base-from: var(--color-orange-600);
+  --radial-base-to: var(--color-amber-400);
+
+  &:where(.dark, .dark *) {
+    --radial-1: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
+    --radial-2: color-mix(in oklch, var(--color-orange-800) 55%, transparent);
+    --radial-3: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
+    --radial-4: color-mix(in oklch, var(--color-orange-300) 30%, transparent);
+    --radial-base-from: var(--color-orange-700);
+    --radial-base-to: var(--color-amber-500);
+  }
 }
 
 @utility bg-radial-yellow {
-  --radial-1: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
-  --radial-2: color-mix(in oklch, var(--color-yellow-700) 55%, transparent);
-  --radial-3: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
-  --radial-4: color-mix(in oklch, var(--color-yellow-200) 30%, transparent);
-  --radial-base-from: var(--color-yellow-600);
-  --radial-base-to: var(--color-amber-400);
+  --radial-1: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-yellow-600) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-amber-300) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-yellow-100) 30%, transparent);
+  --radial-base-from: var(--color-yellow-500);
+  --radial-base-to: var(--color-amber-300);
+
+  &:where(.dark, .dark *) {
+    --radial-1: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
+    --radial-2: color-mix(in oklch, var(--color-yellow-700) 55%, transparent);
+    --radial-3: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
+    --radial-4: color-mix(in oklch, var(--color-yellow-200) 30%, transparent);
+    --radial-base-from: var(--color-yellow-600);
+    --radial-base-to: var(--color-amber-400);
+  }
 }
