@@ -60,9 +60,6 @@
     loading = true;
     error = null;
     try {
-      // TEMP: Simulate slow network (remove later)
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
       await whenReady();
       const rpc = getMainRPC();
 
@@ -357,28 +354,6 @@
     {:else}
       <!-- KPI Row -->
       <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
-        <KpiCard
-          title="Agents"
-          color={"default"}
-          gradient
-          value={stats
-            ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
-            : "—"}
-          subtitle="Active / Total"
-          {loading}
-        />
-
-        <KpiCard
-          title="Agents"
-          color={"default"}
-          // gradient
-          value={stats
-            ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
-            : "—"}
-          subtitle="Active / Total"
-          {loading}
-        />
-
         <KpiCard
           title="Agents"
           color={stats ? "blue" : "default"}

@@ -190,18 +190,25 @@
                 class={[
                   "group",
                   "min-h-18 h-full w-full",
-                  "border-destructive bg-destructive/5 dark:bg-destructive/10",
+                  "border-red-700/80 bg-red-700/80",
+                  // "bg-destructive/80",
+                  "dark:border-destructive/60 dark:bg-destructive/50",
                 ]}
               >
                 <!-- {#if confirmDeleteId === agent.id} -->
                 <Item.Content>
-                  <span class="text-sm text-destructive font-medium">
-                    Delete agent {agent.name}? This can't be undone.
+                  <span
+                    class={[
+                      "text-sm font-medium",
+                      "text-primary-foreground dark:text-primary",
+                    ]}
+                  >
+                    Delete {agent.name}? This can't be undone.
                   </span>
                 </Item.Content>
                 <Item.Actions>
                   <Button
-                    variant="destructive"
+                    variant="default"
                     size="sm"
                     onclick={() => handleDelete(agent)}
                     disabled={deletingId === agent.id}
@@ -209,7 +216,7 @@
                     Yes, delete
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     onclick={() => (confirmDeleteId = null)}
                   >
@@ -229,14 +236,7 @@
             >
               <Item.Root
                 variant="outline"
-                class={[
-                  "group",
-                  "bg-card",
-                  // "bg-background",
-                  // "bg-white dark:bg-black",
-                  // "bg-primary-foreground/50 dark:bg-primary/5",
-                  "min-h-18 h-full w-full",
-                ]}
+                class={["group", "bg-card", "min-h-18 h-full w-full"]}
               >
                 <Item.Media class="min-h-9">
                   <span
