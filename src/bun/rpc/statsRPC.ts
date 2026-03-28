@@ -81,20 +81,22 @@ export const statsRequestHandlers = {
       errorCount: row.errorCount,
     }));
 
-    // Compute KPIs from all stat rows
+    // Compute KPIs from enabled agents only
+    const enabledAgents = agents.filter((a) => a.enabled !== false);
+    const enabledAgentIds = new Set(enabledAgents.map((a) => a.id));
+
     let totalUptime = 0;
     let totalResponseMs = 0;
     let totalIncidents = 0;
     let statRowCount = 0;
 
     for (const row of timeSeries) {
+      if (!enabledAgentIds.has(row.agentId)) continue;
       totalUptime += row.uptimePct;
       totalResponseMs += row.avgResponseMs;
       totalIncidents += row.offlineCount + row.errorCount;
       statRowCount++;
     }
-
-    const enabledAgents = agents.filter((a) => a.enabled !== false);
 
     const kpis: DashboardKpis = {
       avgUptime:
