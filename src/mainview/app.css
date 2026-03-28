@@ -49,7 +49,8 @@
   --background: oklch(0.212 0.019 322.12);
   --body-background: oklch(0.25 0.019 322.12);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.212 0.019 322.12);
+  /* --card: oklch(0.212 0.019 322.12); */
+  --card: oklch(0.22 0.019 322.12);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.212 0.019 322.12);
   --popover-foreground: oklch(0.985 0 0);
@@ -58,6 +59,7 @@
   --secondary: oklch(0.263 0.024 320.12);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.341 0.019 323.02);
+  /* --muted: oklch(0.4 0.019 323.02); */
   --muted-foreground: oklch(0.711 0.019 323.02);
   --accent: oklch(0.263 0.024 320.12);
   --accent-foreground: oklch(0.985 0 0);
@@ -238,6 +240,25 @@
       var(--radial-base-from, transparent) 0%,
       var(--radial-base-to, transparent) 100%
     );
+}
+
+@utility bg-radial-default {
+  --radial-1: color-mix(in oklch, var(--card) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--muted) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--card) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--muted) 30%, transparent);
+  --radial-base-from: var(--muted);
+  --radial-base-to: var(--card);
+
+  &:where(.dark, .dark *) {
+    --bg: oklch(0.16 0.019 322.12);
+    --radial-1: color-mix(in oklch, var(--card) 85%, transparent);
+    --radial-2: color-mix(in oklch, var(--bg) 55%, transparent);
+    --radial-3: color-mix(in oklch, var(--card) 85%, transparent);
+    --radial-4: color-mix(in oklch, var(--bg) 30%, transparent);
+    --radial-base-from: var(--bg);
+    --radial-base-to: var(--card);
+  }
 }
 
 @utility bg-radial-green {

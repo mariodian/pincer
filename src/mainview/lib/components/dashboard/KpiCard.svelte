@@ -34,7 +34,7 @@
       {
         color: "default",
         gradient: false,
-        class: "border-border bg-card text-card-foreground",
+        class: ["bg-card"],
       },
       {
         color: "blue",
@@ -91,10 +91,9 @@
         color: "default",
         gradient: true,
         class: cn([
-          "from-muted/40 to-card",
-          "dark:from-black/80 dark:to-card",
-          "border-border",
-          "text-card-foreground",
+          "bg-radial bg-radial-default",
+          "border-card-foregound/10 dark:border-card-foreground/8",
+          "text-primary text-shadow-xs text-shadow-primary-foreground",
         ]),
       },
       {
@@ -158,7 +157,7 @@
     defaultVariants: {
       color: "default",
       gradient: false,
-      direction: "to-br",
+      // direction: "to-br",
     },
   });
 
@@ -197,7 +196,7 @@
 
 <div class={cn(kpiCardVariants({ color, gradient, direction }), className)}>
   {#if loading}
-    <Skeleton class="h-4 w-20" />
+    <Skeleton class="h-4 w-20 text-white" />
     <Skeleton class="h-7 w-20" />
     {#if subtitle}
       <Skeleton class="h-3 w-24 mt-0.5" />

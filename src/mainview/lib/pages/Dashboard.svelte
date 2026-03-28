@@ -61,7 +61,7 @@
     error = null;
     try {
       // TEMP: Simulate slow network (remove later)
-      // await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       await whenReady();
       const rpc = getMainRPC();
@@ -359,7 +359,29 @@
       <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
         <KpiCard
           title="Agents"
-          color="blue"
+          color={"default"}
+          gradient
+          value={stats
+            ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
+            : "—"}
+          subtitle="Active / Total"
+          {loading}
+        />
+
+        <KpiCard
+          title="Agents"
+          color={"default"}
+          // gradient
+          value={stats
+            ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
+            : "—"}
+          subtitle="Active / Total"
+          {loading}
+        />
+
+        <KpiCard
+          title="Agents"
+          color={stats ? "blue" : "default"}
           gradient
           value={stats
             ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
@@ -404,9 +426,9 @@
 
         <KpiCard
           title="Incidents"
-          color={stats && stats.kpis.incidentCount > 0
-            ? "destructive"
-            : "green"}
+          color={(stats &&
+            (stats.kpis.incidentCount > 0 ? "destructive" : "green")) ||
+            "default"}
           gradient
           value={stats ? stats.kpis.incidentCount : "—"}
           subtitle="Offline + Error checks"
