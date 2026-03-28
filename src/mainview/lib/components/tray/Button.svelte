@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { cn } from "$lib/utils";
   import type { Snippet } from "svelte";
 
   type CssClass = string | string[];
 
   interface Props {
     children?: Snippet;
-    className?: CssClass;
+    class?: CssClass;
     bgColor?: CssClass;
     textColor?: CssClass;
     size?: "sm" | "md" | "lg";
@@ -17,7 +18,7 @@
 
   let {
     children,
-    className = "",
+    class: className,
     size = "md",
     bgColor = "bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50",
     textColor = "text-black/70 dark:text-white",
@@ -42,16 +43,21 @@
 <button
   {type}
   {disabled}
-  class={[
-    "transition-colors",
-    "disabled:cursor-not-allowed disabled:opacity-50",
-    "box-border dark:border-black/5",
-    "shadow-xs shadow-black/5 dark:shadow-black/20",
-    bgColor,
-    textColor,
-    displayClasses[display],
-    `${sizeClasses[size]} ${className}`,
-  ]}
+  class={cn(
+    [
+      "transition-colors",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "box-border dark:border-black/5",
+      "shadow-xs shadow-black/5 dark:shadow-black/20",
+      bgColor,
+      textColor,
+      displayClasses[display],
+      // `${sizeClasses[size]} ${className}`,
+      ,
+    ],
+    sizeClasses[size],
+    className,
+  )}
   {onclick}
 >
   {#if children}

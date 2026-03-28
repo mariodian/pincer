@@ -6,8 +6,8 @@
  * or starts with the route followed by "/" (supports nested routes).
  */
 export function isActiveUrl(currentLocation: string, url: string): boolean {
-  if (url === "/") {
-    return currentLocation === "/";
+  if (url === "/dashboard") {
+    return currentLocation === "/dashboard";
   }
   return currentLocation === url || currentLocation.startsWith(url + "/");
 }

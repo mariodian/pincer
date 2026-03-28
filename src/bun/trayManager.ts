@@ -146,7 +146,7 @@ export async function initializeTray() {
         action === "configure"
           ? "agents"
           : action === "dashboard"
-            ? ""
+            ? "dashboard"
             : action;
       await showMainWindow(route);
     } else if (action === "refresh") {

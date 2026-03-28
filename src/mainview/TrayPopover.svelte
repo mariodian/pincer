@@ -1,16 +1,22 @@
 <script lang="ts">
-  import { Electroview } from "electrobun/view";
-  import type { AgentStatus } from "$shared/types";
-  import { sortAgentsByStatus } from "$shared/agent-helpers";
-  import type { TrayPopoverRPCType } from "$shared/rpc";
+  import Button from "$lib/components/tray/Button.svelte";
   import {
-    onAgentSync,
     offAgentSync,
+    onAgentSync,
     triggerSyncCallbacks,
   } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
+  import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import type { TrayPopoverRPCType } from "$shared/rpc";
+  import type { AgentStatus } from "$shared/types";
+  import {
+    Refresh01Icon,
+    Settings01Icon,
+    ShutDownIcon,
+  } from "@hugeicons/core-free-icons";
+  import { HugeiconsIcon } from "@hugeicons/svelte";
+  import { Electroview } from "electrobun/view";
   import "./tray-popover.css";
-  import Button from "./ui/Button.svelte";
 
   const rpc = Electroview.defineRPC<TrayPopoverRPCType>({
     handlers: {
@@ -96,6 +102,10 @@
     }
   }
 
+  async function handleDashboard() {
+    await rpc.request.openMainWindow({ page: "dashboard" });
+  }
+
   async function handleConfigure() {
     await rpc.request.openMainWindow({ page: "agents" });
   }
@@ -106,6 +116,10 @@
 
   async function handleQuit() {
     await rpc.request.quit({});
+  }
+
+  async function handleAgentDoubleClick(agentId: number) {
+    await rpc.request.openMainWindow({ page: `agents/${agentId}` });
   }
 
   function getStatusClass(status: string): string | string[] {
@@ -173,21 +187,11 @@
       >
     {/if}
 
-    <button
-      class={[
-        "refresh-btn",
-        "rounded transition-colors",
-        "px-2 py-1",
-        "font-bold text-[11px]",
-        "text-black/70 dark:text-white",
-        "bg-white/60 hover:bg-white/90 dark:bg-black/30 dark:hover:bg-black/50",
-        "box-border dark:border-black/5",
-        "shadow-xs shadow-black/5 dark:shadow-black/20",
-      ]}
-      onclick={handleRefresh}
-    >
-      <span class={["refresh-icon", isRefreshing ? "is-spinning" : ""]}>↻</span>
-    </button>
+    <Button onclick={handleRefresh} size="sm" class="flex-0">
+      <div class={["refresh-icon", isRefreshing ? "is-spinning" : ""]}>
+        <HugeiconsIcon icon={Refresh01Icon} strokeWidth={3} size={12} />
+      </div>
+    </Button>
   </div>
 
   <div
@@ -205,6 +209,9 @@
       {#each agents as agent (agent.id)}
         <div
           title={getAgentTitle(agent)}
+          role="button"
+          tabindex="0"
+          ondblclick={() => handleAgentDoubleClick(agent.id)}
           class={[
             "agent-item",
             "flex items-center gap-2 p-2",
@@ -252,14 +259,19 @@
       "border-t border-black/10 dark:border-white/10",
     ]}
   >
-    <Button onclick={handleConfigure} size="sm">Configure</Button>
-    <Button onclick={handleSettings} size="sm">Settings</Button>
+    <Button onclick={handleDashboard} size="sm">Dashboard</Button>
+    <Button onclick={handleSettings} size="sm" class="flex-0 mr-2">
+      <HugeiconsIcon icon={Settings01Icon} strokeWidth={3} size={14} />
+    </Button>
     <Button
       onclick={handleQuit}
       bgColor={["bg-white/60 hover:bg-red-500/60 dark:bg-black/30"]}
       textColor={["text-black/70 hover:text-white dark:text-white"]}
-      size="sm">Quit</Button
+      size="sm"
+      class="flex-0"
     >
+      <HugeiconsIcon icon={ShutDownIcon} strokeWidth={3} size={16} />
+    </Button>
   </div>
 </div>
 
@@ -297,7 +309,7 @@
   }
 
   .refresh-icon {
-    display: inline-block;
+    /* display: block; */
     transform-origin: 50% 50%;
   }
 

@@ -112,7 +112,6 @@
           "bg-radial bg-radial-blue",
           "border-blue-700/50 dark:border-blue-600/50",
           "text-primary-foreground dark:text-primary text-shadow-xs",
-          // "text-white text-shadow-xs",
         ]),
       },
       {
