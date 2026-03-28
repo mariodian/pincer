@@ -9,7 +9,7 @@
 :root {
   --background: oklch(1 0 0);
   /* --bg-background: oklch(96.416% 0.00011 271.152); */
-  --body-background: oklch(0.972 0.003 322.12);
+  --body-background: oklch(0.972 0.008 322.12);
   /* --body-background: oklch(0.972 0 0); */
   /* --background: oklch(96.416% 0.00011 271.152); */
   --foreground: oklch(0.145 0.008 326);
@@ -45,7 +45,7 @@
   /* --sidebar: oklch(0.985 0 0); */
   /* --sidebar: oklch(92.277% 0.0054 16.188); */
   /* --sidebar: oklch(0.912 0 0); */
-  --sidebar: oklch(0.912 0.012 322.12);
+  --sidebar: oklch(0.912 0.014 322.12);
   --sidebar-foreground: oklch(0.145 0.008 326);
   --sidebar-primary: oklch(0.212 0.019 322.12);
   --sidebar-primary-foreground: oklch(0.985 0 0);
