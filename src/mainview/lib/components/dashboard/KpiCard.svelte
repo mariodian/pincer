@@ -3,18 +3,30 @@
   import { tv, type VariantProps } from "tailwind-variants";
 
   export const kpiCardVariants = tv({
-    base: ["rounded-lg border p-4 flex flex-col gap-1", "text-white"],
+    base: ["rounded-lg border p-4 flex flex-col gap-1", "text-primary"],
     variants: {
       color: {
         default: "",
         blue: "",
         green: "",
         destructive: "",
+        orange: "",
+        yellow: "",
         secondary: "",
       },
       gradient: {
         false: "",
         true: "",
+      },
+      direction: {
+        "to-br": "bg-linear-to-br",
+        "to-bl": "bg-linear-to-bl",
+        "to-b": "bg-linear-to-b",
+        "to-tr": "bg-linear-to-tr",
+        "to-tl": "bg-linear-to-tl",
+        "to-t": "bg-linear-to-t",
+        "to-180": "bg-linear-180",
+        "to-90": "bg-linear-90",
       },
     },
     compoundVariants: [
@@ -49,6 +61,22 @@
         ]),
       },
       {
+        color: "orange",
+        gradient: false,
+        class: cn([
+          "border-orange-700/60 bg-orange-600",
+          "dark:border-orange-700 dark:bg-orange-800",
+        ]),
+      },
+      {
+        color: "yellow",
+        gradient: false,
+        class: cn([
+          "border-yellow-600/60 bg-yellow-500",
+          "dark:border-yellow-700 dark:bg-yellow-700",
+        ]),
+      },
+      {
         color: "secondary",
         gradient: false,
         class: cn(["border-border bg-secondary", "text-secondary-foreground"]),
@@ -58,48 +86,68 @@
         color: "default",
         gradient: true,
         class: cn([
-          "from-muted/40 to-card bg-linear-180",
-          "dark:from-black/80 dark:to-card bg-linear-180",
+          "from-muted/40 to-card",
+          "dark:from-black/80 dark:to-card",
           "border-border",
           "text-card-foreground",
-        ]),
-      },
-      {
-        color: "blue",
-        gradient: true,
-        class: cn([
-          "from-blue-700 to-blue-600 bg-linear-180",
-          "dark:from-blue-800 dark:to-blue-700",
-          "border-blue-700",
-          "text-white",
         ]),
       },
       {
         color: "green",
         gradient: true,
         class: cn([
-          "from-green-700 to-green-600 bg-linear-180",
-          "dark:from-green-800 dark:to-green-700",
-          "border-green-700",
-          "text-white",
+          "bg-radial bg-radial-green",
+          "dark:border-green-700 dark:border-emerald-600/50",
+          "text-primary-foreground dark:text-primary",
+          // "border-green-700",
+          // "text-primary-foreground",
         ]),
       },
       {
         color: "destructive",
         gradient: true,
         class: cn([
-          "from-red-700 to-red-600 bg-linear-180",
-          "dark:from-red-800 dark:to-red-700",
-          "border-red-700",
-          "text-white",
+          "bg-radial bg-radial-red",
+          "dark:border-red-700 dark:border-rose-600/50",
+          "text-primary-foreground dark:text-primary",
+          // "from-red-700 to-red-600",
+          // "dark:from-red-800 dark:to-red-700",
+          // "border-red-700",
+          // "text-primary-foreground dark:text-primary",
+        ]),
+      },
+      {
+        color: "orange",
+        gradient: true,
+        class: cn([
+          "bg-radial bg-radial-orange",
+          "border-orange-400 dark:border-amber-500/50",
+          "text-primary-foreground dark:text-primary",
+          // "from-orange-500 to-orange-400",
+          // "dark:from-orange-700 dark:to-orange-600",
+          // "border-orange-500 dark:border-orange-600",
+          // "text-primary-foreground",
+        ]),
+      },
+      {
+        color: "yellow",
+        gradient: true,
+        class: cn([
+          "bg-radial bg-radial-yellow",
+          "border-yellow-300 dark:border-amber-300/50",
+          "text-primary-foreground dark:text-primary",
+          // "from-yellow-400 to-yellow-300",
+          // "dark:from-yellow-600 dark:to-yellow-500",
+          // "border-yellow-400 dark:border-yellow-500",
+          // "text-primary-foreground",
         ]),
       },
       {
         color: "secondary",
         gradient: true,
         class: cn([
-          "from-muted to-secondary bg-linear-180",
-          "dark:from-secondary dark:to-muted/60 bg-linear-180",
+          "from-muted to-secondary",
+          "dark:from-secondary dark:to-muted/60",
           "border-border dark:border-border/50",
           "text-secondary-foreground",
         ]),
@@ -108,6 +156,7 @@
     defaultVariants: {
       color: "default",
       gradient: false,
+      direction: "to-br",
     },
   });
 
@@ -115,6 +164,9 @@
   export type KpiCardGradient = VariantProps<
     typeof kpiCardVariants
   >["gradient"];
+  export type KpiCardDirection = VariantProps<
+    typeof kpiCardVariants
+  >["direction"];
 </script>
 
 <script lang="ts">
@@ -127,6 +179,7 @@
     loading = false,
     color = "default",
     gradient = false,
+    direction = "to-br",
     class: className,
   }: {
     title: string;
@@ -135,11 +188,12 @@
     loading?: boolean;
     color?: KpiCardColor;
     gradient?: KpiCardGradient;
+    direction?: KpiCardDirection;
     class?: string;
   } = $props();
 </script>
 
-<div class={cn(kpiCardVariants({ color, gradient }), className)}>
+<div class={cn(kpiCardVariants({ color, gradient, direction }), className)}>
   {#if loading}
     <Skeleton class="h-4 w-20" />
     <Skeleton class="h-7 w-20" />

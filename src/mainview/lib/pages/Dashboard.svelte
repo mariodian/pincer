@@ -356,8 +356,30 @@
         />
         <KpiCard
           title="Avg Uptime"
+          color="yellow"
+          gradient
+          direction="to-180"
+          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
+          subtitle={showDisabledAgents
+            ? "Across all agents"
+            : "Across enabled agents"}
+          {loading}
+        />
+        <KpiCard
+          title="Avg Uptime"
+          color="orange"
+          gradient
+          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
+          subtitle={showDisabledAgents
+            ? "Across all agents"
+            : "Across enabled agents"}
+          {loading}
+        />
+        <KpiCard
+          title="Avg Uptime"
           color="green"
           gradient
+          direction="to-90"
           value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
           subtitle={showDisabledAgents
             ? "Across all agents"

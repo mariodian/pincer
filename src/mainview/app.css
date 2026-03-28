@@ -210,3 +210,68 @@
     display: none;
   }
 }
+
+@utility bg-radial {
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 70% 20%,
+      var(--radial-1, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 40% 80% at 20% 80%,
+      var(--radial-2, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 60% 70% at 60% 65%,
+      var(--radial-3, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 65% 40% at 50% 60%,
+      var(--radial-4, transparent),
+      transparent 68%
+    ),
+    linear-gradient(
+      180deg,
+      var(--radial-base-from, transparent) 0%,
+      var(--radial-base-to, transparent) 100%
+    );
+}
+
+@utility bg-radial-green {
+  --radial-1: color-mix(in oklch, var(--color-emerald-600) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-green-900) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-emerald-600) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-green-400) 30%, transparent);
+  --radial-base-from: var(--color-green-800);
+  --radial-base-to: var(--color-emerald-600);
+}
+
+@utility bg-radial-red {
+  --radial-1: color-mix(in oklch, var(--color-rose-600) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-red-900) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-rose-600) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-red-400) 30%, transparent);
+  --radial-base-from: var(--color-red-800);
+  --radial-base-to: var(--color-rose-600);
+}
+
+@utility bg-radial-orange {
+  --radial-1: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-orange-800) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-orange-300) 30%, transparent);
+  --radial-base-from: var(--color-orange-700);
+  --radial-base-to: var(--color-amber-500);
+}
+
+@utility bg-radial-yellow {
+  --radial-1: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-yellow-700) 55%, transparent);
+  --radial-3: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
+  --radial-4: color-mix(in oklch, var(--color-yellow-200) 30%, transparent);
+  --radial-base-from: var(--color-yellow-600);
+  --radial-base-to: var(--color-amber-400);
+}
