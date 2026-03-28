@@ -20,10 +20,12 @@ export async function showMainWindow(page: string): Promise<void> {
 
   win.focus();
 
+  // Always use loadURL with a cache-busting query param so the webview
+  // treats the URL as new (hash-only differences are ignored otherwise).
   const baseUrl = stripHash(
     win.webview.url ?? (await getViewUrl("index.html")),
   );
-  win.webview.loadURL(`${baseUrl}#/${page}`);
+  win.webview.loadURL(`${baseUrl}?_t=${Date.now()}#/${page}`);
 
   // Push current statuses so the renderer has fresh data immediately
   void syncAgentsFromKnownStatuses(false);
