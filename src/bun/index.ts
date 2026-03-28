@@ -15,7 +15,7 @@ import { beginStatusUpdates } from "./services/statusService";
 import { getSettings } from "./storage/sqlite/settingsRepo";
 import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
-import { isMacOS as isMacOSFn } from "./utils/platform";
+import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
@@ -27,7 +27,7 @@ declare global {
   }
 }
 
-const isMacOS = isMacOSFn();
+const platformIsMacOS = isMacOS();
 
 // Combine RPCs: use systemRPC as base, register all request handlers via setRequestHandler
 const combinedRPC = systemRPC;
@@ -69,7 +69,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
       y: displayCenter.y,
     },
     rpc: combinedRPC as any,
-    ...(isMacOS
+    ...(platformIsMacOS
       ? {
           titleBarStyle: wc.titleBarStyle,
           transparent: wc.transparent,
@@ -84,7 +84,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
       : {}),
   });
 
-  if (isMacOS) {
+  if (platformIsMacOS) {
     applyMacOSWindowEffects("main", mainWindow, wc);
   }
 
@@ -99,7 +99,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   // On non-macOS platforms, enforce minimum window size by listening to resize events
   // MacOS handles this natively via the setWindowMinSize call
   let resizeTimeout: Timer | null = null;
-  if (!isMacOS) {
+  if (!platformIsMacOS) {
     mainWindow.on("resize", (event: any) => {
       const { x, y, width, height } = event.data;
 
