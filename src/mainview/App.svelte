@@ -44,9 +44,7 @@
       class={[
         "w-full m-1.5 py-5 px-4",
         "rounded-xl",
-        // "rounded-xl bg-zinc-50 dark:bg-background",
-        // "rounded-xl bg-gray-50 dark:bg-background",
-        "shadow-xs shadow-black/5 dark:shadow-black/20",
+        "shadow-xs shadow-black/10 dark:shadow-none",
       ]}
     >
       <Router {routes} />
@@ -56,8 +54,12 @@
 
 <style>
   :global(body) {
-    background-color: var(--body-background);
+    background-color: var(--sidebar);
   }
+  :global([data-slot="sidebar-container"]) {
+    border-color: transparent !important;
+  }
+
   :global([data-slot="content"]) {
     background-color: var(--body-background);
   }
