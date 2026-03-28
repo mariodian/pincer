@@ -345,15 +345,9 @@
       <!-- KPI Row -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <KpiCard
-          title="Avg Uptime"
-          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
-          subtitle={showDisabledAgents
-            ? "Across all agents"
-            : "Across enabled agents"}
-          {loading}
-        />
-        <KpiCard
           title="Agents"
+          // color="secondary"
+          // gradient
           value={stats
             ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
             : "—"}
@@ -361,18 +355,26 @@
           {loading}
         />
         <KpiCard
+          title="Avg Uptime"
+          color="green"
+          gradient
+          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
+          subtitle={showDisabledAgents
+            ? "Across all agents"
+            : "Across enabled agents"}
+          {loading}
+        />
+        <KpiCard
           title="Incidents"
-          class={[
-            "from-red-600/90 to-red-800/90 bg-linear-180", // gradient
-            "border border-red-800",
-            "text-white",
-          ].join(" ")}
+          color="destructive"
+          gradient
           value={stats ? stats.kpis.incidentCount : "—"}
           subtitle="Offline + Error checks"
           {loading}
         />
         <KpiCard
           title="Avg Response"
+          // gradient
           value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
           subtitle={showDisabledAgents
             ? "Across all agents"
