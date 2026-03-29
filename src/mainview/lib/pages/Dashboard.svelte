@@ -3,6 +3,7 @@
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import { EmptyState } from "$lib/components/ui/empty-state/index.js";
+  import { ErrorState } from "$lib/components/ui/error-state/index.js";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
@@ -26,7 +27,7 @@
   } from "$shared/rpc";
   import type { Settings } from "$shared/types";
   import { push } from "@bmlt-enabled/svelte-spa-router";
-  import { Add01Icon } from "@hugeicons/core-free-icons";
+  import { Add01Icon, AlertCircleIcon } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
 
   type TimeRangeOption = { value: TimeRange; label: string };
@@ -180,11 +181,29 @@
 
   <PageBody>
     {#if error}
-      <div
-        class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
+      <ErrorState
+        class="flex-1 py-16"
+        title="Failed to load dashboard"
+        description={error ?? undefined}
       >
-        Failed to load dashboard data: {error}
-      </div>
+        {#snippet icon()}
+          <HugeiconsIcon
+            icon={AlertCircleIcon}
+            class="size-6 text-destructive"
+            strokeWidth={2}
+          />
+        {/snippet}
+        {#snippet cta()}
+          <Button
+            variant="outline"
+            disabled={loading}
+            onclick={() => fetchData()}
+          >
+            <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} />
+            {loading ? "Retrying..." : "Retry"}
+          </Button>
+        {/snippet}
+      </ErrorState>
     {:else}
       {#if stats && chartAgents.length > 0}
         <!-- KPI Row -->
