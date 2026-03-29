@@ -9,7 +9,7 @@
     class?: CssClass;
     bgColor?: CssClass;
     textColor?: CssClass;
-    size?: "sm" | "md" | "lg";
+    size?: "xs" | "sm" | "md" | "lg";
     type?: "button" | "submit" | "reset";
     display?: "inline" | "block";
     disabled?: boolean;
@@ -34,6 +34,7 @@
   };
 
   const sizeClasses = {
+    xs: "px-2 py-1.5 text-xs rounded font-semibold",
     sm: "px-3 py-2.5 text-xs rounded-sm font-semibold",
     md: "px-4 py-2 text-sm rounded",
     lg: "px-6 py-3 text-sm rounded-md",

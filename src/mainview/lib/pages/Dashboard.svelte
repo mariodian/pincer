@@ -186,67 +186,72 @@
         Failed to load dashboard data: {error}
       </div>
     {:else}
-      <!-- KPI Row -->
-      <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
-        <KpiCard
-          title="Agents"
-          color={stats ? "blue" : "default"}
-          gradient
-          value={stats
-            ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
-            : "—"}
-          subtitle="Active / Total"
-          {loading}
-        />
+      {#if stats && chartAgents.length > 0}
+        <!-- KPI Row -->
+        <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
+          <KpiCard
+            title="Agents"
+            color={stats ? "blue" : "default"}
+            gradient
+            value={stats
+              ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
+              : "—"}
+            subtitle="Active / Total"
+            {loading}
+          />
 
-        <KpiCard
-          title="Avg Uptime"
-          color={(stats &&
-            stats.kpis.avgUptime > 0 &&
-            (stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.meh
-              ? "destructive"
-              : stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.ok
-                ? "yellow"
-                : "green")) ||
-            "default"}
-          gradient
-          value={stats ? formatUptimeKpi(stats.kpis.avgUptime) : "—"}
-          subtitle={showDisabledAgents
-            ? "Across all agents"
-            : "Across enabled agents"}
-          {loading}
-        />
+          <KpiCard
+            title="Avg Uptime"
+            color={(stats &&
+              stats.kpis.avgUptime !== null &&
+              stats.kpis.avgUptime > 0 &&
+              (stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.meh
+                ? "destructive"
+                : stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.ok
+                  ? "yellow"
+                  : "green")) ||
+              "default"}
+            gradient
+            value={stats && stats.kpis.avgUptime !== null
+              ? formatUptimeKpi(stats.kpis.avgUptime)
+              : "—"}
+            subtitle={showDisabledAgents
+              ? "Across all agents"
+              : "Across enabled agents"}
+            {loading}
+          />
 
-        <KpiCard
-          title="Avg Response"
-          color={(stats &&
-            stats.kpis.avgResponseMs > 0 &&
-            (stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.meh
-              ? "destructive"
-              : stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.ok
-                ? "yellow"
-                : "green")) ||
-            "default"}
-          gradient
-          value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
-          subtitle={showDisabledAgents
-            ? "Across all agents"
-            : "Across enabled agents"}
-          {loading}
-        />
+          <KpiCard
+            title="Avg Response"
+            color={(stats &&
+              stats.kpis.avgResponseMs > 0 &&
+              (stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.meh
+                ? "destructive"
+                : stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.ok
+                  ? "yellow"
+                  : "green")) ||
+              "default"}
+            gradient
+            value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
+            subtitle={showDisabledAgents
+              ? "Across all agents"
+              : "Across enabled agents"}
+            {loading}
+          />
 
-        <KpiCard
-          title="Incidents"
-          color={(stats &&
-            stats.kpis.incidentCount > 0 &&
-            (stats.kpis.incidentCount > 0 ? "destructive" : "green")) ||
-            "default"}
-          gradient
-          value={stats ? stats.kpis.incidentCount : "—"}
-          subtitle="Offline + Error checks"
-          {loading}
-        />
-      </div>
+          <KpiCard
+            title="Incidents"
+            color={(stats &&
+              stats.kpis.incidentCount > 0 &&
+              (stats.kpis.incidentCount > 0 ? "destructive" : "green")) ||
+              "default"}
+            gradient
+            value={stats ? stats.kpis.incidentCount : "—"}
+            subtitle="Offline + Error checks"
+            {loading}
+          />
+        </div>
+      {/if}
 
       <!-- Charts -->
       {#if loading}

@@ -38,8 +38,7 @@ export function pivotTimeSeries(
 
   return Array.from(byHour.values()).sort(
     (a, b) =>
-      (a.hourTimestamp as Date).getTime() -
-      (b.hourTimestamp as Date).getTime(),
+      (a.hourTimestamp as Date).getTime() - (b.hourTimestamp as Date).getTime(),
   );
 }
 

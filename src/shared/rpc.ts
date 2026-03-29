@@ -28,7 +28,7 @@ export interface TimeSeriesPoint {
 }
 
 export interface DashboardKpis {
-  avgUptime: number;
+  avgUptime: number | null;
   totalAgents: number;
   activeAgents: number;
   incidentCount: number;

@@ -102,7 +102,7 @@ export const statsRequestHandlers = {
       avgUptime:
         statRowCount > 0
           ? Math.round((totalUptime / statRowCount) * 100) / 100
-          : 100,
+          : null,
       totalAgents: agents.length,
       activeAgents: enabledAgents.length,
       incidentCount: totalIncidents,

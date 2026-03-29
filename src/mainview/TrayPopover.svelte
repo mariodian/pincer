@@ -183,7 +183,7 @@
       >
     {/if}
 
-    <Button onclick={handleRefresh} size="sm" class="flex-0">
+    <Button onclick={handleRefresh} size="xs" class="flex-0">
       <div class={["refresh-icon", isRefreshing ? "is-spinning" : ""]}>
         <HugeiconsIcon icon={Refresh01Icon} strokeWidth={3} size={12} />
       </div>
@@ -255,15 +255,15 @@
       "border-t border-black/10 dark:border-white/10",
     ]}
   >
-    <Button onclick={handleDashboard} size="sm">Dashboard</Button>
-    <Button onclick={handleSettings} size="sm" class="flex-0 mr-2">
+    <Button onclick={handleDashboard} size="xs">Dashboard</Button>
+    <Button onclick={handleSettings} size="xs" class="flex-0 mr-2">
       <HugeiconsIcon icon={Settings01Icon} strokeWidth={3} size={14} />
     </Button>
     <Button
       onclick={handleQuit}
       bgColor={["bg-white/60 hover:bg-red-500/60 dark:bg-black/30"]}
       textColor={["text-black/70 hover:text-white dark:text-white"]}
-      size="sm"
+      size="xs"
       class="flex-0"
     >
       <HugeiconsIcon icon={ShutDownIcon} strokeWidth={3} size={16} />

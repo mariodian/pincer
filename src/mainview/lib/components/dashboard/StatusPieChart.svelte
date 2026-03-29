@@ -83,7 +83,10 @@
   const chartHeight = $derived(Math.max(MIN_CHART_HEIGHT, height));
   // Scale font size with chart height, between MIN_FONT_SIZE and MAX_FONT_SIZE
   const fontSize = $derived(
-    Math.min(Math.max(MIN_FONT_SIZE, chartHeight / FONT_SIZE_DIVISOR), MAX_FONT_SIZE),
+    Math.min(
+      Math.max(MIN_FONT_SIZE, chartHeight / FONT_SIZE_DIVISOR),
+      MAX_FONT_SIZE,
+    ),
   );
   const textPosition = $derived(fontSize * TEXT_POSITION_MULTIPLIER);
 
