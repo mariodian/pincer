@@ -35,7 +35,6 @@
     gaps?: boolean;
     gradient?: boolean;
     strokeWidth?: number;
-    // padding?: ReturnType<typeof defaultChartPadding>;
     padding?: { top?: number; right?: number; bottom?: number; left?: number };
     height?: number;
   }
@@ -94,9 +93,6 @@
     if (chartType === "bar" && data.length > maxTicks) {
       const step = Math.ceil(data.length / maxTicks);
       base.ticks = data.filter((_, i) => i % step === 0).map((d) => d[xKey]);
-      // base.tickValues = data
-      //   .filter((_, i) => i % step === 0)
-      //   .map((d) => d[xKey]);
     }
     return base;
   });
@@ -105,6 +101,19 @@
   const tooltipConfig = $derived({
     ...(xFormat ? { header: { format: xFormat } } : {}),
     item: { format: "integer" as const },
+  });
+
+  // Common props shared by all chart types
+  const commonChartProps = $derived({
+    data,
+    series,
+    x: xKey,
+    xAxis: xAxisConfig,
+    yAxis: yFormat ? { format: yFormat } : {},
+    tooltip: tooltipConfig,
+    strokeWidth,
+    padding,
+    height,
   });
 </script>
 
@@ -131,46 +140,11 @@
   {:else}
     <div class="w-full min-h-50 lg:h-60">
       {#if chartType === "line"}
-        <GapLineChart
-          {data}
-          {series}
-          x={xKey}
-          xAxis={xAxisConfig}
-          yAxis={yFormat ? { format: yFormat } : {}}
-          tooltip={tooltipConfig}
-          {gaps}
-          colorGradient={gradient}
-          {strokeWidth}
-          {padding}
-          {height}
-        />
+        <GapLineChart {...commonChartProps} {gaps} colorGradient={gradient} />
       {:else if chartType === "bar"}
-        <GradientBarChart
-          {data}
-          {series}
-          x={xKey}
-          xAxis={xAxisConfig}
-          yAxis={yFormat ? { format: yFormat } : {}}
-          tooltip={tooltipConfig}
-          colorGradient={gradient}
-          {strokeWidth}
-          {padding}
-          {height}
-        />
+        <GradientBarChart {...commonChartProps} colorGradient={gradient} />
       {:else if chartType === "area"}
-        <GapAreaChart
-          {data}
-          {series}
-          x={xKey}
-          xAxis={xAxisConfig}
-          yAxis={yFormat ? { format: yFormat } : {}}
-          tooltip={tooltipConfig}
-          {gaps}
-          colorGradient={gradient}
-          {strokeWidth}
-          {padding}
-          {height}
-        />
+        <GapAreaChart {...commonChartProps} {gaps} colorGradient={gradient} />
       {/if}
     </div>
   {/if}
