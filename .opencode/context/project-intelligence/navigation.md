@@ -1,9 +1,9 @@
-<!-- Context: project-intelligence/navigation | Priority: critical | Version: 1.0 | Updated: 2026-03-28 -->
+<!-- Context: project-intelligence/navigation | Priority: critical | Version: 1.1 | Updated: 2026-03-29 -->
 
 # Project Intelligence
 
 **Purpose**: Quick reference for all project context files.
-**Last Updated**: 2026-03-28
+**Last Updated**: 2026-03-29
 
 ## Quick Routes
 | File | Description | Priority |

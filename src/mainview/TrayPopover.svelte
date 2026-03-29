@@ -106,10 +106,6 @@
     await rpc.request.openMainWindow({ page: "dashboard" });
   }
 
-  async function handleConfigure() {
-    await rpc.request.openMainWindow({ page: "agents" });
-  }
-
   async function handleSettings() {
     await rpc.request.openMainWindow({ page: "settings" });
   }

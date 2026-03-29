@@ -1,9 +1,9 @@
-<!-- Context: project-intelligence/technical | Priority: critical | Version: 1.0 | Updated: 2026-03-28 -->
+<!-- Context: project-intelligence/technical | Priority: critical | Version: 1.1 | Updated: 2026-03-29 -->
 
 # Technical Domain
 
 **Purpose**: Tech stack, architecture, and development patterns for crabControl.
-**Last Updated**: 2026-03-28
+**Last Updated**: 2026-03-29
 
 ## Quick Reference
 **Update Triggers**: Tech stack changes | New patterns | Architecture decisions

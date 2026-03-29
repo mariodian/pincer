@@ -16,7 +16,7 @@
   type TimeRangeOption = { value: TimeRange; label: string };
 
   const MAX_RESPONSE_TIMES = {
-    ok: 100,
+    ok: 200,
     meh: 500,
   };
 
@@ -385,9 +385,9 @@
         <KpiCard
           title="Avg Response"
           color={(stats &&
-            (stats.kpis.avgResponseMs > MAX_RESPONSE_TIMES.meh
+            (stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.meh
               ? "destructive"
-              : stats.kpis.avgResponseMs > MAX_RESPONSE_TIMES.ok
+              : stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.ok
                 ? "yellow"
                 : "green")) ||
             "default"}
@@ -498,7 +498,7 @@
               bottom: 32,
             }}
             gradient={true}
-            strokeWidth={1}
+            strokeWidth={0}
           />
         {:else}
           <div

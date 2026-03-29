@@ -65,14 +65,15 @@
   const totalCount = $derived(statusData.reduce((sum, d) => sum + d.count, 0));
   const chartHeight = $derived(Math.max(160, height));
   // Scale font size with chart height, between 20 and 48
-  const fontSize = $derived(Math.min(Math.max(20, chartHeight / 7), 48));
+  const fontSize = $derived(Math.min(Math.max(20, chartHeight / 8), 48));
+  const textPosition = $derived(fontSize * 1.1);
 
   /*
    * Calculate inner and outer radius based on chart height to maintain good proportions.
    * Inner radius is a small fraction of the chart height, while outer radius is larger but capped.
    */
   const innerRadius = $derived(
-    Math.min(Math.max(-20, 0 - chartHeight / 16), -10),
+    Math.min(Math.max(-20, 0 - chartHeight / 12), -10),
   );
   const outerRadius = $derived(Math.min(Math.max(100, chartHeight / 1.7), 180));
 </script>
@@ -127,19 +128,19 @@
       >
         {#snippet aboveMarks()}
           <Text
-            value={format(totalCount)}
+            value={format(totalCount, "metric")}
             textAnchor="middle"
             verticalAnchor="middle"
             class="font-semibold"
             font-size={fontSize}
-            dy={fontSize * 0.6}
+            dy={textPosition}
           />
           <Text
             value="Total"
             textAnchor="middle"
             verticalAnchor="middle"
             class="text-sm font-medium text-muted-foreground"
-            dy={fontSize * 0.9 + 14}
+            dy={textPosition * 1.8}
           />
         {/snippet}
       </PieChart>
