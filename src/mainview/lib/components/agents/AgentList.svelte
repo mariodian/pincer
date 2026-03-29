@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
+  import { EmptyState } from "$lib/components/ui/empty-state/index.js";
   import * as Item from "$lib/components/ui/item/index.js";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
@@ -152,31 +153,11 @@
           </div>
         {/each}
       </div>
-    {:else if agents.length === 0}
-      <div
-        class="flex flex-col items-center justify-center flex-1 text-center py-16"
-      >
-        <div class="rounded-full bg-muted p-4 mb-4">
-          <HugeiconsIcon
-            icon={Add01Icon}
-            class="size-6 text-muted-foreground"
-            strokeWidth={2}
-          />
-        </div>
-        <h3 class="text-lg font-medium mb-1">No agents yet</h3>
-        <p class="text-sm text-muted-foreground mb-4 max-w-sm">
-          Add your first agent to start monitoring services.
-        </p>
-        <Button onclick={() => onNavigate("/agents/add")}>
-          <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-          Add Agent
-        </Button>
-      </div>
-    {:else}
-      <!-- <div class="flex flex-col gap-2 h-full overflow-x-hidden"> -->
+    {:else if agents.length > 0}
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-x-hidden">
         {#each agents as agent (agent.id)}
           <div class="relative overflow-x-hidden">
+            <!-- Delete Confirmation -->
             <div
               class={[
                 "absolute w-full",
@@ -191,11 +172,9 @@
                   "group",
                   "min-h-18 h-full w-full",
                   "border-red-700/80 bg-red-700/80",
-                  // "bg-destructive/80",
                   "dark:border-destructive/60 dark:bg-destructive/50",
                 ]}
               >
-                <!-- {#if confirmDeleteId === agent.id} -->
                 <Item.Content>
                   <span
                     class={[
@@ -225,7 +204,8 @@
                 </Item.Actions>
               </Item.Root>
             </div>
-            <!-- {:else} -->
+
+            <!-- Agent Item -->
             <div
               class={[
                 "relative w-full",
@@ -296,12 +276,31 @@
                     </Button>
                   </div>
                 </Item.Actions>
-                <!-- {/if} -->
               </Item.Root>
             </div>
           </div>
         {/each}
       </div>
+    {:else}
+      <EmptyState
+        class="flex-1 py-16"
+        title="No agents yet"
+        description="Add your first agent to start monitoring services."
+      >
+        {#snippet icon()}
+          <HugeiconsIcon
+            icon={Add01Icon}
+            class="size-6 text-muted-foreground"
+            strokeWidth={2}
+          />
+        {/snippet}
+        {#snippet cta()}
+          <Button onclick={() => onNavigate("/agents/add")}>
+            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+            Add Agent
+          </Button>
+        {/snippet}
+      </EmptyState>
     {/if}
   </PageBody>
 </div>

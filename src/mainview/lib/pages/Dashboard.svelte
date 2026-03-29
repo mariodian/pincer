@@ -1,6 +1,8 @@
 <script lang="ts">
   import { KpiCard, StatusPieChart } from "$lib/components/dashboard";
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
+  import { Button } from "$lib/components/ui/button/index.js";
+  import { EmptyState } from "$lib/components/ui/empty-state/index.js";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
@@ -23,6 +25,9 @@
     TimeSeriesPoint,
   } from "$shared/rpc";
   import type { Settings } from "$shared/types";
+  import { push } from "@bmlt-enabled/svelte-spa-router";
+  import { Add01Icon } from "@hugeicons/core-free-icons";
+  import { HugeiconsIcon } from "@hugeicons/svelte";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -197,6 +202,7 @@
         <KpiCard
           title="Avg Uptime"
           color={(stats &&
+            stats.kpis.avgUptime > 0 &&
             (stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.meh
               ? "destructive"
               : stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.ok
@@ -214,6 +220,7 @@
         <KpiCard
           title="Avg Response"
           color={(stats &&
+            stats.kpis.avgResponseMs > 0 &&
             (stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.meh
               ? "destructive"
               : stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.ok
@@ -231,6 +238,7 @@
         <KpiCard
           title="Incidents"
           color={(stats &&
+            stats.kpis.incidentCount > 0 &&
             (stats.kpis.incidentCount > 0 ? "destructive" : "green")) ||
             "default"}
           gradient
@@ -241,18 +249,20 @@
       </div>
 
       <!-- Charts -->
-      <div
-        class={[
-          "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
-          "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
-        ]}
-      >
-        {#if loading}
+      {#if loading}
+        <div class="grid gap-4 lg:gap-6 mt-8 lg:mt-12">
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
           <Skeleton class="h-75 w-full rounded-lg" />
-        {:else if stats && chartAgents.length > 0}
+        </div>
+      {:else if stats && chartAgents.length > 0}
+        <div
+          class={[
+            "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
+            "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
+          ]}
+        >
           <MetricChart
             chartType="line"
             title="Uptime % Over Time"
@@ -333,14 +343,28 @@
             gradient={true}
             strokeWidth={0}
           />
-        {:else}
-          <div
-            class="rounded-lg border p-8 text-center text-sm text-muted-foreground"
-          >
-            No agents configured yet. Add an agent to start collecting stats.
-          </div>
-        {/if}
-      </div>
+        </div>
+      {:else}
+        <EmptyState
+          class="flex-1 py-16"
+          title="No agents configured yet"
+          description="Add an agent to start collecting stats."
+        >
+          {#snippet icon()}
+            <HugeiconsIcon
+              icon={Add01Icon}
+              class="size-6 text-muted-foreground"
+              strokeWidth={2}
+            />
+          {/snippet}
+          {#snippet cta()}
+            <Button onclick={() => push("/agents/add")}>
+              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+              Add Agent
+            </Button>
+          {/snippet}
+        </EmptyState>
+      {/if}
     {/if}
   </PageBody>
 </div>
