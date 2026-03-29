@@ -4,3 +4,4 @@ build/
 artifacts/
 drizzle/dev.db
 libMacWindowEffects.dylib
+.tmp/
