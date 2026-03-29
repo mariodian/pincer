@@ -30,7 +30,6 @@
     ok: 200,
     meh: 500,
   };
-
   const MIN_UPTIME_THRESHOLDS = {
     ok: 99,
     meh: 50,
@@ -59,12 +58,27 @@
   let selectedResponseBar = $state<number[]>([]);
   let selectedStatus = $state<number[]>([]);
 
-  // Chart data — computed explicitly in fetchData() to avoid
-  // Svelte 5 $derived reactivity issues with $state proxy tracking
-  let uptimeData = $state<Record<string, unknown>[]>([]);
-  let responseData = $state<Record<string, unknown>[]>([]);
   let chartAgents = $state<AgentWithColor[]>([]);
   let chartTimeSeries = $state<TimeSeriesPoint[]>([]);
+
+  // Chart data — derived reactively from source state
+  let uptimeData = $derived.by(() => {
+    let pivoted = pivotTimeSeries(chartTimeSeries, chartAgents, "uptimePct");
+    pivoted = fillHourlySlots(pivoted, chartAgents, "uptime");
+    if (timeRange !== "24h") pivoted = aggregateByDay(pivoted);
+    return pivoted;
+  });
+
+  let responseData = $derived.by(() => {
+    let pivoted = pivotTimeSeries(
+      chartTimeSeries,
+      chartAgents,
+      "avgResponseMs",
+    );
+    pivoted = fillHourlySlots(pivoted, chartAgents, "response");
+    if (timeRange !== "24h") pivoted = aggregateByDay(pivoted);
+    return pivoted;
+  });
 
   // Fetch data
   async function fetchData() {
@@ -92,35 +106,6 @@
         : result.timeSeries.filter((p) =>
             chartAgents.some((a) => a.id === p.agentId),
           );
-
-      // Compute chart data explicitly (avoids $derived reactivity issues)
-      let uptimePivoted = pivotTimeSeries(
-        chartTimeSeries,
-        chartAgents,
-        "uptimePct",
-      );
-      let responsePivoted = pivotTimeSeries(
-        chartTimeSeries,
-        chartAgents,
-        "avgResponseMs",
-      );
-
-      // Insert null rows for missing hours so chart shows gaps
-      uptimePivoted = fillHourlySlots(uptimePivoted, chartAgents, "uptime");
-      responsePivoted = fillHourlySlots(
-        responsePivoted,
-        chartAgents,
-        "response",
-      );
-
-      // Aggregate to daily for longer time ranges
-      if (timeRange !== "24h") {
-        uptimePivoted = aggregateByDay(uptimePivoted);
-        responsePivoted = aggregateByDay(responsePivoted);
-      }
-
-      uptimeData = uptimePivoted;
-      responseData = responsePivoted;
 
       // Initialize all visible agents as selected if empty
       const allIds = chartAgents.map((a) => a.id);
