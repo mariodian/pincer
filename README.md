@@ -51,9 +51,6 @@ In development, non-main windows should load Vite URLs for HMR updates.
 # Production build
 bun run build
 
-# Production channel build
-bun run build:prod
-
 # Environment-based builds
 bun run build:canary
 bun run build:stable
@@ -61,12 +58,11 @@ bun run build:stable
 
 ## Scripts
 
-- bun run dev: Build native effects + renderer + app, then run Electrobun dev.
+- bun run dev: Format, build native effects + renderer + app, then run Electrobun dev.
 - bun run dev:hmr: Run Vite HMR and Electrobun dev concurrently.
 - bun run hmr: Start Vite on port 5173.
 - bun run build:native-effects: Compile macOS native dylib.
-- bun run build: Build native effects + Vite + Electrobun.
-- bun run build:prod: Rebuild native assets and renderer, then package the stable environment (prod alias).
+- bun run build: Format + build native effects + Vite + Electrobun.
 - bun run build:canary: Rebuild native assets and renderer, then package the canary environment.
 - bun run build:stable: Rebuild native assets and renderer, then package the stable environment.
 - bun run db:generate: Generate Drizzle migrations.
@@ -91,7 +87,7 @@ bun run build:stable
 ### Type Checking
 
 ```bash
-bunx tsc --noEmit
+bun run typecheck
 ```
 
 ### Database Workflow
