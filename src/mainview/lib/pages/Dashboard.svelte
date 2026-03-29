@@ -5,6 +5,17 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import {
+    aggregateByDay,
+    fillHourlySlots,
+    formatDay,
+    formatHour,
+    formatMs,
+    formatMsKpi,
+    formatUptime,
+    formatUptimeKpi,
+    pivotTimeSeries,
+  } from "$lib/utils/dashboard-data";
   import type {
     AgentWithColor,
     DashboardStats,
@@ -131,186 +142,19 @@
     fetchData();
   });
 
-  // Toggle helpers
-  function toggleUptime(id: number) {
-    const idx = selectedUptime.indexOf(id);
-    if (idx === -1) {
-      selectedUptime = [...selectedUptime, id];
-    } else {
-      selectedUptime = selectedUptime.filter((sid) => sid !== id);
-    }
-  }
-
-  function toggleResponse(id: number) {
-    const idx = selectedResponse.indexOf(id);
-    if (idx === -1) {
-      selectedResponse = [...selectedResponse, id];
-    } else {
-      selectedResponse = selectedResponse.filter((sid) => sid !== id);
-    }
-  }
-
-  function toggleResponseBar(id: number) {
-    const idx = selectedResponseBar.indexOf(id);
-    if (idx === -1) {
-      selectedResponseBar = [...selectedResponseBar, id];
-    } else {
-      selectedResponseBar = selectedResponseBar.filter((sid) => sid !== id);
-    }
-  }
-
-  function toggleStatus(id: number) {
-    const idx = selectedStatus.indexOf(id);
-    if (idx === -1) {
-      selectedStatus = [...selectedStatus, id];
-    } else {
-      selectedStatus = selectedStatus.filter((sid) => sid !== id);
-    }
-  }
-
-  // Pivot time series data for charts
-  function pivotTimeSeries(
-    series: TimeSeriesPoint[],
-    agents: AgentWithColor[],
-    valueKey: "uptimePct" | "avgResponseMs",
-  ): Record<string, unknown>[] {
-    const prefix = valueKey === "uptimePct" ? "uptime" : "response";
-    const byHour = new Map<number, Record<string, unknown>>();
-
-    for (const point of series) {
-      if (!byHour.has(point.hourTimestamp)) {
-        byHour.set(point.hourTimestamp, {
-          hourTimestamp: new Date(point.hourTimestamp * 1000),
-        });
+  // Toggle helper — returns a setter for the given $state array
+  function toggleAgent(selected: number[]) {
+    return (id: number) => {
+      const idx = selected.indexOf(id);
+      if (idx === -1) {
+        return [...selected, id];
       }
-      const row = byHour.get(point.hourTimestamp)!;
-      row[`${prefix}_${point.agentId}`] = point[valueKey];
-    }
-
-    // Fill missing agents with null
-    for (const row of byHour.values()) {
-      for (const agent of agents) {
-        const key = `${prefix}_${agent.id}`;
-        if (!(key in row)) {
-          row[key] = null;
-        }
-      }
-    }
-
-    return Array.from(byHour.values()).sort(
-      (a, b) =>
-        (a.hourTimestamp as Date).getTime() -
-        (b.hourTimestamp as Date).getTime(),
-    );
+      return selected.filter((sid) => sid !== id);
+    };
   }
 
-  // Insert null rows for missing hours between first and last data point
-  function fillHourlySlots(
-    rows: Record<string, unknown>[],
-    agents: AgentWithColor[],
-    yPrefix: string,
-  ): Record<string, unknown>[] {
-    if (rows.length <= 1) return rows;
-
-    const HOUR = 3600000;
-    const first = (rows[0].hourTimestamp as Date).getTime();
-    const last = (rows[rows.length - 1].hourTimestamp as Date).getTime();
-
-    const existing = new Map<number, Record<string, unknown>>();
-    for (const row of rows) {
-      existing.set((row.hourTimestamp as Date).getTime(), row);
-    }
-
-    const filled: Record<string, unknown>[] = [];
-    for (let ts = first; ts <= last; ts += HOUR) {
-      if (existing.has(ts)) {
-        filled.push(existing.get(ts)!);
-      } else {
-        const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
-        for (const agent of agents) {
-          row[`${yPrefix}_${agent.id}`] = null;
-        }
-        filled.push(row);
-      }
-    }
-
-    return filled;
-  }
-
-  // Aggregate hourly pivoted data to daily averages
-  function aggregateByDay(
-    rows: Record<string, unknown>[],
-  ): Record<string, unknown>[] {
-    const byDay = new Map<
-      number,
-      { values: Record<string, number[]>; ts: number }
-    >();
-
-    for (const row of rows) {
-      const d = row.hourTimestamp as Date;
-      const localMidnight = new Date(
-        d.getFullYear(),
-        d.getMonth(),
-        d.getDate(),
-      ).getTime();
-      if (!byDay.has(localMidnight)) {
-        byDay.set(localMidnight, { values: {}, ts: localMidnight });
-      }
-      const bucket = byDay.get(localMidnight)!;
-      for (const [key, val] of Object.entries(row)) {
-        if (key === "hourTimestamp") continue;
-        if (typeof val === "number") {
-          if (!bucket.values[key]) bucket.values[key] = [];
-          bucket.values[key].push(val);
-        }
-      }
-    }
-
-    return Array.from(byDay.values())
-      .map(({ values, ts }) => {
-        const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
-        for (const [key, vals] of Object.entries(values)) {
-          row[key] =
-            Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) /
-            100;
-        }
-        return row;
-      })
-      .sort(
-        (a, b) =>
-          (a.hourTimestamp as Date).getTime() -
-          (b.hourTimestamp as Date).getTime(),
-      );
-  }
-
-  // X-axis formatters (values are Date objects since pivot converts timestamps)
-  function formatHour(val: unknown): string {
-    const d = val instanceof Date ? val : new Date(Number(val) * 1000);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-
-  function formatDay(val: unknown): string {
-    const d = val instanceof Date ? val : new Date(Number(val) * 1000);
-    return d.toLocaleDateString([], { month: "short", day: "numeric" });
-  }
-
+  // X-axis formatter depends on time range
   let xAxisFormat = $derived(timeRange === "24h" ? formatHour : formatDay);
-
-  function formatUptime(val: unknown): string {
-    return `${val}%`;
-  }
-
-  function formatMs(val: unknown): string {
-    return `${val}ms`;
-  }
-
-  function formatUptimeKpi(val: number): string {
-    return `${val.toFixed(1)}%`;
-  }
-
-  function formatMsKpi(val: number): string {
-    return `${Math.round(val)}ms`;
-  }
 
   function handleTimeRangeChange(range: TimeRange) {
     timeRange = range;
@@ -432,7 +276,7 @@
             xKey="hourTimestamp"
             agents={chartAgents}
             selectedIds={selectedUptime}
-            onToggleAgent={toggleUptime}
+            onToggleAgent={(id) => (selectedUptime = toggleAgent(selectedUptime)(id))}
             yPrefix="uptime"
             xFormat={xAxisFormat}
             yFormat={formatUptime}
@@ -455,7 +299,7 @@
             xKey="hourTimestamp"
             agents={chartAgents}
             selectedIds={selectedResponse}
-            onToggleAgent={toggleResponse}
+            onToggleAgent={(id) => (selectedResponse = toggleAgent(selectedResponse)(id))}
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
@@ -474,7 +318,7 @@
             timeSeries={chartTimeSeries}
             agents={chartAgents}
             selectedIds={selectedStatus}
-            onToggleAgent={toggleStatus}
+            onToggleAgent={(id) => (selectedStatus = toggleAgent(selectedStatus)(id))}
             height={200}
             padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
           />
@@ -487,7 +331,7 @@
             xKey="hourTimestamp"
             agents={chartAgents}
             selectedIds={selectedResponseBar}
-            onToggleAgent={toggleResponseBar}
+            onToggleAgent={(id) => (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
