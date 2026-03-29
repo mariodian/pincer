@@ -276,7 +276,8 @@
             xKey="hourTimestamp"
             agents={chartAgents}
             selectedIds={selectedUptime}
-            onToggleAgent={(id) => (selectedUptime = toggleAgent(selectedUptime)(id))}
+            onToggleAgent={(id) =>
+              (selectedUptime = toggleAgent(selectedUptime)(id))}
             yPrefix="uptime"
             xFormat={xAxisFormat}
             yFormat={formatUptime}
@@ -299,7 +300,8 @@
             xKey="hourTimestamp"
             agents={chartAgents}
             selectedIds={selectedResponse}
-            onToggleAgent={(id) => (selectedResponse = toggleAgent(selectedResponse)(id))}
+            onToggleAgent={(id) =>
+              (selectedResponse = toggleAgent(selectedResponse)(id))}
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}
@@ -318,7 +320,8 @@
             timeSeries={chartTimeSeries}
             agents={chartAgents}
             selectedIds={selectedStatus}
-            onToggleAgent={(id) => (selectedStatus = toggleAgent(selectedStatus)(id))}
+            onToggleAgent={(id) =>
+              (selectedStatus = toggleAgent(selectedStatus)(id))}
             height={200}
             padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
           />
@@ -331,7 +334,8 @@
             xKey="hourTimestamp"
             agents={chartAgents}
             selectedIds={selectedResponseBar}
-            onToggleAgent={(id) => (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
+            onToggleAgent={(id) =>
+              (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
             yPrefix="response"
             xFormat={xAxisFormat}
             yFormat={formatMs}

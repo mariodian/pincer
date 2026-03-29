@@ -7,6 +7,23 @@
 
   const DEFAULT_PADDING = 24;
 
+  // ── Pie geometry constants ──
+  const MIN_CHART_HEIGHT = 160;
+  const MIN_FONT_SIZE = 20;
+  const MAX_FONT_SIZE = 48;
+  const FONT_SIZE_DIVISOR = 8;
+  const TEXT_POSITION_MULTIPLIER = 1.1;
+  const INNER_RADIUS_MIN = -20;
+  const INNER_RADIUS_MAX = -10;
+  const INNER_RADIUS_DIVISOR = 12;
+  const OUTER_RADIUS_MIN = 100;
+  const OUTER_RADIUS_MAX = 180;
+  const OUTER_RADIUS_DIVISOR = 1.7;
+  const CORNER_RADIUS_DIVISOR = 20;
+  const GROUP_Y_DIVISOR = 4;
+  const GROUP_Y_OFFSET = 25;
+  const SUBTITLE_DY_MULTIPLIER = 1.8;
+
   interface Props {
     title: string;
     description?: string;
@@ -63,19 +80,29 @@
   });
 
   const totalCount = $derived(statusData.reduce((sum, d) => sum + d.count, 0));
-  const chartHeight = $derived(Math.max(160, height));
-  // Scale font size with chart height, between 20 and 48
-  const fontSize = $derived(Math.min(Math.max(20, chartHeight / 8), 48));
-  const textPosition = $derived(fontSize * 1.1);
+  const chartHeight = $derived(Math.max(MIN_CHART_HEIGHT, height));
+  // Scale font size with chart height, between MIN_FONT_SIZE and MAX_FONT_SIZE
+  const fontSize = $derived(
+    Math.min(Math.max(MIN_FONT_SIZE, chartHeight / FONT_SIZE_DIVISOR), MAX_FONT_SIZE),
+  );
+  const textPosition = $derived(fontSize * TEXT_POSITION_MULTIPLIER);
 
   /*
    * Calculate inner and outer radius based on chart height to maintain good proportions.
    * Inner radius is a small fraction of the chart height, while outer radius is larger but capped.
    */
   const innerRadius = $derived(
-    Math.min(Math.max(-20, 0 - chartHeight / 12), -10),
+    Math.min(
+      Math.max(INNER_RADIUS_MIN, 0 - chartHeight / INNER_RADIUS_DIVISOR),
+      INNER_RADIUS_MAX,
+    ),
   );
-  const outerRadius = $derived(Math.min(Math.max(100, chartHeight / 1.7), 180));
+  const outerRadius = $derived(
+    Math.min(
+      Math.max(OUTER_RADIUS_MIN, chartHeight / OUTER_RADIUS_DIVISOR),
+      OUTER_RADIUS_MAX,
+    ),
+  );
 </script>
 
 <div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
@@ -107,9 +134,9 @@
         range={[-90, 90]}
         {outerRadius}
         {innerRadius}
-        cornerRadius={chartHeight / 20}
+        cornerRadius={chartHeight / CORNER_RADIUS_DIVISOR}
         padAngle={0.02}
-        props={{ group: { y: chartHeight / 4 + 25 } }}
+        props={{ group: { y: chartHeight / GROUP_Y_DIVISOR + GROUP_Y_OFFSET } }}
         padding={{
           ...defaultChartPadding({
             top: DEFAULT_PADDING,
@@ -140,7 +167,7 @@
             textAnchor="middle"
             verticalAnchor="middle"
             class="text-sm font-medium text-muted-foreground"
-            dy={textPosition * 1.8}
+            dy={textPosition * SUBTITLE_DY_MULTIPLIER}
           />
         {/snippet}
       </PieChart>
