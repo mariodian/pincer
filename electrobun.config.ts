@@ -6,8 +6,8 @@ const packageJson = JSON.parse(readFileSync("./package.json", "utf8"));
 
 export default {
   app: {
-    name: "CrabMon",
-    identifier: "com.mariodian.crabmonitor",
+    name: "Pincer",
+    identifier: "com.mariodian.pincer",
     version: packageJson.version,
   },
   runtime: {

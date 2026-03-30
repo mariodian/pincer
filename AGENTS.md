@@ -31,11 +31,11 @@ Uses **Drizzle ORM** with SQLite. `migrate()` runs on startup.
 ### Workflow
 
 ```bash
-cp ~/Library/Application\ Support/com.mariodian.crabmonitor/dev/app.db ./drizzle/dev.db
+cp ~/Library/Application\ Support/com.mariodian.pincer/dev/app.db ./drizzle/dev.db
 # Edit src/bun/storage/sqlite/schema.ts
 bun run db:generate   # drizzle-kit diffs schema.ts against dev.db
 bun run dev           # applies pending migrations on startup
-cp ~/Library/Application\ Support/com.mariodian.crabmonitor/dev/app.db ./drizzle/dev.db
+cp ~/Library/Application\ Support/com.mariodian.pincer/dev/app.db ./drizzle/dev.db
 ```
 
 ### Rules

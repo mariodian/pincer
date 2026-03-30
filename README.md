@@ -1,11 +1,11 @@
 <div align="center">
-<h1>CrabMon</h1>
+<h1>Pincer</h1>
 </div>
 
 Desktop monitoring app for local AI and LLM agents with tray-first controls,
 status checks, and quick navigation.
 
-CrabMon is built with Electrobun and Bun for desktop runtime, Svelte 5 for UI,
+Pincer is built with Electrobun and Bun for desktop runtime, Svelte 5 for UI,
 and SQLite with Drizzle for persistence.
 
 ## Installation
@@ -77,7 +77,7 @@ bun run build:stable
 ## Known Limitations
 
 - Native vibrancy/traffic-light customization is only available on macOS.
-- On Windows and Linux, CrabMon runs normally without native macOS effects.
+- On Windows and Linux, Pincer runs normally without native macOS effects.
 - The custom-designed tray menu is currently macOS-only; Windows and Linux use
   the native tray menu fallback.
 - HMR for secondary windows requires Vite URL routing in development.

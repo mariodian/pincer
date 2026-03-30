@@ -171,7 +171,7 @@
     ]}
   >
     <span class="flex-2 font-semibold text-sm text-black/80 dark:text-white"
-      >Crab Monitor</span
+      >Pincer</span
     >
 
     {#if isRefreshing}
