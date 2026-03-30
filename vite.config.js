@@ -25,8 +25,7 @@ export default defineConfig({
       },
       output: {
         manualChunks: {
-          "layerchart": ["layerchart"],
-          "d3": ["d3-array", "d3-scale", "d3-shape"],
+          "layerchart-d3": ["layerchart", "d3-array", "d3-scale", "d3-shape"],
         },
       },
     },
