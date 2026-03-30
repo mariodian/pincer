@@ -5,6 +5,9 @@
 Desktop monitoring app for local AI and LLM agents with tray-first controls,
 status checks, and quick navigation.
 
+![pincer-dashboard](https://github.com/user-attachments/assets/01f8fae8-db1d-47f8-b0ee-a449f21f071c)
+
+
 Pincer is built with Electrobun and Bun for desktop runtime, Svelte 5 for UI,
 and SQLite with Drizzle for persistence.
 
