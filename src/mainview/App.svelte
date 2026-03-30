@@ -12,8 +12,8 @@
   import { TRAY_TITLE } from "../bun/config";
   import "./app.css";
 
-  const MAIN_WINDOW_MODE_STORAGE_KEY = "crab-main-window-mode";
-  const MAIN_WINDOW_THEME_STORAGE_KEY = "crab-main-window-theme";
+  const MAIN_WINDOW_MODE_STORAGE_KEY = "main-window-mode";
+  const MAIN_WINDOW_THEME_STORAGE_KEY = "main-window-theme";
 
   const routes = {
     "/": wrap({

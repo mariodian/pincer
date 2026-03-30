@@ -167,7 +167,7 @@
     <SwitchCard
       id="open-main-window"
       title="Open main window on startup"
-      description="Show the application window when CrabControl launches. If disabled, the app will run in the background and can be accessed from the system tray."
+      description="Show the application window when Pincer launches. If disabled, the app will run in the background and can be accessed from the system tray."
       checked={openMainWindow}
       onCheckedChange={handleMainWindowChange}
     />

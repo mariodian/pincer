@@ -11,8 +11,7 @@ export const POPOVER_WINDOW = { width: 250, height: 300 };
 export const APP_NAME = "Pincer";
 export const TRAY_TITLE = "Pincer";
 export const TRAY_ICON_PATH = "views://resources/tray-icon.webp";
-// export const TRAY_ICON_PATH = "views://resources/carapace-dark.svg";
 
 // LocalStorage keys
-export const KEY_AGENTS = "crabAgents";
-export const KEY_STATUSES = "crabAgentStatuses";
+export const KEY_AGENTS = "agents";
+export const KEY_STATUSES = "agents-statuses";

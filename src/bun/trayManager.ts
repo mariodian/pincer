@@ -53,7 +53,7 @@ const NAV_MENU_ITEMS = [
   { type: "divider" as const },
   {
     type: "normal" as const,
-    label: "Quit CrabMonitor",
+    label: "Quit Pincer",
     action: "quit",
     enabled: true,
   },

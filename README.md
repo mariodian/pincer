@@ -11,8 +11,8 @@ and SQLite with Drizzle for persistence.
 ## Installation
 
 ```bash
-git clone <your-repo-url>
-cd crabControl
+git clone https://github.com/mariodian/pincer.git
+cd pincer
 bun install
 ```
 
