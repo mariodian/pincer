@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [svelte({ configFile: false, ...svelteConfig }), tailwindcss()],
   resolve: {
     alias: {
+      $assets: resolve(__dirname, "src/mainview/assets"),
       $lib: resolve(__dirname, "src/mainview/lib"),
       $bun: resolve(__dirname, "src/bun"),
       $shared: resolve(__dirname, "src/shared"),

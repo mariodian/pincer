@@ -1,13 +1,12 @@
 <script lang="ts">
+  import logo from "$assets/logo.webp";
   import { APP_NAME } from "$bun/config";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import {
-    CrabIcon,
     DashboardSpeedIcon,
     RoboticIcon,
     SettingsIcon,
   } from "@hugeicons/core-free-icons";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
   import packageJson from "../../../../../package.json";
   import NavMain from "./NavMain.svelte";
   import NavSecondary from "./NavSecondary.svelte";
@@ -29,33 +28,40 @@
       <Sidebar.MenuItem>
         <div
           class={[
-            "flex w-full items-center gap-2 h-12 p-2",
-            "h-12 text-sm ",
+            "flex w-full items-center gap-2 px-1 mt-2 h-10",
+            "text-sm",
             "overflow-hidden outline-hidden",
-            "transition-[width,height,padding]",
-            "group-data-[collapsible=icon]:p-0!",
+            "group-data-[collapsible=icon]:p-1",
           ]}
         >
           <div
             class={[
-              "flex items-center justify-center",
-              "bg-sidebar-primary",
+              "flex items-center mr-1",
+              "transition-[width,height,margin]",
               "text-sidebar-primary-foreground",
-              "transition-[width,height,padding]",
               "aspect-square rounded-lg",
-              "size-10 group-data-[collapsible=icon]:size-8!",
+              "size-10 group-data-[collapsible=icon]:size-10!",
+              // "w-10 h-10",
             ]}
           >
-            <HugeiconsIcon
-              icon={CrabIcon}
-              strokeWidth={2}
+            <img
+              src={logo}
+              alt="Pincer Logo"
               class={[
                 "transition-[width,height,padding]",
-                "group-data-[collapsible=icon]:size-4!",
-              ].join(" ")}
+                "duration-200",
+                "group-data-[collapsible=icon]:size-6!",
+                "w-full h-full",
+              ]}
             />
           </div>
-          <div class="flex flex-col gap-0.2 leading-none">
+          <div
+            class={[
+              "flex flex-col gap-0.2 leading-none",
+              "duration-200 transition-opacity",
+              "group-data-[collapsible=icon]:opacity-0!",
+            ]}
+          >
             <span class="font-bold text-base">{APP_NAME}</span>
             <span
               class="text-xs text-sidebar-foreground/50 dark:text-sidebar-foreground/50"

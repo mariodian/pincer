@@ -7,6 +7,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "$assets": ["./src/mainview/assets"],
+      "$assets/*": ["./src/mainview/assets/*"],
       "$lib": ["./src/mainview/lib"],
       "$lib/*": ["./src/mainview/lib/*"],
       "$bun": ["./src/bun"],
