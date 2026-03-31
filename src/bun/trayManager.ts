@@ -1,5 +1,5 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
-import { BrowserWindow, Tray } from "electrobun/bun";
+import { BrowserWindow, Tray, Utils } from "electrobun/bun";
 import { sortAgentsByStatus } from "../shared/agent-helpers";
 import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
@@ -170,6 +170,8 @@ export async function initializeTray() {
         tray?.setTitle(` - Error!`);
         setTimeout(() => tray?.setTitle(``), 2000);
       }
+    } else if (action === "quit") {
+      Utils.quit();
     } else if (action && action.startsWith("agent:")) {
       // Agent menu item clicked
       const agentId = action.substring(6); // Remove "agent:" prefix

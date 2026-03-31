@@ -3,19 +3,7 @@ import { ApplicationMenu, BrowserWindow } from "electrobun/bun";
 export function setupMainWindowMenu(mainWindow: BrowserWindow) {
   ApplicationMenu.setApplicationMenu([
     {
-      submenu: [{ role: "quit" }],
-    },
-    {
-      label: "File",
-      submenu: [
-        {
-          label: "Close Window",
-          action: "close-main-window",
-          accelerator: "w",
-        },
-        { type: "separator" },
-        { role: "quit" },
-      ],
+      submenu: [{ label: "Quit Pincer", role: "quit", accelerator: "q" }],
     },
     {
       label: "Window",
