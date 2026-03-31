@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*" # Trigger on version tags like v0.1.0
+      - "v*"
 
 jobs:
   build-macos:
@@ -13,10 +13,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
       - run: bun install
       - run: bun run build:stable
-
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-macos
@@ -29,10 +27,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
       - run: bun install
       - run: bun run build:stable
-
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-windows
@@ -42,14 +38,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-
       - run: bun install
       - run: bun run build:stable
-
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-linux
@@ -61,12 +54,30 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: all-artifacts
           merge-multiple: true
 
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          body=$(awk "/^## \\[${version}\\]/{found=1; next} /^## \\[/{if(found) exit} found{print}" CHANGELOG.md)
+          echo "$body" > /tmp/release_notes.md
+          prev_version=$(awk "/^## \\[${version}\\]/{found=1; next} found && /^## \\[/{match(\$0, /\\[([^]]+)\\]/, m); print m[1]; exit}" CHANGELOG.md)
+          if [ -n "$prev_version" ]; then
+            echo "" >> /tmp/release_notes.md
+            echo "**Full Changelog:** https://github.com/${{ github.repository }}/compare/v${prev_version}...v${version}" >> /tmp/release_notes.md
+          fi
+
       - uses: softprops/action-gh-release@v2
         with:
           files: all-artifacts/*
-          generate_release_notes: true
+          body_path: /tmp/release_notes.md
