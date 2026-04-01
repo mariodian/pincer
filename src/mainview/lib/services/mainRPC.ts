@@ -3,8 +3,8 @@ import type { SettingsRPCType } from "$bun/rpc/settingsRPC";
 import type { StatsRPCType } from "$bun/rpc/statsRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import { syncAgentsToCache } from "$lib/utils/storage";
-import type { AgentStatus } from "$shared/types";
 import type { LogEntry } from "$shared/rpc";
+import type { AgentStatus } from "$shared/types";
 
 /** Composed RPC type: system + agent + settings + stats requests and messages. */
 export type MainRPCType = SystemRPCType &
@@ -116,8 +116,8 @@ export async function initMainRPC(handlers: {
       handlers: {
         requests: {},
         messages: {
-          navigateTo: ({ params }: { params: { path: string } }) =>
-            handlers.navigateTo(params),
+          navigateTo: ((params: { path: string }) =>
+            handlers.navigateTo(params)) as any,
           // syncAgents and pushLog are sent via rpc.send from the main process,
           // which passes the payload directly (not wrapped in { params: ... }).
           // The framework type expects { params: T } but runtime passes T.
