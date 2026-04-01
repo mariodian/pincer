@@ -29,8 +29,8 @@ export async function showMainWindow(page: string): Promise<void> {
     // Dynamic import to avoid circular dependency with index.ts
     const { createMainWindow } = await import("../index");
     win = await createMainWindow();
-    // views:// protocol can't handle hash fragments — store route for
-    // navigation via RPC once the renderer signals ready.
+    // Store route so notifyRendererReady can return it in the response,
+    // letting the renderer apply it before showing any content.
     pendingRoute = page;
   } else {
     // Existing window — loadURL works because the webview is already loaded

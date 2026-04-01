@@ -5,6 +5,19 @@ import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import { syncAgentsToCache } from "$lib/utils/storage";
 import type { LogEntry } from "$shared/rpc";
 import type { AgentStatus } from "$shared/types";
+import { writable } from "svelte/store";
+
+/**
+ * Set to true once notifyRendererReady has resolved. App.svelte gates Router
+ * rendering on this to prevent a dashboard blip when reopening to another route.
+ */
+export const rpcReady = writable(false);
+
+/**
+ * Route to navigate to when the router first mounts (set during tray reopening
+ * so the / catch-all can push to the correct page instead of /dashboard).
+ */
+export const pendingNavigationRoute = writable<string | null>(null);
 
 /** Composed RPC type: system + agent + settings + stats requests and messages. */
 export type MainRPCType = SystemRPCType &

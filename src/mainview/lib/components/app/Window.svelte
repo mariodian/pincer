@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { getMainRPC, initMainRPC } from "$lib/services/mainRPC";
+  import {
+    getMainRPC,
+    initMainRPC,
+    pendingNavigationRoute,
+    rpcReady,
+  } from "$lib/services/mainRPC";
   import { userPrefersMode } from "mode-watcher";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
@@ -54,6 +59,7 @@
 
     // Skip RPC wiring in plain Vite/browser mode.
     if (!hasElectrobunRuntime) {
+      rpcReady.set(true);
       return;
     }
 
@@ -66,7 +72,16 @@
         });
 
         const rpc = getMainRPC();
-        await rpc.request.notifyRendererReady({ view: "main" });
+        const { initialRoute } = await rpc.request.notifyRendererReady({
+          view: "main",
+        });
+
+        // Store the pending route so the router's / catch-all can push to
+        // the correct page when it first mounts (instead of defaulting to /dashboard).
+        if (initialRoute) {
+          pendingNavigationRoute.set(initialRoute);
+        }
+        rpcReady.set(true);
 
         const result = await rpc.request.getPlatform({});
         if (isDisposed) {
@@ -116,6 +131,7 @@
         };
       } catch (e) {
         console.error("Electrobun platform init failed:", e);
+        rpcReady.set(true);
       }
     })();
 

@@ -6,6 +6,7 @@
   import Dashboard from "$lib/pages/Dashboard.svelte";
   import Settings from "$lib/pages/Settings.svelte";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
   import Router, { replace, router } from "@bmlt-enabled/svelte-spa-router";
   import wrap from "@bmlt-enabled/svelte-spa-router/wrap";
   import { ModeWatcher } from "mode-watcher";
@@ -20,7 +21,12 @@
       component: Dashboard,
       conditions: [
         () => {
-          replace("/dashboard");
+          let route: string | null = null;
+          pendingNavigationRoute.update((r) => {
+            route = r;
+            return null;
+          });
+          replace(route ? `/${route}` : "/dashboard");
           return false;
         },
       ],
@@ -47,19 +53,21 @@
     modeStorageKey={MAIN_WINDOW_MODE_STORAGE_KEY}
     themeStorageKey={MAIN_WINDOW_THEME_STORAGE_KEY}
   />
-  <Sidebar.Provider>
-    <AppSidebar />
-    <main
-      data-slot="content"
-      class={[
-        "w-full m-1.5 py-5 px-4",
-        "rounded-xl",
-        "shadow-xs shadow-black/10 dark:shadow-none",
-      ]}
-    >
-      <Router {routes} />
-    </main>
-  </Sidebar.Provider>
+  {#if $rpcReady}
+    <Sidebar.Provider>
+      <AppSidebar />
+      <main
+        data-slot="content"
+        class={[
+          "w-full m-1.5 py-5 px-4",
+          "rounded-xl",
+          "shadow-xs shadow-black/10 dark:shadow-none",
+        ]}
+      >
+        <Router {routes} />
+      </main>
+    </Sidebar.Provider>
+  {/if}
 </Window>
 
 <style>

@@ -1,10 +1,11 @@
 // System RPC - Shared RPC definition for system info
 import { BrowserView } from "electrobun/bun";
-import { getPlatform } from "../utils/platform";
 import {
   setMacOSWindowAppearance,
   type WindowAppearance,
 } from "../utils/macOSWindowEffects";
+import { clearPendingRoute, getPendingRoute } from "../utils/navigation";
+import { getPlatform } from "../utils/platform";
 
 type RendererView = "main";
 type RendererReadyCallback = (params: {
@@ -30,7 +31,7 @@ export type SystemRPCType = {
       };
       notifyRendererReady: {
         params: { view: RendererView };
-        response: { ok: boolean };
+        response: { ok: boolean; initialRoute: string | null };
       };
     };
     messages: Record<string, never>;
@@ -67,11 +68,16 @@ export const systemRequestHandlers = {
     };
   },
   notifyRendererReady: async ({ view }: { view: RendererView }) => {
+    // Consume pending route before firing the callback so the response
+    // reaches the renderer before any side-effects happen.
+    const initialRoute = getPendingRoute();
+    clearPendingRoute();
+
     if (onRendererReady) {
       await onRendererReady({ view });
     }
 
-    return { ok: true };
+    return { ok: true, initialRoute };
   },
 };
 

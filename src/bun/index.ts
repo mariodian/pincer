@@ -8,7 +8,7 @@ import {
   systemRPC,
   systemRequestHandlers,
 } from "./rpc/systemRPC";
-import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
+import { setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
 import { initLogger, logger } from "./services/loggerService";
 import { beginStatusUpdates } from "./services/statusService";
@@ -16,7 +16,6 @@ import { getSettings } from "./storage/sqlite/settingsRepo";
 import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { isMacOS } from "./utils/platform";
-import { clearPendingRoute, getPendingRoute } from "./utils/navigation";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
@@ -136,21 +135,6 @@ Utils.setDockIconVisible(false);
 
 setRendererReadyCallback(({ view }) => {
   if (view === "main") {
-    // If a route was requested while the window was being created,
-    // navigate now that the renderer RPC is ready.
-    const route = getPendingRoute();
-    if (route) {
-      clearPendingRoute();
-      try {
-        const rpc = getMainWindow()?.webview.rpc as {
-          send?: { navigateTo?: (data: { path: string }) => void };
-        } | null;
-        rpc?.send?.navigateTo?.({ path: `/${route}` });
-      } catch {
-        // Window may be closing — fail silently
-      }
-    }
-
     void syncAgentsFromKnownStatuses(false);
     void beginStatusUpdates();
   }
