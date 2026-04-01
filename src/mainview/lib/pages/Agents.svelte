@@ -25,10 +25,12 @@
   }
 </script>
 
-{#if view === "add"}
-  <AgentForm {prevPath} {currentPath} onNavigate={navigate} />
-{:else if view === "edit" && agentId !== undefined}
-  <AgentForm {prevPath} {currentPath} {agentId} onNavigate={navigate} />
-{:else}
-  <AgentList {prevPath} {currentPath} onNavigate={navigate} />
-{/if}
+{#key currentPath}
+  {#if view === "add"}
+    <AgentForm {prevPath} {currentPath} onNavigate={navigate} />
+  {:else if view === "edit" && agentId !== undefined}
+    <AgentForm {prevPath} {currentPath} {agentId} onNavigate={navigate} />
+  {:else}
+    <AgentList {prevPath} {currentPath} onNavigate={navigate} />
+  {/if}
+{/key}
