@@ -36,6 +36,7 @@
     "@types/d3-array": "^3.2.2",
     "@types/d3-scale": "^4.0.9",
     "@types/d3-shape": "^3.1.8",
+    "@types/three": "^0.183.1",
     "bits-ui": "^2.16.3",
     "clsx": "^2.1.1",
     "concurrently": "^9.1.0",
