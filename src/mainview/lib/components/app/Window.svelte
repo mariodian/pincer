@@ -51,18 +51,6 @@
     let isDisposed = false;
     let stopThemeSync = () => {};
 
-    // Electrobun injects webview/socket identifiers used by Electroview transport.
-    const hasElectrobunRuntime =
-      typeof window !== "undefined" &&
-      typeof (window as any).__electrobunWebviewId !== "undefined" &&
-      typeof (window as any).__electrobunRpcSocketPort !== "undefined";
-
-    // Skip RPC wiring in plain Vite/browser mode.
-    if (!hasElectrobunRuntime) {
-      rpcReady.set(true);
-      return;
-    }
-
     void (async () => {
       try {
         await initMainRPC({
