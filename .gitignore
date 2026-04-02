@@ -1,7 +1,17 @@
+# Dependencies
 node_modules/
+
+# Build artifacts
 dist/
 build/
 artifacts/
+
+# Local database
 drizzle/dev.db
+
+# Native build output
 libMacWindowEffects.dylib
+
+# Local tooling temp/state
 .tmp/
+.opencode
