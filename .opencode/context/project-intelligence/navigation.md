@@ -1,16 +1,25 @@
-<!-- Context: project-intelligence/navigation | Priority: critical | Version: 1.1 | Updated: 2026-03-29 -->
+<!-- Context: project-intelligence/navigation | Priority: critical | Version: 1.2 | Updated: 2026-04-02 -->
 
 # Project Intelligence
 
 **Purpose**: Quick reference for all project context files.
-**Last Updated**: 2026-03-29
 
 ## Quick Routes
+
 | File | Description | Priority |
 |------|-------------|----------|
-| technical-domain.md | Tech stack, patterns, naming, standards, security | critical |
+| concepts/tech-stack.md | Technology overview and key configs | critical |
+| examples/code-patterns.md | RPC, component, and import examples | critical |
+| lookup/naming-conventions.md | File, variable, type naming rules | critical |
+| lookup/code-standards.md | Code rules and security requirements | critical |
+| guides/getting-started.md | Orientation, directory map, build setup | high |
 
-## Deep Dives
-| File | Description | When to Use |
-|------|-------------|-------------|
-| technical-domain.md | Full technical patterns | Building features, reviewing code |
+## By Task
+
+| Task | Read First |
+|------|------------|
+| Building features | examples/code-patterns.md, lookup/code-standards.md |
+| Naming things | lookup/naming-conventions.md |
+| Security review | lookup/code-standards.md |
+| Architecture overview | concepts/tech-stack.md |
+| Onboarding | guides/getting-started.md |
