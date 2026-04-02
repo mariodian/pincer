@@ -173,10 +173,8 @@ export async function initializeTray() {
     } else if (action === "quit") {
       Utils.quit();
     } else if (action && action.startsWith("agent:")) {
-      // Agent menu item clicked
-      const agentId = action.substring(6); // Remove "agent:" prefix
-      // Could open agent URL or show details
-      logger.debug("tray", `Agent clicked: ${agentId}`);
+      const agentId = action.substring(6);
+      await showMainWindow(`agents/${agentId}`);
     }
   });
 
