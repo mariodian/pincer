@@ -63,18 +63,41 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Extract changelog for this version
         id: changelog
         run: |
           version="${{ steps.version.outputs.version }}"
-          body=$(awk "/^## \\[${version}\\]/{found=1; next} /^## \\[/{if(found) exit} found{print}" CHANGELOG.md)
+          body=$(awk -v v="$version" '
+            BEGIN { target = "## [" v "]" }
+            $0 == target { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$body" ]; then
+            echo "Changelog entry not found for $version" >&2
+            exit 1
+          fi
+
           echo "$body" > /tmp/release_notes.md
-          prev_version=$(awk "/^## \\[${version}\\]/{found=1; next} found && /^## \\[/{match(\$0, /\\[([^]]+)\\]/, m); print m[1]; exit}" CHANGELOG.md)
+
+          prev_version=$(awk -v v="$version" '
+            BEGIN { target = "## [" v "]" }
+            $0 == target { found = 1; next }
+            found && /^## \[/ {
+              line = $0
+              sub(/^## \[/, "", line)
+              sub(/\].*$/, "", line)
+              print line
+              exit
+            }
+          ' CHANGELOG.md)
+
           if [ -n "$prev_version" ]; then
             echo "" >> /tmp/release_notes.md
-            echo "**Full Changelog:** https://github.com/${{ github.repository }}/compare/v${prev_version}...v${version}" >> /tmp/release_notes.md
+            echo "**Full Changelog:** https://github.com/${{ github.repository }}/compare/${prev_version}...${version}" >> /tmp/release_notes.md
           fi
 
       - uses: softprops/action-gh-release@v2
