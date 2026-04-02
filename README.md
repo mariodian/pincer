@@ -1,14 +1,43 @@
 <div align="center">
+  <img width="128" height="128" alt="Pincer Icon" src="https://github.com/user-attachments/assets/b72ccc50-db88-4aae-9c32-12d80567ca3e" />
 <h1>Pincer</h1>
+
+![Status](https://img.shields.io/badge/status-alpha-red)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 </div>
 
-Desktop monitoring app for local AI and LLM agents with tray-first controls,
-status checks, and quick navigation.
+<p>Desktop monitoring app for local AI and LLM agents. Gives you tray-first visibility into agent health, real-time status, and historical charts — all without leaving your workflow.</p>
+
+## Why Pincer?
+
+Running multiple local AI agents means constantly switching between terminals and browser tabs just to check what's healthy and what's not. Pincer lives in your system tray and gives you instant visibility into agent health, status history, and usage charts — no context switching required.
 
 ![pincer-dashboard](https://github.com/user-attachments/assets/30b3deb8-c5d4-4ceb-b7d2-6a121e787df0)
 
-Pincer is built with Electrobun and Bun for desktop runtime, Svelte 5 for UI,
-and SQLite with Drizzle for persistence.
+## Features
+
+- **Tray-first visibility** — check agent health at a glance from your system tray
+- **Health monitoring** — real-time status indicators for each running agent
+- **Charts & history** — visualize agent activity and health trends over time
+- **Persistent storage** — activity logged locally with SQLite via Drizzle ORM
+- **Cross-platform** — runs on macOS, Windows, and Linux (native effects on macOS)
+
+## Supported Agents
+
+Pincer is tested with the following local AI agent runtimes:
+
+- [OpenClaw](https://github.com/openclaw/openclaw)
+- [OpenCrabs](https://github.com/adolfousier/opencrabs)
+
+It also supports custom agents that expose HTTP endpoints for health and activity data.
+
+> If you've tested Pincer with another agent, feel free to open a PR to add it here.
+
+## Tech Stack
+
+Pincer is built with Electrobun and Bun for desktop runtime, Svelte 5 for UI, and SQLite with Drizzle for persistence.
 
 ## Installation
 
@@ -18,15 +47,21 @@ cd pincer
 bun install
 ```
 
+## Requirements
+
+- [Bun](https://bun.sh) v1.0+
+- macOS 13+, Windows 10+, or Linux (GTK3)
+- Xcode Command Line Tools (macOS only, required for native vibrancy effects)
+
 ## Configuration
 
 No required environment setup is needed for local development by default.
 
 If you customize runtime behavior, keep these areas in sync:
 
-- App constants in src/bun/config.ts
-- Window behavior in src/bun/windowService.ts
-- Database schema in src/bun/storage/sqlite/schema.ts
+- App constants in `src/bun/config.ts`
+- Window behavior in `src/bun/windowService.ts`
+- Database schema in `src/bun/storage/sqlite/schema.ts`
 
 After schema changes:
 
@@ -60,75 +95,52 @@ bun run build:stable
 
 ## Scripts
 
-- bun run dev: Format, build native effects + renderer + app, then run Electrobun dev.
-- bun run dev:hmr: Run Vite HMR and Electrobun dev concurrently.
-- bun run hmr: Start Vite on port 5173.
-- bun run build:native-effects: Compile macOS native dylib.
-- bun run build: Format + build native effects + Vite + Electrobun.
-- bun run build:canary: Rebuild native assets and renderer, then package the canary environment.
-- bun run build:stable: Rebuild native assets and renderer, then package the stable environment.
-- bun run db:generate: Generate Drizzle migrations.
-- bun run db:push: Push schema to SQLite database.
-- bun run db:studio: Open Drizzle Studio.
+| Command                        | Description                                                            |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `bun run dev`                  | Format, build native effects + renderer + app, then run Electrobun dev |
+| `bun run dev:hmr`              | Run Vite HMR and Electrobun dev concurrently                           |
+| `bun run hmr`                  | Start Vite on port 5173                                                |
+| `bun run build`                | Format + build native effects + Vite + Electrobun                      |
+| `bun run build:canary`         | Rebuild native assets and renderer, then package canary                |
+| `bun run build:stable`         | Rebuild native assets and renderer, then package stable                |
+| `bun run build:native-effects` | Compile macOS native dylib                                             |
+| `bun run db:generate`          | Generate Drizzle migrations                                            |
+| `bun run db:push`              | Push schema to SQLite database                                         |
+| `bun run db:studio`            | Open Drizzle Studio                                                    |
+| `bun run typecheck`            | Run TypeScript type checking                                           |
 
-## Requirements
+## Project Structure
 
-- Bun
-- Supported desktop platform (macOS, Windows, or Linux)
+src/bun/ # Main process, tray, window management, RPC, storage
+src/mainview/ # Svelte renderer app and pages
+src/shared/ # Shared types for main and renderer communication
+native/macos/ # Objective-C++ native window effects
+scripts/ # Build helper scripts
+drizzle/ # Migration files
 
 ## Known Limitations
 
-- Native vibrancy/traffic-light customization is only available on macOS.
-- On Windows and Linux, Pincer runs normally without native macOS effects.
-- The custom-designed tray menu is currently macOS-only; Windows and Linux use
-  the native tray menu fallback.
-- HMR for secondary windows requires Vite URL routing in development.
+- Native vibrancy and traffic-light customization is macOS-only
+- The custom tray menu is macOS-only; Windows and Linux fall back to the native tray
+- HMR for secondary windows requires Vite URL routing in development
 
-## Development
+## Troubleshooting
 
-### Type Checking
-
-```bash
-bun run typecheck
-```
-
-### Database Workflow
-
-```bash
-bun run db:generate
-bun run db:push
-bun run db:studio
-```
-
-### Native macOS Effects
+**Native dylib missing**
 
 ```bash
 bun run build:native-effects
 ```
 
-If native libraries are missing, the app logs a warning and continues with
-fallback behavior.
+**HMR not updating in secondary windows**
+Verify dev windows use `http://localhost:5173/...` URLs.
 
-These effects are optional and do not affect normal app functionality on
-Windows or Linux.
+**Weak vibrancy on macOS**
+Check _System Settings → Accessibility → Reduce transparency_ and ensure it is disabled.
 
-### Project Structure
+## Contributing
 
-- src/bun/: Main process, tray, window management, RPC, storage.
-- src/mainview/: Svelte renderer app and pages.
-- src/shared/: Shared types for main and renderer communication.
-- native/macos/: Objective-C++ native window effects.
-- scripts/: Build helper scripts.
-- drizzle/: Migration files.
-
-## Troubleshooting
-
-- Native dylib missing:
-  Run bun run build:native-effects.
-- HMR not updating in secondary windows:
-  Verify dev windows use http://localhost:5173/... URLs.
-- Weak vibrancy:
-  Check macOS Accessibility setting Reduce transparency.
+Issues and PRs are welcome. For larger changes, open an issue first to discuss the approach.
 
 ## License
 
