@@ -41,7 +41,7 @@ const NAV_MENU_ITEMS = [
   {
     type: "normal" as const,
     label: "Configure Agents",
-    action: "configure",
+    action: "configure-agents",
     enabled: true,
   },
   {
@@ -149,16 +149,11 @@ export async function initializeTray() {
         });
       }
     } else if (
-      action === "configure" ||
+      action === "configure-agents" ||
       action === "dashboard" ||
       action === "settings"
     ) {
-      const route =
-        action === "configure"
-          ? "agents"
-          : action === "dashboard"
-            ? "dashboard"
-            : action;
+      const route = action === "configure-agents" ? "agents" : action;
       await showMainWindow(route);
     } else if (action === "refresh") {
       // Refresh menu item clicked - show feedback in title
