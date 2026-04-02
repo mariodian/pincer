@@ -1,6 +1,6 @@
 {
   "name": "electrobun-svelte-tailwind-vite",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "Electrobun app with Svelte, Tailwind CSS, and Vite HMR",
   "type": "module",
   "scripts": {

@@ -4,6 +4,37 @@ All notable changes to Pincer will be documented in this file.
 
 The format is based on "Keep a Changelog" — https://keepachangelog.com/en/1.0.0/
 
+## [v0.1.0] - 2026-04-03
+
+### Added
+
+- **Agent editing:** Implemented save support in the agent form.
+- **RPC/settings:** Added `maxRequestTime` in shared RPC definitions and implemented `getSettings` handling.
+- **Observability:** Added broader application logging, including error logging in RPC handlers and status sync.
+
+### Changed
+
+- **Routing:** Improved initial-route and pending-route handling to make renderer startup/navigation more reliable.
+- **UI behavior:** Updated tray interaction so agent clicks open/show the main window.
+- **Menu system:** Refactored application/tray menu flows and improved configuration action labeling.
+- **Runtime init:** Simplified RPC initialization by removing Electrobun runtime checks.
+- **Settings UI:** Removed the privacy tab and related content from settings.
+
+### Fixed
+
+- **Agents page reactivity:** Wrapped conditional rendering in a keyed block to improve update behavior.
+- **Type issues:** Corrected type import ordering and `navigateTo` casting in main RPC initialization.
+
+### Removed
+
+- **Project artifacts:** Removed `.opencode` project-specific files and added ignore rules.
+
+### Documentation
+
+- **Docs refresh:** Updated project docs (`AGENTS.md`) and expanded repository documentation sections.
+- **Release automation:** Updated release workflow to extract and publish changelog notes.
+- **Changelog tooling:** Added changelog generator skill and initial changelog tracking.
+
 ## [v0.0.9] - 2026-03-31
 
 ### Added
