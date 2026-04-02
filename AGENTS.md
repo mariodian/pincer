@@ -1,4 +1,4 @@
-# CrabControl Agent Guidelines
+# Pincer Agent Guidelines
 
 > **Important:** This is an **Electrobun** desktop app (NOT Electron). Do not use Electron APIs or patterns.
 > Full Electrobun API reference: https://blackboard.sh/electrobun/llms.txt

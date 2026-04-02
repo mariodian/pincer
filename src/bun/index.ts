@@ -150,4 +150,4 @@ if (getSettings().openMainWindow) {
   await createMainWindow();
 }
 
-logger.info("app", "CrabControl started!");
+logger.info("app", "Pincer started!");
