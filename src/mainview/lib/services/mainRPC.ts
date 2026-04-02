@@ -61,6 +61,7 @@ let callbackKeyCounter = 0;
 
 // Log storage for pushed log entries (warn/error from main process)
 const logMessages: LogEntry[] = [];
+const SAVE_AGENT_FORM_EVENT = "pincer:save-agent-form";
 
 /** Get all pushed log messages. For future UI consumption. */
 export function getLogMessages(): readonly LogEntry[] {
@@ -70,6 +71,29 @@ export function getLogMessages(): readonly LogEntry[] {
 /** Clear all pushed log messages. */
 export function clearLogMessages(): void {
   logMessages.length = 0;
+}
+
+export function triggerAgentFormSave(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new CustomEvent(SAVE_AGENT_FORM_EVENT));
+}
+
+export function onAgentFormSave(callback: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handler = () => {
+    callback();
+  };
+
+  window.addEventListener(SAVE_AGENT_FORM_EVENT, handler);
+  return () => {
+    window.removeEventListener(SAVE_AGENT_FORM_EVENT, handler);
+  };
 }
 
 /** Subscribe to agent data sync events. Returns the key to pass to offAgentSync. */
@@ -131,6 +155,9 @@ export async function initMainRPC(handlers: {
         messages: {
           navigateTo: ((params: { path: string }) =>
             handlers.navigateTo(params)) as any,
+          requestSaveAgentForm: (() => {
+            triggerAgentFormSave();
+          }) as any,
           // syncAgents and pushLog are sent via rpc.send from the main process,
           // which passes the payload directly (not wrapped in { params: ... }).
           // The framework type expects { params: T } but runtime passes T.

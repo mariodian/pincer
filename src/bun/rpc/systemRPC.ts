@@ -40,6 +40,7 @@ export type SystemRPCType = {
     requests: Record<string, never>;
     messages: {
       navigateTo: { params: { path: string }; response: void };
+      requestSaveAgentForm: { params: undefined; response: void };
       pushLog: {
         params: {
           level: "warn" | "error";
@@ -87,6 +88,9 @@ export const systemRPC = BrowserView.defineRPC<SystemRPCType>({
     messages: {
       navigateTo: () => {
         // Navigation is handled in the webview (App.svelte)
+      },
+      requestSaveAgentForm: () => {
+        // Save form handling is implemented in the webview (mainRPC.ts)
       },
       pushLog: () => {
         // Log push is handled in the webview (mainRPC.ts)

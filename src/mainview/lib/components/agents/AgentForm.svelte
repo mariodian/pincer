@@ -6,9 +6,14 @@
   import * as Select from "$lib/components/ui/select";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { SwitchCard } from "$lib/components/ui/switch-card";
-  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import {
+    getMainRPC,
+    onAgentFormSave,
+    whenReady,
+  } from "$lib/services/mainRPC";
   import { normalizeUrl } from "$shared/agent-helpers";
   import type { Agent } from "$shared/types";
+  import { onMount } from "svelte";
 
   interface Props {
     agentId?: number;
@@ -38,6 +43,7 @@
   let saving = $state(false);
   let errors = $state<Record<string, string>>({});
   let loadError = $state("");
+  let formElement = $state<HTMLFormElement | null>(null);
 
   type AgentTypeInfo = {
     id: string;
@@ -209,6 +215,16 @@
       saving = false;
     }
   }
+
+  onMount(() => {
+    return onAgentFormSave(() => {
+      if (loading || saving || !formElement) {
+        return;
+      }
+
+      formElement.requestSubmit();
+    });
+  });
 </script>
 
 <div class="flex flex-col h-full max-w-lg">
@@ -250,7 +266,7 @@
         </div>
       </div>
     {:else}
-      <form onsubmit={handleSubmit} class="space-y-5">
+      <form bind:this={formElement} onsubmit={handleSubmit} class="space-y-5">
         {#if errors.form}
           <div
             class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
