@@ -8,6 +8,7 @@ import {
   DEFAULT_RETRY_DELAY_MS,
 } from "../utils/windowBroadcaster";
 import { readAgents } from "./agentService";
+import { logger } from "./loggerService";
 
 type BroadcastTargets = {
   popoverWindow?: BrowserWindow | null;
@@ -90,23 +91,28 @@ export class StatusSyncService {
    * This is the main synchronization method used by most callers.
    */
   async sync(options: SyncOptions = {}): Promise<void> {
-    const { updateMenu = true, retry = {} } = options;
+    try {
+      const { updateMenu = true, retry = {} } = options;
 
-    const agents = await readAgents();
-    const merged = mergeAgentsWithStatuses(
-      agents,
-      Array.from(this.agentStatusMap.values()),
-    );
+      const agents = await readAgents();
+      const merged = mergeAgentsWithStatuses(
+        agents,
+        Array.from(this.agentStatusMap.values()),
+      );
 
-    // Broadcast to windows
-    await broadcastSyncAgents(merged, this.getTargets(), {
-      mainWindowRetryAttempts: retry.attempts ?? DEFAULT_RETRY_ATTEMPTS,
-      mainWindowRetryDelayMs: retry.delayMs ?? DEFAULT_RETRY_DELAY_MS,
-    });
+      // Broadcast to windows
+      await broadcastSyncAgents(merged, this.getTargets(), {
+        mainWindowRetryAttempts: retry.attempts ?? DEFAULT_RETRY_ATTEMPTS,
+        mainWindowRetryDelayMs: retry.delayMs ?? DEFAULT_RETRY_DELAY_MS,
+      });
 
-    // Refresh native tray menu
-    if (updateMenu && this.onMenuUpdate) {
-      this.onMenuUpdate();
+      // Refresh native tray menu
+      if (updateMenu && this.onMenuUpdate) {
+        this.onMenuUpdate();
+      }
+    } catch (error) {
+      logger.error("statusSync", "Failed to sync agents:", error);
+      throw error;
     }
   }
 
@@ -117,17 +123,23 @@ export class StatusSyncService {
   async pushKnownStatuses(options?: {
     retry?: { attempts?: number; delayMs?: number };
   }): Promise<void> {
-    const agents = await readAgents();
-    const merged = mergeAgentsWithStatuses(
-      agents,
-      Array.from(this.agentStatusMap.values()),
-    );
+    try {
+      const agents = await readAgents();
+      const merged = mergeAgentsWithStatuses(
+        agents,
+        Array.from(this.agentStatusMap.values()),
+      );
 
-    await broadcastSyncAgents(merged, this.getTargets(), {
-      mainWindowRetryAttempts:
-        options?.retry?.attempts ?? DEFAULT_RETRY_ATTEMPTS,
-      mainWindowRetryDelayMs: options?.retry?.delayMs ?? DEFAULT_RETRY_DELAY_MS,
-    });
+      await broadcastSyncAgents(merged, this.getTargets(), {
+        mainWindowRetryAttempts:
+          options?.retry?.attempts ?? DEFAULT_RETRY_ATTEMPTS,
+        mainWindowRetryDelayMs:
+          options?.retry?.delayMs ?? DEFAULT_RETRY_DELAY_MS,
+      });
+    } catch (error) {
+      logger.error("statusSync", "Failed to push known statuses:", error);
+      throw error;
+    }
   }
 
   /**

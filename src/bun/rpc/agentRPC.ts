@@ -14,6 +14,7 @@ import {
   updateAgent,
 } from "../services/agentService";
 import { getStatusSyncService } from "../services/statusSyncService";
+import { logger } from "../services/loggerService";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;
@@ -76,14 +77,24 @@ export function setAgentMutationCallback(cb: AgentMutationCallback) {
 
 export const agentRequestHandlers = {
   getAgents: async () => {
-    return await readAgents();
+    try {
+      return await readAgents();
+    } catch (error) {
+      logger.error("agentRPC", "Failed to get agents:", error);
+      throw error;
+    }
   },
   getAgentTypes: async () => {
-    const types = getAgentTypeList();
-    return types.map((t) => ({
-      ...t,
-      statusShapeOptions: t.id === "custom" ? [...STATUS_SHAPE_OPTIONS] : [],
-    }));
+    try {
+      const types = getAgentTypeList();
+      return types.map((t) => ({
+        ...t,
+        statusShapeOptions: t.id === "custom" ? [...STATUS_SHAPE_OPTIONS] : [],
+      }));
+    } catch (error) {
+      logger.error("agentRPC", "Failed to get agent types:", error);
+      throw error;
+    }
   },
   addAgent: async ({
     type,
@@ -94,57 +105,82 @@ export const agentRequestHandlers = {
     healthEndpoint,
     statusShape,
   }: Omit<Agent, "id">) => {
-    const result = await addAgent({
-      type,
-      name,
-      url,
-      port,
-      enabled,
-      healthEndpoint,
-      statusShape,
-    });
+    try {
+      const result = await addAgent({
+        type,
+        name,
+        url,
+        port,
+        enabled,
+        healthEndpoint,
+        statusShape,
+      });
 
-    const sync = getStatusSyncService();
-    if (result.enabled === false) {
-      sync.markAgentOffline(result.id);
-      await sync.sync();
-    } else {
-      const status = await checkOneAgentStatus(result.id);
-      if (status) await sync.pushOneStatus(status);
-    }
-
-    if (onAgentMutation) onAgentMutation();
-    return result;
-  },
-  updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
-    const result = await updateAgent(id, updates);
-
-    if (result) {
       const sync = getStatusSyncService();
-      if (updates.enabled === false) {
-        sync.markAgentOffline(id);
+      if (result.enabled === false) {
+        sync.markAgentOffline(result.id);
         await sync.sync();
-      } else if (
-        updates.enabled === true ||
-        shouldTriggerHealthCheck(updates)
-      ) {
-        const status = await checkOneAgentStatus(id);
+      } else {
+        const status = await checkOneAgentStatus(result.id);
         if (status) await sync.pushOneStatus(status);
       }
-    }
 
-    if (onAgentMutation) onAgentMutation();
-    return result;
+      if (onAgentMutation) onAgentMutation();
+      return result;
+    } catch (error) {
+      logger.error("agentRPC", "Failed to add agent:", error);
+      throw error;
+    }
+  },
+  updateAgent: async ([id, updates]: [number, Partial<Agent>]) => {
+    try {
+      const result = await updateAgent(id, updates);
+
+      if (result) {
+        const sync = getStatusSyncService();
+        if (updates.enabled === false) {
+          sync.markAgentOffline(id);
+          await sync.sync();
+        } else if (
+          updates.enabled === true ||
+          shouldTriggerHealthCheck(updates)
+        ) {
+          const status = await checkOneAgentStatus(id);
+          if (status) await sync.pushOneStatus(status);
+        }
+      }
+
+      if (onAgentMutation) onAgentMutation();
+      return result;
+    } catch (error) {
+      logger.error("agentRPC", "Failed to update agent:", error);
+      throw error;
+    }
   },
   deleteAgent: async (id: number) => {
-    const result = await deleteAgent(id);
-    if (onAgentMutation) onAgentMutation();
-    return result;
+    try {
+      const result = await deleteAgent(id);
+      if (onAgentMutation) onAgentMutation();
+      return result;
+    } catch (error) {
+      logger.error("agentRPC", "Failed to delete agent:", error);
+      throw error;
+    }
   },
   checkAllAgentsStatus: async () => {
-    return await checkAllAgentsStatus();
+    try {
+      return await checkAllAgentsStatus();
+    } catch (error) {
+      logger.error("agentRPC", "Failed to check all agents status:", error);
+      throw error;
+    }
   },
   checkOneAgentStatus: async (id: number) => {
-    return await checkOneAgentStatus(id);
+    try {
+      return await checkOneAgentStatus(id);
+    } catch (error) {
+      logger.error("agentRPC", "Failed to check agent status:", error);
+      throw error;
+    }
   },
 };

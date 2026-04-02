@@ -3,6 +3,7 @@ import { BrowserView, Utils } from "electrobun/bun";
 import { readAgents } from "../services/agentService";
 import { showMainWindow } from "../utils/navigation";
 import type { TrayPopoverRPCType } from "../../shared/rpc";
+import { logger } from "../services/loggerService";
 
 type RefreshCallback = () => void;
 let onRefreshRequested: RefreshCallback | null = null;
@@ -27,21 +28,54 @@ async function getAgentsWithStatus() {
 export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
   handlers: {
     requests: {
-      getAgents: getAgentsWithStatus,
-      checkAllAgentsStatus: getAgentsWithStatus,
+      getAgents: async () => {
+        try {
+          return await getAgentsWithStatus();
+        } catch (error) {
+          logger.error("trayPopoverRPC", "Failed to get agents:", error);
+          throw error;
+        }
+      },
+      checkAllAgentsStatus: async () => {
+        try {
+          return await getAgentsWithStatus();
+        } catch (error) {
+          logger.error(
+            "trayPopoverRPC",
+            "Failed to check all agents status:",
+            error,
+          );
+          throw error;
+        }
+      },
       openMainWindow: async ({ page }) => {
-        await showMainWindow(page);
-        return true;
+        try {
+          await showMainWindow(page);
+          return true;
+        } catch (error) {
+          logger.error("trayPopoverRPC", "Failed to open main window:", error);
+          throw error;
+        }
       },
       quit: () => {
-        Utils.quit();
-        return true;
+        try {
+          Utils.quit();
+          return true;
+        } catch (error) {
+          logger.error("trayPopoverRPC", "Failed to quit:", error);
+          throw error;
+        }
       },
       requestRefresh: async () => {
-        if (onRefreshRequested) {
-          onRefreshRequested();
+        try {
+          if (onRefreshRequested) {
+            onRefreshRequested();
+          }
+          return true;
+        } catch (error) {
+          logger.error("trayPopoverRPC", "Failed to request refresh:", error);
+          throw error;
         }
-        return true;
       },
     },
     messages: {},

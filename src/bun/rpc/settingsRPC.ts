@@ -5,6 +5,7 @@ import {
 } from "../storage/sqlite/settingsRepo";
 import type { Settings } from "../../shared/types";
 import { restartStatusUpdates } from "../services/statusService";
+import { logger } from "../services/loggerService";
 
 export type SettingsRPCType = {
   bun: {
@@ -28,13 +29,23 @@ export type SettingsRPCType = {
 
 export const settingsRequestHandlers = {
   getSettings: async () => {
-    return getSettingsFromDb();
+    try {
+      return getSettingsFromDb();
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to get settings:", error);
+      throw error;
+    }
   },
   updateSettings: async (partial: Partial<Settings>) => {
-    updateSettingsToDb(partial);
+    try {
+      updateSettingsToDb(partial);
 
-    if (partial.pollingInterval !== undefined) {
-      await restartStatusUpdates();
+      if (partial.pollingInterval !== undefined) {
+        await restartStatusUpdates();
+      }
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to update settings:", error);
+      throw error;
     }
   },
 };
