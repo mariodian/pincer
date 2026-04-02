@@ -6,6 +6,7 @@ import {
 } from "../utils/macOSWindowEffects";
 import { clearPendingRoute, getPendingRoute } from "../utils/navigation";
 import { getPlatform } from "../utils/platform";
+import { logger } from "../services/loggerService";
 
 type RendererView = "main";
 type RendererReadyCallback = (params: {
@@ -64,21 +65,41 @@ export const systemRequestHandlers = {
   }: {
     appearance: WindowAppearance;
   }) => {
-    return {
-      success: setMacOSWindowAppearance(appearance),
-    };
+    try {
+      const success = setMacOSWindowAppearance(appearance);
+      if (!success) {
+        logger.warn("systemRPC", "setMacOSWindowAppearance returned false");
+      }
+      return { success };
+    } catch (error) {
+      logger.error(
+        "systemRPC",
+        "Failed to set window appearance:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return { success: false };
+    }
   },
   notifyRendererReady: async ({ view }: { view: RendererView }) => {
-    // Consume pending route before firing the callback so the response
-    // reaches the renderer before any side-effects happen.
-    const initialRoute = getPendingRoute();
-    clearPendingRoute();
+    try {
+      // Consume pending route before firing the callback so the response
+      // reaches the renderer before any side-effects happen.
+      const initialRoute = getPendingRoute();
+      clearPendingRoute();
 
-    if (onRendererReady) {
-      await onRendererReady({ view });
+      if (onRendererReady) {
+        await onRendererReady({ view });
+      }
+
+      return { ok: true, initialRoute };
+    } catch (error) {
+      logger.error(
+        "systemRPC",
+        "Failed to notify renderer ready:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return { ok: false, initialRoute: null };
     }
-
-    return { ok: true, initialRoute };
   },
 };
 

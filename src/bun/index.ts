@@ -92,6 +92,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   setupMainWindowMenu(mainWindow);
 
   mainWindow.on("close", () => {
+    logger.debug("app", "Main window closing");
     Utils.setDockIconVisible(false);
     setMainWindow(null);
   });
@@ -123,12 +124,15 @@ export async function createMainWindow(): Promise<BrowserWindow> {
 
 // Initialize logger first (reads channel, env vars, sets up file logging)
 await initLogger();
+logger.info("app", "Logger initialized");
 
 // Initialize database before any other operations
 await initDatabase();
+logger.info("app", "Database initialized");
 
 // Initialize tray icon
 await initializeTray();
+logger.info("app", "Tray initialized");
 
 // Hide dock icon immediately — shown later only if main window is created
 Utils.setDockIconVisible(false);
@@ -147,7 +151,9 @@ void beginStatusUpdates();
 // Conditionally create the main window on startup
 if (getSettings().openMainWindow) {
   Utils.setDockIconVisible(true);
+  logger.info("app", "Creating main window...");
   await createMainWindow();
+  logger.debug("app", "Main window created");
 }
 
 logger.info("app", "Pincer started!");

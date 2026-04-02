@@ -1,5 +1,6 @@
 import { ApplicationMenu, BrowserWindow } from "electrobun/bun";
 import { showMainWindow } from "./utils/navigation";
+import { logger } from "./services/loggerService";
 
 function requestSaveAgentForm(mainWindow: BrowserWindow): void {
   const rpc = mainWindow.webview.rpc as {
@@ -89,6 +90,7 @@ function buildMenu(
 }
 
 export function setupMainWindowMenu(mainWindow: BrowserWindow) {
+  logger.debug("menu", "Setting up application menu");
   ApplicationMenu.setApplicationMenu(buildMenu(mainWindow.isFullScreen()));
 
   let lastFullScreen = mainWindow.isFullScreen();

@@ -9,6 +9,7 @@ import {
 } from "../storage/sqlite/settingsRepo";
 import { upsertHourlyStat } from "../storage/sqlite/statsRepo";
 import { initializeDatabase } from "../storage/sqlite/db";
+import { logger } from "./loggerService";
 import {
   getAgentType,
   STATUS_PARSERS,
@@ -38,7 +39,9 @@ export async function updateSettings(
 }
 
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
-  return agentStorage.insertAgent(agent);
+  const result = await agentStorage.insertAgent(agent);
+  logger.info("agent", `Agent added: ${result.name} (id=${result.id})`);
+  return result;
 }
 
 export async function updateAgent(
@@ -54,6 +57,7 @@ export async function updateAgent(
 
   agents[index] = { ...agents[index], ...updates };
   await writeAgents(agents);
+  logger.debug("agent", `Agent updated: id=${id}`);
   return agents[index];
 }
 
@@ -67,6 +71,7 @@ export async function deleteAgent(id: number): Promise<boolean> {
   }
 
   await writeAgents(filteredAgents);
+  logger.info("agent", `Agent deleted: id=${id}`);
   return true;
 }
 

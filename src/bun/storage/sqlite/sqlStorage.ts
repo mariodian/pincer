@@ -2,6 +2,7 @@ import { agents } from "./schema";
 import { getDatabase } from "./db";
 import { AgentStorage } from "../backend";
 import type { Agent } from "../../../shared/types";
+import { logger } from "../../services/loggerService";
 
 type AgentFieldTuple = [
   type: string,
@@ -93,6 +94,7 @@ export class SqliteAgentStorage implements AgentStorage {
     });
 
     write();
+    logger.debug("storage", `Wrote ${agentList.length} agents to database`);
   }
 
   async insertAgent(agent: Omit<Agent, "id">): Promise<Agent> {
@@ -100,6 +102,7 @@ export class SqliteAgentStorage implements AgentStorage {
     const stmt = sqlite.prepare(INSERT_SQL);
     const values: AgentFieldTuple = agentToTuple(agent as Agent);
     const result = stmt.run(...values, Date.now());
+    logger.debug("storage", `Inserted agent: ${agent.name}`);
     return { ...agent, id: result.lastInsertRowid as number };
   }
 }

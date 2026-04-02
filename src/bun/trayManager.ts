@@ -74,6 +74,8 @@ export async function initializeTray() {
     height: 32,
   });
 
+  logger.info("tray", "Tray initialized");
+
   // Set up click handler
   tray.on("tray-clicked", async (event: unknown) => {
     logger.debug("tray", "Tray clicked event:", JSON.stringify(event));
@@ -140,6 +142,7 @@ export async function initializeTray() {
         // Close popover when it loses focus
         popoverWindow.on("blur", () => {
           if (popoverWindow) {
+            logger.debug("tray", "Popover lost focus, closing");
             popoverWindow.close();
             popoverWindow = null;
           }
@@ -331,6 +334,7 @@ export async function syncAgentsFromKnownStatuses(updateMenu = true) {
  * Clean up tray resources
  */
 export function cleanupTray() {
+  logger.info("tray", "Cleaning up tray resources");
   if (tray) {
     tray.remove();
     tray = null;

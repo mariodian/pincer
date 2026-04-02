@@ -155,6 +155,13 @@ export function setMacOSWindowAppearance(
     success = applied && success;
   }
 
+  if (!success) {
+    logger.warn(
+      "native",
+      `setMacOSWindowAppearance(${appearance}) returned false - some windows may not have received the appearance change`,
+    );
+  }
+
   return success;
 }
 

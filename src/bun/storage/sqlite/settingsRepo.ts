@@ -1,5 +1,6 @@
 import { getDatabase } from "./db";
 import { settingsGeneral } from "./schema";
+import { logger } from "../../services/loggerService";
 
 export interface Settings {
   pollingInterval: number;
@@ -46,5 +47,9 @@ export function updateSettings(partial: Partial<Settings>): void {
 
   if (Object.keys(set).length > 0) {
     db.update(settingsGeneral).set(set).run();
+    logger.debug(
+      "settings",
+      `Settings updated: ${Object.keys(set).join(", ")}`,
+    );
   }
 }

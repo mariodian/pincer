@@ -1,6 +1,7 @@
 import { Utils } from "electrobun/bun";
 import { getMainWindow } from "../rpc/windowRegistry";
 import { syncAgentsFromKnownStatuses } from "../trayManager";
+import { logger } from "../services/loggerService";
 import { getViewUrl, stripHash } from "./url";
 
 /** Route to navigate to after the renderer signals ready (used when window is recreated). */
@@ -21,6 +22,7 @@ export function clearPendingRoute(): void {
  * Navigates to the specified page route and pushes current statuses.
  */
 export async function showMainWindow(page: string): Promise<void> {
+  logger.debug("nav", `Showing main window: ${page}`);
   Utils.setDockIconVisible(true);
 
   let win = getMainWindow();
