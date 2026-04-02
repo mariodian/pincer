@@ -64,16 +64,16 @@
     <Tabs.Root bind:value={activeTab} class="flex-1">
       <Tabs.List class="mb-6">
         <Tabs.Trigger value="general">General</Tabs.Trigger>
-        <Tabs.Trigger value="privacy">Privacy</Tabs.Trigger>
+        <!-- <Tabs.Trigger value="advanced">Advanced</Tabs.Trigger> -->
       </Tabs.List>
 
       <Tabs.Content value="general">
         <SettingsGeneral onSaveStatus={handleSaveStatus} />
       </Tabs.Content>
 
-      <Tabs.Content value="privacy">
+      <!-- <Tabs.Content value="advanced">
         <p class="text-sm text-muted-foreground">Coming soon.</p>
-      </Tabs.Content>
+      </Tabs.Content> -->
     </Tabs.Root>
   </PageBody>
 </div>
