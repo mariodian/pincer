@@ -11,16 +11,17 @@
 | `bun run dev:hmr`                       | Vite HMR (port 5173) + dev server concurrently                  |
 | `bun run dev:web`                       | Vite dev server only (no Electrobun)                            |
 | `bun run build:native-effects`          | Compile macOS native dylib (required before dev/build)          |
-| `bun run build`                         | Full production build: native dylib + Vite + electrobun         |
+| `bun run build`                         | Full production build: format + native dylib + Vite + electrobun|
 | `bun run build:canary` / `build:stable` | Environment-specific production builds                          |
+| `bun run format`                        | Prettier auto-format (`src/**/*.{ts,svelte,js,css,html}`)       |
+| `bun run typecheck`                     | Type checking for `.svelte` + `.ts` files (uses `svelte-check`) |
 | `bun run db:generate`                   | Generate Drizzle migration files                                |
 | `bun run db:push`                       | Push schema to SQLite (dev only)                                |
 | `bun run db:studio`                     | Open Drizzle Studio UI                                          |
-| `bun run typecheck`                     | Type checking for `.svelte` + `.ts` files (uses `svelte-check`) |
 | `bun test <file>`                       | Run a single test file                                          |
 | `bun test --grep "<pattern>"`           | Run tests matching a pattern                                    |
 
-> No test framework configured. Use **Vitest** or **Bun test** (`bun test`) when adding tests.
+> No test framework configured yet. Use **Bun test** (`bun test`) or **Vitest** when adding tests.
 
 ---
 
@@ -46,9 +47,7 @@ cp ~/Library/Application\ Support/com.mariodian.pincer/dev/app.db ./drizzle/dev.
 - `drizzle/dev.db` is in `.gitignore` — re-sync from real DB after every migration
 - Test data migrations on a copy of the real database before deploying
 
-### Settings tables
-
-Settings use typed single-row tables named `settings_<category>` (e.g., `settings_general`). Single row (`id = 1`, enforced by app logic). Access via `src/bun/storage/sqlite/settingsRepo.ts` using `getSettings()`/`updateSettings()`.
+Settings use typed single-row tables named `settings_<category>` (e.g., `settings_general`). Access via `src/bun/storage/sqlite/settingsRepo.ts` using `getSettings()`/`updateSettings()`.
 
 ---
 
@@ -60,11 +59,12 @@ Settings use typed single-row tables named `settings_<category>` (e.g., `setting
 - ES modules only; `const`/`let` (never `var`); `async`/`await` for promises
 - Specify return types on public/exported functions
 - Double quotes for strings; semicolons required
-- Wrap I/O and native calls in `try`/`catch` with contextual logging before rethrowing
+- Wrap I/O and native calls in `try`/`catch` — log context via `logger.error()` before rethrowing
+- Use `error instanceof Error ? error.message : String(error)` for error messages
 
 ### Imports
 
-Order: **(1)** external libraries, **(2)** path-aliased internal modules (`$lib`, `$bun`, `$shared`), **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components. Use `import type` inline for type-only imports. Add `.js` extensions in Svelte component imports (e.g., `"$lib/components/ui/button/index.js"`).
+Order: **(1)** external libraries, **(2)** path-aliased internal modules (`$lib`, `$bun`, `$shared`), **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components. Use `import type` inline for type-only imports. Add `.js` extensions in Svelte component imports.
 
 ```ts
 import { BrowserView } from "electrobun/bun"; // External
@@ -75,7 +75,7 @@ import { agentsTable } from "./schema"; // Relative
 
 ### Formatting & Naming
 
-2-space indent, 80–100 char lines, trailing commas in multi-line literals/params.
+Prettier with `prettier-plugin-svelte` (see `.prettierrc`). 2-space indent, 80–100 char lines, trailing commas in multi-line literals/params.
 
 | Type                | Convention                                                         | Example                          |
 | ------------------- | ------------------------------------------------------------------ | -------------------------------- |
@@ -86,16 +86,9 @@ import { agentsTable } from "./schema"; // Relative
 | Booleans            | `is`/`has`/`can` prefix                                            | `isMacOS`, `hasFocus`            |
 | Event handlers      | `handle` prefix                                                    | `handleClick`, `handleSubmit`    |
 
-### Error Handling
-
-- `try`/`catch` for all sync/async I/O; log context via `logger.error()` before rethrowing
-- `logger.warn()` for recoverable issues only (e.g., missing native library → graceful fallback)
-- In native FFI bridging: check library existence before loading; never swallow errors
-- Use `error instanceof Error ? error.message : String(error)` for error messages
-
 ### Logging
 
-Use `logger` from `src/bun/services/loggerService.ts` instead of raw `console.*` in the main process (`src/bun/`).
+Use `logger` from `src/bun/services/loggerService.ts` (not raw `console.*`) in the main process.
 
 ```ts
 import { logger } from "./services/loggerService";
@@ -106,20 +99,12 @@ logger.warn("component", "Recoverable issue:", error);
 logger.error("component", "Critical failure:", error);
 ```
 
-**Channel behavior:**
-
 | Channel           | Console    | File (`userData/logs/app.log`) | Renderer RPC |
 | ----------------- | ---------- | ------------------------------ | ------------ |
 | `dev`             | All levels | Off                            | Off          |
 | `canary`/`stable` | Silent     | All levels                     | warn + error |
 
-**Env var overrides** (set before `bun run dev`):
-
-```bash
-LOG_LEVEL=debug bun run dev          # override min log level (debug|info|warn|error)
-LOG_TO_FILE=true bun run dev         # force file logging even in dev
-LOG_LEVEL=warn LOG_TO_FILE=true bun run dev   # combine
-```
+Env overrides: `LOG_LEVEL=debug`, `LOG_TO_FILE=true` (set before `bun run dev`).
 
 ---
 
