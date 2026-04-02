@@ -4,6 +4,7 @@ import type { StatsRPCType } from "$bun/rpc/statsRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import { syncAgentsToCache } from "$lib/utils/storage";
 import type { LogEntry } from "$shared/rpc";
+import { RPC_MAX_REQUEST_TIME } from "$shared/rpc";
 import type { AgentStatus } from "$shared/types";
 import { writable } from "svelte/store";
 
@@ -150,6 +151,7 @@ export async function initMainRPC(handlers: {
     const { Electroview } = await import("electrobun/view");
 
     const rpc = Electroview.defineRPC<MainRPCType>({
+      maxRequestTime: RPC_MAX_REQUEST_TIME,
       handlers: {
         requests: {},
         messages: {

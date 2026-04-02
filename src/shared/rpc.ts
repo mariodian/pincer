@@ -1,5 +1,11 @@
 // Shared RPC types for tray popover and dashboard
-import type { AgentStatus } from "./types";
+import type { AgentStatus, Settings } from "./types";
+
+/**
+ * RPC request timeout in milliseconds.
+ * Must accommodate health checks (5000ms) + processing buffer.
+ */
+export const RPC_MAX_REQUEST_TIME = 10000;
 
 export type LogEntry = {
   level: "warn" | "error";
@@ -64,6 +70,10 @@ export type TrayPopoverRPCType = {
       quit: {
         params: Record<string, never>;
         response: boolean;
+      };
+      getSettings: {
+        params: Record<string, never>;
+        response: Settings;
       };
     };
     messages: Record<string, never>;

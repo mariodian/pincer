@@ -1,6 +1,7 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
 import { readAgents } from "../services/agentService";
+import { getSettings } from "../storage/sqlite/settingsRepo";
 import { showMainWindow } from "../utils/navigation";
 import type { TrayPopoverRPCType } from "../../shared/rpc";
 import { logger } from "../services/loggerService";
@@ -74,6 +75,14 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
           return true;
         } catch (error) {
           logger.error("trayPopoverRPC", "Failed to request refresh:", error);
+          throw error;
+        }
+      },
+      getSettings: async () => {
+        try {
+          return getSettings();
+        } catch (error) {
+          logger.error("trayPopoverRPC", "Failed to get settings:", error);
           throw error;
         }
       },

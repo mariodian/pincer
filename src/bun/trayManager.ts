@@ -12,6 +12,7 @@ import {
   getStatusSyncService,
   initStatusSyncService,
 } from "./services/statusSyncService";
+import { getSettings } from "./storage/sqlite/settingsRepo";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
@@ -262,8 +263,14 @@ export async function updateTrayMenu() {
   try {
     const agents = await readAgents();
     const sync = getStatusSyncService();
+    const { showDisabledAgents } = getSettings();
 
-    const agentsWithStatus = agents.map((agent) => {
+    // Filter out disabled agents unless showDisabledAgents is true
+    const filteredAgents = showDisabledAgents
+      ? agents
+      : agents.filter((agent) => agent.enabled !== false);
+
+    const agentsWithStatus = filteredAgents.map((agent) => {
       const status = sync.getAgentStatus(agent.id);
       return {
         ...agent,

@@ -8,6 +8,7 @@
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
   import { sortAgentsByStatus } from "$shared/agent-helpers";
   import type { TrayPopoverRPCType } from "$shared/rpc";
+  import { RPC_MAX_REQUEST_TIME } from "$shared/rpc";
   import type { AgentStatus } from "$shared/types";
   import {
     Refresh01Icon,
@@ -19,6 +20,7 @@
   import "./tray-popover.css";
 
   const rpc = Electroview.defineRPC<TrayPopoverRPCType>({
+    maxRequestTime: RPC_MAX_REQUEST_TIME,
     handlers: {
       requests: {},
       messages: {
@@ -28,7 +30,8 @@
           if (typeof localStorage !== "undefined") {
             syncAgentsToCache(data);
           }
-          agents = sortAgentsByStatus(data);
+          // Reload from cache with filtering based on settings
+          void loadAgents();
           triggerSyncCallbacks();
         }) as any,
       },
@@ -69,11 +72,17 @@
     showFooterShadow = !atBottom;
   }
 
-  function loadAgents() {
+  async function loadAgents() {
     // Read from localStorage — data is pushed via syncAgents by trayManager
     const cached = readCachedAgents();
     if (cached) {
-      agents = sortAgentsByStatus(cached);
+      // Fetch settings to check showDisabledAgents
+      const { showDisabledAgents } = await rpc.request.getSettings({});
+      // Filter out disabled agents unless showDisabledAgents is true
+      const filtered = showDisabledAgents
+        ? cached
+        : cached.filter((agent) => agent.enabled !== false);
+      agents = sortAgentsByStatus(filtered);
     }
     loading = false;
   }

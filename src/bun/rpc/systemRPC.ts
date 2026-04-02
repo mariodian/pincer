@@ -1,5 +1,6 @@
 // System RPC - Shared RPC definition for system info
 import { BrowserView } from "electrobun/bun";
+import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
 import {
   setMacOSWindowAppearance,
   type WindowAppearance,
@@ -104,6 +105,7 @@ export const systemRequestHandlers = {
 };
 
 export const systemRPC = BrowserView.defineRPC<SystemRPCType>({
+  maxRequestTime: RPC_MAX_REQUEST_TIME,
   handlers: {
     requests: systemRequestHandlers,
     messages: {
