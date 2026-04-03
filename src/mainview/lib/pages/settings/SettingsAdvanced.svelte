@@ -90,7 +90,7 @@
     <SwitchCard
       id="use-native-tray"
       title="Use native tray"
-      description="Restart required for changes to take effect."
+      description="Native tray integrates better with your platform's appearance but the custom tray offers a more polished design. Restart required for changes to take effect."
       checked={useNativeTray}
       onCheckedChange={handleUseNativeTrayChange}
     />
