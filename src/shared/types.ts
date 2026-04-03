@@ -31,3 +31,8 @@ export interface Settings {
   openMainWindow: boolean;
   showDisabledAgents: boolean;
 }
+
+export interface UpdateSettings {
+  lastCheckTimestamp: number | null;
+  autoCheckEnabled: boolean;
+}

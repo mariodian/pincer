@@ -2,6 +2,8 @@
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import * as Tabs from "$lib/components/ui/tabs";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import SettingsAbout from "./settings/SettingsAbout.svelte";
+  import SettingsAdvanced from "./settings/SettingsAdvanced.svelte";
   import SettingsGeneral from "./settings/SettingsGeneral.svelte";
 
   let currentPath = $derived($currentRoute);
@@ -31,6 +33,29 @@
       }, 1200);
     }
   }
+
+  // Parse ?tab= parameter from URL hash
+  function getTabFromUrl(): string | null {
+    const hash = window.location.hash;
+    const queryIndex = hash.indexOf("?");
+    if (queryIndex === -1) return null;
+
+    const queryString = hash.slice(queryIndex + 1);
+    const params = new URLSearchParams(queryString);
+    return params.get("tab");
+  }
+
+  // Update active tab when route changes
+  $effect(() => {
+    const tabFromUrl = getTabFromUrl();
+    if (
+      tabFromUrl === "general" ||
+      tabFromUrl === "advanced" ||
+      tabFromUrl === "about"
+    ) {
+      activeTab = tabFromUrl;
+    }
+  });
 </script>
 
 <div class="flex flex-col h-full">
@@ -64,16 +89,21 @@
     <Tabs.Root bind:value={activeTab} class="flex-1">
       <Tabs.List class="mb-6">
         <Tabs.Trigger value="general">General</Tabs.Trigger>
-        <!-- <Tabs.Trigger value="advanced">Advanced</Tabs.Trigger> -->
+        <Tabs.Trigger value="advanced">Advanced</Tabs.Trigger>
+        <Tabs.Trigger value="about">About</Tabs.Trigger>
       </Tabs.List>
 
       <Tabs.Content value="general">
         <SettingsGeneral onSaveStatus={handleSaveStatus} />
       </Tabs.Content>
 
-      <!-- <Tabs.Content value="advanced">
-        <p class="text-sm text-muted-foreground">Coming soon.</p>
-      </Tabs.Content> -->
+      <Tabs.Content value="advanced">
+        <SettingsAdvanced onSaveStatus={handleSaveStatus} />
+      </Tabs.Content>
+
+      <Tabs.Content value="about">
+        <SettingsAbout />
+      </Tabs.Content>
     </Tabs.Root>
   </PageBody>
 </div>

@@ -37,6 +37,14 @@ export const settingsGeneral = sqliteTable("settings_general", {
     .default(false),
 });
 
+export const settingsUpdate = sqliteTable("settings_update", {
+  id: integer("id").primaryKey().default(1),
+  lastCheckTimestamp: integer("last_check_timestamp"),
+  autoCheckEnabled: integer("auto_check_enabled", { mode: "boolean" })
+    .notNull()
+    .default(true),
+});
+
 export const stats = sqliteTable(
   "stats",
   {

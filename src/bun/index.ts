@@ -1,6 +1,7 @@
 import { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { agentRequestHandlers } from "./rpc/agentRPC";
+import { performAutoUpdateCheck, updateRequestHandlers } from "./rpc/updateRPC";
 import { settingsRequestHandlers } from "./rpc/settingsRPC";
 import { statsRequestHandlers } from "./rpc/statsRPC";
 import {
@@ -36,6 +37,7 @@ combinedRPC.setRequestHandler({
   ...agentRequestHandlers,
   ...settingsRequestHandlers,
   ...statsRequestHandlers,
+  ...updateRequestHandlers,
 });
 
 /**
@@ -133,6 +135,9 @@ logger.info("app", "Database initialized");
 // Initialize tray icon
 await initializeTray();
 logger.info("app", "Tray initialized");
+
+// Perform automatic update check if enabled and due
+void performAutoUpdateCheck();
 
 // Hide dock icon immediately — shown later only if main window is created
 Utils.setDockIconVisible(false);

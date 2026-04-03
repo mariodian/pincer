@@ -17,6 +17,11 @@ function buildMenu(
     {
       submenu: [
         {
+          label: "About Pincer",
+          action: "open-about",
+        },
+        { type: "separator" },
+        {
           label: "Settings",
           accelerator: ",",
           action: "open-settings",
@@ -106,6 +111,8 @@ export function setupMainWindowMenu(mainWindow: BrowserWindow) {
     const action = (event as { data?: { action?: string } })?.data?.action;
     if (action === "close-main-window") {
       mainWindow.close();
+    } else if (action === "open-about") {
+      await showMainWindow("settings?tab=about");
     } else if (action === "open-settings") {
       await showMainWindow("settings");
     } else if (action === "open-dashboard") {
