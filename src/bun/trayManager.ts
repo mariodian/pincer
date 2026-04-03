@@ -24,11 +24,11 @@ export { refreshAndPush };
 
 const platformIsMacOS = isMacOS();
 
-// For now, only use native menu on non-macOS platforms since it supports icons and better styling.
-// On macOS we will use a custom popover menu to have more control over appearance and behavior.
-// @TODO: Evaluate if we can switch to custom menu on all platforms for consistency.
-const NATIVE_MENU = !platformIsMacOS;
-// const NATIVE_MENU = true;
+// Use native tray when useNativeTray setting is true (default on Windows/Linux, off on macOS)
+// On Windows/Linux, native menu supports icons and better styling.
+// On macOS, we use a custom popover menu for better appearance and behavior.
+// This can be overridden via the Advanced Settings.
+const NATIVE_MENU = getSettings().useNativeTray;
 
 /** Shared navigation/action menu items used in both normal and error-fallback menus. */
 const NAV_MENU_ITEMS = [

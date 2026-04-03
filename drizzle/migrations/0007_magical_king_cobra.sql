@@ -1,0 +1,1 @@
+ALTER TABLE `settings_general` ADD `use_native_tray` integer DEFAULT false NOT NULL;

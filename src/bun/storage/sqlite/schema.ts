@@ -35,6 +35,9 @@ export const settingsGeneral = sqliteTable("settings_general", {
   showDisabledAgents: integer("show_disabled_agents", { mode: "boolean" })
     .notNull()
     .default(false),
+  useNativeTray: integer("use_native_tray", { mode: "boolean" })
+    .notNull()
+    .default(false),
 });
 
 export const settingsUpdate = sqliteTable("settings_update", {

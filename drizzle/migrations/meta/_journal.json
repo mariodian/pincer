@@ -50,6 +50,13 @@
       "when": 1775226296546,
       "tag": "0006_abandoned_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1775235066881,
+      "tag": "0007_magical_king_cobra",
+      "breakpoints": true
     }
   ]
 }

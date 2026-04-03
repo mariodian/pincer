@@ -30,6 +30,7 @@ export interface Settings {
   retentionDays: number;
   openMainWindow: boolean;
   showDisabledAgents: boolean;
+  useNativeTray: boolean;
 }
 
 export interface UpdateSettings {

@@ -1,3 +1,4 @@
+import { isMacOS } from "../../utils/platform";
 import { getDatabase } from "./db";
 import { settingsGeneral } from "./schema";
 import { logger } from "../../services/loggerService";
@@ -7,6 +8,7 @@ export interface Settings {
   retentionDays: number;
   openMainWindow: boolean;
   showDisabledAgents: boolean;
+  useNativeTray: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export function getSettings(): Settings {
     retentionDays: row?.retentionDays ?? 90,
     openMainWindow: row?.openMainWindow ?? true,
     showDisabledAgents: row?.showDisabledAgents ?? false,
+    useNativeTray: row?.useNativeTray ?? isMacOS(),
   };
 }
 
@@ -43,6 +46,9 @@ export function updateSettings(partial: Partial<Settings>): void {
   }
   if (partial.showDisabledAgents !== undefined) {
     set.showDisabledAgents = partial.showDisabledAgents;
+  }
+  if (partial.useNativeTray !== undefined) {
+    set.useNativeTray = partial.useNativeTray;
   }
 
   if (Object.keys(set).length > 0) {
