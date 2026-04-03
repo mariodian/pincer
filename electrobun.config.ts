@@ -34,7 +34,7 @@ export default {
     },
     win: {
       bundleCEF: false,
-      icon: "icons/icon.png",
+      icon: "icons/icon.ico",
     },
   },
   release: {
