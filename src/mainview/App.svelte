@@ -9,7 +9,8 @@
   import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
   import Router, { replace, router } from "@bmlt-enabled/svelte-spa-router";
   import wrap from "@bmlt-enabled/svelte-spa-router/wrap";
-  import { ModeWatcher } from "mode-watcher";
+  import { ModeWatcher, mode } from "mode-watcher";
+  import { Toaster } from "svelte-sonner";
   import { TRAY_TITLE } from "../bun/config";
   import "./app.css";
 
@@ -49,6 +50,7 @@
 </script>
 
 <Window title={TRAY_TITLE}>
+  <Toaster theme={mode.current ?? "light"} />
   <ModeWatcher
     modeStorageKey={MAIN_WINDOW_MODE_STORAGE_KEY}
     themeStorageKey={MAIN_WINDOW_THEME_STORAGE_KEY}

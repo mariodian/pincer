@@ -14,6 +14,7 @@
   import { normalizeUrl } from "$shared/agent-helpers";
   import type { Agent } from "$shared/types";
   import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     agentId?: number;
@@ -202,8 +203,10 @@
         }
 
         await rpc.request.updateAgent([agentId, updates]);
+        toast.success(`Agent "${name}" updated`);
       } else {
         await rpc.request.addAgent(agentData);
+        toast.success(`Agent "${name}" added`);
       }
 
       // Status sync is handled by main process via StatusSyncService
