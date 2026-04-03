@@ -2,7 +2,28 @@
 
 All notable changes to Pincer will be documented in this file.
 
-The format is based on "Keep a Changelog" — https://keepachangelog.com/en/1.0.0/
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [v0.1.1] - 2026-04-04
+
+### Added
+
+- Added update management features and related settings.
+- Added an `openExternalUrl` RPC method and improved alert components.
+- Added toast notifications for agent feedback with `svelte-sonner`.
+- Added a `useNativeTray` setting and updated related components.
+
+### Changed
+
+- Updated README content for clarity and additional project details.
+- Updated changelog tooling rules and release-workflow extraction behavior.
+- Updated `@hugeicons/core-free-icons` and `tailwindcss` dependencies.
+
+### Fixed
+
+- Simplified import paths in the settings about page.
+- Improved the description for the native tray setting in advanced settings.
 
 ## [v0.1.0] - 2026-04-03
 
