@@ -117,7 +117,7 @@ export const updateRequestHandlers = {
       } else {
         return {
           updateAvailable: false,
-          message: "You are on the latest version",
+          message: "You're up to date!",
         };
       }
     } catch (error) {

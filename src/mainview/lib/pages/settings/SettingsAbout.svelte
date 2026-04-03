@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Alert from "$lib/components/ui/alert/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
@@ -6,6 +7,7 @@
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { cn } from "$lib/utils";
   import {
+    AlertCircleIcon,
     CheckmarkCircle02Icon,
     Download04Icon,
     RefreshIcon,
@@ -29,6 +31,9 @@
     hash?: string;
     message: string;
   }
+
+  const RELEASE_NOTES_URL =
+    "https://github.com/mariodian/pincer/blob/main/CHANGELOG.md";
 
   let loading = $state(true);
   let checking = $state(false);
@@ -96,6 +101,28 @@
     }
   }
 
+  async function handleOpenReleaseNotes(event: MouseEvent) {
+    event.preventDefault();
+
+    try {
+      await whenReady();
+      const rpc = getMainRPC();
+      const result = await rpc.request.openExternalUrl({
+        url: RELEASE_NOTES_URL,
+      });
+
+      if (!result.success) {
+        error = "Could not open release notes in your default browser";
+      }
+    } catch (err) {
+      error =
+        err instanceof Error
+          ? err.message
+          : "Could not open release notes in your default browser";
+      console.error("Failed to open release notes:", err);
+    }
+  }
+
   function formatLastCheck(timestamp: number | null): string {
     if (!timestamp) return "Never checked";
 
@@ -145,11 +172,7 @@
     <Card.Root>
       <Card.Header>
         <Card.Title class="flex items-center justify-center flex-col">
-          <img
-            src={icon}
-            alt="Pincer Icon"
-            class="h-24 w-24 drop-shadow-xl/10"
-          />
+          <img src={icon} alt="Pincer Icon" class="h-24 w-24 drop-shadow-sm" />
           <div class="flex items-center gap-3 mt-4">
             <h2 class="text-xl font-semibold">Pincer</h2>
 
@@ -195,6 +218,22 @@
           </Button>
         </div>
 
+        <!-- Check Result Message -->
+        {#if checkResult && !checkResult.updateAvailable}
+          <Alert.Root>
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} class="size-4" />
+            <Alert.Title>{checkResult.message}</Alert.Title>
+            <Alert.Description>
+              <a
+                href={RELEASE_NOTES_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onclick={handleOpenReleaseNotes}>Release Notes</a
+              >
+            </Alert.Description>
+          </Alert.Root>
+        {/if}
+
         {#if updateInfo.updateAvailable && updateInfo.newVersion}
           <div
             class={cn(
@@ -230,34 +269,13 @@
           </div>
         {/if}
 
-        <!-- Check Result Message -->
-        {#if checkResult}
-          <div
-            class="p-3 rounded-md border text-sm {checkResult.updateAvailable
-              ? cn([
-                  'border-green-300/50 bg-green-300/30',
-                  'dark:border-green-900/70 dark:bg-green-900/50',
-                  'text-green-950/60 dark:text-green-100/60',
-                ])
-              : 'bg-muted'}"
-          >
-            {checkResult.message}
-          </div>
-        {/if}
-
         <!-- Error Message -->
         {#if error}
-          <div
-            class={cn([
-              "p-3 rounded-md text-sm border",
-              "border-red-300/50 bg-red-300/30",
-              "dark:border-red-900/70 dark:bg-red-900/50",
-              "text-red-950/60",
-              "dark:text-red-100/60",
-            ])}
-          >
-            {error}
-          </div>
+          <Alert.Root variant="destructive">
+            <HugeiconsIcon icon={AlertCircleIcon} class="size-4" />
+            <Alert.Title>Error</Alert.Title>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Root>
         {/if}
       </Card.Content>
     </Card.Root>

@@ -1,13 +1,13 @@
 // System RPC - Shared RPC definition for system info
-import { BrowserView } from "electrobun/bun";
+import { BrowserView, Utils } from "electrobun/bun";
 import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
+import { logger } from "../services/loggerService";
 import {
   setMacOSWindowAppearance,
   type WindowAppearance,
 } from "../utils/macOSWindowEffects";
 import { clearPendingRoute, getPendingRoute } from "../utils/navigation";
 import { getPlatform } from "../utils/platform";
-import { logger } from "../services/loggerService";
 
 type RendererView = "main";
 type RendererReadyCallback = (params: {
@@ -34,6 +34,10 @@ export type SystemRPCType = {
       notifyRendererReady: {
         params: { view: RendererView };
         response: { ok: boolean; initialRoute: string | null };
+      };
+      openExternalUrl: {
+        params: { url: string };
+        response: { success: boolean };
       };
     };
     messages: Record<string, never>;
@@ -100,6 +104,32 @@ export const systemRequestHandlers = {
         error instanceof Error ? error.message : String(error),
       );
       return { ok: false, initialRoute: null };
+    }
+  },
+  openExternalUrl: async ({ url }: { url: string }) => {
+    try {
+      const parsedUrl = new URL(url);
+      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+        logger.warn(
+          "systemRPC",
+          `Blocked external URL with protocol: ${parsedUrl.protocol}`,
+        );
+        return { success: false };
+      }
+
+      const success = Utils.openExternal(url);
+      if (!success) {
+        logger.warn("systemRPC", `Failed to open external URL: ${url}`);
+      }
+
+      return { success };
+    } catch (error) {
+      logger.error(
+        "systemRPC",
+        "Failed to open external URL:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return { success: false };
     }
   },
 };
