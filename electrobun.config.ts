@@ -38,6 +38,6 @@ export default {
     },
   },
   release: {
-    baseUrl: "https://github.com/mariodian/pincer/releases/download/",
+    baseUrl: "https://github.com/mariodian/pincer/releases/latest/download/",
   },
 } satisfies ElectrobunConfig;
