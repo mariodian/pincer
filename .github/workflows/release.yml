@@ -71,7 +71,7 @@ jobs:
           version="${{ steps.version.outputs.version }}"
           body=$(awk -v v="$version" '
             BEGIN { target = "## [" v "]" }
-            $0 == target { found = 1; next }
+            index($0, target) == 1 { found = 1; next }
             found && /^## \[/ { exit }
             found { print }
           ' CHANGELOG.md)
@@ -85,7 +85,7 @@ jobs:
 
           prev_version=$(awk -v v="$version" '
             BEGIN { target = "## [" v "]" }
-            $0 == target { found = 1; next }
+            index($0, target) == 1 { found = 1; next }
             found && /^## \[/ {
               line = $0
               sub(/^## \[/, "", line)
