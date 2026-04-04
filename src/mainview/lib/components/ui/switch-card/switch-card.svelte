@@ -121,5 +121,5 @@
       </p>
     {/if}
   </div>
-  <Switch {variant} {size} {id} bind:checked {disabled} {onCheckedChange} />
+  <Switch tabindex={0} {variant} {size} {id} bind:checked {disabled} {onCheckedChange} />
 </Label>
