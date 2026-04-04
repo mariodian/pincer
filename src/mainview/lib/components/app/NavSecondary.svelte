@@ -75,7 +75,7 @@
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
-                  <Icon name={item.icon} strokeWidth={2} />
+                  <Icon name={item.icon} />
                   <span>{item.title}</span>
                 </a>
               {/snippet}
@@ -100,18 +100,15 @@
                       <div {...props}>
                         <Icon
                           name="sun"
-                          strokeWidth={2}
                           class={cn([
-                            "h-[1.2rem] w-[1.2rem]",
                             "scale-100 rotate-0",
                             "dark:scale-0 dark:-rotate-90",
                           ])}
                         />
                         <Icon
                           name="moon"
-                          strokeWidth={2}
                           class={cn([
-                            "absolute h-[1.2rem] w-[1.2rem]",
+                            "absolute",
                             "scale-0 rotate-90",
                             "dark:scale-100 dark:rotate-0",
                           ])}
@@ -126,7 +123,7 @@
                     >Light
                     {#if selectedThemeKey === "light"}
                       <DropdownMenu.Shortcut>
-                        <Icon name="tick" strokeWidth={2.5} />
+                        <Icon name="tick" strokeWidth={3} />
                       </DropdownMenu.Shortcut>
                     {/if}</DropdownMenu.Item
                   >
@@ -134,7 +131,7 @@
                     >Dark
                     {#if selectedThemeKey === "dark"}
                       <DropdownMenu.Shortcut>
-                        <Icon name="tick" strokeWidth={2.5} />
+                        <Icon name="tick" strokeWidth={3} />
                       </DropdownMenu.Shortcut>
                     {/if}</DropdownMenu.Item
                   >
@@ -142,7 +139,7 @@
                     >System
                     {#if selectedThemeKey === "system"}
                       <DropdownMenu.Shortcut>
-                        <Icon name="tick" strokeWidth={2.5} />
+                        <Icon name="tick" strokeWidth={3} />
                       </DropdownMenu.Shortcut>
                     {/if}</DropdownMenu.Item
                   >
@@ -182,7 +179,7 @@
             <Sidebar.MenuButton>
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
-                  <Icon name={item.icon} strokeWidth={2} />
+                  <Icon name={item.icon} />
                   <span>{item.title}</span>
                 </a>
               {/snippet}

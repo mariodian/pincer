@@ -124,7 +124,7 @@
     {#snippet actions()}
       {#if agents.length > 0}
         <Button onclick={() => onNavigate("/agents/add")}>
-          <Icon name="add" strokeWidth={2} />
+          <Icon name="add" />
           Add Agent
         </Button>
       {/if}
@@ -256,7 +256,7 @@
                       onclick={() => onNavigate(`/agents/${agent.id}`)}
                       title="Edit agent"
                     >
-                      <Icon name="edit" strokeWidth={2} />
+                      <Icon name="edit" />
                       <span class="sr-only">Edit</span>
                     </Button>
                     <Button
@@ -268,7 +268,7 @@
                       title="Delete agent"
                       class="hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Icon name="delete" strokeWidth={2} />
+                      <Icon name="delete" />
                       <span class="sr-only">Delete</span>
                     </Button>
                   </div>

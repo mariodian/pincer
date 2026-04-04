@@ -186,11 +186,7 @@
         description={error ?? undefined}
       >
         {#snippet icon()}
-          <Icon
-            name="alertCircle"
-            class="size-6 text-destructive"
-            strokeWidth={2}
-          />
+          <Icon name="alertCircle" class="size-5 text-destructive" />
         {/snippet}
         {#snippet cta()}
           <Button
@@ -198,7 +194,7 @@
             disabled={loading}
             onclick={() => fetchData()}
           >
-            <Icon name="alertCircle" strokeWidth={2} />
+            <Icon name="alertCircle" />
             {loading ? "Retrying..." : "Retry"}
           </Button>
         {/snippet}
