@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
-  import { EmptyState } from "$lib/components/ui/empty-state/index.js";
+  import * as Empty from "$lib/components/ui/empty/index.js";
+  import { Icon } from "$lib/components/ui/icon";
   import * as Item from "$lib/components/ui/item/index.js";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
@@ -11,7 +12,6 @@
     sortAgentsByStatus,
   } from "$shared/agent-helpers";
   import type { AgentStatus } from "$shared/types";
-  import { Icon } from "$lib/components/ui/icon";
   import { onMount } from "svelte";
 
   interface Props {
@@ -122,10 +122,12 @@
     {currentPath}
   >
     {#snippet actions()}
-      <Button onclick={() => onNavigate("/agents/add")}>
-        <Icon name="add" strokeWidth={2} />
-        Add Agent
-      </Button>
+      {#if agents.length > 0}
+        <Button onclick={() => onNavigate("/agents/add")}>
+          <Icon name="add" strokeWidth={2} />
+          Add Agent
+        </Button>
+      {/if}
     {/snippet}
   </PageHeader>
 
@@ -277,25 +279,25 @@
         {/each}
       </div>
     {:else}
-      <EmptyState
-        class="flex-1 py-16"
-        title="No agents yet"
-        description="Add your first agent to start monitoring services."
-      >
-        {#snippet icon()}
-          <Icon
-            name="add"
-            class="size-6 text-muted-foreground"
-            strokeWidth={2}
-          />
-        {/snippet}
-        {#snippet cta()}
-          <Button onclick={() => onNavigate("/agents/add")}>
-            <Icon name="add" strokeWidth={2} />
-            Add Agent
-          </Button>
-        {/snippet}
-      </EmptyState>
+      <Empty.Root class="border border-dashed">
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Icon name="agents" class="text-muted-foreground" />
+          </Empty.Media>
+          <Empty.Title>No agents yet</Empty.Title>
+          <Empty.Description>
+            You haven't created any agents yet. Add your first agent to start
+            monitoring services.
+          </Empty.Description>
+        </Empty.Header>
+        <Empty.Content>
+          <div class="flex gap-2">
+            <Button onclick={() => onNavigate("/agents/add")}
+              >Create Agent</Button
+            >
+          </div>
+        </Empty.Content>
+      </Empty.Root>
     {/if}
   </PageBody>
 </div>

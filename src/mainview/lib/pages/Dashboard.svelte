@@ -2,8 +2,9 @@
   import { KpiCard, StatusPieChart } from "$lib/components/dashboard";
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
-  import { EmptyState } from "$lib/components/ui/empty-state/index.js";
+  import * as Empty from "$lib/components/ui/empty/index.js";
   import { ErrorState } from "$lib/components/ui/error-state/index.js";
+  import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
@@ -27,7 +28,6 @@
   } from "$shared/rpc";
   import type { Settings } from "$shared/types";
   import { push } from "@bmlt-enabled/svelte-spa-router";
-  import { Icon } from "$lib/components/ui/icon";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -368,25 +368,23 @@
           />
         </div>
       {:else}
-        <EmptyState
-          class="flex-1 py-16"
-          title="No agents configured yet"
-          description="Add an agent to start collecting stats."
-        >
-          {#snippet icon()}
-            <Icon
-              name="add"
-              class="size-6 text-muted-foreground"
-              strokeWidth={2}
-            />
-          {/snippet}
-          {#snippet cta()}
-            <Button onclick={() => push("/agents/add")}>
-              <Icon name="add" strokeWidth={2} />
-              Add Agent
-            </Button>
-          {/snippet}
-        </EmptyState>
+        <Empty.Root class="border border-dashed">
+          <Empty.Header>
+            <Empty.Media variant="icon">
+              <Icon name="agents" class="text-muted-foreground" />
+            </Empty.Media>
+            <Empty.Title>No agents yet</Empty.Title>
+            <Empty.Description>
+              You haven't created any agents yet. Add an agent to start
+              collecting stats.
+            </Empty.Description>
+          </Empty.Header>
+          <Empty.Content>
+            <div class="flex gap-2">
+              <Button onclick={() => push("/agents/add")}>Create Agent</Button>
+            </div>
+          </Empty.Content>
+        </Empty.Root>
       {/if}
     {/if}
   </PageBody>
