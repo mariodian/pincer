@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
@@ -45,6 +46,7 @@
   let errors = $state<Record<string, string>>({});
   let loadError = $state("");
   let formElement = $state<HTMLFormElement | null>(null);
+  let showDiscardDialog = $state(false);
 
   type AgentTypeInfo = {
     id: string;
@@ -59,6 +61,25 @@
   );
 
   const isCustom = $derived(type === "custom");
+
+  const hasUnsavedChanges = $derived.by(() => {
+    if (loading || saving) return false;
+    if (isEdit && initialEditSnapshot) {
+      const updates = buildChangedFields(
+        initialEditSnapshot,
+        buildNormalizedPayload(),
+      );
+      return Object.keys(updates).length > 0;
+    }
+    // Add mode: dirty if any field differs from defaults
+    return (
+      name !== "" ||
+      url !== "" ||
+      port !== "18790" ||
+      enabled !== true ||
+      type !== ""
+    );
+  });
 
   function buildNormalizedPayload(): Omit<Agent, "id"> {
     return {
@@ -232,8 +253,25 @@
   function handleEscKey(e: KeyboardEvent) {
     if (e.key === "Escape") {
       e.preventDefault();
-      window.history.back();
+      if (hasUnsavedChanges) {
+        showDiscardDialog = true;
+      } else {
+        window.history.back();
+      }
     }
+  }
+
+  function handleBack() {
+    if (hasUnsavedChanges) {
+      showDiscardDialog = true;
+    } else {
+      onNavigate("/agents");
+    }
+  }
+
+  function handleDiscard() {
+    showDiscardDialog = false;
+    window.history.back();
   }
 </script>
 
@@ -248,7 +286,7 @@
     {prevPath}
     {currentPath}
     showBack
-    onBack={() => onNavigate("/agents")}
+    onBack={handleBack}
   />
 
   <PageBody>
@@ -399,15 +437,31 @@
           <Button type="submit" disabled={saving}>
             {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Agent"}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onclick={() => onNavigate("/agents")}
-          >
+          <Button type="button" variant="outline" onclick={handleBack}>
             Cancel
           </Button>
         </div>
       </form>
     {/if}
   </PageBody>
+
+  <Dialog.Root bind:open={showDiscardDialog}>
+    <Dialog.Portal>
+      <Dialog.Overlay />
+      <Dialog.Content showCloseButton={false}>
+        <Dialog.Header>
+          <Dialog.Title>Discard unsaved changes?</Dialog.Title>
+          <Dialog.Description>
+            You have unsaved changes that will be lost if you leave.
+          </Dialog.Description>
+        </Dialog.Header>
+        <Dialog.Footer class="gap-2">
+          <Button variant="outline" onclick={() => (showDiscardDialog = false)}>
+            Keep editing
+          </Button>
+          <Button variant="destructive" onclick={handleDiscard}>Discard</Button>
+        </Dialog.Footer>
+      </Dialog.Content>
+    </Dialog.Portal>
+  </Dialog.Root>
 </div>
