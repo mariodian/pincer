@@ -4,13 +4,13 @@
   import * as Card from "$lib/components/ui/card";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { Spinner } from "$lib/components/ui/spinner";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { cn } from "$lib/utils";
   import {
     AlertCircleIcon,
     CheckmarkCircle02Icon,
     Download04Icon,
-    RefreshIcon,
   } from "@hugeicons/core-free-icons";
   import { HugeiconsIcon } from "@hugeicons/svelte";
   import icon from "../../../../../icons/icon.iconset/icon_256x256.png";
@@ -209,10 +209,9 @@
             class="gap-2"
           >
             {#if checking}
-              <span class="animate-spin">⟳</span>
+              <Spinner class="size-4" />
               Checking...
             {:else}
-              <HugeiconsIcon icon={RefreshIcon} class="size-4" />
               Check for Updates
             {/if}
           </Button>
@@ -259,7 +258,7 @@
               class="gap-2"
             >
               {#if downloading}
-                <span class="animate-spin">⟳</span>
+                <Spinner class="size-4" />
                 Downloading...
               {:else}
                 <HugeiconsIcon icon={Download04Icon} class="size-4" />
