@@ -41,6 +41,10 @@
 
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
   const yDomain = $derived(computeYDomain(data, series));
+
+  const fallbackGetSplineProps = (s: any) => ({
+    data: s?.data ?? data,
+  });
 </script>
 
 <LineChart
@@ -72,10 +76,12 @@
 >
   {#snippet belowMarks({ getSplineProps })}
     {#if gaps}
-      {#each series as s, i}
-        {#each lineGaps[s.key] ?? [] as gapData}
+      {#each series as s, i (s.key)}
+        {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${j}`)}
           <Spline
-            {...getSplineProps(s, i)}
+            {...getSplineProps
+              ? getSplineProps(s, i)
+              : fallbackGetSplineProps(s)}
             data={gapData}
             y={(d) => Number(d[s.key])}
             class="[stroke-dasharray:3,3]"
@@ -87,9 +93,9 @@
       {/each}
     {/if}
   {/snippet}
-  {#snippet marks({ getSplineProps })}
+  {#snippet marks({ getSplineProps, highlightKey })}
     {#if colorGradient}
-      {#each series as s, i}
+      {#each series as s, i (s.key)}
         <LinearGradient
           stops={[
             `color-mix(${s.color} 80%, transparent)`,
@@ -101,9 +107,13 @@
         >
           {#snippet children({ gradient })}
             <Spline
-              {...getSplineProps(s, i)}
+              {...getSplineProps
+                ? getSplineProps(s, i)
+                : fallbackGetSplineProps(s)}
+              data={s.data ?? data}
               y={(d) => d[s.key]}
               stroke={gradient}
+              opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
               {strokeWidth}
               curve={curveCatmullRom}
             />
@@ -111,11 +121,13 @@
         </LinearGradient>
       {/each}
     {:else}
-      {#each series as s, i}
+      {#each series as s, i (s.key)}
         <Spline
-          {...getSplineProps(s, i)}
+          {...getSplineProps ? getSplineProps(s, i) : fallbackGetSplineProps(s)}
+          data={s.data ?? data}
           y={(d) => d[s.key]}
           stroke={s.color}
+          opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
           {strokeWidth}
           curve={curveCatmullRom}
         />
