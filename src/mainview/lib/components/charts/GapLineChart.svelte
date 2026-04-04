@@ -41,10 +41,6 @@
 
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
   const yDomain = $derived(computeYDomain(data, series));
-
-  const fallbackGetSplineProps = (s: any) => ({
-    data: s?.data ?? data,
-  });
 </script>
 
 <LineChart
@@ -74,18 +70,16 @@
     tooltip: tooltip,
   }}
 >
-  {#snippet belowMarks({ getSplineProps })}
+  {#snippet belowMarks({ context })}
     {#if gaps}
-      {#each series as s, i (s.key)}
+      {#each context.series.visibleSeries as s (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${j}`)}
           <Spline
-            {...getSplineProps
-              ? getSplineProps(s, i)
-              : fallbackGetSplineProps(s)}
             data={gapData}
             y={(d) => Number(d[s.key])}
             class="[stroke-dasharray:3,3]"
             stroke={s.color}
+            opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
             {strokeWidth}
             curve={curveCatmullRom.alpha(0.5)}
           />
@@ -93,27 +87,24 @@
       {/each}
     {/if}
   {/snippet}
-  {#snippet marks({ getSplineProps, highlightKey })}
+  {#snippet marks({ context })}
     {#if colorGradient}
-      {#each series as s, i (s.key)}
+      {#each context.series.visibleSeries as s (s.key)}
         <LinearGradient
           stops={[
-            `color-mix(${s.color} 80%, transparent)`,
-            `color-mix(${s.color} 50%, transparent)`,
-            `color-mix(${s.color} 40%, transparent)`,
+            [0, `color-mix(${s.color ?? "currentColor"} 80%, transparent)`],
+            [0.6, `color-mix(${s.color ?? "currentColor"} 50%, transparent)`],
+            [1, `color-mix(${s.color ?? "currentColor"} 40%, transparent)`],
           ]}
           units="userSpaceOnUse"
           vertical
         >
           {#snippet children({ gradient })}
             <Spline
-              {...getSplineProps
-                ? getSplineProps(s, i)
-                : fallbackGetSplineProps(s)}
               data={s.data ?? data}
               y={(d) => d[s.key]}
               stroke={gradient}
-              opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+              opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
               {strokeWidth}
               curve={curveCatmullRom}
             />
@@ -121,13 +112,12 @@
         </LinearGradient>
       {/each}
     {:else}
-      {#each series as s, i (s.key)}
+      {#each context.series.visibleSeries as s (s.key)}
         <Spline
-          {...getSplineProps ? getSplineProps(s, i) : fallbackGetSplineProps(s)}
           data={s.data ?? data}
           y={(d) => d[s.key]}
           stroke={s.color}
-          opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+          opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
           {strokeWidth}
           curve={curveCatmullRom}
         />

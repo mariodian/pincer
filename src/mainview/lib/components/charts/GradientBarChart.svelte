@@ -60,16 +60,31 @@
     tooltip: tooltip,
   }}
 >
-  {#snippet marks({ getBarsProps })}
-    {#each series as s, i}
+  {#snippet marks({ context })}
+    {#each context.series.visibleSeries as s, i (s.key)}
       {#if colorGradient}
         <LinearGradient
-          stops={[s.color, `color-mix(${s.color} 50%, transparent)`]}
+          stops={[
+            [0, s.color ?? "currentColor"],
+            [1, `color-mix(${s.color ?? "currentColor"} 50%, transparent)`],
+          ]}
           vertical
         >
           {#snippet children({ gradient })}
             <Bars
-              {...getBarsProps(s, i)}
+              seriesKey={s.key}
+              x1={() => s.value ?? s.key}
+              rounded={context.series.divergingEdgeKeys
+                ? context.series.divergingEdgeKeys.has(s.key)
+                  ? "edge"
+                  : "none"
+                : context.series.isStacked &&
+                    i !== context.series.visibleSeries.length - 1
+                  ? "none"
+                  : "all"}
+              radius={4}
+              opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
+              {...s.props}
               fill={gradient}
               stroke={s.color}
               {strokeWidth}
@@ -77,7 +92,23 @@
           {/snippet}
         </LinearGradient>
       {:else}
-        <Bars {...getBarsProps(s, i)} fill={s.color} {strokeWidth} />
+        <Bars
+          seriesKey={s.key}
+          x1={() => s.value ?? s.key}
+          rounded={context.series.divergingEdgeKeys
+            ? context.series.divergingEdgeKeys.has(s.key)
+              ? "edge"
+              : "none"
+            : context.series.isStacked &&
+                i !== context.series.visibleSeries.length - 1
+              ? "none"
+              : "all"}
+          radius={4}
+          opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
+          {...s.props}
+          fill={s.color}
+          {strokeWidth}
+        />
       {/if}
     {/each}
   {/snippet}
