@@ -464,10 +464,16 @@
           </Dialog.Description>
         </Dialog.Header>
         <Dialog.Footer class="gap-2">
-          <Button variant="outline" onclick={() => (showDiscardDialog = false)}>
+          <Button
+            tabindex={0}
+            variant="outline"
+            onclick={() => (showDiscardDialog = false)}
+          >
             Keep editing
           </Button>
-          <Button variant="destructive" onclick={handleDiscard}>Discard</Button>
+          <Button tabindex={0} variant="destructive" onclick={handleDiscard}
+            >Discard</Button
+          >
         </Dialog.Footer>
       </Dialog.Content>
     </Dialog.Portal>
