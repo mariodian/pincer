@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { cn } from "$lib/utils.js";
-	import { iconRegistry, type IconName } from "$lib/icons/icon-registry.js";
+	import { iconRegistry, type IconName } from "$lib/icons/icon-registry";
+	import { cn } from "$lib/utils";
 	import { HugeiconsIcon } from "@hugeicons/svelte";
 
 	interface Props {
 		name: IconName;
-		size?: string | number;
-		strokeWidth?: string | number;
+		size?: number;
+		strokeWidth?: number;
 		color?: string;
 		ariaLabel?: string;
 		class?: string;
@@ -16,7 +16,7 @@
 
 	let {
 		name,
-		size,
+		size = 16,
 		strokeWidth = 2,
 		color,
 		ariaLabel,
@@ -41,7 +41,8 @@
 	{#if entry.hugeicons}
 		<HugeiconsIcon
 			icon={entry.hugeicons}
-			strokeWidth={Number(strokeWidth)}
+      size={size}
+			strokeWidth={strokeWidth}
 			color={resolvedColor}
 			aria-label={ariaLabel}
 			class={resolvedClass}
@@ -54,8 +55,8 @@
 	{#if entry.lucide}
 		{@const LucideIcon = entry.lucide}
 		<LucideIcon
-			size={size?.toString()}
-			strokeWidth={strokeWidth?.toString()}
+			size={size}
+			strokeWidth={strokeWidth}
 			color={resolvedColor}
 			ariaLabel={ariaLabel}
 			class={resolvedClass}

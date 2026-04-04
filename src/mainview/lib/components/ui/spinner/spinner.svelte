@@ -3,6 +3,8 @@
 	import { cn } from "$lib/utils.js";
 
 	type Props = {
+    size?: number;
+    strokeWidth?: number;
 		class?: string;
 		className?: string;
 		role?: string;
@@ -10,6 +12,8 @@
 	};
 
 	let {
+    size = 16,
+    strokeWidth = 2,
 		class: className,
 		role = "status",
 		"aria-label": ariaLabel = "Loading",
@@ -18,8 +22,9 @@
 
 <Icon
 	name="loading"
-	strokeWidth={2}
+  {size}
+	{strokeWidth}
 	ariaLabel={ariaLabel}
-	class={cn("size-4 animate-spin", className)}
+	class={cn("animate-spin", className)}
 	{role}
 />

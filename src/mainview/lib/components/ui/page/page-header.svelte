@@ -64,7 +64,7 @@
     >
       {#if showBack}
         <Button variant="ghost" size="icon-sm" onclick={onBack}>
-          <Icon name="chevronLeft" strokeWidth={2} size={12} />
+          <Icon name="chevronLeft" class="size-5" />
           <span class="sr-only">Back</span>
         </Button>
       {/if}

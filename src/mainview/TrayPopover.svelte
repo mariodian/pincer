@@ -1,5 +1,6 @@
 <script lang="ts">
   import Button from "$lib/components/tray/Button.svelte";
+  import { Icon } from "$lib/components/ui/icon";
   import {
     offAgentSync,
     onAgentSync,
@@ -10,7 +11,6 @@
   import type { TrayPopoverRPCType } from "$shared/rpc";
   import { RPC_MAX_REQUEST_TIME } from "$shared/rpc";
   import type { AgentStatus } from "$shared/types";
-  import { Icon } from "$lib/components/ui/icon";
   import { Electroview } from "electrobun/view";
   import "./tray-popover.css";
 
@@ -189,7 +189,7 @@
 
     <Button onclick={handleRefresh} size="xs" class="flex-0">
       <div class={["refresh-icon", isRefreshing ? "is-spinning" : ""]}>
-        <Icon name="refresh" strokeWidth={3} size={12} />
+        <Icon name="refresh" size={14} />
       </div>
     </Button>
   </div>
@@ -261,7 +261,7 @@
   >
     <Button onclick={handleDashboard} size="xs">Dashboard</Button>
     <Button onclick={handleSettings} size="xs" class="flex-0 mr-2">
-      <Icon name="settings" strokeWidth={3} size={14} />
+      <Icon name="settings" />
     </Button>
     <Button
       onclick={handleQuit}
@@ -270,7 +270,7 @@
       size="xs"
       class="flex-0"
     >
-      <Icon name="shutDown" strokeWidth={3} size={16} />
+      <Icon name="shutDown" />
     </Button>
   </div>
 </div>

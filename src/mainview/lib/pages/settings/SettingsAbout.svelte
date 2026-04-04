@@ -204,7 +204,7 @@
             class="gap-2"
           >
             {#if checking}
-              <Spinner class="size-4" />
+              <Spinner />
               Checking...
             {:else}
               Check for Updates
@@ -215,7 +215,7 @@
         <!-- Check Result Message -->
         {#if checkResult && !checkResult.updateAvailable}
           <Alert.Root>
-            <Icon name="checkCircle" class="size-4" />
+            <Icon name="checkCircle" />
             <Alert.Title>{checkResult.message}</Alert.Title>
             <Alert.Description>
               <a
@@ -239,8 +239,9 @@
           >
             <div class="flex items-center gap-2 mb-2">
               <Icon
+                size={20}
                 name="checkCircle"
-                class="size-5 text-green-950/80 dark:text-green-100/80"
+                class="text-green-950/80 dark:text-green-100/80"
               />
               <span class="font-medium">Update Available</span>
             </div>
@@ -253,10 +254,10 @@
               class="gap-2"
             >
               {#if downloading}
-                <Spinner class="size-4" />
+                <Spinner />
                 Downloading...
               {:else}
-                <Icon name="download" class="size-4" />
+                <Icon name="download" />
                 Download & Install
               {/if}
             </Button>
@@ -266,7 +267,7 @@
         <!-- Error Message -->
         {#if error}
           <Alert.Root variant="destructive">
-            <Icon name="alertCircle" class="size-4" />
+            <Icon name="alertCircle" />
             <Alert.Title>Error</Alert.Title>
             <Alert.Description>{error}</Alert.Description>
           </Alert.Root>
