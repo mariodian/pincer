@@ -32,11 +32,12 @@
   }: Props = $props();
 
   const isEdit = $derived(agentId !== undefined);
+  const DEFAULT_PORT = "18790";
 
   let type = $state("");
   let name = $state("");
   let url = $state("");
-  let port = $state("18790");
+  let port = $state(DEFAULT_PORT);
   let enabled = $state(true);
   let healthEndpoint = $state("/health");
   let statusShape = $state("always_ok");
@@ -75,7 +76,7 @@
     return (
       name !== "" ||
       url !== "" ||
-      port !== "18790" ||
+      port !== DEFAULT_PORT ||
       enabled !== true ||
       type !== ""
     );
@@ -448,7 +449,14 @@
   <Dialog.Root bind:open={showDiscardDialog}>
     <Dialog.Portal>
       <Dialog.Overlay />
-      <Dialog.Content showCloseButton={false}>
+      <Dialog.Content
+        showCloseButton={false}
+        onkeydown={(e) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+          }
+        }}
+      >
         <Dialog.Header>
           <Dialog.Title>Discard unsaved changes?</Dialog.Title>
           <Dialog.Description>
