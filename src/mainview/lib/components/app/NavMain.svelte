@@ -1,16 +1,13 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+  import { Icon } from "$lib/components/ui/icon/index.js";
   import { currentRoute } from "$lib/services/navigationStore";
   import { isActiveUrl } from "$lib/utils/url.js";
+  import type { IconName } from "$lib/icons/icon-registry.js";
   import { link, push } from "@bmlt-enabled/svelte-spa-router";
-  import { Add01Icon } from "@hugeicons/core-free-icons";
-  import type { IconSvgElement } from "@hugeicons/svelte";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
 
-  let {
-    items,
-  }: { items: { title: string; url: string; icon: IconSvgElement }[] } =
+  let { items }: { items: { title: string; url: string; icon: IconName }[] } =
     $props();
 
   let currentLocation = $derived($currentRoute);
@@ -29,7 +26,7 @@
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
-                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
+                  <Icon name={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>
               {/snippet}
@@ -40,7 +37,7 @@
               variant="outline"
               onclick={() => push("/agents/add")}
             >
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+              <Icon name="add" strokeWidth={2} />
               <span class="sr-only">Add agent</span>
             </Button>
           </Sidebar.MenuItem>
@@ -52,7 +49,7 @@
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
-                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
+                  <Icon name={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>
               {/snippet}

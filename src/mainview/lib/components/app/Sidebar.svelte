@@ -2,11 +2,6 @@
   import logo from "$assets/logo.webp";
   import { APP_NAME } from "$bun/config";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import {
-    DashboardSpeedIcon,
-    RoboticIcon,
-    SettingsIcon,
-  } from "@hugeicons/core-free-icons";
   import packageJson from "../../../../../package.json";
   import NavMain from "./NavMain.svelte";
   import NavSecondary from "./NavSecondary.svelte";
@@ -15,10 +10,12 @@
 
   const menuItems = {
     navMain: [
-      { title: "Dashboard", icon: DashboardSpeedIcon, url: "/dashboard" },
-      { title: "Agents", icon: RoboticIcon, url: "/agents" },
+      { title: "Dashboard", icon: "dashboard" as const, url: "/dashboard" },
+      { title: "Agents", icon: "agents" as const, url: "/agents" },
     ],
-    navSecondary: [{ title: "Settings", icon: SettingsIcon, url: "/settings" }],
+    navSecondary: [
+      { title: "Settings", icon: "settings" as const, url: "/settings" },
+    ],
   };
 </script>
 

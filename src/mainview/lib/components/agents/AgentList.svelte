@@ -11,12 +11,7 @@
     sortAgentsByStatus,
   } from "$shared/agent-helpers";
   import type { AgentStatus } from "$shared/types";
-  import {
-    Add01Icon,
-    Delete01Icon,
-    Edit01Icon,
-  } from "@hugeicons/core-free-icons";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
+  import { Icon } from "$lib/components/ui/icon";
   import { onMount } from "svelte";
 
   interface Props {
@@ -128,7 +123,7 @@
   >
     {#snippet actions()}
       <Button onclick={() => onNavigate("/agents/add")}>
-        <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+        <Icon name="add" strokeWidth={2} />
         Add Agent
       </Button>
     {/snippet}
@@ -259,7 +254,7 @@
                       onclick={() => onNavigate(`/agents/${agent.id}`)}
                       title="Edit agent"
                     >
-                      <HugeiconsIcon icon={Edit01Icon} strokeWidth={2} />
+                      <Icon name="edit" strokeWidth={2} />
                       <span class="sr-only">Edit</span>
                     </Button>
                     <Button
@@ -271,7 +266,7 @@
                       title="Delete agent"
                       class="hover:text-destructive hover:bg-destructive/10"
                     >
-                      <HugeiconsIcon icon={Delete01Icon} strokeWidth={2} />
+                      <Icon name="delete" strokeWidth={2} />
                       <span class="sr-only">Delete</span>
                     </Button>
                   </div>
@@ -288,15 +283,15 @@
         description="Add your first agent to start monitoring services."
       >
         {#snippet icon()}
-          <HugeiconsIcon
-            icon={Add01Icon}
+          <Icon
+            name="add"
             class="size-6 text-muted-foreground"
             strokeWidth={2}
           />
         {/snippet}
         {#snippet cta()}
           <Button onclick={() => onNavigate("/agents/add")}>
-            <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+            <Icon name="add" strokeWidth={2} />
             Add Agent
           </Button>
         {/snippet}
