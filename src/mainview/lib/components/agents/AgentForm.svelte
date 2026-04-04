@@ -228,7 +228,16 @@
       formElement.requestSubmit();
     });
   });
+
+  function handleEscKey(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      window.history.back();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleEscKey} />
 
 <div class="flex flex-col h-full max-w-lg">
   <PageHeader
