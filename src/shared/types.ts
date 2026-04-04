@@ -26,14 +26,13 @@ export interface AgentStatusInfo {
 }
 
 export interface Settings {
-  pollingInterval: number;
   retentionDays: number;
   openMainWindow: boolean;
   showDisabledAgents: boolean;
-  useNativeTray: boolean;
 }
 
-export interface UpdateSettings {
-  lastCheckTimestamp: number | null;
+export interface AdvancedSettings {
+  pollingInterval: number;
+  useNativeTray: boolean;
   autoCheckEnabled: boolean;
 }

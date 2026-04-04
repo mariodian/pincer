@@ -27,7 +27,6 @@ export const agents = sqliteTable("agents", {
 
 export const settingsGeneral = sqliteTable("settings_general", {
   id: integer("id").primaryKey().default(1),
-  pollingInterval: integer("polling_interval").notNull().default(30000),
   retentionDays: integer("retention_days").notNull().default(90),
   openMainWindow: integer("open_main_window", { mode: "boolean" })
     .notNull()
@@ -35,14 +34,15 @@ export const settingsGeneral = sqliteTable("settings_general", {
   showDisabledAgents: integer("show_disabled_agents", { mode: "boolean" })
     .notNull()
     .default(false),
+});
+
+// Advanced settings table - for settings shown in Advanced tab
+export const settingsAdvanced = sqliteTable("settings_advanced", {
+  id: integer("id").primaryKey().default(1),
+  pollingInterval: integer("polling_interval").notNull().default(30000),
   useNativeTray: integer("use_native_tray", { mode: "boolean" })
     .notNull()
     .default(false),
-});
-
-export const settingsUpdate = sqliteTable("settings_update", {
-  id: integer("id").primaryKey().default(1),
-  lastCheckTimestamp: integer("last_check_timestamp"),
   autoCheckEnabled: integer("auto_check_enabled", { mode: "boolean" })
     .notNull()
     .default(true),

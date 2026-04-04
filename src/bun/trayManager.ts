@@ -13,6 +13,7 @@ import {
   initStatusSyncService,
 } from "./services/statusSyncService";
 import { getSettings } from "./storage/sqlite/settingsRepo";
+import { getAdvancedSettings } from "./storage/sqlite/advancedSettingsRepo";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
 import { isMacOS } from "./utils/platform";
@@ -24,11 +25,10 @@ export { refreshAndPush };
 
 const platformIsMacOS = isMacOS();
 
-// Use native tray when useNativeTray setting is true (default on Windows/Linux, off on macOS)
-// On Windows/Linux, native menu supports icons and better styling.
-// On macOS, we use a custom popover menu for better appearance and behavior.
-// This can be overridden via the Advanced Settings.
-const NATIVE_MENU = getSettings().useNativeTray;
+/** Check if native menu should be used based on advanced settings. */
+function useNativeMenu(): boolean {
+  return getAdvancedSettings().useNativeTray;
+}
 
 /** Shared navigation/action menu items used in both normal and error-fallback menus. */
 const NAV_MENU_ITEMS = [
@@ -83,7 +83,7 @@ export async function initializeTray() {
     const action = (event as { data?: { action?: string } })?.data?.action;
 
     if (action === "") {
-      if (NATIVE_MENU) {
+      if (useNativeMenu()) {
         // Show native menu
         updateTrayMenu();
       } else {
@@ -178,7 +178,7 @@ export async function initializeTray() {
   });
 
   // Initial menu update
-  if (NATIVE_MENU) {
+  if (useNativeMenu()) {
     updateTrayMenu();
   }
 
@@ -186,7 +186,7 @@ export async function initializeTray() {
   initStatusSyncService({
     getMainWindow,
     onMenuUpdate: () => {
-      if (NATIVE_MENU) updateTrayMenu();
+      if (useNativeMenu()) updateTrayMenu();
     },
   });
   getStatusSyncService().setPopoverWindow(popoverWindow);
@@ -327,7 +327,7 @@ export async function updateTrayMenu() {
 export async function syncAgentsFromKnownStatuses(updateMenu = true) {
   const sync = getStatusSyncService();
   await sync.pushKnownStatuses();
-  if (updateMenu && NATIVE_MENU) {
+  if (updateMenu && useNativeMenu()) {
     updateTrayMenu();
   }
 }

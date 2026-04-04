@@ -3,7 +3,11 @@ import {
   getSettings as getSettingsFromDb,
   updateSettings as updateSettingsToDb,
 } from "../storage/sqlite/settingsRepo";
-import type { Settings } from "../../shared/types";
+import {
+  getAdvancedSettings as getAdvancedSettingsFromDb,
+  updateAdvancedSettings as updateAdvancedSettingsToDb,
+} from "../storage/sqlite/advancedSettingsRepo";
+import type { Settings, AdvancedSettings } from "../../shared/types";
 import { restartStatusUpdates } from "../services/statusService";
 import { logger } from "../services/loggerService";
 
@@ -16,6 +20,14 @@ export type SettingsRPCType = {
       };
       updateSettings: {
         params: Partial<Settings>;
+        response: void;
+      };
+      getAdvancedSettings: {
+        params: Record<string, never>;
+        response: AdvancedSettings;
+      };
+      updateAdvancedSettings: {
+        params: Partial<AdvancedSettings>;
         response: void;
       };
     };
@@ -39,12 +51,28 @@ export const settingsRequestHandlers = {
   updateSettings: async (partial: Partial<Settings>) => {
     try {
       updateSettingsToDb(partial);
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to update settings:", error);
+      throw error;
+    }
+  },
+  getAdvancedSettings: async () => {
+    try {
+      return getAdvancedSettingsFromDb();
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to get advanced settings:", error);
+      throw error;
+    }
+  },
+  updateAdvancedSettings: async (partial: Partial<AdvancedSettings>) => {
+    try {
+      updateAdvancedSettingsToDb(partial);
 
       if (partial.pollingInterval !== undefined) {
         await restartStatusUpdates();
       }
     } catch (error) {
-      logger.error("settingsRPC", "Failed to update settings:", error);
+      logger.error("settingsRPC", "Failed to update advanced settings:", error);
       throw error;
     }
   },

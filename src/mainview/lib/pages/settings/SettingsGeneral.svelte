@@ -15,13 +15,11 @@
   let loading = $state(true);
 
   // Form state
-  let pollingIntervalSec = $state(30);
   let retentionDays = $state(90);
   let openMainWindow = $state(true);
   let showDisabledAgents = $state(false);
 
   // Track last-saved values to detect changes on blur
-  let savedPollingIntervalSec = $state(30);
   let savedRetentionDays = $state(90);
 
   async function loadSettings() {
@@ -30,12 +28,10 @@
       const rpc = getMainRPC();
       const settings: Settings = await rpc.request.getSettings({});
 
-      pollingIntervalSec = Math.round(settings.pollingInterval / 1000);
       retentionDays = settings.retentionDays;
       openMainWindow = settings.openMainWindow;
       showDisabledAgents = settings.showDisabledAgents;
 
-      savedPollingIntervalSec = pollingIntervalSec;
       savedRetentionDays = retentionDays;
     } catch (error) {
       console.error("Failed to load settings:", error);
@@ -57,22 +53,6 @@
     } catch (error) {
       console.error("Failed to save settings:", error);
       onSaveStatus("error");
-    }
-  }
-
-  async function handlePollingBlur() {
-    const val = Math.max(1, Math.round(pollingIntervalSec));
-    pollingIntervalSec = val;
-
-    if (val === savedPollingIntervalSec) return;
-
-    savedPollingIntervalSec = val;
-    await saveField({ pollingInterval: val * 1000 });
-  }
-
-  function handlePollingKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter") {
-      (e.target as HTMLInputElement).blur();
     }
   }
 
@@ -106,11 +86,6 @@
 {#if loading}
   <div class="space-y-6 max-w-lg">
     <div class="space-y-2">
-      <Skeleton class="h-4 w-32" />
-      <Skeleton class="h-9 w-full" />
-      <Skeleton class="h-3 w-48" />
-    </div>
-    <div class="space-y-2">
       <Skeleton class="h-4 w-28" />
       <Skeleton class="h-9 w-full" />
       <Skeleton class="h-3 w-56" />
@@ -132,22 +107,6 @@
   </div>
 {:else}
   <div class="space-y-6 max-w-lg">
-    <div class="space-y-2">
-      <Label for="polling-interval">Polling interval (seconds)</Label>
-      <Input
-        id="polling-interval"
-        type="number"
-        min="1"
-        bind:value={pollingIntervalSec}
-        onblur={handlePollingBlur}
-        onkeydown={handlePollingKeydown}
-        class="w-20"
-      />
-      <p class="text-xs text-muted-foreground">
-        How often to check agent health status.
-      </p>
-    </div>
-
     <div class="space-y-2">
       <Label for="retention-days">Data retention (days)</Label>
       <Input

@@ -1,7 +1,7 @@
 // Status Service - Centralized status polling for agent monitoring
 import { logger } from "./loggerService";
 import { checkAllAgentsStatus } from "./agentService";
-import { getSettings } from "../storage/sqlite/settingsRepo";
+import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
 import { getStatusSyncService } from "./statusSyncService";
 
 let statusUpdateInterval: NodeJS.Timeout | null = null;
@@ -29,8 +29,8 @@ async function startStatusUpdates() {
     clearInterval(statusUpdateInterval);
   }
 
-  // Read config for polling interval
-  const { pollingInterval } = getSettings();
+  // Read config for polling interval from advanced settings
+  const { pollingInterval } = getAdvancedSettings();
   const interval = pollingInterval || 30000;
 
   logger.debug("status", `Starting status polling every ${interval}ms`);

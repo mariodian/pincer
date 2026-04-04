@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { Input } from "$lib/components/ui/input";
+  import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { SwitchCard } from "$lib/components/ui/switch-card/index.js";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import type { AdvancedSettings } from "$shared/types";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -10,6 +13,8 @@
   let { onSaveStatus }: Props = $props();
 
   let loading = $state(true);
+  let pollingIntervalSec = $state(30);
+  let savedPollingIntervalSec = $state(30);
   let autoCheckEnabled = $state(true);
   let useNativeTray = $state(false);
 
@@ -17,11 +22,13 @@
     try {
       await whenReady();
       const rpc = getMainRPC();
-      const [updateInfo, settings] = await Promise.all([
-        rpc.request.getUpdateInfo({}),
-        rpc.request.getSettings({}),
-      ]);
-      autoCheckEnabled = updateInfo.autoCheckEnabled;
+      const settings: AdvancedSettings = await rpc.request.getAdvancedSettings(
+        {},
+      );
+
+      pollingIntervalSec = Math.round(settings.pollingInterval / 1000);
+      savedPollingIntervalSec = pollingIntervalSec;
+      autoCheckEnabled = settings.autoCheckEnabled;
       useNativeTray = settings.useNativeTray;
     } catch (error) {
       console.error("Failed to load advanced settings:", error);
@@ -33,6 +40,34 @@
   $effect(() => {
     loadSettings();
   });
+
+  async function saveAdvancedSettings(updates: Partial<AdvancedSettings>) {
+    onSaveStatus("saving");
+    try {
+      const rpc = getMainRPC();
+      await rpc.request.updateAdvancedSettings(updates);
+      onSaveStatus("saved");
+    } catch (error) {
+      console.error("Failed to save advanced settings:", error);
+      onSaveStatus("error");
+    }
+  }
+
+  async function handlePollingBlur() {
+    const val = Math.max(1, Math.round(pollingIntervalSec));
+    pollingIntervalSec = val;
+
+    if (val === savedPollingIntervalSec) return;
+
+    savedPollingIntervalSec = val;
+    await saveAdvancedSettings({ pollingInterval: val * 1000 });
+  }
+
+  function handlePollingKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      (e.target as HTMLInputElement).blur();
+    }
+  }
 
   async function handleAutoCheckChange(checked: boolean) {
     onSaveStatus("saving");
@@ -48,21 +83,18 @@
   }
 
   async function handleUseNativeTrayChange(checked: boolean) {
-    onSaveStatus("saving");
-    try {
-      const rpc = getMainRPC();
-      await rpc.request.updateSettings({ useNativeTray: checked });
-      useNativeTray = checked;
-      onSaveStatus("saved");
-    } catch (error) {
-      console.error("Failed to save tray setting:", error);
-      onSaveStatus("error");
-    }
+    useNativeTray = checked;
+    await saveAdvancedSettings({ useNativeTray: checked });
   }
 </script>
 
 {#if loading}
   <div class="space-y-6 max-w-lg">
+    <div class="space-y-2">
+      <Skeleton class="h-4 w-32" />
+      <Skeleton class="h-9 w-full" />
+      <Skeleton class="h-3 w-48" />
+    </div>
     <div class="flex items-center justify-between">
       <div class="space-y-2">
         <Skeleton class="h-4 w-48" />
@@ -80,6 +112,22 @@
   </div>
 {:else}
   <div class="space-y-6 max-w-lg">
+    <div class="space-y-2">
+      <Label for="polling-interval">Polling interval (seconds)</Label>
+      <Input
+        id="polling-interval"
+        type="number"
+        min="1"
+        bind:value={pollingIntervalSec}
+        onblur={handlePollingBlur}
+        onkeydown={handlePollingKeydown}
+        class="w-20"
+      />
+      <p class="text-xs text-muted-foreground">
+        How often to check agent health status.
+      </p>
+    </div>
+
     <SwitchCard
       id="auto-check-updates"
       title="Automatically check for updates"

@@ -64,6 +64,13 @@
       "when": 1775279643283,
       "tag": "0008_create_app_state",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1775312000000,
+      "tag": "0009_create_settings_advanced_and_move_fields",
+      "breakpoints": true
     }
   ]
 }

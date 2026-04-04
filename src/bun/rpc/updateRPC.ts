@@ -1,9 +1,13 @@
 // Update RPC - Shared RPC definition for update management
 import { Updater } from "electrobun/bun";
 import {
-  getUpdateSettings as getUpdateSettingsFromDb,
-  updateUpdateSettings as updateUpdateSettingsToDb,
-} from "../storage/sqlite/updateSettingsRepo";
+  getAdvancedSettings as getAdvancedSettingsFromDb,
+  updateAdvancedSettings as updateAdvancedSettingsToDb,
+} from "../storage/sqlite/advancedSettingsRepo";
+import {
+  getLastUpdateCheck as getLastUpdateCheckFromDb,
+  setLastUpdateCheck as setLastUpdateCheckToDb,
+} from "../storage/sqlite/appStateRepo";
 
 import { logger } from "../services/loggerService";
 
@@ -67,7 +71,8 @@ export function clearUpdateCache(): void {
 export const updateRequestHandlers = {
   getUpdateInfo: async (): Promise<UpdateInfoResponse> => {
     try {
-      const settings = getUpdateSettingsFromDb();
+      const settings = getAdvancedSettingsFromDb();
+      const lastCheckTimestamp = getLastUpdateCheckFromDb();
       const version = await Updater.localInfo.version();
       const hash = await Updater.localInfo.hash();
       const channel = await Updater.localInfo.channel();
@@ -79,7 +84,7 @@ export const updateRequestHandlers = {
         version,
         hash,
         channel,
-        lastCheckTimestamp: settings.lastCheckTimestamp,
+        lastCheckTimestamp,
         autoCheckEnabled: settings.autoCheckEnabled,
         updateAvailable,
         newVersion: cachedUpdateCheck?.version,
@@ -95,10 +100,8 @@ export const updateRequestHandlers = {
     try {
       const result = await Updater.checkForUpdate();
 
-      // Update the last check timestamp
-      updateUpdateSettingsToDb({
-        lastCheckTimestamp: Date.now(),
-      });
+      // Update the last check timestamp in app state
+      setLastUpdateCheckToDb(Date.now());
 
       // Cache the result
       cachedUpdateCheck = {
@@ -128,7 +131,7 @@ export const updateRequestHandlers = {
 
   setAutoCheck: async ({ enabled }: { enabled: boolean }): Promise<void> => {
     try {
-      updateUpdateSettingsToDb({ autoCheckEnabled: enabled });
+      updateAdvancedSettingsToDb({ autoCheckEnabled: enabled });
       logger.debug(
         "updateRPC",
         `Auto-check ${enabled ? "enabled" : "disabled"}`,
@@ -170,7 +173,7 @@ export const updateRequestHandlers = {
  */
 export async function performAutoUpdateCheck(): Promise<void> {
   try {
-    const settings = getUpdateSettingsFromDb();
+    const settings = getAdvancedSettingsFromDb();
 
     if (!settings.autoCheckEnabled) {
       logger.debug("update", "Auto-check disabled, skipping");
@@ -180,13 +183,11 @@ export async function performAutoUpdateCheck(): Promise<void> {
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;
 
-    if (
-      settings.lastCheckTimestamp &&
-      now - settings.lastCheckTimestamp < oneDayMs
-    ) {
+    const lastCheckTimestamp = getLastUpdateCheckFromDb();
+    if (lastCheckTimestamp && now - lastCheckTimestamp < oneDayMs) {
       logger.debug(
         "update",
-        `Last check was ${new Date(settings.lastCheckTimestamp).toLocaleString()}, skipping auto-check`,
+        `Last check was ${new Date(lastCheckTimestamp).toLocaleString()}, skipping auto-check`,
       );
       return;
     }
@@ -194,10 +195,8 @@ export async function performAutoUpdateCheck(): Promise<void> {
     logger.info("update", "Performing automatic update check...");
     const result = await Updater.checkForUpdate();
 
-    // Update the last check timestamp
-    updateUpdateSettingsToDb({
-      lastCheckTimestamp: now,
-    });
+    // Update the last check timestamp in app state
+    setLastUpdateCheckToDb(now);
 
     // Cache the result for UI display
     cachedUpdateCheck = {

@@ -11,6 +11,7 @@ export interface WindowBounds {
 }
 
 const WINDOW_BOUNDS_KEY = "windowBounds";
+const LAST_UPDATE_CHECK_KEY = "lastUpdateCheck";
 
 /**
  * Get a value from app state by key.
@@ -66,6 +67,22 @@ export function getWindowBounds(): WindowBounds | null {
  */
 export function setWindowBounds(bounds: WindowBounds): void {
   setAppState(WINDOW_BOUNDS_KEY, bounds);
+}
+
+/**
+ * Get the last update check timestamp.
+ * Returns null if never checked.
+ */
+export function getLastUpdateCheck(): number | null {
+  return getAppState<number>(LAST_UPDATE_CHECK_KEY);
+}
+
+/**
+ * Set the last update check timestamp.
+ * Convenience wrapper around setAppState.
+ */
+export function setLastUpdateCheck(timestamp: number): void {
+  setAppState(LAST_UPDATE_CHECK_KEY, timestamp);
 }
 
 /**
