@@ -1,11 +1,10 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
-  import { SidebarLeftIcon } from "@hugeicons/core-free-icons";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
+  import PanelLeftIcon from '@lucide/svelte/icons/panel-left';
   import type { ComponentProps } from "svelte";
   import { useSidebar } from "./context.svelte";
   import MenuButton, {
-    type SidebarMenuButtonSize,
+      type SidebarMenuButtonSize,
   } from "./sidebar-menu-button.svelte";
 
   let {
@@ -75,6 +74,6 @@
   }}
   {...restProps}
 >
-  <HugeiconsIcon icon={SidebarLeftIcon} strokeWidth={2} />
+  <PanelLeftIcon class="size-5" />
   <span class="sr-only">Toggle Sidebar</span>
 </MenuButton>

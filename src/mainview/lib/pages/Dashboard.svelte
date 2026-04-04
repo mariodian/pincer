@@ -27,8 +27,7 @@
   } from "$shared/rpc";
   import type { Settings } from "$shared/types";
   import { push } from "@bmlt-enabled/svelte-spa-router";
-  import { Add01Icon, AlertCircleIcon } from "@hugeicons/core-free-icons";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
+  import { Icon } from "$lib/components/ui/icon";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -187,8 +186,8 @@
         description={error ?? undefined}
       >
         {#snippet icon()}
-          <HugeiconsIcon
-            icon={AlertCircleIcon}
+          <Icon
+            name="alertCircle"
             class="size-6 text-destructive"
             strokeWidth={2}
           />
@@ -199,7 +198,7 @@
             disabled={loading}
             onclick={() => fetchData()}
           >
-            <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={2} />
+            <Icon name="alertCircle" strokeWidth={2} />
             {loading ? "Retrying..." : "Retry"}
           </Button>
         {/snippet}
@@ -375,15 +374,15 @@
           description="Add an agent to start collecting stats."
         >
           {#snippet icon()}
-            <HugeiconsIcon
-              icon={Add01Icon}
+            <Icon
+              name="add"
               class="size-6 text-muted-foreground"
               strokeWidth={2}
             />
           {/snippet}
           {#snippet cta()}
             <Button onclick={() => push("/agents/add")}>
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+              <Icon name="add" strokeWidth={2} />
               Add Agent
             </Button>
           {/snippet}

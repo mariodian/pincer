@@ -2,17 +2,12 @@
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
+  import { Icon } from "$lib/components/ui/icon";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Spinner } from "$lib/components/ui/spinner";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { cn } from "$lib/utils";
-  import {
-    AlertCircleIcon,
-    CheckmarkCircle02Icon,
-    Download04Icon,
-  } from "@hugeicons/core-free-icons";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
   import icon from "../../../../../icons/icon.iconset/icon_256x256.png";
 
   interface UpdateInfo {
@@ -209,7 +204,7 @@
             class="gap-2"
           >
             {#if checking}
-              <Spinner class="size-4" />
+              <Spinner />
               Checking...
             {:else}
               Check for Updates
@@ -220,7 +215,7 @@
         <!-- Check Result Message -->
         {#if checkResult && !checkResult.updateAvailable}
           <Alert.Root>
-            <HugeiconsIcon icon={CheckmarkCircle02Icon} class="size-4" />
+            <Icon name="checkCircle" />
             <Alert.Title>{checkResult.message}</Alert.Title>
             <Alert.Description>
               <a
@@ -243,9 +238,10 @@
             )}
           >
             <div class="flex items-center gap-2 mb-2">
-              <HugeiconsIcon
-                icon={CheckmarkCircle02Icon}
-                class="size-5 text-green-950/80 dark:text-green-100/80"
+              <Icon
+                size={20}
+                name="checkCircle"
+                class="text-green-950/80 dark:text-green-100/80"
               />
               <span class="font-medium">Update Available</span>
             </div>
@@ -258,10 +254,10 @@
               class="gap-2"
             >
               {#if downloading}
-                <Spinner class="size-4" />
+                <Spinner />
                 Downloading...
               {:else}
-                <HugeiconsIcon icon={Download04Icon} class="size-4" />
+                <Icon name="download" />
                 Download & Install
               {/if}
             </Button>
@@ -271,7 +267,7 @@
         <!-- Error Message -->
         {#if error}
           <Alert.Root variant="destructive">
-            <HugeiconsIcon icon={AlertCircleIcon} class="size-4" />
+            <Icon name="alertCircle" />
             <Alert.Title>Error</Alert.Title>
             <Alert.Description>{error}</Alert.Description>
           </Alert.Root>

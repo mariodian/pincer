@@ -1,14 +1,13 @@
 <script lang="ts">
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import { Icon } from "$lib/components/ui/icon/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { useSidebar } from "$lib/components/ui/sidebar";
+  import type { IconName } from "$lib/icons/icon-registry.js";
   import { currentRoute } from "$lib/services/navigationStore";
   import { cn, type WithoutChildren } from "$lib/utils";
   import { isActiveUrl } from "$lib/utils/url.js";
   import { link } from "@bmlt-enabled/svelte-spa-router";
-  import { Moon02Icon, SunIcon, Tick01Icon } from "@hugeicons/core-free-icons";
-  import type { IconSvgElement } from "@hugeicons/svelte";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
   import { resetMode, setMode, userPrefersMode } from "mode-watcher";
   import type { ComponentProps } from "svelte";
 
@@ -50,7 +49,7 @@
     items,
     ...restProps
   }: {
-    items: { title: string; url: string; icon: IconSvgElement }[];
+    items: { title: string; url: string; icon: IconName }[];
   } & WithoutChildren<ComponentProps<typeof Sidebar.Group>> = $props();
 
   // Disable sidebar trigger when window is too small
@@ -76,7 +75,7 @@
             >
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
-                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
+                  <Icon name={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>
               {/snippet}
@@ -99,8 +98,8 @@
                   >
                     {#snippet child({ props })}
                       <div {...props}>
-                        <HugeiconsIcon
-                          icon={SunIcon}
+                        <Icon
+                          name="sun"
                           strokeWidth={2}
                           class={cn([
                             "h-[1.2rem] w-[1.2rem]",
@@ -108,8 +107,8 @@
                             "dark:scale-0 dark:-rotate-90",
                           ])}
                         />
-                        <HugeiconsIcon
-                          icon={Moon02Icon}
+                        <Icon
+                          name="moon"
                           strokeWidth={2}
                           class={cn([
                             "absolute h-[1.2rem] w-[1.2rem]",
@@ -127,7 +126,7 @@
                     >Light
                     {#if selectedThemeKey === "light"}
                       <DropdownMenu.Shortcut>
-                        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2.5} />
+                        <Icon name="tick" strokeWidth={2.5} />
                       </DropdownMenu.Shortcut>
                     {/if}</DropdownMenu.Item
                   >
@@ -135,7 +134,7 @@
                     >Dark
                     {#if selectedThemeKey === "dark"}
                       <DropdownMenu.Shortcut>
-                        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2.5} />
+                        <Icon name="tick" strokeWidth={2.5} />
                       </DropdownMenu.Shortcut>
                     {/if}</DropdownMenu.Item
                   >
@@ -143,7 +142,7 @@
                     >System
                     {#if selectedThemeKey === "system"}
                       <DropdownMenu.Shortcut>
-                        <HugeiconsIcon icon={Tick01Icon} strokeWidth={2.5} />
+                        <Icon name="tick" strokeWidth={2.5} />
                       </DropdownMenu.Shortcut>
                     {/if}</DropdownMenu.Item
                   >
@@ -183,7 +182,7 @@
             <Sidebar.MenuButton>
               {#snippet child({ props })}
                 <a href={item.url} use:link {...props}>
-                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
+                  <Icon name={item.icon} strokeWidth={2} />
                   <span>{item.title}</span>
                 </a>
               {/snippet}

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
-  import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
-  import { HugeiconsIcon } from "@hugeicons/svelte";
+  import { Icon } from "$lib/components/ui/icon";
   import type { Snippet } from "svelte";
 
   let {
@@ -65,7 +64,7 @@
     >
       {#if showBack}
         <Button variant="ghost" size="icon-sm" onclick={onBack}>
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+          <Icon name="chevronLeft" class="size-5" />
           <span class="sr-only">Back</span>
         </Button>
       {/if}

@@ -1,38 +1,30 @@
 <script lang="ts">
+	import { Icon } from "$lib/components/ui/icon/index.js";
 	import { cn } from "$lib/utils.js";
-	import { Loading03Icon } from "@hugeicons/core-free-icons";
-	import { HugeiconsIcon } from "@hugeicons/svelte";
-	import type { SVGAttributes } from "svelte/elements";
 
-	type Props = SVGAttributes<SVGSVGElement> & {
-		icon?: typeof Loading03Icon;
-		name?: string | null;
-		color?: string | null;
-		stroke?: string | null;
+	type Props = {
+    size?: number;
+    strokeWidth?: number;
+		class?: string;
+		className?: string;
+		role?: string;
+		"aria-label"?: string;
 	};
 
 	let {
-		icon = Loading03Icon,
+    size = 16,
+    strokeWidth = 2,
 		class: className,
-		className: svgClassName,
 		role = "status",
-		// we add name, color, and stroke for compatibility with different icon libraries props
-		name,
-		color,
-		stroke,
 		"aria-label": ariaLabel = "Loading",
-		...restProps
 	}: Props = $props();
 </script>
 
-<HugeiconsIcon
-	{icon}
-	strokeWidth={2}
+<Icon
+	name="loading"
+  {size}
+	{strokeWidth}
+	ariaLabel={ariaLabel}
+	class={cn("animate-spin", className)}
 	{role}
-	name={name === null ? undefined : name}
-	color={color === null ? undefined : color}
-	stroke={stroke === null ? undefined : stroke}
-	aria-label={ariaLabel}
-	class={cn("size-4 animate-spin", className, svgClassName ?? undefined)}
-	{...restProps}
 />
