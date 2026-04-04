@@ -1,12 +1,12 @@
 <script lang="ts">
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import { Icon } from "$lib/components/ui/icon/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar";
   import { useSidebar } from "$lib/components/ui/sidebar";
-  import { Icon } from "$lib/components/ui/icon/index.js";
+  import type { IconName } from "$lib/icons/icon-registry.js";
   import { currentRoute } from "$lib/services/navigationStore";
   import { cn, type WithoutChildren } from "$lib/utils";
   import { isActiveUrl } from "$lib/utils/url.js";
-  import type { IconName } from "$lib/icons/icon-registry.js";
   import { link } from "@bmlt-enabled/svelte-spa-router";
   import { resetMode, setMode, userPrefersMode } from "mode-watcher";
   import type { ComponentProps } from "svelte";

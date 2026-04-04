@@ -5,57 +5,41 @@ import type { SVGAttributes } from "svelte/elements";
 import {
   Add01Icon,
   AlertCircleIcon,
-  ArrowDown01Icon,
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
-  ArrowUp01Icon,
-  Cancel01Icon,
   CheckmarkCircle02Icon,
+  ChevronLeft,
   DashboardSpeedIcon,
   Delete01Icon,
   Download04Icon,
   Edit01Icon,
   Loading03Icon,
-  MinusSignIcon,
   Moon02Icon,
   Refresh01Icon,
   RoboticIcon,
   Settings01Icon,
-  Settings02Icon,
   ShutDownIcon,
   SidebarLeftIcon,
   SunIcon,
   Tick01Icon,
-  Tick02Icon,
-  UnfoldMoreIcon,
-  UserIcon,
 } from "@hugeicons/core-free-icons";
 
 import {
-  AlertCircle,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
   Bot,
   Check,
-  CheckCircle2,
-  ChevronsUpDown,
+  ChevronLeftIcon,
+  CircleAlert,
+  CircleCheck,
+  Cog,
   Download,
-  Edit,
   LayoutDashboard,
-  Loader2,
-  Minus,
+  Loader,
+  LogOut,
   Moon,
+  PanelLeft,
   Plus,
   RefreshCw,
-  Settings,
-  Settings2,
-  Sidebar,
+  SquarePen,
   Sun,
   Trash2,
-  User,
-  X,
 } from "@lucide/svelte";
 
 interface LucideIconProps extends SVGAttributes<SVGSVGElement> {
@@ -83,43 +67,23 @@ export const iconRegistry: Record<string, IconEntry> = {
     hugeicons: Add01Icon,
   },
   alertCircle: {
-    lucide: AlertCircle,
+    lucide: CircleAlert,
     hugeicons: AlertCircleIcon,
-  },
-  arrowDown: {
-    lucide: ArrowDown,
-    hugeicons: ArrowDown01Icon,
-  },
-  arrowLeft: {
-    lucide: ArrowLeft,
-    hugeicons: ArrowLeft01Icon,
-  },
-  arrowRight: {
-    lucide: ArrowRight,
-    hugeicons: ArrowRight01Icon,
-  },
-  arrowUp: {
-    lucide: ArrowUp,
-    hugeicons: ArrowUp01Icon,
   },
   agents: {
     lucide: Bot,
     hugeicons: RoboticIcon,
   },
-  cancel: {
-    lucide: X,
-    hugeicons: Cancel01Icon,
-  },
-  check: {
-    lucide: Check,
-    hugeicons: Tick02Icon,
+  chevronLeft: {
+    lucide: ChevronLeftIcon,
+    hugeicons: ChevronLeft,
   },
   dashboard: {
     lucide: LayoutDashboard,
     hugeicons: DashboardSpeedIcon,
   },
   checkCircle: {
-    lucide: CheckCircle2,
+    lucide: CircleCheck,
     hugeicons: CheckmarkCircle02Icon,
   },
   delete: {
@@ -131,35 +95,27 @@ export const iconRegistry: Record<string, IconEntry> = {
     hugeicons: Download04Icon,
   },
   edit: {
-    lucide: Edit,
+    lucide: SquarePen,
     hugeicons: Edit01Icon,
   },
   loading: {
-    lucide: Loader2,
+    lucide: Loader,
     hugeicons: Loading03Icon,
-  },
-  minus: {
-    lucide: Minus,
-    hugeicons: MinusSignIcon,
   },
   refresh: {
     lucide: RefreshCw,
     hugeicons: Refresh01Icon,
   },
   settings: {
-    lucide: Settings,
+    lucide: Cog,
     hugeicons: Settings01Icon,
   },
-  settings2: {
-    lucide: Settings2,
-    hugeicons: Settings02Icon,
-  },
   shutDown: {
-    lucide: X, // No exact equivalent
+    lucide: LogOut,
     hugeicons: ShutDownIcon,
   },
   sidebar: {
-    lucide: Sidebar,
+    lucide: PanelLeft,
     hugeicons: SidebarLeftIcon,
   },
   sun: {
@@ -173,14 +129,6 @@ export const iconRegistry: Record<string, IconEntry> = {
   tick: {
     lucide: Check,
     hugeicons: Tick01Icon,
-  },
-  unfoldMore: {
-    lucide: ChevronsUpDown,
-    hugeicons: UnfoldMoreIcon,
-  },
-  user: {
-    lucide: User,
-    hugeicons: UserIcon,
   },
 };
 
