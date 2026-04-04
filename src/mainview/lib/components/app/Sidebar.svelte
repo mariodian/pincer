@@ -38,7 +38,6 @@
               "text-sidebar-primary-foreground",
               "aspect-square rounded-lg",
               "size-10 group-data-[collapsible=icon]:size-10!",
-              // "w-10 h-10",
             ]}
           >
             <img

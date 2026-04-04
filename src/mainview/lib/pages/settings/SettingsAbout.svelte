@@ -198,6 +198,7 @@
 
           <!-- Check Button -->
           <Button
+            tabindex={0}
             variant="outline"
             onclick={handleCheckForUpdate}
             disabled={checking}
@@ -249,6 +250,7 @@
               Version {updateInfo.newVersion} is ready to download and install.
             </p>
             <Button
+              tabindex={0}
               onclick={handleDownloadAndApply}
               disabled={downloading}
               class="gap-2"

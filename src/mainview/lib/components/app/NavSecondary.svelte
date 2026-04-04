@@ -69,7 +69,7 @@
         {#if item.title === "Settings"}
           <Sidebar.MenuItem class="flex items-center gap-2">
             <Sidebar.MenuButton
-              class="min-w-8 duration-200 ease-linear"
+              class="min-w-8 duration-150 ease-linear"
               tooltipContent={item.title}
               isActive={isActiveUrl(currentLocation, item.url)}
             >
@@ -147,30 +147,34 @@
               </DropdownMenu.Root>
               <div
                 class={cn([
-                  "transition-all duration-150 overflow-hidden",
+                  "transition-all duration-150",
                   shouldFlex
-                    ? "max-w-0 opacity-0 pointer-events-none"
+                    ? "max-w-0 opacity-0 pointer-events-none overflow-hidden"
                     : "max-w-10 opacity-100",
                 ])}
               >
-                <Sidebar.Trigger size="icon-sm" />
+                <Sidebar.Trigger
+                  tabindex={shouldFlex ? -1 : 0}
+                  size="icon-sm"
+                />
               </div>
             </Sidebar.MenuItem>
           </div>
 
           <div
             class={cn([
-              "transition-all duration-150 overflow-hidden",
+              "transition-all duration-150",
               shouldFlex
-                ? "max-h-10 opacity-100"
-                : "max-h-0 opacity-0 mt-0 pointer-events-none",
+                ? "max-h-10 opacity-100 mb-1"
+                : "max-h-0 opacity-0 mt-0 pointer-events-none overflow-hidden",
             ])}
           >
             <Sidebar.MenuItem>
               <Sidebar.Trigger
+                tabindex={shouldFlex ? 0 : -1}
                 disabled={!!shouldDisableSidebarTrigger}
                 tooltipContent="Open sidebar"
-                size="icon-sm"
+                size="icon"
               />
             </Sidebar.MenuItem>
           </div>

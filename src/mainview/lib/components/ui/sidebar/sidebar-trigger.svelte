@@ -61,6 +61,7 @@
   data-sidebar="trigger"
   data-slot="sidebar-trigger"
   size={mappedSize}
+  tabindex={restProps.tabindex ?? 0}
   {tooltipContent}
   {tooltipContentProps}
   class={cn(

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import { Icon } from "$lib/components/ui/icon/index.js";
+  import { useSidebar } from "$lib/components/ui/sidebar";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import type { IconName } from "$lib/icons/icon-registry.js";
   import { currentRoute } from "$lib/services/navigationStore";
@@ -11,6 +12,7 @@
     $props();
 
   let currentLocation = $derived($currentRoute);
+  const sidebar = useSidebar();
 </script>
 
 <Sidebar.Group>
@@ -32,6 +34,7 @@
               {/snippet}
             </Sidebar.MenuButton>
             <Button
+              tabindex={sidebar.state === "collapsed" ? -1 : 0}
               size="icon"
               class="size-8 group-data-[collapsible=icon]:opacity-0"
               variant="outline"
