@@ -48,6 +48,15 @@ export const settingsUpdate = sqliteTable("settings_update", {
     .default(true),
 });
 
+// Key-value store for ephemeral application state (window position, UI state, etc.)
+export const appState = sqliteTable("app_state", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch())`,
+  ),
+});
+
 export const stats = sqliteTable(
   "stats",
   {

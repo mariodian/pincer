@@ -1,4 +1,4 @@
-import { BrowserWindow, Screen, Utils } from "electrobun/bun";
+import Electrobun, { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { agentRequestHandlers } from "./rpc/agentRPC";
 import { performAutoUpdateCheck, updateRequestHandlers } from "./rpc/updateRPC";
@@ -9,11 +9,16 @@ import {
   systemRPC,
   systemRequestHandlers,
 } from "./rpc/systemRPC";
-import { setMainWindow } from "./rpc/windowRegistry";
+import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
 import { initLogger, logger } from "./services/loggerService";
 import { beginStatusUpdates } from "./services/statusService";
 import { getSettings } from "./storage/sqlite/settingsRepo";
+import {
+  getWindowBounds,
+  setWindowBounds,
+  type WindowBounds,
+} from "./storage/sqlite/appStateRepo";
 import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { isMacOS } from "./utils/platform";
@@ -21,6 +26,29 @@ import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
 import { APP_NAME, MAIN_WINDOW } from "./config";
+
+/**
+ * Check if saved window bounds are within a visible display.
+ * Returns valid bounds or null if they need resetting.
+ */
+function validateWindowBounds(bounds: WindowBounds): WindowBounds | null {
+  const displays = Screen.getAllDisplays();
+  const margin = 50; // Allow partial off-screen (50px margin)
+
+  for (const display of displays) {
+    const workArea = display.bounds;
+    // Check if at least part of the window is visible
+    if (
+      bounds.x + bounds.width > workArea.x - margin &&
+      bounds.x < workArea.x + workArea.width + margin &&
+      bounds.y + bounds.height > workArea.y - margin &&
+      bounds.y < workArea.y + workArea.height + margin
+    ) {
+      return bounds;
+    }
+  }
+  return null;
+}
 
 declare global {
   interface Window {
@@ -47,19 +75,50 @@ combinedRPC.setRequestHandler({
 export async function createMainWindow(): Promise<BrowserWindow> {
   const url = await getViewUrl("index.html");
   const wc = await readWindowConfig("main");
+  const savedBounds = getWindowBounds();
 
-  const windowWidth = MAIN_WINDOW.width;
-  const windowHeight = MAIN_WINDOW.height;
-  const primaryDisplay = Screen.getPrimaryDisplay();
-  const displayCenter = {
-    x: Math.round(
+  // Use saved bounds if available and valid, otherwise center on screen
+  let windowX: number;
+  let windowY: number;
+  let windowWidth: number;
+  let windowHeight: number;
+
+  if (savedBounds) {
+    const validBounds = validateWindowBounds(savedBounds);
+    if (validBounds) {
+      windowX = validBounds.x;
+      windowY = validBounds.y;
+      windowWidth = validBounds.width;
+      windowHeight = validBounds.height;
+      logger.debug("app", "Restored window bounds from app state");
+    } else {
+      // Bounds are off-screen, reset to center
+      const primaryDisplay = Screen.getPrimaryDisplay();
+      windowWidth = MAIN_WINDOW.width;
+      windowHeight = MAIN_WINDOW.height;
+      windowX = Math.round(
+        primaryDisplay.bounds.x +
+          (primaryDisplay.bounds.width - windowWidth) / 2,
+      );
+      windowY = Math.round(
+        primaryDisplay.bounds.y +
+          (primaryDisplay.bounds.height - windowHeight) / 2,
+      );
+      logger.debug("app", "Window bounds off-screen, resetting to center");
+    }
+  } else {
+    // No saved bounds, center on primary display
+    const primaryDisplay = Screen.getPrimaryDisplay();
+    windowWidth = MAIN_WINDOW.width;
+    windowHeight = MAIN_WINDOW.height;
+    windowX = Math.round(
       primaryDisplay.bounds.x + (primaryDisplay.bounds.width - windowWidth) / 2,
-    ),
-    y: Math.round(
+    );
+    windowY = Math.round(
       primaryDisplay.bounds.y +
         (primaryDisplay.bounds.height - windowHeight) / 2,
-    ),
-  };
+    );
+  }
 
   const mainWindow = new BrowserWindow({
     title: APP_NAME,
@@ -67,8 +126,8 @@ export async function createMainWindow(): Promise<BrowserWindow> {
     frame: {
       width: windowWidth,
       height: windowHeight,
-      x: displayCenter.x,
-      y: displayCenter.y,
+      x: windowX,
+      y: windowY,
     },
     rpc: combinedRPC as any,
     ...(platformIsMacOS
@@ -95,6 +154,23 @@ export async function createMainWindow(): Promise<BrowserWindow> {
 
   mainWindow.on("close", () => {
     logger.debug("app", "Main window closing");
+    // Save window bounds to restore on next open
+    try {
+      const bounds = mainWindow.getFrame();
+      setWindowBounds({
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+      });
+      logger.debug("app", "Window bounds saved on close");
+    } catch (error) {
+      logger.warn(
+        "app",
+        "Failed to save window bounds:",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
     Utils.setDockIconVisible(false);
     setMainWindow(null);
   });
@@ -146,6 +222,29 @@ setRendererReadyCallback(({ view }) => {
   if (view === "main") {
     void syncAgentsFromKnownStatuses(false);
     void beginStatusUpdates();
+  }
+});
+
+// Save window bounds before app quits (when window is open but not closed yet)
+Electrobun.events.on("before-quit", () => {
+  const mainWindow = getMainWindow();
+  if (mainWindow) {
+    try {
+      const bounds = mainWindow.getFrame();
+      setWindowBounds({
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+      });
+      logger.debug("app", "Window bounds saved on quit");
+    } catch (error) {
+      logger.warn(
+        "app",
+        "Failed to save bounds on quit:",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
   }
 });
 
