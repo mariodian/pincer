@@ -39,7 +39,7 @@ import {
   RefreshCw,
   SquarePen,
   Sun,
-  Trash2,
+  TrashIcon,
 } from "@lucide/svelte";
 
 interface LucideIconProps extends SVGAttributes<SVGSVGElement> {
@@ -87,7 +87,7 @@ export const iconRegistry: Record<string, IconEntry> = {
     hugeicons: CheckmarkCircle02Icon,
   },
   delete: {
-    lucide: Trash2,
+    lucide: TrashIcon,
     hugeicons: Delete01Icon,
   },
   download: {
