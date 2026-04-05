@@ -1,5 +1,12 @@
 export type LineSegments = Record<string, unknown>[][];
 
+export interface ChartSeries {
+  key: string;
+  label?: string;
+  color?: string;
+  data?: Record<string, unknown>[];
+}
+
 export function toFiniteNumber(value: unknown): number | null {
   if (value === null || typeof value === "undefined") return null;
   const n = Number(value);
@@ -57,7 +64,7 @@ export function buildSeriesGaps(
 
 export function buildAllSeriesGaps(
   data: Record<string, unknown>[],
-  series: { key: string }[],
+  series: ChartSeries[],
   gaps: boolean,
 ): Record<string, LineSegments> {
   const out: Record<string, LineSegments> = {};
@@ -71,7 +78,7 @@ export function buildAllSeriesGaps(
 
 export function computeYDomain(
   data: Record<string, unknown>[],
-  series: { key: string }[],
+  series: ChartSeries[],
 ): [number, number] {
   const values = data.flatMap((d) =>
     series
@@ -83,4 +90,33 @@ export function computeYDomain(
   const dataMax = values.length > 0 ? Math.max(...values) : 100;
 
   return [dataMin - 5, dataMax + 5];
+}
+
+export function toFiniteNumberOrZero(value: unknown): number {
+  return toFiniteNumber(value) ?? 0;
+}
+
+export function sanitizeSeriesData(
+  data: Record<string, unknown>[],
+  series: ChartSeries[],
+): Record<string, unknown>[] {
+  return data.map((row) => {
+    const sanitizedRow: Record<string, unknown> = { ...row };
+
+    for (const s of series) {
+      const key = typeof s?.key === "string" ? s.key : null;
+      if (!key) continue;
+      sanitizedRow[key] = toFiniteNumberOrZero(row[key]);
+    }
+
+    return sanitizedRow;
+  });
+}
+
+export function getSeriesFiniteValue(
+  row: Record<string, unknown>,
+  key: unknown,
+): number {
+  if (typeof key !== "string") return 0;
+  return toFiniteNumberOrZero(row[key]);
 }

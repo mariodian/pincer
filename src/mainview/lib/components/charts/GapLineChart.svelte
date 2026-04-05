@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { buildAllSeriesGaps, computeYDomain } from "$lib/utils/chart.js";
+  import {
+    buildAllSeriesGaps,
+    type ChartSeries,
+    computeYDomain,
+  } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
     defaultChartPadding,
@@ -13,7 +17,7 @@
   interface Props {
     data: Record<string, unknown>[];
     x: string;
-    series: any[];
+    series: ChartSeries[];
     xAxis?: Record<string, unknown>;
     yAxis?: Record<string, unknown>;
     tooltip?: Record<string, unknown>;
@@ -41,7 +45,7 @@
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
   const yDomain = $derived(computeYDomain(data, series));
 
-  const fallbackGetSplineProps = (s: any) => ({
+  const fallbackGetSplineProps = (s: ChartSeries) => ({
     data: s?.data ?? data,
   });
 </script>
@@ -68,9 +72,9 @@
       strokeWidth,
       curve: curveCatmullRom,
     },
-    xAxis: xAxis,
-    yAxis: yAxis,
-    tooltip: tooltip,
+    xAxis,
+    yAxis,
+    tooltip,
   }}
 >
   {#snippet belowMarks(args)}

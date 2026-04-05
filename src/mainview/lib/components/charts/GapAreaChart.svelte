@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { buildAllSeriesGaps, computeYDomain } from "$lib/utils/chart.js";
+  import {
+    buildAllSeriesGaps,
+    type ChartSeries,
+    computeYDomain,
+  } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
     Area,
@@ -14,7 +18,7 @@
   interface Props {
     data: Record<string, unknown>[];
     x: string;
-    series: any[];
+    series: ChartSeries[];
     xAxis?: Record<string, unknown>;
     yAxis?: Record<string, unknown>;
     tooltip?: Record<string, unknown>;
@@ -42,7 +46,7 @@
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
   const yDomain = $derived(computeYDomain(data, series));
 
-  const fallbackGetAreaProps = (s: any) => ({
+  const fallbackGetAreaProps = (s: ChartSeries) => ({
     data: s?.data ?? data,
   });
 </script>
@@ -71,9 +75,9 @@
       },
       curve: curveCatmullRom,
     },
-    xAxis: xAxis,
-    yAxis: yAxis,
-    tooltip: tooltip,
+    xAxis,
+    yAxis,
+    tooltip,
   }}
 >
   {#snippet belowMarks(args)}
