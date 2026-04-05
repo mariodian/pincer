@@ -9,8 +9,9 @@ export default defineConfig({
   resolve: {
     alias: {
       $assets: resolve(__dirname, "src/mainview/assets"),
-      $lib: resolve(__dirname, "src/mainview/lib"),
       $bun: resolve(__dirname, "src/bun"),
+      $lib: resolve(__dirname, "src/mainview/lib"),
+      $resources: resolve(__dirname, "src/resources"),
       $shared: resolve(__dirname, "src/shared"),
     },
   },

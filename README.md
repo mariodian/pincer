@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="128" height="128" alt="Pincer Icon" src="https://github.com/user-attachments/assets/b72ccc50-db88-4aae-9c32-12d80567ca3e" />
+<img width="128" height="128" alt="Pincer Icon" src="icons/icon.iconset/icon_128x128@2x.png" />
 <h1>Pincer</h1>
 
 ![Status](https://img.shields.io/badge/status-alpha-red)
@@ -14,7 +14,9 @@
 
 Running multiple local AI agents means constantly switching between terminals and browser tabs just to check what's healthy and what's not. Pincer lives in your system tray and gives you instant visibility into agent health, status history, and usage charts — no context switching required.
 
-![pincer-dashboard](https://github.com/user-attachments/assets/30b3deb8-c5d4-4ceb-b7d2-6a121e787df0)
+![pincer-dashboard](media/pincer-screenshot.webp)
+
+<!-- ![pincer-dashboard](https://github.com/user-attachments/assets/30b3deb8-c5d4-4ceb-b7d2-6a121e787df0) -->
 
 ## Features
 

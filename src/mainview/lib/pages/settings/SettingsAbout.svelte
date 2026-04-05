@@ -8,7 +8,7 @@
   import { Spinner } from "$lib/components/ui/spinner";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { cn } from "$lib/utils";
-  import icon from "../../../../../icons/icon.iconset/icon_256x256.png";
+  import icon from "$resources/icon.png";
 
   interface UpdateInfo {
     version: string;

@@ -5,7 +5,6 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "$assets": ["./src/mainview/assets"],
       "$assets/*": ["./src/mainview/assets/*"],
@@ -13,6 +12,8 @@
       "$lib/*": ["./src/mainview/lib/*"],
       "$bun": ["./src/bun"],
       "$bun/*": ["./src/bun/*"],
+      "$resources": ["./src/resources"],
+      "$resources/*": ["./src/resources/*"],
       "$shared": ["./src/shared"],
       "$shared/*": ["./src/shared/*"]
     },
