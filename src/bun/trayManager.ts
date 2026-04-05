@@ -1,7 +1,12 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
 import { BrowserWindow, Tray, Utils } from "electrobun/bun";
 import { sortAgentsByStatus } from "../shared/agent-helpers";
-import { POPOVER_WINDOW, TRAY_ICON_PATH } from "./config";
+import {
+  POPOVER_WINDOW,
+  TRAY_ICON_PATH,
+  TRAY_ICON_SIZE,
+  TRAY_ICON_SIZE_WINDOWS,
+} from "./config";
 import { setAgentMutationCallback } from "./rpc/agentRPC";
 import { setRefreshCallback, trayPopoverRPC } from "./rpc/trayPopoverRPC";
 import { getMainWindow } from "./rpc/windowRegistry";
@@ -12,11 +17,11 @@ import {
   getStatusSyncService,
   initStatusSyncService,
 } from "./services/statusSyncService";
-import { getSettings } from "./storage/sqlite/settingsRepo";
 import { getAdvancedSettings } from "./storage/sqlite/advancedSettingsRepo";
+import { getSettings } from "./storage/sqlite/settingsRepo";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
-import { isMacOS } from "./utils/platform";
+import { isMacOS, isWindows } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
@@ -24,6 +29,7 @@ import { readWindowConfig } from "./utils/windowConfig";
 export { refreshAndPush };
 
 const platformIsMacOS = isMacOS();
+const platformIsWindows = isWindows();
 
 /** Check if native menu should be used based on advanced settings. */
 function useNativeMenu(): boolean {
@@ -62,6 +68,7 @@ const NAV_MENU_ITEMS = [
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
+const iconSize = platformIsWindows ? TRAY_ICON_SIZE_WINDOWS : TRAY_ICON_SIZE;
 
 /**
  * Initialize the tray icon and set up event handlers
@@ -71,8 +78,8 @@ export async function initializeTray() {
   tray = new Tray({
     image: TRAY_ICON_PATH,
     template: true,
-    width: 32,
-    height: 32,
+    width: iconSize,
+    height: iconSize,
   });
 
   logger.info("tray", "Tray initialized");
