@@ -78,18 +78,19 @@
   }}
 >
   {#snippet belowMarks(args)}
-    {@const getSplineProps = args?.getSplineProps ?? fallbackGetSplineProps}
-    {@const visibleSeries = args?.visibleSeries ?? series}
+    {@const highlightKey = args.context.series.highlightKey}
+    {@const visibleSeries = args.context.series.visibleSeries}
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
+          {@const { data: _ } = fallbackGetSplineProps(s)}
           <Spline
-            {...getSplineProps(s, i)}
             data={gapData}
             y={(d) => Number(d[s.key])}
             class="[stroke-dasharray:3,3]"
             stroke={s.color}
             {strokeWidth}
+            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
             curve={curveCatmullRom.alpha(0.5)}
           />
         {/each}
@@ -97,11 +98,10 @@
     {/if}
   {/snippet}
   {#snippet marks(args)}
-    {@const getSplineProps = args?.getSplineProps ?? fallbackGetSplineProps}
-    {@const highlightKey = args?.highlightKey}
-    {@const visibleSeries = args?.visibleSeries ?? series}
+    {@const highlightKey = args.context.series.highlightKey}
+    {@const visibleSeries = args.context.series.visibleSeries}
     {#if colorGradient}
-      {#each visibleSeries as s, i (s.key)}
+      {#each visibleSeries as s (s.key)}
         <LinearGradient
           stops={[
             [0, s.color ?? "currentColor"],
@@ -112,8 +112,8 @@
           vertical
         >
           {#snippet children({ gradient })}
+            {@const { data: _ } = fallbackGetSplineProps(s)}
             <Spline
-              {...getSplineProps(s, i)}
               data={s.data ?? data}
               y={(d) => d[s.key]}
               stroke={gradient}
@@ -125,9 +125,9 @@
         </LinearGradient>
       {/each}
     {:else}
-      {#each visibleSeries as s, i (s.key)}
+      {#each visibleSeries as s (s.key)}
+        {@const { data: _ } = fallbackGetSplineProps(s)}
         <Spline
-          {...getSplineProps(s, i)}
           data={s.data ?? data}
           y={(d) => d[s.key]}
           stroke={s.color}

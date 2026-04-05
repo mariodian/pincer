@@ -81,8 +81,8 @@
   }}
 >
   {#snippet belowMarks(args)}
-    {@const highlightKey = args?.highlightKey}
-    {@const visibleSeries = args?.visibleSeries ?? series}
+    {@const highlightKey = args.context.series.highlightKey}
+    {@const visibleSeries = args.context.series.visibleSeries}
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
@@ -100,11 +100,11 @@
     {/if}
   {/snippet}
   {#snippet marks(args)}
-    {@const getAreaProps = args?.getAreaProps ?? fallbackGetAreaProps}
-    {@const highlightKey = args?.highlightKey}
-    {@const visibleSeries = args?.visibleSeries ?? series}
+    {@const highlightKey = args.context.series.highlightKey}
+    {@const visibleSeries = args.context.series.visibleSeries}
     {#if colorGradient}
-      {#each visibleSeries as s, i (s.key)}
+      {#each visibleSeries as s (s.key)}
+        {@const { data: areaData } = fallbackGetAreaProps(s)}
         <LinearGradient
           stops={[
             [0, s.color ?? "currentColor"],
@@ -114,8 +114,7 @@
         >
           {#snippet children({ gradient })}
             <Area
-              {...getAreaProps(s, i)}
-              data={s.data ?? data}
+              data={areaData}
               y1={(d) => d[s.key]}
               line={{
                 stroke: s.color,
@@ -123,16 +122,17 @@
                 opacity: highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1,
               }}
               fill={gradient}
+              fillOpacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
               curve={curveCatmullRom}
             />
           {/snippet}
         </LinearGradient>
       {/each}
     {:else}
-      {#each visibleSeries as s, i (s.key)}
+      {#each visibleSeries as s (s.key)}
+        {@const { data: areaData } = fallbackGetAreaProps(s)}
         <Area
-          {...getAreaProps(s, i)}
-          data={s.data ?? data}
+          data={areaData}
           y1={(d) => d[s.key]}
           line={{
             stroke: s.color,
@@ -140,6 +140,7 @@
             opacity: highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1,
           }}
           fill={s.color}
+          fillOpacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
           curve={curveCatmullRom}
         />
       {/each}

@@ -86,9 +86,9 @@
   }}
 >
   {#snippet marks(args)}
-    {@const getBarsProps = args?.getBarsProps ?? fallbackGetBarsProps}
-    {@const visibleSeries = args?.visibleSeries ?? series}
-    {#each visibleSeries as s, i (s.key)}
+    {@const visibleSeries = args.context.series.visibleSeries}
+    {#each visibleSeries as s (s.key)}
+      {@const { data: barData } = fallbackGetBarsProps(s)}
       {#if colorGradient}
         <LinearGradient
           stops={[
@@ -102,8 +102,9 @@
         >
           {#snippet children({ gradient })}
             <Bars
-              {...getBarsProps(s, i)}
-              data={s?.data ?? sanitizedData}
+              seriesKey={s.key}
+              data={barData}
+              x1={() => s.key}
               y={(d) => getSeriesFiniteValue(d, s?.key)}
               fill={gradient}
               stroke={s.color ?? "currentColor"}
@@ -115,8 +116,9 @@
         </LinearGradient>
       {:else}
         <Bars
-          {...getBarsProps(s, i)}
-          data={s?.data ?? sanitizedData}
+          seriesKey={s.key}
+          data={barData}
+          x1={() => s.key}
           y={(d) => getSeriesFiniteValue(d, s?.key)}
           fill={s.color ?? "currentColor"}
           stroke={s.color ?? "currentColor"}
