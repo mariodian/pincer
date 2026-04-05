@@ -5,6 +5,30 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.2] - 2026-04-05
+
+### Added
+
+- Added Escape-key shortcuts in the agent form to close discard dialogs and navigate back.
+- Added keyboard accessibility improvements across controls, including explicit `tabindex` support.
+- Added a loading spinner in settings to improve feedback during asynchronous states.
+- Added app state persistence for window bounds and UI preferences.
+- Added a Windows `icon.ico` asset for platform-specific packaging.
+
+### Changed
+
+- Replaced Hugeicons usage with Lucide icons and unified icon handling through a shared icon component.
+- Migrated settings into an advanced settings structure and updated related RPC handling.
+- Refactored empty-state, chart, and icon code paths for cleaner structure and more consistent rendering.
+- Updated package dependencies to improve compatibility and stability.
+
+### Fixed
+
+- Fixed chart robustness by improving guarded context handling, gradient bar rendering, and line-series fallbacks.
+- Fixed agent loading so disabled-agent visibility respects local preference state.
+- Fixed window bounds saving behavior to work around Electrobun bug #182.
+- Fixed release download metadata by updating the release `baseUrl`.
+
 ## [v0.1.1] - 2026-04-04
 
 ### Added
