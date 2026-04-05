@@ -18,7 +18,6 @@
     xAxis?: Record<string, unknown>;
     yAxis?: Record<string, unknown>;
     tooltip?: Record<string, unknown>;
-    // padding?: ReturnType<typeof defaultChartPadding>;
     strokeWidth?: number;
     gaps?: boolean;
     colorGradient?: boolean;
@@ -42,6 +41,10 @@
 
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
   const yDomain = $derived(computeYDomain(data, series));
+
+  const fallbackGetAreaProps = (s: any) => ({
+    data: s?.data ?? data,
+  });
 </script>
 
 <AreaChart
@@ -63,7 +66,9 @@
   props={{
     highlight: { points: { r: 8, strokeWidth: 8 } },
     area: {
-      line: { strokeWidth: 3 },
+      line: {
+        strokeWidth,
+      },
       curve: curveCatmullRom,
     },
     xAxis: xAxis,
@@ -71,27 +76,31 @@
     tooltip: tooltip,
   }}
 >
-  {#snippet belowMarks({ context })}
+  {#snippet belowMarks(args)}
+    {@const highlightKey = args?.highlightKey}
+    {@const visibleSeries = args?.visibleSeries ?? series}
     {#if gaps}
-      {#each context.series.visibleSeries as s (s.key)}
-        {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${j}`)}
+      {#each visibleSeries as s, i (s.key)}
+        {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
           <Spline
             data={gapData}
             y={(d) => Number(d[s.key])}
             class="[stroke-dasharray:3,3]"
             stroke={s.color}
             {strokeWidth}
-            opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
+            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
             curve={curveCatmullRom}
           />
         {/each}
       {/each}
     {/if}
   {/snippet}
-
-  {#snippet marks({ context })}
+  {#snippet marks(args)}
+    {@const getAreaProps = args?.getAreaProps ?? fallbackGetAreaProps}
+    {@const highlightKey = args?.highlightKey}
+    {@const visibleSeries = args?.visibleSeries ?? series}
     {#if colorGradient}
-      {#each context.series.visibleSeries as s (s.key)}
+      {#each visibleSeries as s, i (s.key)}
         <LinearGradient
           stops={[
             [0, s.color ?? "currentColor"],
@@ -101,12 +110,13 @@
         >
           {#snippet children({ gradient })}
             <Area
+              {...getAreaProps(s, i)}
               data={s.data ?? data}
               y1={(d) => d[s.key]}
               line={{
                 stroke: s.color,
-                strokeWidth: strokeWidth,
-                opacity: context.series.isHighlighted(s.key, true) ? 1 : 0.1,
+                strokeWidth,
+                opacity: highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1,
               }}
               fill={gradient}
               curve={curveCatmullRom}
@@ -115,16 +125,17 @@
         </LinearGradient>
       {/each}
     {:else}
-      {#each context.series.visibleSeries as s (s.key)}
+      {#each visibleSeries as s, i (s.key)}
         <Area
+          {...getAreaProps(s, i)}
           data={s.data ?? data}
           y1={(d) => d[s.key]}
-          fill={s.color}
           line={{
             stroke: s.color,
-            strokeWidth: strokeWidth,
-            opacity: context.series.isHighlighted(s.key, true) ? 1 : 0.1,
+            strokeWidth,
+            opacity: highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1,
           }}
+          fill={s.color}
           curve={curveCatmullRom}
         />
       {/each}

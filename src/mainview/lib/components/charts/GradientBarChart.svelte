@@ -20,7 +20,6 @@
     strokeWidth?: number;
     height?: number;
     padding?: { top?: number; right?: number; bottom?: number; left?: number };
-    // padding?: ReturnType<typeof defaultChartPadding>;
   }
 
   let {
@@ -60,8 +59,20 @@
     tooltip: tooltip,
   }}
 >
-  {#snippet marks({ context })}
-    {#each context.series.visibleSeries as s, i (s.key)}
+  {#snippet marks(args)}
+    {@const chartContext = args?.context as any}
+    {@const visibleSeries = chartContext?.series?.visibleSeries ?? series}
+    {#each visibleSeries as s, i (s.key)}
+      {@const isHighlighted =
+        chartContext?.series?.isHighlighted?.(s.key, true) ?? true}
+      {@const rounded = chartContext?.series?.divergingEdgeKeys
+        ? chartContext.series.divergingEdgeKeys.has(s.key)
+          ? "edge"
+          : "none"
+        : chartContext?.series?.isStacked && i !== visibleSeries.length - 1
+          ? "none"
+          : "all"}
+
       {#if colorGradient}
         <LinearGradient
           stops={[
@@ -74,16 +85,9 @@
             <Bars
               seriesKey={s.key}
               x1={() => s.value ?? s.key}
-              rounded={context.series.divergingEdgeKeys
-                ? context.series.divergingEdgeKeys.has(s.key)
-                  ? "edge"
-                  : "none"
-                : context.series.isStacked &&
-                    i !== context.series.visibleSeries.length - 1
-                  ? "none"
-                  : "all"}
+              {rounded}
               radius={4}
-              opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
+              opacity={isHighlighted ? 1 : 0.1}
               {...s.props}
               fill={gradient}
               stroke={s.color}
@@ -95,18 +99,12 @@
         <Bars
           seriesKey={s.key}
           x1={() => s.value ?? s.key}
-          rounded={context.series.divergingEdgeKeys
-            ? context.series.divergingEdgeKeys.has(s.key)
-              ? "edge"
-              : "none"
-            : context.series.isStacked &&
-                i !== context.series.visibleSeries.length - 1
-              ? "none"
-              : "all"}
+          {rounded}
           radius={4}
-          opacity={context.series.isHighlighted(s.key, true) ? 1 : 0.1}
+          opacity={isHighlighted ? 1 : 0.1}
           {...s.props}
           fill={s.color}
+          stroke={s.color}
           {strokeWidth}
         />
       {/if}
