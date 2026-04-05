@@ -60,53 +60,26 @@
   }}
 >
   {#snippet marks(args)}
-    {@const chartContext = args?.context as any}
-    {@const visibleSeries = chartContext?.series?.visibleSeries ?? series}
+    {@const getBarsProps = args.getBarsProps}
+    {@const visibleSeries = args.visibleSeries}
     {#each visibleSeries as s, i (s.key)}
-      {@const isHighlighted =
-        chartContext?.series?.isHighlighted?.(s.key, true) ?? true}
-      {@const rounded = chartContext?.series?.divergingEdgeKeys
-        ? chartContext.series.divergingEdgeKeys.has(s.key)
-          ? "edge"
-          : "none"
-        : chartContext?.series?.isStacked && i !== visibleSeries.length - 1
-          ? "none"
-          : "all"}
-
       {#if colorGradient}
         <LinearGradient
           stops={[
             [0, s.color ?? "currentColor"],
-            [1, `color-mix(${s.color ?? "currentColor"} 50%, transparent)`],
+            [
+              1,
+              `color-mix(in srgb, ${s.color ?? "currentColor"} 50%, transparent)`,
+            ],
           ]}
           vertical
         >
           {#snippet children({ gradient })}
-            <Bars
-              seriesKey={s.key}
-              x1={() => s.value ?? s.key}
-              {rounded}
-              radius={4}
-              opacity={isHighlighted ? 1 : 0.1}
-              {...s.props}
-              fill={gradient}
-              stroke={s.color}
-              {strokeWidth}
-            />
+            <Bars {...getBarsProps(s, i)} fill={gradient} {strokeWidth} />
           {/snippet}
         </LinearGradient>
       {:else}
-        <Bars
-          seriesKey={s.key}
-          x1={() => s.value ?? s.key}
-          {rounded}
-          radius={4}
-          opacity={isHighlighted ? 1 : 0.1}
-          {...s.props}
-          fill={s.color}
-          stroke={s.color}
-          {strokeWidth}
-        />
+        <Bars {...getBarsProps(s, i)} {strokeWidth} />
       {/if}
     {/each}
   {/snippet}
