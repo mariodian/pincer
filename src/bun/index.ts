@@ -58,6 +58,44 @@ declare global {
 
 const platformIsMacOS = isMacOS();
 
+/**
+ * Bug workaround: Electrobun #182
+ * https://github.com/blackboardsh/electrobun/issues/182
+ *
+ * On macOS (and possibly Windows), getSize() includes the title bar area
+ * in its measurement. This causes the window to grow by ~28px each time
+ * it's restored because the saved size includes the title bar, but when
+ * restoring we pass that total size to create the window, which then adds
+ * the title bar again on top.
+ *
+ * The fix: subtract the title bar offset when saving, so we always save
+ * and restore the content size, not the total window size.
+ */
+const TITLE_BAR_OFFSET = 28; // pixels
+
+/**
+ * Save the current window bounds to persistent storage.
+ * Uses content size (excluding title bar) to work around Electrobun bug #182.
+ */
+function saveWindowBounds(win: BrowserWindow): void {
+  const pos = win.getPosition();
+  const size = win.getSize();
+  // Subtract title bar offset to get content-only size
+  const adjustedHeight = size.height - (platformIsMacOS ? TITLE_BAR_OFFSET : 0);
+
+  logger.debug(
+    "app",
+    `Saving window bounds: x=${pos.x}, y=${pos.y}, w=${size.width}, h=${adjustedHeight}`,
+  );
+
+  setWindowBounds({
+    x: pos.x,
+    y: pos.y,
+    width: size.width,
+    height: adjustedHeight,
+  });
+}
+
 // Combine RPCs: use systemRPC as base, register all request handlers via setRequestHandler
 const combinedRPC = systemRPC;
 combinedRPC.setRequestHandler({
@@ -84,13 +122,20 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   let windowHeight: number;
 
   if (savedBounds) {
+    logger.debug(
+      "app",
+      `Saved bounds found: x=${savedBounds.x}, y=${savedBounds.y}, w=${savedBounds.width}, h=${savedBounds.height}`,
+    );
     const validBounds = validateWindowBounds(savedBounds);
     if (validBounds) {
       windowX = validBounds.x;
       windowY = validBounds.y;
       windowWidth = validBounds.width;
       windowHeight = validBounds.height;
-      logger.debug("app", "Restored window bounds from app state");
+      logger.debug(
+        "app",
+        `Restoring window bounds: x=${windowX}, y=${windowY}, w=${windowWidth}, h=${windowHeight}`,
+      );
     } else {
       // Bounds are off-screen, reset to center
       const primaryDisplay = Screen.getPrimaryDisplay();
@@ -154,16 +199,8 @@ export async function createMainWindow(): Promise<BrowserWindow> {
 
   mainWindow.on("close", () => {
     logger.debug("app", "Main window closing");
-    // Save window bounds to restore on next open
     try {
-      const bounds = mainWindow.getFrame();
-      setWindowBounds({
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-      });
-      logger.debug("app", "Window bounds saved on close");
+      saveWindowBounds(mainWindow);
     } catch (error) {
       logger.warn(
         "app",
@@ -225,19 +262,12 @@ setRendererReadyCallback(({ view }) => {
   }
 });
 
-// Save window bounds before app quits (when window is open but not closed yet)
+// Save window bounds before app quits (fallback for when close event doesn't fire)
 Electrobun.events.on("before-quit", () => {
   const mainWindow = getMainWindow();
   if (mainWindow) {
     try {
-      const bounds = mainWindow.getFrame();
-      setWindowBounds({
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-      });
-      logger.debug("app", "Window bounds saved on quit");
+      saveWindowBounds(mainWindow);
     } catch (error) {
       logger.warn(
         "app",
@@ -245,6 +275,9 @@ Electrobun.events.on("before-quit", () => {
         error instanceof Error ? error.message : String(error),
       );
     }
+    // Window reference is cleared in close handler, but clean up here too
+    // in case quit happens without close firing (e.g., Cmd+Q with no window)
+    setMainWindow(null);
   }
 });
 
