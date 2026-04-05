@@ -37,8 +37,44 @@
     rpc,
   });
 
-  let agents: AgentStatus[] = $state([]);
-  let loading = $state(true);
+  const SHOW_DISABLED_AGENTS_KEY = "tray-show-disabled-agents";
+
+  function readCachedShowDisabledAgents(): boolean {
+    try {
+      const value = localStorage.getItem(SHOW_DISABLED_AGENTS_KEY);
+      return value === "true";
+    } catch {
+      return false;
+    }
+  }
+
+  function writeCachedShowDisabledAgents(value: boolean): void {
+    try {
+      localStorage.setItem(SHOW_DISABLED_AGENTS_KEY, String(value));
+    } catch {
+      // Ignore storage errors; UI can still reconcile via RPC fetch.
+    }
+  }
+
+  function applyDisabledFilter(
+    input: AgentStatus[],
+    showDisabledAgents: boolean,
+  ): AgentStatus[] {
+    return showDisabledAgents
+      ? input
+      : input.filter((agent) => agent.enabled !== false);
+  }
+
+  const initialCachedAgents = readCachedAgents();
+  const initialShowDisabledAgents = readCachedShowDisabledAgents();
+  let agents: AgentStatus[] = $state(
+    initialCachedAgents
+      ? sortAgentsByStatus(
+          applyDisabledFilter(initialCachedAgents, initialShowDisabledAgents),
+        )
+      : [],
+  );
+  let hasCompletedInitialLoad = $state(initialCachedAgents !== null);
   let isRefreshing = $state(false);
   let scrollContainer: HTMLDivElement | null = $state(null);
   let showHeaderShadow = $state(false);
@@ -68,29 +104,51 @@
   }
 
   async function loadAgents() {
-    // Read from localStorage — data is pushed via syncAgents by trayManager
+    // Read from localStorage — data is pushed via syncAgents by trayManager.
+    // Render immediately so the popover does not flash the empty state.
     const cached = readCachedAgents();
-    if (cached) {
-      // Fetch settings to check showDisabledAgents
-      const { showDisabledAgents } = await rpc.request.getSettings({});
-      // Filter out disabled agents unless showDisabledAgents is true
-      const filtered = showDisabledAgents
-        ? cached
-        : cached.filter((agent) => agent.enabled !== false);
-      agents = sortAgentsByStatus(filtered);
+    if (!cached) {
+      try {
+        const [fetchedAgents, settings] = await Promise.all([
+          rpc.request.getAgents({}),
+          rpc.request.getSettings({}),
+        ]);
+        writeCachedShowDisabledAgents(settings.showDisabledAgents);
+        const filtered = applyDisabledFilter(
+          fetchedAgents,
+          settings.showDisabledAgents,
+        );
+        agents = sortAgentsByStatus(filtered);
+      } catch {
+        agents = [];
+      } finally {
+        hasCompletedInitialLoad = true;
+      }
+      return;
     }
-    loading = false;
+
+    agents = sortAgentsByStatus(
+      applyDisabledFilter(cached, initialShowDisabledAgents),
+    );
+
+    // Apply disabled-agent filtering once settings are available.
+    const { showDisabledAgents } = await rpc.request.getSettings({});
+    writeCachedShowDisabledAgents(showDisabledAgents);
+    const filtered = applyDisabledFilter(cached, showDisabledAgents);
+    agents = sortAgentsByStatus(filtered);
+    hasCompletedInitialLoad = true;
   }
 
   $effect(() => {
-    loadAgents();
+    void loadAgents();
 
-    const key = onAgentSync(loadAgents);
+    const key = onAgentSync(() => {
+      void loadAgents();
+    });
     return () => offAgentSync(key);
   });
 
   $effect(() => {
-    loading;
     agents;
     requestAnimationFrame(updateScrollShadows);
   });
@@ -199,7 +257,13 @@
     onscroll={updateScrollShadows}
     class={["flex flex-col gap-2 py-2 pl-2 pr-5", "flex-1", "overflow-y-auto"]}
   >
-    {#if agents.length === 0}
+    {#if !hasCompletedInitialLoad}
+      <div
+        class={["p-5 text-sm text-center", "text-black/60 dark:text-white/60"]}
+      >
+        Loading…
+      </div>
+    {:else if agents.length === 0}
       <div
         class={["p-5 text-sm text-center", "text-black/60 dark:text-white/60"]}
       >
