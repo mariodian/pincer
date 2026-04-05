@@ -9,7 +9,7 @@
     "dev:web": "vite dev",
     "hmr": "vite --port 5173",
     "build:native-effects": "bash ./scripts/build-macos-effects.sh",
-    "build": "bun run format && bun run build:native-effects && vite build && electrobun build",
+    "build": "bun run format && bun run typecheck && bun run build:native-effects && vite build && electrobun build",
     "build:canary": "bun run build --env=canary",
     "build:stable": "bun run build --env=stable",
     "format": "bunx prettier --write 'src/**/*.{ts,svelte,js,css,html}'",
