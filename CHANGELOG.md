@@ -5,6 +5,21 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.3] - 2026-04-06
+
+### Added
+
+- Added a CSS module type declaration to improve TypeScript support for stylesheet imports.
+
+### Changed
+
+- Updated tray icon resources and configuration to improve visual consistency.
+- Refactored code structure in key UI paths for clearer organization and maintainability.
+
+### Fixed
+
+- Fixed chart components to read series properties from chart context and handle data more reliably.
+
 ## [v0.1.2] - 2026-04-05
 
 ### Added
