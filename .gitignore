@@ -13,5 +13,6 @@ drizzle/dev.db
 libMacOS.dylib
 
 # Local tooling temp/state
-.tmp/
+.githooks
 .opencode
+.tmp/
