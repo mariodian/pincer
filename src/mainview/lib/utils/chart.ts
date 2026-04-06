@@ -7,6 +7,29 @@ export interface ChartSeries {
   data?: Record<string, unknown>[];
 }
 
+export function buildLinePointProps(
+  strokeWidth: number,
+  stroke = "var(--background)",
+) {
+  return {
+    r: Math.min(Math.max(strokeWidth * 0.45, 3), 6),
+    stroke,
+    strokeWidth: 2,
+  };
+}
+
+export function buildLineHighlightPointProps(
+  strokeWidth: number,
+  stroke = "var(--background)",
+) {
+  return {
+    r: Math.min(Math.max(strokeWidth * 1.2, 3), 10),
+    strokeWidth: Math.min(Math.max(2.4 * strokeWidth, 6), 16),
+    stroke,
+    strokeOpacity: 0,
+  };
+}
+
 export function toFiniteNumber(value: unknown): number | null {
   if (value === null || typeof value === "undefined") return null;
   const n = Number(value);

@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     buildAllSeriesGaps,
+    buildLineHighlightPointProps,
     type ChartSeries,
     computeYDomain,
   } from "$lib/utils/chart.js";
@@ -67,7 +68,9 @@
   {height}
   brush
   props={{
-    highlight: { points: { r: 8, strokeWidth: 8 } },
+    highlight: {
+      points: buildLineHighlightPointProps(strokeWidth, "var(--background)"),
+    },
     spline: {
       strokeWidth,
       curve: curveCatmullRom,

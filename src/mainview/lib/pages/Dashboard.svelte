@@ -361,6 +361,7 @@
             }}
             gradient={true}
             strokeWidth={0}
+            {timeRange}
           />
         </div>
       {:else}

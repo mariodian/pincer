@@ -1,6 +1,7 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
-  import type { AgentWithColor } from "$shared/rpc";
+  import { padToFullRange } from "$lib/utils/dashboard-data";
+  import type { AgentWithColor, TimeRange } from "$shared/rpc";
   import GapAreaChart from "../charts/GapAreaChart.svelte";
   import GapLineChart from "../charts/GapLineChart.svelte";
   import GradientBarChart from "../charts/GradientBarChart.svelte";
@@ -37,6 +38,8 @@
     strokeWidth?: number;
     padding?: { top?: number; right?: number; bottom?: number; left?: number };
     height?: number;
+    /** Time range for full-range padding (pads to 7/30 days when set) */
+    timeRange?: TimeRange;
   }
 
   let {
@@ -58,6 +61,7 @@
     strokeWidth,
     padding,
     height,
+    timeRange,
   }: Props = $props();
 
   // Build chart config from agents
@@ -103,9 +107,15 @@
     item: { format: "integer" as const },
   });
 
+  // Apply full-range padding when timeRange is set (and not 24h)
+  const chartData = $derived.by(() => {
+    if (!timeRange || timeRange === "24h") return data;
+    return padToFullRange(data, agents, yPrefix, timeRange);
+  });
+
   // Common props shared by all chart types
   const commonChartProps = $derived({
-    data,
+    data: chartData,
     series,
     x: xKey,
     xAxis: xAxisConfig,
