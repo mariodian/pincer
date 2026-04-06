@@ -127,6 +127,80 @@ export function aggregateByDay(
     );
 }
 
+/**
+ * Pad daily aggregated data to cover the full time range from the start.
+ * Inserts null rows for missing days before the first data point so bar charts
+ * show the full range (7/30 days) even when data doesn't exist yet.
+ */
+export function padToFullRange(
+  rows: Record<string, unknown>[],
+  agents: AgentWithColor[],
+  yPrefix: string,
+  timeRange: "7d" | "30d",
+): Record<string, unknown>[] {
+  if (rows.length === 0) return rows;
+
+  const DAY_MS = 24 * 3600 * 1000;
+  const days = timeRange === "7d" ? 7 : 30;
+
+  // Calculate expected start (now - days)
+  const now = Date.now();
+  const expectedStart = new Date(now - days * DAY_MS);
+  const expectedStartMidnight = new Date(
+    expectedStart.getFullYear(),
+    expectedStart.getMonth(),
+    expectedStart.getDate(),
+  ).getTime();
+
+  // Get actual first date in data
+  const firstDataDate = rows[0].hourTimestamp as Date;
+  const firstDataMidnight = new Date(
+    firstDataDate.getFullYear(),
+    firstDataDate.getMonth(),
+    firstDataDate.getDate(),
+  ).getTime();
+
+  // If data starts on or before expected start, no padding needed
+  if (firstDataMidnight <= expectedStartMidnight) {
+    return rows;
+  }
+
+  // Build map of existing days
+  const existing = new Map<number, Record<string, unknown>>();
+  for (const row of rows) {
+    const d = row.hourTimestamp as Date;
+    const midnight = new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate(),
+    ).getTime();
+    existing.set(midnight, row);
+  }
+
+  // Generate padded rows from expected start to last data point
+  const padded: Record<string, unknown>[] = [];
+  const lastDataDate = rows[rows.length - 1].hourTimestamp as Date;
+  const lastMidnight = new Date(
+    lastDataDate.getFullYear(),
+    lastDataDate.getMonth(),
+    lastDataDate.getDate(),
+  ).getTime();
+
+  for (let ts = expectedStartMidnight; ts <= lastMidnight; ts += DAY_MS) {
+    if (existing.has(ts)) {
+      padded.push(existing.get(ts)!);
+    } else {
+      const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
+      for (const agent of agents) {
+        row[`${yPrefix}_${agent.id}`] = null;
+      }
+      padded.push(row);
+    }
+  }
+
+  return padded;
+}
+
 // ── Formatters ──────────────────────────────────────────────────────────
 
 export function formatHour(val: unknown): string {

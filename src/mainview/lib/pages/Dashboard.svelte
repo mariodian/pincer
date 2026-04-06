@@ -302,8 +302,6 @@
               top: 20,
             }}
             gaps={true}
-            gradient={true}
-            strokeWidth={3}
           />
 
           <MetricChart
@@ -361,6 +359,7 @@
             }}
             gradient={true}
             strokeWidth={0}
+            {timeRange}
           />
         </div>
       {:else}

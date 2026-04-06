@@ -1,6 +1,7 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
-  import type { AgentWithColor } from "$shared/rpc";
+  import { padToFullRange } from "$lib/utils/dashboard-data";
+  import type { AgentWithColor, TimeRange } from "$shared/rpc";
   import GapAreaChart from "../charts/GapAreaChart.svelte";
   import GapLineChart from "../charts/GapLineChart.svelte";
   import GradientBarChart from "../charts/GradientBarChart.svelte";
@@ -37,6 +38,8 @@
     strokeWidth?: number;
     padding?: { top?: number; right?: number; bottom?: number; left?: number };
     height?: number;
+    /** Time range for full-range padding (pads to 7/30 days when set) */
+    timeRange?: TimeRange;
   }
 
   let {
@@ -58,6 +61,7 @@
     strokeWidth,
     padding,
     height,
+    timeRange,
   }: Props = $props();
 
   // Build chart config from agents
@@ -84,15 +88,22 @@
       });
   });
 
-  // X-axis config — bar charts (band scale) need explicit tickValues to
-  // limit label density; line/area (time scale) handle tick positioning
-  // automatically via D3's smart time tick intervals
+  // X-axis config — limit tick density for all chart types to prevent
+  // overcrowding. For 24h charts with ~24 data points, this caps at ~8 labels.
+  // Note: band scales (bar) use `ticks`, time scales (line/area) use `tickValues`.
   const xAxisConfig = $derived.by(() => {
     const base: Record<string, unknown> = {};
     if (xFormat) base.format = xFormat;
-    if (chartType === "bar" && data.length > maxTicks) {
+    if (data.length > maxTicks) {
       const step = Math.ceil(data.length / maxTicks);
-      base.ticks = data.filter((_, i) => i % step === 0).map((d) => d[xKey]);
+      const tickData = data
+        .filter((_, i) => i % step === 0)
+        .map((d) => d[xKey]);
+      if (chartType === "bar") {
+        base.ticks = tickData;
+      } else {
+        base.tickValues = tickData;
+      }
     }
     return base;
   });
@@ -103,9 +114,15 @@
     item: { format: "integer" as const },
   });
 
+  // Apply full-range padding when timeRange is set (and not 24h)
+  const chartData = $derived.by(() => {
+    if (!timeRange || timeRange === "24h") return data;
+    return padToFullRange(data, agents, yPrefix, timeRange);
+  });
+
   // Common props shared by all chart types
   const commonChartProps = $derived({
-    data,
+    data: chartData,
     series,
     x: xKey,
     xAxis: xAxisConfig,
@@ -140,11 +157,21 @@
   {:else}
     <div class="w-full min-h-50 lg:h-60">
       {#if chartType === "line"}
-        <GapLineChart {...commonChartProps} {gaps} colorGradient={gradient} />
+        <GapLineChart
+          {...commonChartProps}
+          {gaps}
+          colorGradient={gradient}
+          xDomainPadding={0.025}
+        />
       {:else if chartType === "bar"}
         <GradientBarChart {...commonChartProps} colorGradient={gradient} />
       {:else if chartType === "area"}
-        <GapAreaChart {...commonChartProps} {gaps} colorGradient={gradient} />
+        <GapAreaChart
+          {...commonChartProps}
+          {gaps}
+          colorGradient={gradient}
+          xDomainPadding={0.025}
+        />
       {/if}
     </div>
   {/if}

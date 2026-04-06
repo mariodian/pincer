@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     type ChartSeries,
+    computeGradientStops,
     getSeriesFiniteValue,
     sanitizeSeriesData,
   } from "$lib/utils/chart.js";
@@ -49,13 +50,15 @@
     tooltip,
     colorGradient = false,
     strokeWidth = 0,
-    radius = 6,
+    radius = 4,
     rounded = "edge",
     height,
     padding,
   }: Props = $props();
 
   const sanitizedData = $derived(sanitizeSeriesData(data, series));
+
+  const gradientStops = $derived(computeGradientStops(series));
 
   const fallbackGetBarsProps = (s: ChartSeries) => ({
     data: s?.data ?? sanitizedData,
@@ -90,16 +93,7 @@
     {#each visibleSeries as s (s.key)}
       {@const { data: barData } = fallbackGetBarsProps(s)}
       {#if colorGradient}
-        <LinearGradient
-          stops={[
-            [0, s.color ?? "currentColor"],
-            [
-              1,
-              `color-mix(in srgb, ${s.color ?? "currentColor"} 30%, transparent)`,
-            ],
-          ]}
-          vertical
-        >
+        <LinearGradient stops={gradientStops[s.key]} vertical>
           {#snippet children({ gradient })}
             <Bars
               seriesKey={s.key}

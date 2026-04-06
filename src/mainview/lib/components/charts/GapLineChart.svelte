@@ -1,16 +1,23 @@
 <script lang="ts">
   import {
     buildAllSeriesGaps,
-    type ChartSeries,
+    buildGapPath,
+    buildLineHighlightPointProps,
+    computeGradientStops,
+    computeXDomain,
     computeYDomain,
+    getAlonePointIndices,
+    type ChartSeries,
   } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
     defaultChartPadding,
     LinearGradient,
     LineChart,
-    Spline,
+    Path,
   } from "layerchart";
+  import SeriesDot from "./SeriesDot.svelte";
+  import LineSpline from "./LineSpline.svelte";
 
   const DEFAULT_PADDING = 24;
 
@@ -26,6 +33,7 @@
     gaps?: boolean;
     colorGradient?: boolean;
     height?: number;
+    xDomainPadding?: number;
   }
 
   let {
@@ -40,19 +48,88 @@
     colorGradient = false,
     strokeWidth = 3,
     height,
+    xDomainPadding = 0.05,
   }: Props = $props();
 
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
+  const xDomain = $derived(computeXDomain(data, x, xDomainPadding));
   const yDomain = $derived(computeYDomain(data, series));
+  const alonePointsMap = $derived(
+    series.reduce(
+      (acc, s) => {
+        acc[s.key] = getAlonePointIndices(s.data ?? data, s.key);
+        return acc;
+      },
+      {} as Record<string, number[]>,
+    ),
+  );
 
-  const fallbackGetSplineProps = (s: ChartSeries) => ({
-    data: s?.data ?? data,
-  });
+  const gradientStops = $derived(computeGradientStops(series));
 </script>
+
+{#snippet seriesLine(s: ChartSeries, highlightKey: string | null)}
+  {#if colorGradient}
+    <LinearGradient
+      stops={gradientStops[s.key]}
+      units="userSpaceOnUse"
+      vertical
+    >
+      {#snippet children({ gradient }: { gradient: string })}
+        <LineSpline
+          series={s}
+          {highlightKey}
+          stroke={gradient}
+          {strokeWidth}
+          {data}
+        />
+      {/snippet}
+    </LinearGradient>
+  {:else}
+    <LineSpline
+      series={s}
+      {highlightKey}
+      stroke={s.color ?? "currentColor"}
+      {strokeWidth}
+      {data}
+    />
+  {/if}
+{/snippet}
+
+{#snippet chartMarks(args: {
+  context: {
+    series: { highlightKey: string | null; visibleSeries: ChartSeries[] };
+    xScale: (d: Date) => number;
+    yScale: (n: number) => number;
+    x: (d: Record<string, unknown>) => Date;
+  };
+})}
+  {@const highlightKey = args.context.series.highlightKey}
+  {@const visibleSeries = args.context.series.visibleSeries}
+  {@const xScale = args.context.xScale}
+  {@const yScale = args.context.yScale}
+  {@const xGet = args.context.x}
+  {#each visibleSeries as s (s.key)}
+    {@render seriesLine(s, highlightKey)}
+    {@const aloneIndices = alonePointsMap[s.key] ?? []}
+    {#if aloneIndices.length > 0}
+      <SeriesDot
+        series={s}
+        {xScale}
+        {yScale}
+        {xGet}
+        {highlightKey}
+        {strokeWidth}
+        {data}
+        {aloneIndices}
+      />
+    {/if}
+  {/each}
+{/snippet}
 
 <LineChart
   {data}
   {x}
+  {xDomain}
   {yDomain}
   {series}
   padding={{
@@ -67,7 +144,9 @@
   {height}
   brush
   props={{
-    highlight: { points: { r: 8, strokeWidth: 8 } },
+    highlight: {
+      points: buildLineHighlightPointProps(strokeWidth, "var(--background)"),
+    },
     spline: {
       strokeWidth,
       curve: curveCatmullRom,
@@ -80,62 +159,25 @@
   {#snippet belowMarks(args)}
     {@const highlightKey = args.context.series.highlightKey}
     {@const visibleSeries = args.context.series.visibleSeries}
+    {@const xScale = args.context.xScale}
+    {@const yScale = args.context.yScale}
+    {@const xGet = args.context.x}
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
-          {@const { data: _ } = fallbackGetSplineProps(s)}
-          <Spline
-            data={gapData}
-            y={(d) => Number(d[s.key])}
-            class="[stroke-dasharray:3,3]"
-            stroke={s.color}
+          {@const pathD = buildGapPath(gapData, s.key, xGet, xScale, yScale)}
+          <Path
+            d={pathD}
+            stroke={s.color ?? "currentColor"}
             {strokeWidth}
-            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-            curve={curveCatmullRom.alpha(0.5)}
+            class="[stroke-dasharray:3,3]"
+            opacity={highlightKey === null || highlightKey === s.key ? 1 : 0.1}
           />
         {/each}
       {/each}
     {/if}
   {/snippet}
   {#snippet marks(args)}
-    {@const highlightKey = args.context.series.highlightKey}
-    {@const visibleSeries = args.context.series.visibleSeries}
-    {#if colorGradient}
-      {#each visibleSeries as s (s.key)}
-        <LinearGradient
-          stops={[
-            [0, s.color ?? "currentColor"],
-            [0.6, `color-mix(${s.color ?? "currentColor"} 85%, transparent)`],
-            [1, `color-mix(${s.color ?? "currentColor"} 70%, transparent)`],
-          ]}
-          units="userSpaceOnUse"
-          vertical
-        >
-          {#snippet children({ gradient })}
-            {@const { data: _ } = fallbackGetSplineProps(s)}
-            <Spline
-              data={s.data ?? data}
-              y={(d) => d[s.key]}
-              stroke={gradient}
-              opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-              {strokeWidth}
-              curve={curveCatmullRom}
-            />
-          {/snippet}
-        </LinearGradient>
-      {/each}
-    {:else}
-      {#each visibleSeries as s (s.key)}
-        {@const { data: _ } = fallbackGetSplineProps(s)}
-        <Spline
-          data={s.data ?? data}
-          y={(d) => d[s.key]}
-          stroke={s.color}
-          opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-          {strokeWidth}
-          curve={curveCatmullRom}
-        />
-      {/each}
-    {/if}
+    {@render chartMarks(args)}
   {/snippet}
 </LineChart>

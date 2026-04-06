@@ -7,10 +7,83 @@ export interface ChartSeries {
   data?: Record<string, unknown>[];
 }
 
+export function buildLinePointProps(
+  strokeWidth: number,
+  stroke = "var(--background)",
+) {
+  return {
+    r: Math.min(Math.max(strokeWidth * 0.45, 3), 6),
+    stroke,
+    strokeWidth: 2,
+  };
+}
+
+export function buildLineHighlightPointProps(
+  strokeWidth: number,
+  stroke = "var(--background)",
+) {
+  return {
+    r: Math.min(Math.max(strokeWidth * 1.2, 3), 10),
+    strokeWidth: Math.min(Math.max(2.4 * strokeWidth, 6), 16),
+    stroke,
+    strokeOpacity: 0,
+  };
+}
+
 export function toFiniteNumber(value: unknown): number | null {
   if (value === null || typeof value === "undefined") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+export function countValidDataPoints(
+  data: Record<string, unknown>[],
+  key: string,
+): number {
+  return data.filter((row) => toFiniteNumber(row[key]) !== null).length;
+}
+
+export function getSingleValidDataPoint(
+  data: Record<string, unknown>[],
+  key: string,
+): Record<string, unknown> | null {
+  for (const row of data) {
+    if (toFiniteNumber(row[key]) !== null) {
+      return row;
+    }
+  }
+  return null;
+}
+
+/**
+ * Returns indices of data points that are "alone" - valid values with no
+ * solid-line connection possible on either side (both neighbors are gaps/null).
+ *
+ * A point is alone when:
+ * - It has a valid (non-null) value
+ * - Left neighbor is null or out of bounds
+ * - Right neighbor is null or out of bounds
+ */
+export function getAlonePointIndices(
+  data: Record<string, unknown>[],
+  key: string,
+): number[] {
+  const indices: number[] = [];
+  const values = data.map((row) => toFiniteNumber(row[key]));
+
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] === null) continue;
+
+    const left = i > 0 ? values[i - 1] : null;
+    const right = i < values.length - 1 ? values[i + 1] : null;
+
+    // Point is alone if both sides cannot form a solid line
+    if (left === null && right === null) {
+      indices.push(i);
+    }
+  }
+
+  return indices;
 }
 
 export function buildSeriesGaps(
@@ -92,6 +165,33 @@ export function computeYDomain(
   return [dataMin - 5, dataMax + 5];
 }
 
+export function computeXDomain(
+  data: Record<string, unknown>[],
+  xKey: string,
+  paddingRatio = 0.05,
+): [Date, Date] {
+  const dates = data
+    .map((d) => d[xKey])
+    .filter((d): d is Date => d instanceof Date);
+
+  if (dates.length === 0) {
+    const now = new Date();
+    return [new Date(now.getTime() - 86400000), now];
+  }
+
+  const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+  // Add padding on each side to prevent dots from being clipped at edges
+  const range = maxDate.getTime() - minDate.getTime();
+  const padding = range * paddingRatio || 3600000; // paddingRatio or 1 hour default
+
+  return [
+    new Date(minDate.getTime() - padding),
+    new Date(maxDate.getTime() + padding),
+  ];
+}
+
 export function toFiniteNumberOrZero(value: unknown): number {
   return toFiniteNumber(value) ?? 0;
 }
@@ -119,4 +219,62 @@ export function getSeriesFiniteValue(
 ): number {
   if (typeof key !== "string") return 0;
   return toFiniteNumberOrZero(row[key]);
+}
+
+export function getSeriesOpacity(
+  highlightKey: string | null,
+  seriesKey: string,
+): number {
+  if (highlightKey === null) return 1;
+  return highlightKey === seriesKey ? 1 : 0.1;
+}
+
+export function computeGradientStops(
+  series: ChartSeries[],
+): Record<string, [number, string][]> {
+  return series.reduce(
+    (acc, s) => {
+      const color = s.color ?? "currentColor";
+      acc[s.key] = [
+        [0, color],
+        [0.6, `color-mix(${color} 55%, transparent)`],
+        [1, `color-mix(${color} 30%, transparent)`],
+      ];
+      return acc;
+    },
+    {} as Record<string, [number, string][]>,
+  );
+}
+
+/**
+ * Builds an SVG path string for gap data that bypasses layerchart's
+ * tooltip registration. Used for dashed gap lines where we don't want
+ * interpolated values to appear in tooltips.
+ */
+export function buildGapPath(
+  gapData: Record<string, unknown>[],
+  key: string,
+  xGet: (d: Record<string, unknown>) => Date,
+  xScale: (d: Date) => number,
+  yScale: (n: number) => number,
+): string {
+  if (gapData.length === 0) return "";
+
+  // Build path commands: M (move to) first point, then L (line to) subsequent points
+  const commands: string[] = [];
+
+  for (let i = 0; i < gapData.length; i++) {
+    const d = gapData[i];
+    const x = xScale(xGet(d));
+    const yVal = d[key];
+    const y = yScale(Number(yVal));
+
+    if (i === 0) {
+      commands.push(`M ${x} ${y}`);
+    } else {
+      commands.push(`L ${x} ${y}`);
+    }
+  }
+
+  return commands.join(" ");
 }
