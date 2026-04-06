@@ -8,7 +8,7 @@
     countValidDataPoints,
     getSingleValidDataPoint,
     type ChartSeries,
-  } from "$lib/utils/chart.js";
+  }   from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
     Circle,
@@ -66,6 +66,84 @@
   });
 </script>
 
+{#snippet seriesDot(
+  s: ChartSeries,
+  xScale: (d: Date) => number,
+  yScale: (n: number) => number,
+  xGet: (d: Record<string, unknown>) => Date,
+  highlightKey: string | null,
+)}
+  {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
+  {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
+  {#if singlePoint}
+    {@const cx = xScale(xGet(singlePoint))}
+    {@const cy = yScale(Number(singlePoint[s.key]))}
+    <Circle
+      {cx}
+      {cy}
+      r={pointProps.r}
+      fill={s.color}
+      stroke={pointProps.stroke}
+      stroke-width={pointProps.strokeWidth}
+      opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+    />
+  {/if}
+{/snippet}
+
+{#snippet lineSpline(s: ChartSeries, highlightKey: string | null, stroke: string)}
+  <Spline
+    data={s.data ?? data}
+    y={(d) => d[s.key]}
+    {stroke}
+    opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+    {strokeWidth}
+    curve={curveCatmullRom}
+  />
+{/snippet}
+
+{#snippet seriesLine(s: ChartSeries, highlightKey: string | null)}
+  {@const { data: _ } = fallbackGetSplineProps(s)}
+  {#if colorGradient}
+    <LinearGradient
+      stops={[
+        [0, s.color ?? "currentColor"],
+        [0.6, `color-mix(${s.color ?? "currentColor"} 85%, transparent)`],
+        [1, `color-mix(${s.color ?? "currentColor"} 70%, transparent)`],
+      ]}
+      units="userSpaceOnUse"
+      vertical
+    >
+      {#snippet children({ gradient }: { gradient: string })}
+        {@render lineSpline(s, highlightKey, gradient)}
+      {/snippet}
+    </LinearGradient>
+  {:else}
+    {@render lineSpline(s, highlightKey, s.color ?? "currentColor")}
+  {/if}
+{/snippet}
+
+{#snippet chartMarks(args: {
+  context: {
+    series: { highlightKey: string | null; visibleSeries: ChartSeries[] };
+    xScale: (d: Date) => number;
+    yScale: (n: number) => number;
+    x: (d: Record<string, unknown>) => Date;
+  };
+})}
+  {@const highlightKey = args.context.series.highlightKey}
+  {@const visibleSeries = args.context.series.visibleSeries}
+  {@const xScale = args.context.xScale}
+  {@const yScale = args.context.yScale}
+  {@const xGet = args.context.x}
+  {#each visibleSeries as s (s.key)}
+    {#if singlePointKeys.has(s.key)}
+      {@render seriesDot(s, xScale, yScale, xGet, highlightKey)}
+    {:else}
+      {@render seriesLine(s, highlightKey)}
+    {/if}
+  {/each}
+{/snippet}
+
 <LineChart
   {data}
   {x}
@@ -117,83 +195,6 @@
     {/if}
   {/snippet}
   {#snippet marks(args)}
-    {@const highlightKey = args.context.series.highlightKey}
-    {@const visibleSeries = args.context.series.visibleSeries}
-    {@const xScale = args.context.xScale}
-    {@const yScale = args.context.yScale}
-    {@const xGet = args.context.x}
-    {#if colorGradient}
-      {#each visibleSeries as s (s.key)}
-        {#if singlePointKeys.has(s.key)}
-          {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
-          {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
-          {#if singlePoint}
-            {@const cx = xScale(xGet(singlePoint))}
-            {@const cy = yScale(Number(singlePoint[s.key]))}
-            <Circle
-              {cx}
-              {cy}
-              r={pointProps.r}
-              fill={s.color}
-              stroke={pointProps.stroke}
-              stroke-width={pointProps.strokeWidth}
-              opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-            />
-          {/if}
-        {:else}
-          <LinearGradient
-            stops={[
-              [0, s.color ?? "currentColor"],
-              [0.6, `color-mix(${s.color ?? "currentColor"} 85%, transparent)`],
-              [1, `color-mix(${s.color ?? "currentColor"} 70%, transparent)`],
-            ]}
-            units="userSpaceOnUse"
-            vertical
-          >
-            {#snippet children({ gradient })}
-              {@const { data: _ } = fallbackGetSplineProps(s)}
-              <Spline
-                data={s.data ?? data}
-                y={(d) => d[s.key]}
-                stroke={gradient}
-                opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-                {strokeWidth}
-                curve={curveCatmullRom}
-              />
-            {/snippet}
-          </LinearGradient>
-        {/if}
-      {/each}
-    {:else}
-      {#each visibleSeries as s (s.key)}
-        {@const { data: _ } = fallbackGetSplineProps(s)}
-        {#if singlePointKeys.has(s.key)}
-          {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
-          {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
-          {#if singlePoint}
-            {@const cx = xScale(xGet(singlePoint))}
-            {@const cy = yScale(Number(singlePoint[s.key]))}
-            <Circle
-              {cx}
-              {cy}
-              r={pointProps.r}
-              fill={s.color}
-              stroke={pointProps.stroke}
-              stroke-width={pointProps.strokeWidth}
-              opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-            />
-          {/if}
-        {:else}
-          <Spline
-            data={s.data ?? data}
-            y={(d) => d[s.key]}
-            stroke={s.color}
-            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-            {strokeWidth}
-            curve={curveCatmullRom}
-          />
-        {/if}
-      {/each}
-    {/if}
+    {@render chartMarks(args)}
   {/snippet}
 </LineChart>
