@@ -2,7 +2,7 @@
 <img width="128" height="128" alt="Pincer Icon" src="icons/icon.iconset/icon_128x128@2x.png" />
 <h1>Pincer</h1>
 
-Desktop monitoring app for local AI and LLM agents.<br />Check agent health, status, and historical charts right from your system tray, without leaving your workflow.
+Desktop monitoring for local AI agents.<br />Check health, status, and charts from your system tray, without leaving your workflow.
 
 [Changelog](./CHANGELOG.md) · [Report Bug](https://github.com/mariodian/pincer/issues/new?template=bug-report.md) · [Request Feature](https://github.com/mariodian/pincer/issues/new?template=feature-request.md)
 
@@ -21,7 +21,7 @@ cd pincer
 bun install && bun run dev
 ```
 
-Done. Pincer will appear in your system tray.
+Pincer will appear in your system tray.
 
 ## 📋 Table of Contents
 
@@ -46,13 +46,13 @@ Running multiple local AI agents means constantly switching between terminals an
 ## ✨ Features
 
 - **Tray-first visibility**: check agent health at a glance from your system tray
-- **Health monitoring**: real-time status indicators for each running agent
+- **Real-time monitoring**: status indicators for each running agent
 - **Charts & history**: visualize agent activity and health trends over time
 - **Persistent storage**: activity logged locally with SQLite via Drizzle ORM
 - **Minimal resource usage**: local-first, no cloud dependency
-- **Cross-platform**: runs on macOS, Windows, and Linux (native effects on macOS)
+- **Cross-platform**: runs on macOS, Windows, and Linux
 - **Light/dark mode**: automatic system theme detection with manual override
-- **Agent support**: tested with [OpenClaw](https://github.com/openclaw/openclaw) and [OpenCrabs](https://github.com/adolfousier/opencrabs); also supports custom agents exposing HTTP health endpoints
+- **Agent support**: works with [OpenClaw](https://github.com/openclaw/openclaw), [OpenCrabs](https://github.com/adolfousier/opencrabs), and custom agents via HTTP health endpoints
 
 ## 📥 Installation
 
@@ -85,19 +85,16 @@ bun run build:canary
 bun run build:stable
 ```
 
-In development, non-main windows should load Vite URLs for HMR updates.
-
 ## ⚠️ Known Limitations
 
 - Native vibrancy and traffic-light customization is macOS-only
 - The custom tray menu is macOS-only; Windows and Linux fall back to the native tray
-- HMR for secondary windows requires Vite URL routing in development
 
 ## 🔧 Troubleshooting
 
 ### App won't launch on macOS
 
-If the app is blocked by macOS security, run:
+If macOS blocks the app from running, run:
 
 ```bash
 xattr -cr /path/to/Pincer.app

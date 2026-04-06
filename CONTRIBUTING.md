@@ -52,6 +52,13 @@ bun run dev
 | `bun run dev` | Full desktop dev flow |
 | `bun run dev:hmr` | Fast renderer iteration with HMR |
 | `bun run build` | Production build |
+| `bun run dev:web` | Vite dev server only (no Electrobun) |
+
+### Development Notes
+
+- Non-main windows should load `http://localhost:5173/...` URLs for HMR updates
+- HMR for secondary windows requires Vite URL routing in development
+- Run `bun run build:native-libs` if the app crashes on startup (macOS native effects)
 
 ## Code Style
 
