@@ -1,11 +1,12 @@
 <script lang="ts">
   import {
     buildAllSeriesGaps,
+    buildGapPath,
     buildLineHighlightPointProps,
     computeGradientStops,
     computeXDomain,
     computeYDomain,
-    countValidDataPoints,
+    getAlonePointIndices,
     getSeriesOpacity,
     type ChartSeries,
   } from "$lib/utils/chart.js";
@@ -15,9 +16,9 @@
     AreaChart,
     defaultChartPadding,
     LinearGradient,
+    Path,
   } from "layerchart";
   import SeriesDot from "./SeriesDot.svelte";
-  import LineSpline from "./LineSpline.svelte";
 
   const DEFAULT_PADDING = 40;
 
@@ -55,11 +56,13 @@
   const xDomain = $derived(computeXDomain(data, x, xDomainPadding));
   const yDomain = $derived(computeYDomain(data, series));
   const gradientStops = $derived(computeGradientStops(series));
-  const singlePointKeys = $derived(
-    new Set(
-      series
-        .filter((s) => countValidDataPoints(s.data ?? data, s.key) === 1)
-        .map((s) => s.key),
+  const alonePointsMap = $derived(
+    series.reduce(
+      (acc, s) => {
+        acc[s.key] = getAlonePointIndices(s.data ?? data, s.key);
+        return acc;
+      },
+      {} as Record<string, number[]>,
     ),
   );
 </script>
@@ -135,16 +138,19 @@
   {#snippet belowMarks(args)}
     {@const highlightKey = args.context.series.highlightKey}
     {@const visibleSeries = args.context.series.visibleSeries}
+    {@const xScale = args.context.xScale}
+    {@const yScale = args.context.yScale}
+    {@const xGet = args.context.x}
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
-          <LineSpline
-            series={{ ...s, data: gapData }}
-            {highlightKey}
+          {@const pathD = buildGapPath(gapData, s.key, xGet, xScale, yScale)}
+          <Path
+            d={pathD}
             stroke={s.color ?? "currentColor"}
-            dashed
             {strokeWidth}
-            {data}
+            class="[stroke-dasharray:3,3]"
+            opacity={highlightKey === null || highlightKey === s.key ? 1 : 0.1}
           />
         {/each}
       {/each}
@@ -157,7 +163,9 @@
     {@const yScale = args.context.yScale}
     {@const xGet = args.context.x}
     {#each visibleSeries as s (s.key)}
-      {#if singlePointKeys.has(s.key)}
+      {@render seriesMarks(s, highlightKey)}
+      {@const aloneIndices = alonePointsMap[s.key] ?? []}
+      {#if aloneIndices.length > 0}
         <SeriesDot
           series={s}
           {xScale}
@@ -166,9 +174,8 @@
           {highlightKey}
           {strokeWidth}
           {data}
+          {aloneIndices}
         />
-      {:else}
-        {@render seriesMarks(s, highlightKey)}
       {/if}
     {/each}
   {/snippet}

@@ -9,7 +9,7 @@
     stroke: string;
     dashed?: boolean;
     strokeWidth: number;
-    data: Record<string, unknown>[];
+    data?: Record<string, unknown>[];
   }
 
   let {

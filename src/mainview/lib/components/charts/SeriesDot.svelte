@@ -3,7 +3,6 @@
   import {
     buildLinePointProps,
     getSeriesOpacity,
-    getSingleValidDataPoint,
     type ChartSeries,
   } from "$lib/utils/chart.js";
 
@@ -15,20 +14,27 @@
     highlightKey: string | null;
     strokeWidth: number;
     data: Record<string, unknown>[];
+    aloneIndices: number[];
   }
 
-  let { series, xScale, yScale, xGet, highlightKey, strokeWidth, data }: Props =
-    $props();
+  let {
+    series,
+    xScale,
+    yScale,
+    xGet,
+    highlightKey,
+    strokeWidth,
+    data,
+    aloneIndices,
+  }: Props = $props();
 
   const pointProps = $derived(buildLinePointProps(strokeWidth, series.color));
-  const singlePoint = $derived(
-    getSingleValidDataPoint(series.data ?? data, series.key),
-  );
 </script>
 
-{#if singlePoint}
-  {@const cx = xScale(xGet(singlePoint))}
-  {@const cy = yScale(Number(singlePoint[series.key]))}
+{#each aloneIndices as idx (idx)}
+  {@const point = data[idx]}
+  {@const cx = xScale(xGet(point))}
+  {@const cy = yScale(Number(point[series.key]))}
   <Circle
     {cx}
     {cy}
@@ -38,4 +44,4 @@
     stroke-width={pointProps.strokeWidth}
     opacity={getSeriesOpacity(highlightKey, series.key)}
   />
-{/if}
+{/each}

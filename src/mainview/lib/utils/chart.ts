@@ -55,6 +55,37 @@ export function getSingleValidDataPoint(
   return null;
 }
 
+/**
+ * Returns indices of data points that are "alone" - valid values with no
+ * solid-line connection possible on either side (both neighbors are gaps/null).
+ *
+ * A point is alone when:
+ * - It has a valid (non-null) value
+ * - Left neighbor is null or out of bounds
+ * - Right neighbor is null or out of bounds
+ */
+export function getAlonePointIndices(
+  data: Record<string, unknown>[],
+  key: string,
+): number[] {
+  const indices: number[] = [];
+  const values = data.map((row) => toFiniteNumber(row[key]));
+
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] === null) continue;
+
+    const left = i > 0 ? values[i - 1] : null;
+    const right = i < values.length - 1 ? values[i + 1] : null;
+
+    // Point is alone if both sides cannot form a solid line
+    if (left === null && right === null) {
+      indices.push(i);
+    }
+  }
+
+  return indices;
+}
+
 export function buildSeriesGaps(
   rows: Record<string, unknown>[],
   key: string,
@@ -213,4 +244,37 @@ export function computeGradientStops(
     },
     {} as Record<string, [number, string][]>,
   );
+}
+
+/**
+ * Builds an SVG path string for gap data that bypasses layerchart's
+ * tooltip registration. Used for dashed gap lines where we don't want
+ * interpolated values to appear in tooltips.
+ */
+export function buildGapPath(
+  gapData: Record<string, unknown>[],
+  key: string,
+  xGet: (d: Record<string, unknown>) => Date,
+  xScale: (d: Date) => number,
+  yScale: (n: number) => number,
+): string {
+  if (gapData.length === 0) return "";
+
+  // Build path commands: M (move to) first point, then L (line to) subsequent points
+  const commands: string[] = [];
+
+  for (let i = 0; i < gapData.length; i++) {
+    const d = gapData[i];
+    const x = xScale(xGet(d));
+    const yVal = d[key];
+    const y = yScale(Number(yVal));
+
+    if (i === 0) {
+      commands.push(`M ${x} ${y}`);
+    } else {
+      commands.push(`L ${x} ${y}`);
+    }
+  }
+
+  return commands.join(" ");
 }
