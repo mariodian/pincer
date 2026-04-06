@@ -5,6 +5,24 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.4] - 2026-04-07
+
+### Added
+
+- Added reusable `seriesDot` and `seriesLine` chart snippets for more consistent series rendering.
+
+### Changed
+
+- Refactored `GapAreaChart` and `GapLineChart` to use `LineSpline` and `SeriesDot` components.
+- Enhanced gap-chart rendering with improved opacity handling, line highlighting, and full-range time-series padding.
+- Updated `GapLineChart` behavior with improved `xDomainPadding` handling and x-axis configuration.
+- Updated `GradientBarChart` to use computed gradient stops and adjusted corner radius behavior.
+
+### Fixed
+
+- Fixed single-point handling and gap-path rendering in `GapAreaChart` and `GapLineChart`.
+- Fixed development script behavior to improve local build reliability.
+
 ## [v0.1.3] - 2026-04-06
 
 ### Added
