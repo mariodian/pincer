@@ -25,16 +25,17 @@ Done. Pincer will appear in your system tray.
 
 ## 📋 Table of Contents
 
-- [⚡ Quick Start](#-quick-start)
-- [🤔 Why Pincer?](#-why-pincer)
-- [✨ Features](#-features)
-- [📥 Installation](#-installation)
-  - [✅ Requirements](#-requirements)
-- [🚀 Usage](#-usage)
-- [⚠️ Known Limitations](#-known-limitations)
-- [🔧 Troubleshooting](#-troubleshooting)
-- [💬 Contributing](#-contributing)
-- [📜 License](#-license)
+- ⚡ [Quick Start](#quick-start)
+- 🤔 [Why Pincer?](#why-pincer)
+- ✨ [Features](#features)
+- 📥 [Installation](#installation)
+  - ✅ [Requirements](#requirements)
+- 🚀 [Usage](#usage)
+- ⚠️ [Known Limitations](#known-limitations)
+- 🔧 [Troubleshooting](#troubleshooting)
+- 💬 [Contributing](#contributing)
+- 📜 [License](#license)
+- 📌 [Credits](#credits)
 
 ## 🤔 Why Pincer?
 
@@ -110,6 +111,15 @@ Verify dev windows use `http://localhost:5173/...` URLs.
 
 Window blur effects may appear weak if transparency is enabled in system settings. Check _System Settings → Accessibility → Reduce transparency_ and disable it for full vibrancy effects.
 
+## ❤️ Like This Project?
+
+If Pincer is useful to you, consider leaving a star on GitHub and sharing it with others.
+
+<a href="https://twitter.com/intent/tweet?url=https%3A%2F%2Fgithub.com%2Fmariodian%2Fpincer&text=Stop%20switching%20between%20terminals%20to%20check%20AI%20agent%20health.%20%0A%0APincer%20lives%20in%20your%20system%20tray.%0A%0AGitHub%3A&via=mariodian" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; color: #fff; background-color: #000000; text-decoration: none; border-radius: 5px; font-family: sans-serif; font-weight: bold; font-size: 1rem;">
+<svg width="24" height="24" fill="#fff" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+<span>Share on X (Twitter)</span>
+</a>
+
 ## 💬 Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
@@ -117,3 +127,9 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
 ## 📜 License
 
 MIT. See [LICENSE](LICENSE).
+
+## 📌 Credits
+
+Feel free to remove this section. Otherwise, credit is appreciated.
+
+[Pincer on GitHub](https://github.com/mariodian/pincer) · [Mario Dian on X](https://x.com/mariodian)
