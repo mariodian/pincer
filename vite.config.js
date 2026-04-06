@@ -21,20 +21,14 @@ export default defineConfig({
     outDir: "../../dist",
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         main: resolve(__dirname, "src/mainview/index.html"),
         trayPopover: resolve(__dirname, "src/mainview/tray-popover.html"),
       },
-      output: {
-        manualChunks: {
-          "layerchart-d3": ["layerchart", "d3-array", "d3-scale", "d3-shape"],
-        },
-      },
     },
   },
   server: {
-    port: 5173,
-    strictPort: true,
+    forwardConsole: true,
   },
 });
