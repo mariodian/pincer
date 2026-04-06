@@ -20,8 +20,8 @@ export default {
       "dist/tray-popover.html": "views/mainview/tray-popover.html",
       "dist/assets": "views/mainview/assets",
       "src/resources": "views/resources",
-      "src/bun/libs/libMacWindowEffects.dylib":
-        "bun/libs/libMacWindowEffects.dylib",
+      "src/bun/libs/libMacOS.dylib":
+        "bun/libs/libMacOS.dylib",
       "drizzle/migrations": "drizzle/migrations",
     },
     mac: {

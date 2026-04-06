@@ -1,3 +1,5 @@
+import { execSync } from "node:child_process";
+
 export function isMacOS(): boolean {
   return process.platform === "darwin";
 }
@@ -9,4 +11,43 @@ export function isWindows(): boolean {
 export function getPlatform(): "macos" | "win" | "linux" {
   const p = process.platform;
   return p === "darwin" ? "macos" : p === "win32" ? "win" : "linux";
+}
+
+/**
+ * Get the macOS version.
+ * Returns 0 if not on macOS.
+ * Returns the major version number (e.g., 13 for Ventura, 14 for Sonoma).
+ * Uses sw_vers utility for reliable version detection.
+ */
+export function getMacOSVersion(): number {
+  if (!isMacOS()) {
+    return 0;
+  }
+
+  try {
+    const output = execSync("sw_vers -productVersion", { encoding: "utf8" });
+    const version = output.trim();
+    const match = version.match(/^(\d+)/);
+    if (match) {
+      return parseInt(match[1], 10);
+    }
+  } catch {
+    // Fallback: try parsing os.release()
+    const release = process.env["OSTYPE"] || "";
+    const match = release.match(/darwin(\d+)/i);
+    if (match) {
+      // Darwin kernel version = macOS version + 4 (roughly)
+      return parseInt(match[1], 10) - 4;
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * Check if the system supports SMAppService API.
+ * SMAppService was introduced in macOS 13 (Ventura).
+ */
+export function supportsSMAppService(): boolean {
+  return getMacOSVersion() >= 13;
 }

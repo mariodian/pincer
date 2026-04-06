@@ -10,7 +10,7 @@
 | `bun run dev`                           | Build native dylib, Vite, and start Electrobun dev server       |
 | `bun run dev:hmr`                       | Vite HMR (port 5173) + dev server concurrently                  |
 | `bun run dev:web`                       | Vite dev server only (no Electrobun)                            |
-| `bun run build:native-effects`          | Compile macOS native dylib (required before dev/build)          |
+| `bun run build:native-libs`             | Compile macOS native dylib (required before dev/build)          |
 | `bun run build`                         | Full production build: format + native dylib + Vite + electrobun|
 | `bun run build:canary` / `build:stable` | Environment-specific production builds                          |
 | `bun run format`                        | Prettier auto-format (`src/**/*.{ts,svelte,js,css,html}`)       |
@@ -124,8 +124,8 @@ src/
       services/   Renderer-side RPC client
     ui/           Top-level wrappers (Window.svelte, Button.svelte)
   shared/         Shared types for main↔renderer (types.ts, rpc.ts, agent-helpers.ts)
-native/macos/     Objective-C++ window effects (vibrancy, traffic-light positioning)
-scripts/          Build scripts (build-macos-effects.sh)
+native/macos/     Objective-C++ native code (window effects, system services)
+scripts/          Build scripts (build-macos-lib.sh)
 ```
 
 Key configs: `electrobun.config.ts` (packaging), `vite.config.js` (3 entry points, root: `src/mainview`), `tsconfig.json` (strict, aliases), `drizzle.config.ts` (SQLite schema).
@@ -170,7 +170,7 @@ Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, 
 
 | Issue                  | Fix                                                           |
 | ---------------------- | ------------------------------------------------------------- |
-| Native dylib not found | `bun run build:native-effects`                                |
+| Native dylib not found | `bun run build:native-libs`                                |
 | Port 5173 in use       | Kill existing Vite process or change port in `vite.config.js` |
 | HMR not working        | Use `bun run dev:hmr` for concurrent Vite + Electrobun        |
 | Main process logs      | Terminal output                                               |

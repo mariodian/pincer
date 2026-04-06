@@ -63,12 +63,12 @@ function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
     return macWindowEffectsLib;
   }
 
-  const dylibPath = join(import.meta.dir, "libs", "libMacWindowEffects.dylib");
+  const dylibPath = join(import.meta.dir, "libs", "libMacOS.dylib");
 
   if (!existsSync(dylibPath)) {
     logger.warn(
       "native",
-      `Native macOS effects lib not found at ${dylibPath}. Falling back to transparent-only mode.`,
+      `Native macOS lib not found at ${dylibPath}. Falling back to transparent-only mode.`,
     );
     return null;
   }

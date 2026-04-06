@@ -10,7 +10,7 @@ artifacts/
 drizzle/dev.db
 
 # Native build output
-libMacWindowEffects.dylib
+libMacOS.dylib
 
 # Local tooling temp/state
 .tmp/

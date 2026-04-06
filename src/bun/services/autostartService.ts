@@ -1,11 +1,23 @@
+/**
+ * Cross-platform autostart service
+ *
+ * Delegates to platform-specific implementations:
+ * - macOS: Uses SMAppService API (13+) with LaunchAgent fallback (<13)
+ * - Windows: Registry-based autostart
+ * - Linux: .desktop entry in autostart directory
+ */
 import { join } from "node:path";
 import { mkdirSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { $ } from "bun";
 import { Updater, Utils } from "electrobun/bun";
 import { isMacOS, isWindows } from "../utils/platform";
+import {
+  enableMacOSAutostart,
+  disableMacOSAutostart,
+  isMacOSAutostartEnabled,
+} from "./macOSAutostartService";
 import { logger } from "./loggerService";
 
-const BUNDLE_ID = "com.mariodian.pincer";
 const APP_NAME = "Pincer";
 
 /**
@@ -33,25 +45,13 @@ async function getChannelAppName(): Promise<string> {
 }
 
 /**
- * Get the channel-specific bundle ID.
- */
-async function getChannelBundleId(): Promise<string> {
-  const channel = await getChannel();
-  return channel === "stable" ? BUNDLE_ID : `${BUNDLE_ID}.${channel}`;
-}
-
-/**
  * Check if the app is currently set to launch at login.
  * Returns the current autostart state.
  */
 export async function isAutostartEnabled(): Promise<boolean> {
   try {
     if (isMacOS()) {
-      // On macOS 13+, we can check if the service is registered
-      // Since we don't have direct SMAppService bindings, we rely on
-      // LaunchServices to tell us. A more robust check would require
-      // native bindings, but we'll track state via our settings.
-      return false; // Will be tracked via settings
+      return isMacOSAutostartEnabled();
     } else if (isWindows()) {
       // Check Windows registry
       const appName = await getChannelAppName();
@@ -124,69 +124,6 @@ function getLauncherPath(): string {
     return process.execPath.replace(/\/MacOS\/[^/]+$/, "/MacOS/launcher");
   }
   return process.execPath;
-}
-
-/**
- * macOS autostart implementation using LaunchAgent plist.
- */
-async function enableMacOSAutostart(): Promise<void> {
-  const launchAgentsDir = join(Utils.paths.home, "Library", "LaunchAgents");
-  const bundleId = await getChannelBundleId();
-  const plistPath = join(launchAgentsDir, `${bundleId}.plist`);
-
-  // Ensure LaunchAgents directory exists
-  mkdirSync(launchAgentsDir, { recursive: true });
-
-  // Get the launcher executable path (not the bun executable)
-  const execPath = getLauncherPath();
-
-  const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>${bundleId}</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>${execPath}</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <false/>
-</dict>
-</plist>`;
-
-  writeFileSync(plistPath, plistContent);
-
-  // Note: We intentionally do NOT call `launchctl load` here.
-  // Loading the agent would immediately launch a second instance of the app.
-  // The agent will be automatically loaded by the system on next login.
-  logger.debug(
-    "autostart",
-    `LaunchAgent created at ${plistPath}, will activate on next login`,
-  );
-}
-
-async function disableMacOSAutostart(): Promise<void> {
-  const bundleId = await getChannelBundleId();
-  const plistPath = join(
-    Utils.paths.home,
-    "Library",
-    "LaunchAgents",
-    `${bundleId}.plist`,
-  );
-
-  // Unload the launch agent if it exists
-  if (existsSync(plistPath)) {
-    try {
-      await $`launchctl unload ${plistPath}`.quiet().nothrow();
-    } catch {
-      // Ignore errors during unload
-    }
-    unlinkSync(plistPath);
-  }
 }
 
 /**

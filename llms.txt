@@ -37,12 +37,12 @@ Views must be configured in `electrobun.config.ts` to be built and copied into t
 
 ## Native Build Instructions
 
-- Native source: `native/macos/window-effects.mm`
-- Build script: `scripts/build-macos-effects.sh`
-- Output artifact: `src/bun/libMacWindowEffects.dylib`
+- Native source: `native/macos/window-effects.mm` (window effects), `native/macos/system.mm` (system services)
+- Build script: `scripts/build-macos-lib.sh`
+- Output artifact: `src/bun/libs/libMacOS.dylib`
 - Bundle copy mapping is in `electrobun.config.ts`.
 - Full build path runs via:
-  - `bun run build:native-effects`
+  - `bun run build:native-libs`
   - `vite build`
   - `electrobun build`
 
