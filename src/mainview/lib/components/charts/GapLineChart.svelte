@@ -2,23 +2,16 @@
   import {
     buildAllSeriesGaps,
     buildLineHighlightPointProps,
-    buildLinePointProps,
     computeGradientStops,
     computeXDomain,
     computeYDomain,
     countValidDataPoints,
-    getSeriesOpacity,
-    getSingleValidDataPoint,
     type ChartSeries,
   } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
-  import {
-    Circle,
-    defaultChartPadding,
-    LinearGradient,
-    LineChart,
-    Spline,
-  } from "layerchart";
+  import { defaultChartPadding, LinearGradient, LineChart } from "layerchart";
+  import SeriesDot from "./SeriesDot.svelte";
+  import LineSpline from "./LineSpline.svelte";
 
   const DEFAULT_PADDING = 24;
 
@@ -66,47 +59,6 @@
   const gradientStops = $derived(computeGradientStops(series));
 </script>
 
-{#snippet seriesDot(
-  s: ChartSeries,
-  xScale: (d: Date) => number,
-  yScale: (n: number) => number,
-  xGet: (d: Record<string, unknown>) => Date,
-  highlightKey: string | null,
-)}
-  {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
-  {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
-  {#if singlePoint}
-    {@const cx = xScale(xGet(singlePoint))}
-    {@const cy = yScale(Number(singlePoint[s.key]))}
-    <Circle
-      {cx}
-      {cy}
-      r={pointProps.r}
-      fill={s.color}
-      stroke={pointProps.stroke}
-      stroke-width={pointProps.strokeWidth}
-      opacity={getSeriesOpacity(highlightKey, s.key)}
-    />
-  {/if}
-{/snippet}
-
-{#snippet lineSpline(
-  s: ChartSeries,
-  highlightKey: string | null,
-  stroke: string,
-  dashed = false,
-)}
-  <Spline
-    data={s.data ?? data}
-    y={(d) => d[s.key]}
-    {stroke}
-    opacity={getSeriesOpacity(highlightKey, s.key)}
-    {strokeWidth}
-    curve={dashed ? curveCatmullRom.alpha(0.5) : curveCatmullRom}
-    class={dashed ? "[stroke-dasharray:3,3]" : ""}
-  />
-{/snippet}
-
 {#snippet seriesLine(s: ChartSeries, highlightKey: string | null)}
   {#if colorGradient}
     <LinearGradient
@@ -115,11 +67,23 @@
       vertical
     >
       {#snippet children({ gradient }: { gradient: string })}
-        {@render lineSpline(s, highlightKey, gradient)}
+        <LineSpline
+          series={s}
+          {highlightKey}
+          stroke={gradient}
+          {strokeWidth}
+          {data}
+        />
       {/snippet}
     </LinearGradient>
   {:else}
-    {@render lineSpline(s, highlightKey, s.color ?? "currentColor")}
+    <LineSpline
+      series={s}
+      {highlightKey}
+      stroke={s.color ?? "currentColor"}
+      {strokeWidth}
+      {data}
+    />
   {/if}
 {/snippet}
 
@@ -138,7 +102,15 @@
   {@const xGet = args.context.x}
   {#each visibleSeries as s (s.key)}
     {#if singlePointKeys.has(s.key)}
-      {@render seriesDot(s, xScale, yScale, xGet, highlightKey)}
+      <SeriesDot
+        series={s}
+        {xScale}
+        {yScale}
+        {xGet}
+        {highlightKey}
+        {strokeWidth}
+        {data}
+      />
     {:else}
       {@render seriesLine(s, highlightKey)}
     {/if}
@@ -181,12 +153,14 @@
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
-          {@render lineSpline(
-            { ...s, data: gapData },
-            highlightKey,
-            s.color ?? "currentColor",
-            true,
-          )}
+          <LineSpline
+            series={{ ...s, data: gapData }}
+            {highlightKey}
+            stroke={s.color ?? "currentColor"}
+            dashed
+            {strokeWidth}
+            {data}
+          />
         {/each}
       {/each}
     {/if}

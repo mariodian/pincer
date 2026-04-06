@@ -2,24 +2,22 @@
   import {
     buildAllSeriesGaps,
     buildLineHighlightPointProps,
-    buildLinePointProps,
     computeGradientStops,
     computeXDomain,
     computeYDomain,
     countValidDataPoints,
     getSeriesOpacity,
-    getSingleValidDataPoint,
     type ChartSeries,
   } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
     Area,
     AreaChart,
-    Circle,
     defaultChartPadding,
     LinearGradient,
-    Spline,
   } from "layerchart";
+  import SeriesDot from "./SeriesDot.svelte";
+  import LineSpline from "./LineSpline.svelte";
 
   const DEFAULT_PADDING = 40;
 
@@ -65,30 +63,6 @@
     ),
   );
 </script>
-
-{#snippet seriesDot(
-  s: ChartSeries,
-  xScale: (d: Date) => number,
-  yScale: (n: number) => number,
-  xGet: (d: Record<string, unknown>) => Date,
-  highlightKey: string | null,
-)}
-  {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
-  {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
-  {#if singlePoint}
-    {@const cx = xScale(xGet(singlePoint))}
-    {@const cy = yScale(Number(singlePoint[s.key]))}
-    <Circle
-      {cx}
-      {cy}
-      r={pointProps.r}
-      fill={s.color}
-      stroke={pointProps.stroke}
-      stroke-width={pointProps.strokeWidth}
-      opacity={getSeriesOpacity(highlightKey, s.key)}
-    />
-  {/if}
-{/snippet}
 
 {#snippet areaSeries(
   s: ChartSeries,
@@ -164,14 +138,13 @@
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
-          <Spline
-            data={gapData}
-            y={(d) => Number(d[s.key])}
-            class="[stroke-dasharray:3,3]"
-            stroke={s.color}
+          <LineSpline
+            series={{ ...s, data: gapData }}
+            {highlightKey}
+            stroke={s.color ?? "currentColor"}
+            dashed
             {strokeWidth}
-            opacity={getSeriesOpacity(highlightKey, s.key)}
-            curve={curveCatmullRom}
+            {data}
           />
         {/each}
       {/each}
@@ -185,7 +158,15 @@
     {@const xGet = args.context.x}
     {#each visibleSeries as s (s.key)}
       {#if singlePointKeys.has(s.key)}
-        {@render seriesDot(s, xScale, yScale, xGet, highlightKey)}
+        <SeriesDot
+          series={s}
+          {xScale}
+          {yScale}
+          {xGet}
+          {highlightKey}
+          {strokeWidth}
+          {data}
+        />
       {:else}
         {@render seriesMarks(s, highlightKey)}
       {/if}
