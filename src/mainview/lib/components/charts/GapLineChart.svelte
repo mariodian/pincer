@@ -3,12 +3,14 @@
     buildAllSeriesGaps,
     buildLineHighlightPointProps,
     buildLinePointProps,
+    computeGradientStops,
     computeXDomain,
     computeYDomain,
     countValidDataPoints,
+    getSeriesOpacity,
     getSingleValidDataPoint,
     type ChartSeries,
-  }   from "$lib/utils/chart.js";
+  } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
     Circle,
@@ -61,9 +63,7 @@
     ),
   );
 
-  const fallbackGetSplineProps = (s: ChartSeries) => ({
-    data: s?.data ?? data,
-  });
+  const gradientStops = $derived(computeGradientStops(series));
 </script>
 
 {#snippet seriesDot(
@@ -85,31 +85,32 @@
       fill={s.color}
       stroke={pointProps.stroke}
       stroke-width={pointProps.strokeWidth}
-      opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+      opacity={getSeriesOpacity(highlightKey, s.key)}
     />
   {/if}
 {/snippet}
 
-{#snippet lineSpline(s: ChartSeries, highlightKey: string | null, stroke: string)}
+{#snippet lineSpline(
+  s: ChartSeries,
+  highlightKey: string | null,
+  stroke: string,
+  dashed = false,
+)}
   <Spline
     data={s.data ?? data}
     y={(d) => d[s.key]}
     {stroke}
-    opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+    opacity={getSeriesOpacity(highlightKey, s.key)}
     {strokeWidth}
-    curve={curveCatmullRom}
+    curve={dashed ? curveCatmullRom.alpha(0.5) : curveCatmullRom}
+    class={dashed ? "[stroke-dasharray:3,3]" : ""}
   />
 {/snippet}
 
 {#snippet seriesLine(s: ChartSeries, highlightKey: string | null)}
-  {@const { data: _ } = fallbackGetSplineProps(s)}
   {#if colorGradient}
     <LinearGradient
-      stops={[
-        [0, s.color ?? "currentColor"],
-        [0.6, `color-mix(${s.color ?? "currentColor"} 85%, transparent)`],
-        [1, `color-mix(${s.color ?? "currentColor"} 70%, transparent)`],
-      ]}
+      stops={gradientStops[s.key]}
       units="userSpaceOnUse"
       vertical
     >
@@ -180,16 +181,7 @@
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
-          {@const { data: _ } = fallbackGetSplineProps(s)}
-          <Spline
-            data={gapData}
-            y={(d) => Number(d[s.key])}
-            class="[stroke-dasharray:3,3]"
-            stroke={s.color}
-            {strokeWidth}
-            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-            curve={curveCatmullRom.alpha(0.5)}
-          />
+          {@render lineSpline({ ...s, data: gapData }, highlightKey, s.color ?? "currentColor", true)}
         {/each}
       {/each}
     {/if}

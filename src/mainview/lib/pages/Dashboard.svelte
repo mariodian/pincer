@@ -302,8 +302,6 @@
               top: 20,
             }}
             gaps={true}
-            gradient={true}
-            strokeWidth={3}
           />
 
           <MetricChart

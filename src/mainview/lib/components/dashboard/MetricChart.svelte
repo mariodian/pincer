@@ -159,7 +159,12 @@
       {:else if chartType === "bar"}
         <GradientBarChart {...commonChartProps} colorGradient={gradient} />
       {:else if chartType === "area"}
-        <GapAreaChart {...commonChartProps} {gaps} colorGradient={gradient} />
+        <GapAreaChart
+          {...commonChartProps}
+          {gaps}
+          colorGradient={gradient}
+          xDomainPadding={0.025}
+        />
       {/if}
     </div>
   {/if}

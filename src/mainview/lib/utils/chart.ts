@@ -189,3 +189,28 @@ export function getSeriesFiniteValue(
   if (typeof key !== "string") return 0;
   return toFiniteNumberOrZero(row[key]);
 }
+
+export function getSeriesOpacity(
+  highlightKey: string | null,
+  seriesKey: string,
+): number {
+  if (highlightKey === null) return 1;
+  return highlightKey === seriesKey ? 1 : 0.1;
+}
+
+export function computeGradientStops(
+  series: ChartSeries[],
+): Record<string, [number, string][]> {
+  return series.reduce(
+    (acc, s) => {
+      const color = s.color ?? "currentColor";
+      acc[s.key] = [
+        [0, color],
+        [0.6, `color-mix(${color} 55%, transparent)`],
+        [1, `color-mix(${color} 30%, transparent)`],
+      ];
+      return acc;
+    },
+    {} as Record<string, [number, string][]>,
+  );
+}
