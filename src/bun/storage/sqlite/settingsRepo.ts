@@ -6,6 +6,7 @@ export interface Settings {
   retentionDays: number;
   openMainWindow: boolean;
   showDisabledAgents: boolean;
+  launchAtLogin: boolean;
 }
 
 /**
@@ -20,6 +21,7 @@ export function getSettings(): Settings {
     retentionDays: row?.retentionDays ?? 90,
     openMainWindow: row?.openMainWindow ?? true,
     showDisabledAgents: row?.showDisabledAgents ?? false,
+    launchAtLogin: row?.launchAtLogin ?? false,
   };
 }
 
@@ -38,6 +40,9 @@ export function updateSettings(partial: Partial<Settings>): void {
   }
   if (partial.showDisabledAgents !== undefined) {
     set.showDisabledAgents = partial.showDisabledAgents;
+  }
+  if (partial.launchAtLogin !== undefined) {
+    set.launchAtLogin = partial.launchAtLogin;
   }
 
   if (Object.keys(set).length > 0) {

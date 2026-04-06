@@ -26,6 +26,7 @@ import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
 
 import { APP_NAME, MAIN_WINDOW } from "./config";
+import { applyAutostartSetting } from "./services/autostartService";
 
 /**
  * Check if saved window bounds are within a visible display.
@@ -244,6 +245,9 @@ logger.info("app", "Logger initialized");
 // Initialize database before any other operations
 await initDatabase();
 logger.info("app", "Database initialized");
+
+// Apply autostart setting on startup
+void applyAutostartSetting(getSettings().launchAtLogin);
 
 // Initialize tray icon
 await initializeTray();

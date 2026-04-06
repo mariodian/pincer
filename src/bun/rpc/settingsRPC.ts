@@ -10,6 +10,10 @@ import {
 import type { Settings, AdvancedSettings } from "../../shared/types";
 import { restartStatusUpdates } from "../services/statusService";
 import { logger } from "../services/loggerService";
+import {
+  enableAutostart,
+  disableAutostart,
+} from "../services/autostartService";
 
 export type SettingsRPCType = {
   bun: {
@@ -51,6 +55,24 @@ export const settingsRequestHandlers = {
   updateSettings: async (partial: Partial<Settings>) => {
     try {
       updateSettingsToDb(partial);
+
+      // Handle autostart setting changes
+      if (partial.launchAtLogin !== undefined) {
+        try {
+          if (partial.launchAtLogin) {
+            await enableAutostart();
+          } else {
+            await disableAutostart();
+          }
+        } catch (autostartError) {
+          logger.error(
+            "settingsRPC",
+            "Failed to update autostart:",
+            autostartError,
+          );
+          // Don't throw - setting is saved even if autostart fails
+        }
+      }
     } catch (error) {
       logger.error("settingsRPC", "Failed to update settings:", error);
       throw error;

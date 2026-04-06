@@ -71,6 +71,13 @@
       "when": 1775312000000,
       "tag": "0009_create_settings_advanced_and_move_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1775449266714,
+      "tag": "0010_fearless_mordo",
+      "breakpoints": true
     }
   ]
 }

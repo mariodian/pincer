@@ -34,6 +34,9 @@ export const settingsGeneral = sqliteTable("settings_general", {
   showDisabledAgents: integer("show_disabled_agents", { mode: "boolean" })
     .notNull()
     .default(false),
+  launchAtLogin: integer("launch_at_login", { mode: "boolean" })
+    .notNull()
+    .default(false),
 });
 
 // Advanced settings table - for settings shown in Advanced tab

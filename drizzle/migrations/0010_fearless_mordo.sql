@@ -1,0 +1,1 @@
+ALTER TABLE `settings_general` ADD `launch_at_login` integer DEFAULT false NOT NULL;

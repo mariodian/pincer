@@ -13,11 +13,13 @@
   let { onSaveStatus }: Props = $props();
 
   let loading = $state(true);
+  let platform: "macos" | "win" | "linux" | null = $state(null);
 
   // Form state
   let retentionDays = $state(90);
   let openMainWindow = $state(true);
   let showDisabledAgents = $state(false);
+  let launchAtLogin = $state(false);
 
   // Track last-saved values to detect changes on blur
   let savedRetentionDays = $state(90);
@@ -26,11 +28,19 @@
     try {
       await whenReady();
       const rpc = getMainRPC();
-      const settings: Settings = await rpc.request.getSettings({});
+      const [settings, platformInfo]: [
+        Settings,
+        { os: "macos" | "win" | "linux" },
+      ] = await Promise.all([
+        rpc.request.getSettings({}),
+        rpc.request.getPlatform({}),
+      ]);
 
       retentionDays = settings.retentionDays;
       openMainWindow = settings.openMainWindow;
       showDisabledAgents = settings.showDisabledAgents;
+      launchAtLogin = settings.launchAtLogin;
+      platform = platformInfo.os;
 
       savedRetentionDays = retentionDays;
     } catch (error) {
@@ -81,6 +91,20 @@
     showDisabledAgents = checked;
     await saveField({ showDisabledAgents: checked });
   }
+
+  async function handleLaunchAtLoginChange(checked: boolean) {
+    launchAtLogin = checked;
+    await saveField({ launchAtLogin: checked });
+  }
+
+  function getAutostartDescription(): string {
+    if (platform === "macos") {
+      return "Start Pincer automatically when you log in to your Mac. The app will run in the background and can be accessed from the menu bar.";
+    } else if (platform === "win") {
+      return "Start Pincer automatically when Windows starts. The app will run in the background and can be accessed from the system tray.";
+    }
+    return "Start Pincer automatically when you log in. The app will run in the background and can be accessed from the system tray.";
+  }
 </script>
 
 {#if loading}
@@ -104,9 +128,32 @@
       </div>
       <Skeleton class="h-[18px] w-[32px] rounded-full" />
     </div>
+    <div class="flex items-center justify-between">
+      <div class="space-y-2">
+        <Skeleton class="h-4 w-28" />
+        <Skeleton class="h-3 w-56" />
+      </div>
+      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+    </div>
   </div>
 {:else}
   <div class="space-y-6 max-w-lg">
+    <SwitchCard
+      id="launch-at-login"
+      title="Launch at login"
+      description={getAutostartDescription()}
+      checked={launchAtLogin}
+      onCheckedChange={handleLaunchAtLoginChange}
+    />
+
+    <SwitchCard
+      id="open-main-window"
+      title="Open main window on startup"
+      description="Show the application window when Pincer launches. If disabled, the app will run in the background and can be accessed from the system tray."
+      checked={openMainWindow}
+      onCheckedChange={handleMainWindowChange}
+    />
+
     <div class="space-y-2">
       <Label for="retention-days">Data retention (days)</Label>
       <Input
@@ -122,14 +169,6 @@
         Days to keep historical stats. Set to 0 to keep forever.
       </p>
     </div>
-
-    <SwitchCard
-      id="open-main-window"
-      title="Open main window on startup"
-      description="Show the application window when Pincer launches. If disabled, the app will run in the background and can be accessed from the system tray."
-      checked={openMainWindow}
-      onCheckedChange={handleMainWindowChange}
-    />
 
     <SwitchCard
       id="show-disabled-agents"

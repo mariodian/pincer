@@ -29,6 +29,7 @@ export interface Settings {
   retentionDays: number;
   openMainWindow: boolean;
   showDisabledAgents: boolean;
+  launchAtLogin: boolean;
 }
 
 export interface AdvancedSettings {
