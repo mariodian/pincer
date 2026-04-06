@@ -1,7 +1,8 @@
 <div align="center">
 <img width="128" height="128" alt="Pincer Icon" src="icons/icon.iconset/icon_128x128@2x.png" />
 <h1>Pincer</h1>
-<p>Desktop monitoring app for local AI and LLM agents. Check agent health, status, and historical charts right from your system tray, without leaving your workflow.</p>
+
+Desktop monitoring app for local AI and LLM agents.<br />Check agent health, status, and historical charts right from your system tray, without leaving your workflow.
 
 [Changelog](./CHANGELOG.md) · [Report Bug](https://github.com/mariodian/pincer/issues/new?template=bug-report.md) · [Request Feature](https://github.com/mariodian/pincer/issues/new?template=feature-request.md)
 
