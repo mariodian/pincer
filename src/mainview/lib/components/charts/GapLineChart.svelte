@@ -2,11 +2,16 @@
   import {
     buildAllSeriesGaps,
     buildLineHighlightPointProps,
-    type ChartSeries,
+    buildLinePointProps,
+    computeXDomain,
     computeYDomain,
+    countValidDataPoints,
+    getSingleValidDataPoint,
+    type ChartSeries,
   } from "$lib/utils/chart.js";
   import { curveCatmullRom } from "d3-shape";
   import {
+    Circle,
     defaultChartPadding,
     LinearGradient,
     LineChart,
@@ -27,6 +32,7 @@
     gaps?: boolean;
     colorGradient?: boolean;
     height?: number;
+    xDomainPadding?: number;
   }
 
   let {
@@ -41,10 +47,19 @@
     colorGradient = false,
     strokeWidth = 3,
     height,
+    xDomainPadding = 0.05,
   }: Props = $props();
 
   const lineGaps = $derived(buildAllSeriesGaps(data, series, gaps));
+  const xDomain = $derived(computeXDomain(data, x, xDomainPadding));
   const yDomain = $derived(computeYDomain(data, series));
+  const singlePointKeys = $derived(
+    new Set(
+      series
+        .filter((s) => countValidDataPoints(s.data ?? data, s.key) === 1)
+        .map((s) => s.key),
+    ),
+  );
 
   const fallbackGetSplineProps = (s: ChartSeries) => ({
     data: s?.data ?? data,
@@ -54,6 +69,7 @@
 <LineChart
   {data}
   {x}
+  {xDomain}
   {yDomain}
   {series}
   padding={{
@@ -103,41 +119,80 @@
   {#snippet marks(args)}
     {@const highlightKey = args.context.series.highlightKey}
     {@const visibleSeries = args.context.series.visibleSeries}
+    {@const xScale = args.context.xScale}
+    {@const yScale = args.context.yScale}
+    {@const xGet = args.context.x}
     {#if colorGradient}
       {#each visibleSeries as s (s.key)}
-        <LinearGradient
-          stops={[
-            [0, s.color ?? "currentColor"],
-            [0.6, `color-mix(${s.color ?? "currentColor"} 85%, transparent)`],
-            [1, `color-mix(${s.color ?? "currentColor"} 70%, transparent)`],
-          ]}
-          units="userSpaceOnUse"
-          vertical
-        >
-          {#snippet children({ gradient })}
-            {@const { data: _ } = fallbackGetSplineProps(s)}
-            <Spline
-              data={s.data ?? data}
-              y={(d) => d[s.key]}
-              stroke={gradient}
+        {#if singlePointKeys.has(s.key)}
+          {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
+          {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
+          {#if singlePoint}
+            {@const cx = xScale(xGet(singlePoint))}
+            {@const cy = yScale(Number(singlePoint[s.key]))}
+            <Circle
+              {cx}
+              {cy}
+              r={pointProps.r}
+              fill={s.color}
+              stroke={pointProps.stroke}
+              stroke-width={pointProps.strokeWidth}
               opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-              {strokeWidth}
-              curve={curveCatmullRom}
             />
-          {/snippet}
-        </LinearGradient>
+          {/if}
+        {:else}
+          <LinearGradient
+            stops={[
+              [0, s.color ?? "currentColor"],
+              [0.6, `color-mix(${s.color ?? "currentColor"} 85%, transparent)`],
+              [1, `color-mix(${s.color ?? "currentColor"} 70%, transparent)`],
+            ]}
+            units="userSpaceOnUse"
+            vertical
+          >
+            {#snippet children({ gradient })}
+              {@const { data: _ } = fallbackGetSplineProps(s)}
+              <Spline
+                data={s.data ?? data}
+                y={(d) => d[s.key]}
+                stroke={gradient}
+                opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+                {strokeWidth}
+                curve={curveCatmullRom}
+              />
+            {/snippet}
+          </LinearGradient>
+        {/if}
       {/each}
     {:else}
       {#each visibleSeries as s (s.key)}
         {@const { data: _ } = fallbackGetSplineProps(s)}
-        <Spline
-          data={s.data ?? data}
-          y={(d) => d[s.key]}
-          stroke={s.color}
-          opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
-          {strokeWidth}
-          curve={curveCatmullRom}
-        />
+        {#if singlePointKeys.has(s.key)}
+          {@const pointProps = buildLinePointProps(strokeWidth, s.color)}
+          {@const singlePoint = getSingleValidDataPoint(s.data ?? data, s.key)}
+          {#if singlePoint}
+            {@const cx = xScale(xGet(singlePoint))}
+            {@const cy = yScale(Number(singlePoint[s.key]))}
+            <Circle
+              {cx}
+              {cy}
+              r={pointProps.r}
+              fill={s.color}
+              stroke={pointProps.stroke}
+              stroke-width={pointProps.strokeWidth}
+              opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+            />
+          {/if}
+        {:else}
+          <Spline
+            data={s.data ?? data}
+            y={(d) => d[s.key]}
+            stroke={s.color}
+            opacity={highlightKey === s.key ? 1 : highlightKey ? 0.1 : 1}
+            {strokeWidth}
+            curve={curveCatmullRom}
+          />
+        {/if}
       {/each}
     {/if}
   {/snippet}

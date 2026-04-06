@@ -150,7 +150,12 @@
   {:else}
     <div class="w-full min-h-50 lg:h-60">
       {#if chartType === "line"}
-        <GapLineChart {...commonChartProps} {gaps} colorGradient={gradient} />
+        <GapLineChart
+          {...commonChartProps}
+          {gaps}
+          colorGradient={gradient}
+          xDomainPadding={0.025}
+        />
       {:else if chartType === "bar"}
         <GradientBarChart {...commonChartProps} colorGradient={gradient} />
       {:else if chartType === "area"}

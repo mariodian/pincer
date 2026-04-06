@@ -36,6 +36,25 @@ export function toFiniteNumber(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+export function countValidDataPoints(
+  data: Record<string, unknown>[],
+  key: string,
+): number {
+  return data.filter((row) => toFiniteNumber(row[key]) !== null).length;
+}
+
+export function getSingleValidDataPoint(
+  data: Record<string, unknown>[],
+  key: string,
+): Record<string, unknown> | null {
+  for (const row of data) {
+    if (toFiniteNumber(row[key]) !== null) {
+      return row;
+    }
+  }
+  return null;
+}
+
 export function buildSeriesGaps(
   rows: Record<string, unknown>[],
   key: string,
@@ -113,6 +132,33 @@ export function computeYDomain(
   const dataMax = values.length > 0 ? Math.max(...values) : 100;
 
   return [dataMin - 5, dataMax + 5];
+}
+
+export function computeXDomain(
+  data: Record<string, unknown>[],
+  xKey: string,
+  paddingRatio = 0.05,
+): [Date, Date] {
+  const dates = data
+    .map((d) => d[xKey])
+    .filter((d): d is Date => d instanceof Date);
+
+  if (dates.length === 0) {
+    const now = new Date();
+    return [new Date(now.getTime() - 86400000), now];
+  }
+
+  const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+  // Add padding on each side to prevent dots from being clipped at edges
+  const range = maxDate.getTime() - minDate.getTime();
+  const padding = range * paddingRatio || 3600000; // paddingRatio or 1 hour default
+
+  return [
+    new Date(minDate.getTime() - padding),
+    new Date(maxDate.getTime() + padding),
+  ];
 }
 
 export function toFiniteNumberOrZero(value: unknown): number {
