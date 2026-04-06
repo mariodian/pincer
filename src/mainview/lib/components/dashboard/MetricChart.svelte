@@ -88,15 +88,22 @@
       });
   });
 
-  // X-axis config — bar charts (band scale) need explicit tickValues to
-  // limit label density; line/area (time scale) handle tick positioning
-  // automatically via D3's smart time tick intervals
+  // X-axis config — limit tick density for all chart types to prevent
+  // overcrowding. For 24h charts with ~24 data points, this caps at ~8 labels.
+  // Note: band scales (bar) use `ticks`, time scales (line/area) use `tickValues`.
   const xAxisConfig = $derived.by(() => {
     const base: Record<string, unknown> = {};
     if (xFormat) base.format = xFormat;
-    if (chartType === "bar" && data.length > maxTicks) {
+    if (data.length > maxTicks) {
       const step = Math.ceil(data.length / maxTicks);
-      base.ticks = data.filter((_, i) => i % step === 0).map((d) => d[xKey]);
+      const tickData = data
+        .filter((_, i) => i % step === 0)
+        .map((d) => d[xKey]);
+      if (chartType === "bar") {
+        base.ticks = tickData;
+      } else {
+        base.tickValues = tickData;
+      }
     }
     return base;
   });

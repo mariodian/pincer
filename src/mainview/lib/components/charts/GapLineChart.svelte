@@ -181,7 +181,12 @@
     {#if gaps}
       {#each visibleSeries as s, i (s.key)}
         {#each lineGaps[s.key] ?? [] as gapData, j (`${s.key}-${i}-${j}`)}
-          {@render lineSpline({ ...s, data: gapData }, highlightKey, s.color ?? "currentColor", true)}
+          {@render lineSpline(
+            { ...s, data: gapData },
+            highlightKey,
+            s.color ?? "currentColor",
+            true,
+          )}
         {/each}
       {/each}
     {/if}
