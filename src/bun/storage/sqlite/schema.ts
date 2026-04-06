@@ -45,7 +45,7 @@ export const settingsAdvanced = sqliteTable("settings_advanced", {
   pollingInterval: integer("polling_interval").notNull().default(30000),
   useNativeTray: integer("use_native_tray", { mode: "boolean" })
     .notNull()
-    .default(false),
+    .default(true),
   autoCheckEnabled: integer("auto_check_enabled", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -53,6 +53,15 @@ export const settingsAdvanced = sqliteTable("settings_advanced", {
 
 // Key-value store for ephemeral application state (window position, UI state, etc.)
 export const appState = sqliteTable("app_state", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
+    sql`(unixepoch())`,
+  ),
+});
+
+// Generic key-value store for app state (initialized, versions, migration flags, etc.)
+export const appMeta = sqliteTable("app_meta", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(

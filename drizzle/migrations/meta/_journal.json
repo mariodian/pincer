@@ -78,6 +78,20 @@
       "when": 1775449266714,
       "tag": "0010_fearless_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1775475078051,
+      "tag": "0011_add_app_meta_and_tray_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1775476000000,
+      "tag": "0012_cleanup_settings_general_columns",
+      "breakpoints": true
     }
   ]
 }

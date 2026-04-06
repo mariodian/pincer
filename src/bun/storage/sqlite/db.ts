@@ -5,9 +5,9 @@ import { PATHS, Utils } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { runDatabaseInitialization } from "../../services/dbInitService";
 import { logger } from "../../services/loggerService";
 import { ensureAppDataDir } from "../../utils/fs";
-import { settingsGeneral } from "./schema";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 let sqliteInstance: Database | null = null;
@@ -88,12 +88,8 @@ export async function initializeDatabase(): Promise<{
     }
   }
 
-  // Seed the settings_general row if it doesn't exist (first run without migration)
-  try {
-    db.insert(settingsGeneral).values({ id: 1 }).onConflictDoNothing().run();
-  } catch (error) {
-    logger.warn("db", "Failed to seed settings_general:", error);
-  }
+  // Run application-level initialization (seeding, platform defaults, etc.)
+  await runDatabaseInitialization(db);
 
   // Start the pruning job
   startPruningJob(db);
