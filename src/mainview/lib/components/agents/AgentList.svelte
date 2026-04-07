@@ -140,8 +140,8 @@
           >
             <Skeleton class="size-3 rounded-full" />
             <div class="flex-1 space-y-2">
-              <Skeleton class="h-4 w-32" />
-              <Skeleton class="h-3 w-48" />
+              <Skeleton class="h-4 w-44" />
+              <Skeleton class="h-3 w-24" />
             </div>
             <div class="flex gap-1">
               <Skeleton class="size-8 rounded-md" />
