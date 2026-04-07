@@ -6,7 +6,7 @@
     computeGradientStops,
     computeXDomain,
     computeYDomain,
-    getAlonePointIndices,
+    getIsolatedPointIndices,
     getSeriesOpacity,
     type ChartSeries,
   } from "$lib/utils/chart.js";
@@ -59,7 +59,7 @@
   const alonePointsMap = $derived(
     series.reduce(
       (acc, s) => {
-        acc[s.key] = getAlonePointIndices(s.data ?? data, s.key);
+        acc[s.key] = getIsolatedPointIndices(s.data ?? data, s.key);
         return acc;
       },
       {} as Record<string, number[]>,

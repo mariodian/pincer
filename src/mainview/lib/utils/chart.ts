@@ -56,15 +56,15 @@ export function getSingleValidDataPoint(
 }
 
 /**
- * Returns indices of data points that are "alone" - valid values with no
+ * Returns indices of data points that are "isolated" - valid values with no
  * solid-line connection possible on either side (both neighbors are gaps/null).
  *
- * A point is alone when:
+ * A point is isolated when:
  * - It has a valid (non-null) value
  * - Left neighbor is null or out of bounds
  * - Right neighbor is null or out of bounds
  */
-export function getAlonePointIndices(
+export function getIsolatedPointIndices(
   data: Record<string, unknown>[],
   key: string,
 ): number[] {
@@ -77,7 +77,7 @@ export function getAlonePointIndices(
     const left = i > 0 ? values[i - 1] : null;
     const right = i < values.length - 1 ? values[i + 1] : null;
 
-    // Point is alone if both sides cannot form a solid line
+    // Point is isolated if both sides cannot form a solid line
     if (left === null && right === null) {
       indices.push(i);
     }
