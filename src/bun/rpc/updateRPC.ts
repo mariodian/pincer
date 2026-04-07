@@ -44,7 +44,7 @@ export interface UpdateInfoResponse {
   hash: string;
   channel: string;
   lastCheckTimestamp: number | null;
-  autoCheckEnabled: boolean;
+  autoCheckUpdate: boolean;
   updateAvailable: boolean;
   newVersion?: string;
   newHash?: string;
@@ -85,7 +85,7 @@ export const updateRequestHandlers = {
         hash,
         channel,
         lastCheckTimestamp,
-        autoCheckEnabled: settings.autoCheckEnabled,
+        autoCheckUpdate: settings.autoCheckUpdate,
         updateAvailable,
         newVersion: cachedUpdateCheck?.version,
         newHash: cachedUpdateCheck?.hash,
@@ -131,7 +131,7 @@ export const updateRequestHandlers = {
 
   setAutoCheck: async ({ enabled }: { enabled: boolean }): Promise<void> => {
     try {
-      updateAdvancedSettingsToDb({ autoCheckEnabled: enabled });
+      updateAdvancedSettingsToDb({ autoCheckUpdate: enabled });
       logger.debug(
         "updateRPC",
         `Auto-check ${enabled ? "enabled" : "disabled"}`,
@@ -175,7 +175,7 @@ export async function performAutoUpdateCheck(): Promise<void> {
   try {
     const settings = getAdvancedSettingsFromDb();
 
-    if (!settings.autoCheckEnabled) {
+    if (!settings.autoCheckUpdate) {
       logger.debug("update", "Auto-check disabled, skipping");
       return;
     }

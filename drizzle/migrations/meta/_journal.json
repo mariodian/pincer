@@ -92,6 +92,20 @@
       "when": 1775476000000,
       "tag": "0012_cleanup_settings_general_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1775480000000,
+      "tag": "0013_rename_auto_check_column",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1775480100000,
+      "tag": "0014_drop_settings_update_table",
+      "breakpoints": true
     }
   ]
 }

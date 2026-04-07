@@ -5,7 +5,7 @@ import { settingsAdvanced } from "./schema";
 export interface AdvancedSettings {
   pollingInterval: number;
   useNativeTray: boolean;
-  autoCheckEnabled: boolean;
+  autoCheckUpdate: boolean;
 }
 
 /**
@@ -20,7 +20,7 @@ export function getAdvancedSettings(): AdvancedSettings {
   return {
     pollingInterval: row?.pollingInterval ?? 30000,
     useNativeTray: row?.useNativeTray ?? true,
-    autoCheckEnabled: row?.autoCheckEnabled ?? true,
+    autoCheckUpdate: row?.autoCheckUpdate ?? true,
   };
 }
 
@@ -41,8 +41,8 @@ export function updateAdvancedSettings(
   if (partial.useNativeTray !== undefined) {
     set.useNativeTray = partial.useNativeTray;
   }
-  if (partial.autoCheckEnabled !== undefined) {
-    set.autoCheckEnabled = partial.autoCheckEnabled;
+  if (partial.autoCheckUpdate !== undefined) {
+    set.autoCheckUpdate = partial.autoCheckUpdate;
   }
 
   if (Object.keys(set).length > 0) {

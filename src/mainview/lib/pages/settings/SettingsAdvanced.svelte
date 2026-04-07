@@ -18,7 +18,7 @@
   let loading = $state(true);
   let pollingIntervalSec = $state(30);
   let savedPollingIntervalSec = $state(30);
-  let autoCheckEnabled = $state(true);
+  let autoCheckUpdate = $state(true);
   let useNativeTray = $state(false);
 
   async function loadSettings() {
@@ -31,7 +31,7 @@
 
       pollingIntervalSec = Math.round(settings.pollingInterval / 1000);
       savedPollingIntervalSec = pollingIntervalSec;
-      autoCheckEnabled = settings.autoCheckEnabled;
+      autoCheckUpdate = settings.autoCheckUpdate;
       useNativeTray = settings.useNativeTray;
     } catch (error) {
       console.error("Failed to load advanced settings:", error);
@@ -77,7 +77,7 @@
     try {
       const rpc = getMainRPC();
       await rpc.request.setAutoCheck({ enabled: checked });
-      autoCheckEnabled = checked;
+      autoCheckUpdate = checked;
       onSaveStatus("saved");
     } catch (error) {
       console.error("Failed to save auto-check setting:", error);
@@ -158,7 +158,7 @@
           id="auto-check-updates"
           title="Automatically check for updates"
           description="Check for new versions once a day when the app starts."
-          checked={autoCheckEnabled}
+          checked={autoCheckUpdate}
           onCheckedChange={handleAutoCheckChange}
         />
       </Card.Content>

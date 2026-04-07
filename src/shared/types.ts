@@ -35,5 +35,5 @@ export interface Settings {
 export interface AdvancedSettings {
   pollingInterval: number;
   useNativeTray: boolean;
-  autoCheckEnabled: boolean;
+  autoCheckUpdate: boolean;
 }

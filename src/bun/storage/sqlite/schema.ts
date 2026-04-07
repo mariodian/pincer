@@ -46,7 +46,7 @@ export const settingsAdvanced = sqliteTable("settings_advanced", {
   useNativeTray: integer("use_native_tray", { mode: "boolean" })
     .notNull()
     .default(true),
-  autoCheckEnabled: integer("auto_check_enabled", { mode: "boolean" })
+  autoCheckUpdate: integer("auto_check_update", { mode: "boolean" })
     .notNull()
     .default(true),
 });
