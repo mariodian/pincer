@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import * as Dialog from "$lib/components/ui/dialog";
@@ -17,6 +18,7 @@
   import type { Agent } from "$shared/types";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+  import Icon from "../ui/icon/icon.svelte";
   import Separator from "../ui/separator/separator.svelte";
 
   interface Props {
@@ -167,6 +169,10 @@
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
+    if (!type) {
+      newErrors.type = "Agent type is required";
+    }
+
     if (!name.trim()) {
       newErrors.name = "Name is required";
     }
@@ -294,45 +300,62 @@
 
   <PageBody>
     {#if loadError}
-      <div
-        class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
-      >
-        {loadError}
-      </div>
+      <Alert.Root variant="destructive">
+        <Icon name="alertCircle" class="size-4 text-destructive" />
+        <Alert.Title>Error</Alert.Title>
+        <Alert.Description>
+          <p>{loadError}</p>
+        </Alert.Description>
+      </Alert.Root>
     {:else if loading}
-      <div class="space-y-6">
-        <div class="space-y-2">
-          <Skeleton class="h-4 w-12" />
-          <Skeleton class="h-9 w-full" />
-        </div>
-        <div class="space-y-2">
-          <Skeleton class="h-4 w-12" />
-          <Skeleton class="h-9 w-full" />
-        </div>
-        <div class="space-y-2">
-          <Skeleton class="h-4 w-8" />
-          <Skeleton class="h-9 w-full" />
-        </div>
-        <div class="space-y-2">
-          <Skeleton class="h-4 w-8" />
-          <Skeleton class="h-9 w-full" />
-        </div>
-      </div>
+      <Card.Root class="">
+        <Card.Content class="space-y-6">
+          <div class="space-y-2">
+            <Skeleton class="h-4 w-19" />
+            <Skeleton class="h-9 w-56" />
+          </div>
+          <div class="space-y-2">
+            <Skeleton class="h-4 w-12" />
+            <Skeleton class="h-9 w-full" />
+          </div>
+          <div class="space-y-2">
+            <Skeleton class="h-4 w-8" />
+            <Skeleton class="h-9 w-full" />
+          </div>
+          <div class="space-y-2">
+            <Skeleton class="h-4 w-8" />
+            <Skeleton class="h-9 w-28" />
+          </div>
+        </Card.Content>
+      </Card.Root>
     {:else}
-      <form bind:this={formElement} onsubmit={handleSubmit} class="space-y-5">
-        <Card.Root class=" gap-0">
-          <Card.Content class="space-y-5">
-            {#if errors.form}
-              <div
-                class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
-              >
-                {errors.form}
-              </div>
-            {/if}
-
+      <form bind:this={formElement} onsubmit={handleSubmit}>
+        {#if errors.form}
+          <Alert.Root variant="destructive">
+            <Icon name="alertCircle" class="size-4 text-destructive" />
+            <Alert.Title>Error</Alert.Title>
+            <Alert.Description>
+              <p>{errors.form}</p>
+            </Alert.Description>
+          </Alert.Root>
+        {/if}
+        <Card.Root class="gap-0">
+          <Card.Content class="space-y-4">
             <div class="space-y-2">
+              <Label
+                for="type-select"
+                class="text-sm font-medium cursor-pointer"
+              >
+                Agent Type
+              </Label>
               <Select.Root type="single" name="type" bind:value={type}>
-                <Select.Trigger class="w-56">{triggerContent}</Select.Trigger>
+                <Select.Trigger
+                  id="type-select"
+                  class="w-56"
+                  aria-invalid={!!errors.type}
+                >
+                  {triggerContent}
+                </Select.Trigger>
                 <Select.Content>
                   <Select.Group>
                     <Select.Label>Agents</Select.Label>
@@ -347,6 +370,9 @@
                   </Select.Group>
                 </Select.Content>
               </Select.Root>
+              {#if errors.type}
+                <p class="text-xs text-destructive">{errors.type}</p>
+              {/if}
             </div>
 
             {#if isCustom}
