@@ -70,10 +70,20 @@ let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
 const iconSize = platformIsWindows ? TRAY_ICON_SIZE_WINDOWS : TRAY_ICON_SIZE;
 
+// Cache the useNativeTray setting at startup - changes require restart
+let useNativeTrayCached: boolean | null = null;
+
 /**
  * Initialize the tray icon and set up event handlers
  */
 export async function initializeTray() {
+  // Cache the useNativeTray setting at startup - changes require restart
+  useNativeTrayCached = useNativeMenu();
+  logger.info(
+    "tray",
+    `Tray initializing with useNativeTray=${useNativeTrayCached}`,
+  );
+
   // Create tray icon
   tray = new Tray({
     image: TRAY_ICON_PATH,
@@ -90,7 +100,8 @@ export async function initializeTray() {
     const action = (event as { data?: { action?: string } })?.data?.action;
 
     if (action === "") {
-      if (useNativeMenu()) {
+      // Use cached value - changing this setting requires restart
+      if (useNativeTrayCached) {
         // Show native menu
         updateTrayMenu();
       } else {
@@ -184,8 +195,8 @@ export async function initializeTray() {
     }
   });
 
-  // Initial menu update
-  if (useNativeMenu()) {
+  // Initial menu update (uses cached value - restart required to change)
+  if (useNativeTrayCached) {
     updateTrayMenu();
   }
 
@@ -193,7 +204,8 @@ export async function initializeTray() {
   initStatusSyncService({
     getMainWindow,
     onMenuUpdate: () => {
-      if (useNativeMenu()) updateTrayMenu();
+      // Use cached value - restart required to change tray type
+      if (useNativeTrayCached) updateTrayMenu();
     },
   });
   getStatusSyncService().setPopoverWindow(popoverWindow);
@@ -334,7 +346,8 @@ export async function updateTrayMenu() {
 export async function syncAgentsFromKnownStatuses(updateMenu = true) {
   const sync = getStatusSyncService();
   await sync.pushKnownStatuses();
-  if (updateMenu && useNativeMenu()) {
+  // Use cached value - restart required to change tray type
+  if (updateMenu && useNativeTrayCached) {
     updateTrayMenu();
   }
 }
