@@ -5,6 +5,27 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.5] - 2026-04-07
+
+### Added
+
+- Added stronger validation and error handling in the agent form flow.
+- Added database migrations to align update-settings schema changes.
+
+### Changed
+
+- Updated application UI layout and styling across app shell, navigation, and settings pages for better consistency.
+- Updated page-header formatting and responsive layout behavior in agent-related views.
+- Renamed update setting field usage from `autoCheckEnabled` to `autoCheckUpdate` across shared types, RPC, storage, and settings UI.
+- Refactored chart helper naming by renaming `getAlonePointIndices` to `getIsolatedPointIndices` for clarity.
+
+### Fixed
+
+- Fixed native tray behavior so `useNativeTray` setting changes correctly take effect after restart.
+- Fixed tooltip visibility logic in sidebar menu interactions.
+- Fixed skeleton placeholder sizing for improved layout consistency in the agent list.
+- Fixed temporary LayerChart tooltip container styling to stabilize dashboard tooltip display.
+
 ## [v0.1.4] - 2026-04-07
 
 ### Added
