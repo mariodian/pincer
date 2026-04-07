@@ -5,8 +5,8 @@
   import Agents from "$lib/pages/Agents.svelte";
   import Dashboard from "$lib/pages/Dashboard.svelte";
   import Settings from "$lib/pages/Settings.svelte";
-  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
+  import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import Router, { replace, router } from "@bmlt-enabled/svelte-spa-router";
   import wrap from "@bmlt-enabled/svelte-spa-router/wrap";
   import { ModeWatcher, mode } from "mode-watcher";
@@ -64,6 +64,7 @@
           "w-full m-1.5 py-5 px-4",
           "rounded-xl",
           "shadow-xs shadow-black/10 dark:shadow-none",
+          "bg-content-background",
         ]}
       >
         <Router {routes} />
@@ -79,11 +80,7 @@
   :global([data-slot="sidebar-container"]) {
     border-color: transparent !important;
   }
-
-  :global([data-slot="content"]) {
-    background-color: var(--body-background);
-  }
-  :global(input, textarea, select, [data-slot="select-trigger"]) {
+  /* :global(input, textarea, select, [data-slot="select-trigger"]) {
     background-color: var(--input-background);
-  }
+  } */
 </style>

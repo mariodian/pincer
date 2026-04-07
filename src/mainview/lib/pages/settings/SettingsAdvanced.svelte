@@ -1,8 +1,11 @@
 <script lang="ts">
+  import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { SwitchCard } from "$lib/components/ui/switch-card/index.js";
+  import { Separator } from "$lib/components/ui/separator";
+
+  import { Skeleton } from "$lib/components/ui/skeleton";
+  import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import type { AdvancedSettings } from "$shared/types";
 
@@ -100,47 +103,65 @@
         <Skeleton class="h-4 w-48" />
         <Skeleton class="h-3 w-64" />
       </div>
-      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+      <Skeleton class="h-4.5 w-8 rounded-full" />
     </div>
     <div class="flex items-center justify-between">
       <div class="space-y-2">
         <Skeleton class="h-4 w-32" />
         <Skeleton class="h-3 w-56" />
       </div>
-      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+      <Skeleton class="h-4.5 w-8 rounded-full" />
     </div>
   </div>
 {:else}
   <div class="space-y-6 max-w-lg">
-    <div class="space-y-2">
-      <Label for="polling-interval">Polling interval (seconds)</Label>
-      <Input
-        id="polling-interval"
-        type="number"
-        min="1"
-        bind:value={pollingIntervalSec}
-        onblur={handlePollingBlur}
-        onkeydown={handlePollingKeydown}
-        class="w-20"
-      />
-      <p class="text-xs text-muted-foreground">
-        How often to check agent health status.
-      </p>
-    </div>
+    <h3 class="font-medium mb-2">System</h3>
+    <Card.Root>
+      <Card.Content>
+        <div class="space-y-2">
+          <Label for="polling-interval">Polling interval (seconds)</Label>
+          <Input
+            id="polling-interval"
+            type="number"
+            min="1"
+            bind:value={pollingIntervalSec}
+            onblur={handlePollingBlur}
+            onkeydown={handlePollingKeydown}
+            class="w-20"
+          />
+          <p class="text-xs text-muted-foreground">
+            How often to check agent health status.
+          </p>
+        </div>
+      </Card.Content>
 
-    <SwitchCard
-      id="auto-check-updates"
-      title="Automatically check for updates"
-      description="Check for new versions once a day when the app starts."
-      checked={autoCheckEnabled}
-      onCheckedChange={handleAutoCheckChange}
-    />
-    <SwitchCard
-      id="use-native-tray"
-      title="Use native tray"
-      description="Native tray integrates better with your platform's appearance but the custom tray offers a more polished design. Restart required for changes to take effect."
-      checked={useNativeTray}
-      onCheckedChange={handleUseNativeTrayChange}
-    />
+      <Separator class="my-0" />
+
+      <Card.Content>
+        <SwitchCard
+          class="border-none bg-transparent! shadow-none p-0"
+          id="use-native-tray"
+          title="Use native tray"
+          description="Native tray integrates better with your platform's appearance but the custom tray offers a more polished design. Restart required for changes to take effect."
+          checked={useNativeTray}
+          onCheckedChange={handleUseNativeTrayChange}
+        />
+      </Card.Content>
+    </Card.Root>
+
+    <h3 class="font-medium mb-2">Updates</h3>
+
+    <Card.Root>
+      <Card.Content>
+        <SwitchCard
+          class="border-none bg-transparent! shadow-none p-0"
+          id="auto-check-updates"
+          title="Automatically check for updates"
+          description="Check for new versions once a day when the app starts."
+          checked={autoCheckEnabled}
+          onCheckedChange={handleAutoCheckChange}
+        />
+      </Card.Content>
+    </Card.Root>
   </div>
 {/if}

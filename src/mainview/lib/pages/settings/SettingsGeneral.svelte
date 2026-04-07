@@ -1,6 +1,8 @@
 <script lang="ts">
+  import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
+  import Separator from "$lib/components/ui/separator/separator.svelte";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
@@ -119,63 +121,84 @@
         <Skeleton class="h-4 w-40" />
         <Skeleton class="h-3 w-52" />
       </div>
-      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+      <Skeleton class="h-4.5 w-8 rounded-full" />
     </div>
     <div class="flex items-center justify-between">
       <div class="space-y-2">
         <Skeleton class="h-4 w-48" />
         <Skeleton class="h-3 w-64" />
       </div>
-      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+      <Skeleton class="h-4.5 w-8 rounded-full" />
     </div>
     <div class="flex items-center justify-between">
       <div class="space-y-2">
         <Skeleton class="h-4 w-28" />
         <Skeleton class="h-3 w-56" />
       </div>
-      <Skeleton class="h-[18px] w-[32px] rounded-full" />
+      <Skeleton class="h-4.5 w-8 rounded-full" />
     </div>
   </div>
 {:else}
   <div class="space-y-6 max-w-lg">
-    <SwitchCard
-      id="launch-at-login"
-      title="Launch at login"
-      description={getAutostartDescription()}
-      checked={launchAtLogin}
-      onCheckedChange={handleLaunchAtLoginChange}
-    />
+    <h3 class="font-medium mb-2">Application</h3>
+    <Card.Root>
+      <Card.Content>
+        <SwitchCard
+          class="border-none bg-transparent! shadow-none p-0"
+          id="launch-at-login"
+          title="Launch at login"
+          description={getAutostartDescription()}
+          checked={launchAtLogin}
+          onCheckedChange={handleLaunchAtLoginChange}
+        />
+      </Card.Content>
 
-    <SwitchCard
-      id="open-main-window"
-      title="Open main window on startup"
-      description="Show the application window when Pincer launches. If disabled, the app will run in the background and can be accessed from the system tray."
-      checked={openMainWindow}
-      onCheckedChange={handleMainWindowChange}
-    />
+      <Separator class="my-0" />
 
-    <div class="space-y-2">
-      <Label for="retention-days">Data retention (days)</Label>
-      <Input
-        id="retention-days"
-        type="number"
-        min="0"
-        bind:value={retentionDays}
-        onblur={handleRetentionBlur}
-        onkeydown={handleRetentionKeydown}
-        class="w-20"
-      />
-      <p class="text-xs text-muted-foreground">
-        Days to keep historical stats. Set to 0 to keep forever.
-      </p>
-    </div>
+      <Card.Content>
+        <SwitchCard
+          class="border-none bg-transparent! shadow-none p-0"
+          id="open-main-window"
+          title="Open main window on startup"
+          description="Show the application window when Pincer launches. If disabled, the app will run in the background and can be accessed from the system tray."
+          checked={openMainWindow}
+          onCheckedChange={handleMainWindowChange}
+        />
+      </Card.Content>
+    </Card.Root>
 
-    <SwitchCard
-      id="show-disabled-agents"
-      title="Show disabled agents in dashboard"
-      description="Include data from disabled agents in dashboard charts and KPIs. Historical data is preserved even when disabled."
-      checked={showDisabledAgents}
-      onCheckedChange={handleShowDisabledAgentsChange}
-    />
+    <h3 class="font-medium mb-2">Statistics</h3>
+    <Card.Root>
+      <Card.Content class="space-y-4">
+        <div class="space-y-2">
+          <Label for="retention-days">Data retention (days)</Label>
+          <Input
+            id="retention-days"
+            type="number"
+            min="0"
+            bind:value={retentionDays}
+            onblur={handleRetentionBlur}
+            onkeydown={handleRetentionKeydown}
+            class="w-20"
+          />
+          <p class="text-xs text-muted-foreground">
+            Days to keep historical stats. Set to 0 to keep forever.
+          </p>
+        </div>
+      </Card.Content>
+
+      <Separator class="my-0" />
+
+      <Card.Content>
+        <SwitchCard
+          class="border-none bg-transparent! shadow-none p-0"
+          id="show-disabled-agents"
+          title="Show disabled agents in dashboard"
+          description="Include data from disabled agents in dashboard charts and KPIs. Historical data is preserved even when disabled."
+          checked={showDisabledAgents}
+          onCheckedChange={handleShowDisabledAgentsChange}
+        />
+      </Card.Content>
+    </Card.Root>
   </div>
 {/if}

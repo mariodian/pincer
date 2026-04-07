@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
+  import * as Card from "$lib/components/ui/card";
   import * as Dialog from "$lib/components/ui/dialog";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -16,6 +17,7 @@
   import type { Agent } from "$shared/types";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+  import Separator from "../ui/separator/separator.svelte";
 
   interface Props {
     agentId?: number;
@@ -318,130 +320,148 @@
       </div>
     {:else}
       <form bind:this={formElement} onsubmit={handleSubmit} class="space-y-5">
-        {#if errors.form}
-          <div
-            class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
-          >
-            {errors.form}
-          </div>
-        {/if}
-
-        <div class="space-y-2">
-          <Select.Root type="single" name="type" bind:value={type}>
-            <Select.Trigger class="w-56">{triggerContent}</Select.Trigger>
-            <Select.Content>
-              <Select.Group>
-                <Select.Label>Agents</Select.Label>
-                {#each [...agentTypes].sort( (a, b) => (a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0), ) as agentType (agentType.id)}
-                  <Select.Item value={agentType.id} label="{agentType.name}}">
-                    {agentType.name}
-                  </Select.Item>
-                {/each}
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
-        </div>
-
-        {#if isCustom}
-          <div class="space-y-2">
-            <Label for="healthEndpoint" class="text-sm font-medium">
-              Health Endpoint
-            </Label>
-            <Input
-              id="healthEndpoint"
-              type="text"
-              placeholder="/health"
-              bind:value={healthEndpoint}
-              aria-invalid={!!errors.healthEndpoint}
-            />
-            {#if errors.healthEndpoint}
-              <p class="text-xs text-destructive">{errors.healthEndpoint}</p>
+        <Card.Root class=" gap-0">
+          <Card.Content class="space-y-5">
+            {#if errors.form}
+              <div
+                class="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {errors.form}
+              </div>
             {/if}
-            <p class="text-xs text-muted-foreground">
-              Path checked for agent health (e.g. /health, /status)
-            </p>
-          </div>
 
-          <div class="space-y-2">
-            <Label for="statusShape" class="text-sm font-medium">
-              Status Detection
-            </Label>
-            <select
-              id="statusShape"
-              bind:value={statusShape}
-              class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
-            >
-              {#each agentTypes.find((t) => t.id === "custom")?.statusShapeOptions ?? [] as option (option.value)}
-                <option value={option.value}>{option.label}</option>
-              {/each}
-            </select>
-            <p class="text-xs text-muted-foreground">
-              How to interpret the health endpoint response
-            </p>
-          </div>
-        {/if}
+            <div class="space-y-2">
+              <Select.Root type="single" name="type" bind:value={type}>
+                <Select.Trigger class="w-56">{triggerContent}</Select.Trigger>
+                <Select.Content>
+                  <Select.Group>
+                    <Select.Label>Agents</Select.Label>
+                    {#each [...agentTypes].sort( (a, b) => (a.id === "custom" ? 1 : b.id === "custom" ? -1 : 0), ) as agentType (agentType.id)}
+                      <Select.Item
+                        value={agentType.id}
+                        label="{agentType.name}}"
+                      >
+                        {agentType.name}
+                      </Select.Item>
+                    {/each}
+                  </Select.Group>
+                </Select.Content>
+              </Select.Root>
+            </div>
 
-        <div class="space-y-2">
-          <Label for="name" class="text-sm font-medium">Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="My Service"
-            bind:value={name}
-            aria-invalid={!!errors.name}
-          />
-          {#if errors.name}
-            <p class="text-xs text-destructive">{errors.name}</p>
-          {/if}
-        </div>
+            {#if isCustom}
+              <div class="space-y-2">
+                <Label for="healthEndpoint" class="text-sm font-medium">
+                  Health Endpoint
+                </Label>
+                <Input
+                  id="healthEndpoint"
+                  type="text"
+                  placeholder="/health"
+                  bind:value={healthEndpoint}
+                  aria-invalid={!!errors.healthEndpoint}
+                />
+                {#if errors.healthEndpoint}
+                  <p class="text-xs text-destructive">
+                    {errors.healthEndpoint}
+                  </p>
+                {/if}
+                <p class="text-xs text-muted-foreground">
+                  Path checked for agent health (e.g. /health, /status)
+                </p>
+              </div>
 
-        <div class="space-y-2">
-          <Label for="url" class="text-sm font-medium">URL</Label>
-          <Input
-            id="url"
-            type="text"
-            placeholder="example.com or http(s)://example.com"
-            bind:value={url}
-            aria-invalid={!!errors.url}
-          />
-          {#if errors.url}
-            <p class="text-xs text-destructive">{errors.url}</p>
-          {/if}
-        </div>
+              <div class="space-y-2">
+                <Label for="statusShape" class="text-sm font-medium">
+                  Status Detection
+                </Label>
+                <select
+                  id="statusShape"
+                  bind:value={statusShape}
+                  class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
+                >
+                  {#each agentTypes.find((t) => t.id === "custom")?.statusShapeOptions ?? [] as option (option.value)}
+                    <option value={option.value}>{option.label}</option>
+                  {/each}
+                </select>
+                <p class="text-xs text-muted-foreground">
+                  How to interpret the health endpoint response
+                </p>
+              </div>
+            {/if}
 
-        <div class="space-y-2 w-28">
-          <Label for="port" class="text-sm font-medium">Port</Label>
-          <Input
-            id="port"
-            type="number"
-            placeholder="18790"
-            bind:value={port}
-            min="1"
-            max="65535"
-            aria-invalid={!!errors.port}
-          />
-          {#if errors.port}
-            <p class="text-xs text-destructive">{errors.port}</p>
-          {/if}
-        </div>
+            <div class="space-y-2">
+              <Label for="name" class="text-sm font-medium">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="My Service"
+                bind:value={name}
+                aria-invalid={!!errors.name}
+              />
+              {#if errors.name}
+                <p class="text-xs text-destructive">{errors.name}</p>
+              {/if}
+            </div>
 
-        <SwitchCard
-          id="monitor-agent"
-          title="Monitor Agent"
-          description="An enabled agent will be actively monitored. Disable to pause
+            <div class="space-y-2">
+              <Label for="url" class="text-sm font-medium">URL</Label>
+              <Input
+                id="url"
+                type="text"
+                placeholder="example.com or http(s)://example.com"
+                bind:value={url}
+                aria-invalid={!!errors.url}
+              />
+              {#if errors.url}
+                <p class="text-xs text-destructive">{errors.url}</p>
+              {/if}
+            </div>
+
+            <div class="space-y-2 w-28">
+              <Label for="port" class="text-sm font-medium">Port</Label>
+              <Input
+                id="port"
+                type="number"
+                placeholder="18790"
+                bind:value={port}
+                min="1"
+                max="65535"
+                aria-invalid={!!errors.port}
+              />
+              {#if errors.port}
+                <p class="text-xs text-destructive">{errors.port}</p>
+              {/if}
+            </div>
+          </Card.Content>
+
+          <Separator class="mt-6" />
+
+          <Card.Content class="p-0 space-y-0">
+            <SwitchCard
+              id="monitor-agent"
+              title="Monitor Agent"
+              description="An enabled agent will be actively monitored. Disable to pause
           monitoring without losing configuration."
-          bind:checked={enabled}
-          variant="blue"
-        />
+              bind:checked={enabled}
+              variant="blue"
+              class="border-none shadow-none rounded-none m-0 px-6"
+            />
+          </Card.Content>
 
-        <div class="flex gap-3 pt-2">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Agent"}
-          </Button>
-          <Button type="button" variant="outline" onclick={handleBack}>
-            Cancel
-          </Button>
-        </div>
+          <Separator class="mb-4" />
+
+          <Card.Footer>
+            <div class="flex gap-3 pt-2">
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Agent"}
+              </Button>
+              <Button type="button" variant="outline" onclick={handleBack}>
+                Cancel
+              </Button>
+            </div>
+          </Card.Footer>
+        </Card.Root>
       </form>
     {/if}
   </PageBody>

@@ -6,7 +6,7 @@
 
 :root {
   --background: oklch(1 0 0);
-  --body-background: oklch(0.972 0.007 322.12);
+  --content-background: oklch(0.972 0.007 322.12);
   --foreground: oklch(0.145 0.008 326);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0.008 326);
@@ -47,7 +47,7 @@
 
 .dark {
   --background: oklch(0.212 0.019 322.12);
-  --body-background: oklch(0.25 0.019 322.12);
+  --content-background: oklch(0.25 0.019 322.12);
   --foreground: oklch(0.985 0 0);
   /* --card: oklch(0.212 0.019 322.12); */
   --card: oklch(0.22 0.019 322.12);
@@ -89,6 +89,7 @@
 
 @theme inline {
   --font-sans: "Inter Variable", sans-serif;
+  --color-content-background: var(--content-background);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
