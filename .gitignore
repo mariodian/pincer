@@ -18,3 +18,7 @@ libMacOS.dylib
 .githooks
 .opencode
 .tmp/
+
+# Mempalace state
+entities.json
+mempalace.yaml
