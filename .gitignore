@@ -8,6 +8,8 @@ artifacts/
 
 # Local database
 drizzle/dev.db
+drizzle/dev.db-shm
+drizzle/dev.db-wal
 
 # Native build output
 libMacOS.dylib
