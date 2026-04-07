@@ -290,8 +290,8 @@
   <PageHeader
     title={isEdit ? "Edit Agent" : "Add Agent"}
     description={isEdit
-      ? "Update the agent configuration."
-      : "Configure a new service to monitor."}
+      ? "Update the agent configuration"
+      : "Configure a new service to monitor"}
     {prevPath}
     {currentPath}
     showBack
