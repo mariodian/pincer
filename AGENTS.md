@@ -3,176 +3,65 @@
 > **Important:** This is an **Electrobun** desktop app (NOT Electron). Do not use Electron APIs or patterns.
 > Full Electrobun API reference: https://blackboard.sh/electrobun/llms.txt
 
-## Build, Lint, and Test Commands
+## Essential Commands
 
-| Command                                 | Description                                                     |
-| --------------------------------------- | --------------------------------------------------------------- |
-| `bun run dev`                           | Build native dylib, Vite, and start Electrobun dev server       |
-| `bun run dev:hmr`                       | Vite HMR (port 5173) + dev server concurrently                  |
-| `bun run dev:web`                       | Vite dev server only (no Electrobun)                            |
-| `bun run build:native-libs`             | Compile macOS native dylib (required before dev/build)          |
-| `bun run build`                         | Full production build: format + native dylib + Vite + electrobun|
-| `bun run build:canary` / `build:stable` | Environment-specific production builds                          |
-| `bun run format`                        | Prettier auto-format (`src/**/*.{ts,svelte,js,css,html}`)       |
-| `bun run typecheck`                     | Type checking for `.svelte` + `.ts` files (uses `svelte-check`) |
-| `bun run db:generate`                   | Generate Drizzle migration files                                |
-| `bun run db:push`                       | Push schema to SQLite (dev only)                                |
-| `bun run db:studio`                     | Open Drizzle Studio UI                                          |
-| `bun test <file>`                       | Run a single test file                                          |
-| `bun test --grep "<pattern>"`           | Run tests matching a pattern                                    |
+| Command                     | Purpose                                          |
+| --------------------------- | ------------------------------------------------ |
+| `bun run dev`               | Dev server (builds native dylib + Vite)          |
+| `bun run build:native-libs` | Compile macOS dylib (required before dev/build)  |
+| `bun run build`             | Full production build                            |
+| `bun run db:generate`       | Generate Drizzle migrations after schema changes |
 
-> No test framework configured yet. Use **Bun test** (`bun test`) or **Vitest** when adding tests.
+> See `package.json` for full script list. Tests: `bun test` (Bun test or Vitest).
 
----
+## Database Migrations (Drizzle + SQLite)
 
-## Database Migrations
-
-Uses **Drizzle ORM** with SQLite. `migrate()` runs on startup.
-
-### Workflow
-
-```bash
-cp ~/Library/Application\ Support/com.mariodian.pincer/dev/app.db ./drizzle/dev.db
-# Edit src/bun/storage/sqlite/schema.ts
-bun run db:generate   # drizzle-kit diffs schema.ts against dev.db
-bun run dev           # applies pending migrations on startup
-cp ~/Library/Application\ Support/com.mariodian.pincer/dev/app.db ./drizzle/dev.db
-```
-
-### Rules
+**Critical rules:**
 
 - NEVER manually create migration files or edit `_journal.json`
-- Let `drizzle-kit generate` produce the base migration with correct hashes
-- For data migrations: edit the generated `.sql` — add INSERT/UPDATE between CREATE and DROP with `WHERE EXISTS` guards for fresh-install compatibility
-- `drizzle/dev.db` is in `.gitignore` — re-sync from real DB after every migration
-- Test data migrations on a copy of the real database before deploying
+- For data migrations: edit generated `.sql` — add INSERT/UPDATE between CREATE/DROP with `WHERE EXISTS` guards
+- Re-sync `drizzle/dev.db` from real DB after every migration
 
-Settings use typed single-row tables named `settings_<category>` (e.g., `settings_general`). Access via `src/bun/storage/sqlite/settingsRepo.ts` using `getSettings()`/`updateSettings()`.
+> Full workflow: `.opencode/context/project-intelligence/lookup/database-migrations.md`
 
----
+## Code Conventions
 
-## Code Style
+**Follow:** `.opencode/context/project-intelligence/lookup/code-standards.md` and `naming-conventions.md`
 
-### TypeScript
+**Key reminders:**
 
-- Target ES2020, strict mode on (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`)
-- ES modules only; `const`/`let` (never `var`); `async`/`await` for promises
-- Specify return types on public/exported functions
-- Double quotes for strings; semicolons required
-- Wrap I/O and native calls in `try`/`catch` — log context via `logger.error()` before rethrowing
-- Use `error instanceof Error ? error.message : String(error)` for error messages
+- Use `logger` from `loggerService.ts` (not `console.*`) in main process
+- Guard macOS code: `if (process.platform === "darwin")` or use `isMacOS()` from `utils/platform`
 
-### Imports
-
-Order: **(1)** external libraries, **(2)** path-aliased internal modules (`$lib`, `$bun`, `$shared`), **(3)** relative local imports. Sort alphabetically within each group. Use named exports for utilities; default exports only for Svelte components. Use `import type` inline for type-only imports. Add `.js` extensions in Svelte component imports.
-
-```ts
-import { BrowserView } from "electrobun/bun"; // External
-import { eq } from "drizzle-orm";
-import type { Agent } from "$shared/types"; // Aliased
-import { agentsTable } from "./schema"; // Relative
-```
-
-### Formatting & Naming
-
-Prettier with `prettier-plugin-svelte` (see `.prettierrc`). 2-space indent, 80–100 char lines, trailing commas in multi-line literals/params.
-
-| Type                | Convention                                                         | Example                          |
-| ------------------- | ------------------------------------------------------------------ | -------------------------------- |
-| Constants           | `UPPER_SNAKE_CASE`                                                 | `MAC_TRAFFIC_LIGHTS_X`           |
-| Variables/functions | `camelCase`                                                        | `applyMacOSWindowEffects`        |
-| Types/interfaces    | `PascalCase`                                                       | `WindowEffects`, `AgentStatus`   |
-| Files               | `kebab-case.ts` (services/utils), `PascalCase.svelte` (components) | `windowService.ts`, `App.svelte` |
-| Booleans            | `is`/`has`/`can` prefix                                            | `isMacOS`, `hasFocus`            |
-| Event handlers      | `handle` prefix                                                    | `handleClick`, `handleSubmit`    |
-
-### Logging
-
-Use `logger` from `src/bun/services/loggerService.ts` (not raw `console.*`) in the main process.
-
-```ts
-import { logger } from "./services/loggerService";
-
-logger.debug("component", "Detailed info for dev debugging");
-logger.info("component", "Notable event");
-logger.warn("component", "Recoverable issue:", error);
-logger.error("component", "Critical failure:", error);
-```
-
-| Channel           | Console    | File (`userData/logs/app.log`) | Renderer RPC |
-| ----------------- | ---------- | ------------------------------ | ------------ |
-| `dev`             | All levels | Off                            | Off          |
-| `canary`/`stable` | Silent     | All levels                     | warn + error |
-
-Env overrides: `LOG_LEVEL=debug`, `LOG_TO_FILE=true` (set before `bun run dev`).
-
----
-
-## Project Structure
+## Project Structure (Brief)
 
 ```
-src/
-  bun/            Main process (Electrobun, FFI, native integration)
-    rpc/          RPC method definitions & type maps
-    services/     Business logic (agentService, statusService, statusSyncService, loggerService)
-    storage/      Storage abstraction → SQLite/Drizzle implementation
-    utils/        Utilities (platform detection, native effects, window config)
-  mainview/       Svelte UI renderer
-    lib/
-      components/ Reusable UI primitives (shadcn-style) + app-specific components
-      pages/      Route-level pages (Dashboard, Agents, Settings)
-      services/   Renderer-side RPC client
-    ui/           Top-level wrappers (Window.svelte, Button.svelte)
-  shared/         Shared types for main↔renderer (types.ts, rpc.ts, agent-helpers.ts)
-native/macos/     Objective-C++ native code (window effects, system services)
-scripts/          Build scripts (build-macos-lib.sh)
+src/bun/          # Main process (RPC, services, storage, native FFI)
+src/mainview/     # Svelte 5 renderer (lib/components, lib/pages)
+src/shared/       # Shared types for main↔renderer
+native/macos/     # Objective-C++ native code
 ```
 
-Key configs: `electrobun.config.ts` (packaging), `vite.config.js` (3 entry points, root: `src/mainview`), `tsconfig.json` (strict, aliases), `drizzle.config.ts` (SQLite schema).
+> Full tree + config details: `.opencode/context/project-intelligence/navigation.md`
 
----
+## Tech Stack
 
-## Technology Stack
-
-Runtime: **Electrobun + Bun** · UI: **Svelte 5** (runes: `$state`, `$derived`, `$effect`) · Styling: **Tailwind CSS v4** (`@tailwindcss/vite`) · Components: **shadcn-svelte** (via `bits-ui`) · Build: **Vite** · DB: **Drizzle ORM + SQLite** · Native: **Objective-C++ via Bun FFI**
-
----
+Electrobun+Bun · Svelte 5 (runes) · Tailwind v4 · shadcn-svelte · Drizzle+SQLite · Objective-C++ via Bun FFI
 
 ## RPC & Native Integration
 
-- RPC types defined in `src/bun/rpc/*.ts` using `BrowserView.defineRPC<T>()`; shared types in `src/shared/types.ts`
-- Always validate RPC inputs from the renderer before processing or passing to native code
-- Guard macOS-specific code with `process.platform === "darwin"`
-- Use Bun FFI (`bun:ffi`) with explicit `CString`/`ptr` type definitions
-- Handle missing native libraries gracefully — fall back, don't crash
+- Validate all renderer inputs before passing to native code or storage
+- RPC types: `src/bun/rpc/*.ts` via `BrowserView.defineRPC<T>()`; shared types in `src/shared/types.ts`
+- Use Bun FFI (`bun:ffi`) with explicit `CString`/`ptr` types; handle missing native libs gracefully
 
----
-
-## Svelte 5 Conventions
+## Svelte 5
 
 - Reactivity via runes: `$state`, `$derived`, `$effect` (no stores unless cross-component)
-- Props via `$props()` with typed interface; destructure on declaration
-- Events: `onclick={handler}` (no colon prefix — Svelte 5 syntax)
-- Keep components small and single-responsibility; pages in `lib/pages/`, UI primitives in `lib/components/ui/`
-- CSS scoped by default; Tailwind utility classes; use `cn()` from `$lib/utils` for conditional classes
-
----
+- Props via `$props()` with typed interface; events: `onclick={handler}` (no colon)
+- Components: small, single-responsibility; use `cn()` from `$lib/utils` for conditional classes
 
 ## Security
 
-- Validate all renderer inputs before passing to native code or storage
-- Avoid `eval`, `new Function()`, and template-based code execution
-- Principle of least privilege; run `bun audit` regularly
+- Validate renderer inputs; avoid `eval`/`new Function()`; principle of least privilege; run `bun audit`
 
----
-
-## Debugging
-
-| Issue                  | Fix                                                           |
-| ---------------------- | ------------------------------------------------------------- |
-| Native dylib not found | `bun run build:native-libs`                                |
-| Port 5173 in use       | Kill existing Vite process or change port in `vite.config.js` |
-| HMR not working        | Use `bun run dev:hmr` for concurrent Vite + Electrobun        |
-| Main process logs      | Terminal output                                               |
-| Renderer logs          | Browser DevTools in Electrobun windows                        |
-| Native crashes         | macOS Console app → crash logs                                |
+> Troubleshooting: `.opencode/context/project-intelligence/guides/getting-started.md`
