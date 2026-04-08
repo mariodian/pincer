@@ -51,6 +51,24 @@ export const settingsAdvanced = sqliteTable("settings_advanced", {
     .default(true),
 });
 
+// Notification settings table - for settings shown in Notifications tab
+export const settingsNotifications = sqliteTable("settings_notifications", {
+  id: integer("id").primaryKey().default(1),
+  notificationsEnabled: integer("notifications_enabled", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  notifyOnStatusChange: integer("notify_on_status_change", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  notifyOnError: integer("notify_on_error", { mode: "boolean" })
+    .notNull()
+    .default(true),
+  statusChangeThreshold: integer("status_change_threshold").notNull().default(1),
+  silentNotifications: integer("silent_notifications", { mode: "boolean" })
+    .notNull()
+    .default(false),
+});
+
 // Key-value store for ephemeral application state (window position, UI state, etc.)
 export const appState = sqliteTable("app_state", {
   key: text("key").primaryKey(),

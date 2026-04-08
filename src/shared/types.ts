@@ -37,3 +37,11 @@ export interface AdvancedSettings {
   useNativeTray: boolean;
   autoCheckUpdate: boolean;
 }
+
+export interface NotificationSettings {
+  notificationsEnabled: boolean;
+  notifyOnStatusChange: boolean;
+  notifyOnError: boolean;
+  statusChangeThreshold: number;
+  silentNotifications: boolean;
+}

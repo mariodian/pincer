@@ -5,6 +5,7 @@
   import SettingsAbout from "./settings/SettingsAbout.svelte";
   import SettingsAdvanced from "./settings/SettingsAdvanced.svelte";
   import SettingsGeneral from "./settings/SettingsGeneral.svelte";
+  import SettingsNotifications from "./settings/SettingsNotifications.svelte";
 
   let currentPath = $derived($currentRoute);
   let prevPath = $derived($previousRoute);
@@ -51,6 +52,7 @@
     if (
       tabFromUrl === "general" ||
       tabFromUrl === "advanced" ||
+      tabFromUrl === "notifications" ||
       tabFromUrl === "about"
     ) {
       activeTab = tabFromUrl;
@@ -90,6 +92,7 @@
       <Tabs.List class="mb-6">
         <Tabs.Trigger value="general">General</Tabs.Trigger>
         <Tabs.Trigger value="advanced">Advanced</Tabs.Trigger>
+        <Tabs.Trigger value="notifications">Notifications</Tabs.Trigger>
         <Tabs.Trigger value="about">About</Tabs.Trigger>
       </Tabs.List>
 
@@ -99,6 +102,10 @@
 
       <Tabs.Content value="advanced">
         <SettingsAdvanced onSaveStatus={handleSaveStatus} />
+      </Tabs.Content>
+
+      <Tabs.Content value="notifications">
+        <SettingsNotifications onSaveStatus={handleSaveStatus} />
       </Tabs.Content>
 
       <Tabs.Content value="about">

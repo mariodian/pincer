@@ -1,4 +1,5 @@
 // Settings RPC - Shared RPC definition for settings management
+import { Utils } from "electrobun/bun";
 import {
   getSettings as getSettingsFromDb,
   updateSettings as updateSettingsToDb,
@@ -7,7 +8,12 @@ import {
   getAdvancedSettings as getAdvancedSettingsFromDb,
   updateAdvancedSettings as updateAdvancedSettingsToDb,
 } from "../storage/sqlite/advancedSettingsRepo";
+import {
+  getNotificationSettings as getNotificationSettingsFromDb,
+  updateNotificationSettings as updateNotificationSettingsToDb,
+} from "../storage/sqlite/settingsNotificationsRepo";
 import type { Settings, AdvancedSettings } from "../../shared/types";
+import type { NotificationSettings } from "../../shared/types";
 import { restartStatusUpdates } from "../services/statusService";
 import { logger } from "../services/loggerService";
 import {
@@ -32,6 +38,18 @@ export type SettingsRPCType = {
       };
       updateAdvancedSettings: {
         params: Partial<AdvancedSettings>;
+        response: void;
+      };
+      getNotificationSettings: {
+        params: Record<string, never>;
+        response: NotificationSettings;
+      };
+      updateNotificationSettings: {
+        params: Partial<NotificationSettings>;
+        response: void;
+      };
+      requestNotificationPermission: {
+        params: Record<string, never>;
         response: void;
       };
     };
@@ -96,6 +114,35 @@ export const settingsRequestHandlers = {
     } catch (error) {
       logger.error("settingsRPC", "Failed to update advanced settings:", error);
       throw error;
+    }
+  },
+  getNotificationSettings: async () => {
+    try {
+      return getNotificationSettingsFromDb();
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to get notification settings:", error);
+      throw error;
+    }
+  },
+  updateNotificationSettings: async (partial: Partial<NotificationSettings>) => {
+    try {
+      updateNotificationSettingsToDb(partial);
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to update notification settings:", error);
+      throw error;
+    }
+  },
+  requestNotificationPermission: async () => {
+    try {
+      // Send a silent notification to trigger the OS permission prompt
+      Utils.showNotification({
+        title: "Notifications Enabled",
+        body: "You will now receive notifications when agent status changes.",
+        silent: true,
+      });
+      logger.debug("settingsRPC", "Notification permission requested");
+    } catch (error) {
+      logger.error("settingsRPC", "Failed to request notification permission:", error);
     }
   },
 };

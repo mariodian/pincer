@@ -1,5 +1,5 @@
 import { getMeta, hasMeta, setMeta } from "../storage/sqlite/appMetaRepo";
-import { settingsGeneral, settingsAdvanced } from "../storage/sqlite/schema";
+import { settingsGeneral, settingsAdvanced, settingsNotifications } from "../storage/sqlite/schema";
 import { isMacOS } from "../utils/platform";
 import { logger } from "./loggerService";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
@@ -19,6 +19,9 @@ export async function runDatabaseInitialization(
   // Seed the settings_advanced row if it doesn't exist
   // Required for fresh installs - migrations create the table but not the row
   seedSettingsAdvanced(db);
+
+  // Seed the settings_notifications row if it doesn't exist
+  seedSettingsNotifications(db);
 
   // Handle fresh install platform-specific defaults
   await handleFreshInstallDefaults(db);
@@ -44,6 +47,18 @@ function seedSettingsAdvanced(
     logger.debug("db-init", "Seeded settings_advanced row");
   } catch (error) {
     logger.warn("db-init", "Failed to seed settings_advanced:", error);
+  }
+}
+
+function seedSettingsNotifications(
+  db: BunSQLiteDatabase<Record<string, unknown>>,
+): void {
+  try {
+    // Insert default row - uses schema defaults (notificationsEnabled=false by default)
+    db.insert(settingsNotifications).values({ id: 1 }).onConflictDoNothing().run();
+    logger.debug("db-init", "Seeded settings_notifications row");
+  } catch (error) {
+    logger.warn("db-init", "Failed to seed settings_notifications:", error);
   }
 }
 
