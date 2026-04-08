@@ -303,7 +303,7 @@ function batchAndSendNotifications(
 
 async function startStatusUpdates() {
   if (statusUpdateInterval) {
-    clearInterval(statusUpdateInterval);
+    clearTimeout(statusUpdateInterval);
   }
 
   const { pollingInterval } = getAdvancedSettings();
@@ -311,19 +311,20 @@ async function startStatusUpdates() {
 
   logger.info("status", `Starting status polling every ${interval}ms`);
 
-  try {
-    await refreshAndPush();
-  } catch (error) {
-    logger.error("status", "Failed to update agent statuses:", error);
-  }
-
-  statusUpdateInterval = setInterval(async () => {
+  // Recursive poll function to prevent overlapping polls
+  const poll = async () => {
+    logger.debug("status", "Polling agents...");
     try {
       await refreshAndPush();
     } catch (error) {
       logger.error("status", "Failed to update agent statuses:", error);
     }
-  }, interval);
+    // Schedule next poll after this one completes
+    statusUpdateInterval = setTimeout(poll, interval);
+  };
+
+  // First poll immediately
+  await poll();
 }
 
 export async function beginStatusUpdates() {
