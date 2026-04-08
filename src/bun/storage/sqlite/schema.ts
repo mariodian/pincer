@@ -42,7 +42,7 @@ export const settingsGeneral = sqliteTable("settings_general", {
 // Advanced settings table - for settings shown in Advanced tab
 export const settingsAdvanced = sqliteTable("settings_advanced", {
   id: integer("id").primaryKey().default(1),
-  pollingInterval: integer("polling_interval").notNull().default(30000),
+  pollingInterval: integer("polling_interval").notNull().default(15000),
   useNativeTray: integer("use_native_tray", { mode: "boolean" })
     .notNull()
     .default(true),
@@ -63,7 +63,7 @@ export const settingsNotifications = sqliteTable("settings_notifications", {
   notifyOnError: integer("notify_on_error", { mode: "boolean" })
     .notNull()
     .default(true),
-  statusChangeThreshold: integer("status_change_threshold").notNull().default(1),
+  statusChangeThreshold: integer("status_change_threshold").notNull().default(2),
   silentNotifications: integer("silent_notifications", { mode: "boolean" })
     .notNull()
     .default(false),

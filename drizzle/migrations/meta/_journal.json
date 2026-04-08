@@ -113,6 +113,13 @@
       "when": 1775621404417,
       "tag": "0015_secret_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1775640046107,
+      "tag": "0016_sturdy_mephisto",
+      "breakpoints": true
     }
   ]
 }
