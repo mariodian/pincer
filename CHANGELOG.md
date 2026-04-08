@@ -5,6 +5,24 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.6] - 2026-04-08
+
+### Added
+
+- Added notification settings and management functionality for customizing agent alerts.
+- Added settings migration for advanced and notification configurations.
+
+### Changed
+
+- Enhanced notification logic and batching for improved agent status change handling.
+- Refactored status update polling to use `setTimeout` for better control and reliability.
+- Improved code formatting and readability across multiple files.
+- Simplified notification threshold descriptions for improved clarity.
+
+### Fixed
+
+- Fixed gitignore to properly exclude mempalace state files from version control.
+
 ## [v0.1.5] - 2026-04-07
 
 ### Added
