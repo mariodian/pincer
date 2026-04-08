@@ -193,8 +193,7 @@
               class="w-20"
             />
             <p class="text-xs text-muted-foreground">
-              Number of status changes before triggering a notification. Helps
-              reduce notification spam.
+              Number of polling rounds before a status change is confirmed. When any agent in a group (e.g., all agents going "online") reaches this threshold, all agents in that group notify together. Agents that join the group later are included when the group fires, even if they've had fewer poll checks. This batches notifications for agents changing to the same status within the threshold window.
             </p>
           </div>
         </Card.Content>
