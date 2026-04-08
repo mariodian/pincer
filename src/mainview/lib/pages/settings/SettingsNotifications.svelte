@@ -193,7 +193,10 @@
               class="w-20"
             />
             <p class="text-xs text-muted-foreground">
-              Polling rounds before a status change is confirmed. When any agent in a group (e.g., all going "online") reaches this threshold, all agents in that group notify together. Batches notifications for agents changing to the same status.
+              Polling rounds before a status change is confirmed. When any agent
+              in a group (e.g., all going "online") reaches this threshold, all
+              agents in that group notify together. Batches notifications for
+              agents changing to the same status.
             </p>
           </div>
         </Card.Content>

@@ -63,7 +63,9 @@ export const settingsNotifications = sqliteTable("settings_notifications", {
   notifyOnError: integer("notify_on_error", { mode: "boolean" })
     .notNull()
     .default(true),
-  statusChangeThreshold: integer("status_change_threshold").notNull().default(2),
+  statusChangeThreshold: integer("status_change_threshold")
+    .notNull()
+    .default(2),
   silentNotifications: integer("silent_notifications", { mode: "boolean" })
     .notNull()
     .default(false),

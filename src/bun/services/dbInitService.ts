@@ -1,5 +1,9 @@
 import { getMeta, hasMeta, setMeta } from "../storage/sqlite/appMetaRepo";
-import { settingsGeneral, settingsAdvanced, settingsNotifications } from "../storage/sqlite/schema";
+import {
+  settingsGeneral,
+  settingsAdvanced,
+  settingsNotifications,
+} from "../storage/sqlite/schema";
 import { isMacOS } from "../utils/platform";
 import { logger } from "./loggerService";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
@@ -55,7 +59,10 @@ function seedSettingsNotifications(
 ): void {
   try {
     // Insert default row - uses schema defaults (notificationsEnabled=false by default)
-    db.insert(settingsNotifications).values({ id: 1 }).onConflictDoNothing().run();
+    db.insert(settingsNotifications)
+      .values({ id: 1 })
+      .onConflictDoNothing()
+      .run();
     logger.debug("db-init", "Seeded settings_notifications row");
   } catch (error) {
     logger.warn("db-init", "Failed to seed settings_notifications:", error);

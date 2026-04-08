@@ -120,9 +120,7 @@ export async function initializeTray() {
           title: "",
           url: await getViewUrl("tray-popover.html"),
           titleBarStyle: "hiddenInset",
-          // trafficLights: false,
           rpc: trayPopoverRPC,
-          // transparent: true,
           ...(platformIsMacOS
             ? {
                 trafficLights: windowConfig.trafficLights,
@@ -137,7 +135,6 @@ export async function initializeTray() {
                 },
               }
             : {}),
-          // frame: false,
           frame: {
             width: POPOVER_WINDOW.width,
             height: POPOVER_WINDOW.height,

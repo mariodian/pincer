@@ -1,9 +1,16 @@
 // Settings RPC - Shared RPC definition for settings management
 import { Utils } from "electrobun/bun";
+import type {
+  AdvancedSettings,
+  NotificationSettings,
+  Settings,
+} from "../../shared/types";
 import {
-  getSettings as getSettingsFromDb,
-  updateSettings as updateSettingsToDb,
-} from "../storage/sqlite/settingsRepo";
+  disableAutostart,
+  enableAutostart,
+} from "../services/autostartService";
+import { logger } from "../services/loggerService";
+import { restartStatusUpdates } from "../services/statusService";
 import {
   getAdvancedSettings as getAdvancedSettingsFromDb,
   updateAdvancedSettings as updateAdvancedSettingsToDb,
@@ -12,14 +19,10 @@ import {
   getNotificationSettings as getNotificationSettingsFromDb,
   updateNotificationSettings as updateNotificationSettingsToDb,
 } from "../storage/sqlite/settingsNotificationsRepo";
-import type { Settings, AdvancedSettings } from "../../shared/types";
-import type { NotificationSettings } from "../../shared/types";
-import { restartStatusUpdates } from "../services/statusService";
-import { logger } from "../services/loggerService";
 import {
-  enableAutostart,
-  disableAutostart,
-} from "../services/autostartService";
+  getSettings as getSettingsFromDb,
+  updateSettings as updateSettingsToDb,
+} from "../storage/sqlite/settingsRepo";
 
 export type SettingsRPCType = {
   bun: {
@@ -120,15 +123,25 @@ export const settingsRequestHandlers = {
     try {
       return getNotificationSettingsFromDb();
     } catch (error) {
-      logger.error("settingsRPC", "Failed to get notification settings:", error);
+      logger.error(
+        "settingsRPC",
+        "Failed to get notification settings:",
+        error,
+      );
       throw error;
     }
   },
-  updateNotificationSettings: async (partial: Partial<NotificationSettings>) => {
+  updateNotificationSettings: async (
+    partial: Partial<NotificationSettings>,
+  ) => {
     try {
       updateNotificationSettingsToDb(partial);
     } catch (error) {
-      logger.error("settingsRPC", "Failed to update notification settings:", error);
+      logger.error(
+        "settingsRPC",
+        "Failed to update notification settings:",
+        error,
+      );
       throw error;
     }
   },
@@ -142,7 +155,11 @@ export const settingsRequestHandlers = {
       });
       logger.debug("settingsRPC", "Notification permission requested");
     } catch (error) {
-      logger.error("settingsRPC", "Failed to request notification permission:", error);
+      logger.error(
+        "settingsRPC",
+        "Failed to request notification permission:",
+        error,
+      );
     }
   },
 };

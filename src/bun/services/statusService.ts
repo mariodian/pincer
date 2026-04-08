@@ -45,7 +45,7 @@ let pendingAgents: Map<number, PendingAgent> = new Map();
  */
 const STATUS_VALUES: string[] = ["ok", "offline", "error"];
 let statusGroups: Map<string, Set<number>> = new Map(
-  STATUS_VALUES.map((s) => [s, new Set<number>()])
+  STATUS_VALUES.map((s) => [s, new Set<number>()]),
 );
 
 interface StatusChangeBatch {
@@ -83,7 +83,9 @@ export async function refreshAndPush(updateMenu = true) {
  * - Reset poll counter to 1
  * - Add to new status group
  */
-async function checkAndNotifyStatusChanges(statuses: AgentStatusInfo[]): Promise<void> {
+async function checkAndNotifyStatusChanges(
+  statuses: AgentStatusInfo[],
+): Promise<void> {
   const settings = getNotificationSettings();
 
   if (!settings.notificationsEnabled) {
@@ -99,7 +101,10 @@ async function checkAndNotifyStatusChanges(statuses: AgentStatusInfo[]): Promise
   // from the PREVIOUS complete poll, not baselines modified during this poll.
   const baselinesAtPollStart = new Map<number, string>();
   for (const status of statuses) {
-    baselinesAtPollStart.set(status.id, agentBaseline.get(status.id) ?? FIRST_POLL_MARKER);
+    baselinesAtPollStart.set(
+      status.id,
+      agentBaseline.get(status.id) ?? FIRST_POLL_MARKER,
+    );
   }
 
   // Phase 1: Process each agent - detect deviations, update counters, manage groups
@@ -129,7 +134,10 @@ async function checkAndNotifyStatusChanges(statuses: AgentStatusInfo[]): Promise
         });
         // Add to appropriate status group for batching
         statusGroups.get(currentStatus)?.add(status.id);
-        logger.debug("notifications", `[${agentName}] Status change: ${baseline} -> ${currentStatus}`);
+        logger.debug(
+          "notifications",
+          `[${agentName}] Status change: ${baseline} -> ${currentStatus}`,
+        );
       } else if (pending.currentStatus === currentStatus) {
         // Agent is still deviated in the SAME status as last poll
         // Just increment the counter
@@ -192,7 +200,10 @@ async function checkAndNotifyStatusChanges(statuses: AgentStatusInfo[]): Promise
     if (maxPolls >= settings.statusChangeThreshold) {
       // ALL agents in this group fire together
       // This includes agents that joined later (fewer polls)
-      logger.info("notifications", `${group.size} agent(s) reached threshold for ${status}, sending notification`);
+      logger.info(
+        "notifications",
+        `${group.size} agent(s) reached threshold for ${status}, sending notification`,
+      );
       for (const agentId of group) {
         const agentName = agentNameMap.get(agentId) || `Agent ${agentId}`;
         changesToNotify.push({
@@ -229,7 +240,7 @@ function batchAndSendNotifications(
     notifyOnStatusChange: boolean;
     notifyOnError: boolean;
     silentNotifications: boolean;
-  }
+  },
 ): void {
   // Group changes by their final status
   const grouped: Map<string, StatusChangeBatch[]> = new Map();
