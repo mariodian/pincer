@@ -10,7 +10,7 @@
   import { sortAgentsByStatus } from "$shared/agent-helpers";
   import type { TrayPopoverRPCType } from "$shared/rpc";
   import { RPC_MAX_REQUEST_TIME } from "$shared/rpc";
-  import type { AgentStatus } from "$shared/types";
+  import type { AgentStatus, Status } from "$shared/types";
   import { Electroview } from "electrobun/view";
   import "./tray-popover.css";
 
@@ -180,7 +180,7 @@
     await rpc.request.openMainWindow({ page: `agents/${agentId}` });
   }
 
-  function getStatusClass(status: string): string | string[] {
+  function getStatusClass(status: Status): string | string[] {
     switch (status) {
       case "ok":
         return ["status-online", "bg-green-600 dark:bg-green-500"];

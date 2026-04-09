@@ -1,6 +1,6 @@
 // Report types for per-agent uptime summaries
 
-import type { TimeRange } from "./types";
+import type { Status, TimeRange } from "./types";
 
 export interface AgentUptimeSummary {
   agentId: number;
@@ -8,7 +8,7 @@ export interface AgentUptimeSummary {
   color: string;
   enabled: boolean;
   /** Derived status for sorting (ok if uptimePct > 50, error if > 0, offline otherwise) */
-  status: "ok" | "error" | "offline";
+  status: Status;
   /** Overall uptime percentage for the period (0-100) */
   uptimePct: number;
   /** Total number of checks in the period */

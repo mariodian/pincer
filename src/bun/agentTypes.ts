@@ -1,3 +1,5 @@
+import type { Status } from "$shared/types";
+
 // Agent Type Registry — defines supported agent types and their health check strategies
 export interface AgentTypeConfig {
   id: string;
@@ -11,7 +13,7 @@ export interface AgentTypeConfig {
 
 /** Signature for a health response parser. */
 export type StatusParser = (json: unknown) => {
-  status: "ok" | "error";
+  status: Status;
   errorMessage?: string;
 };
 
@@ -27,7 +29,7 @@ export type StatusShape = (typeof STATUS_SHAPE_OPTIONS)[number]["value"];
 export const STATUS_PARSERS: Record<StatusShape, StatusParser> = {
   always_ok: (_json) => ({ status: "ok" }),
   json_status: (json) => {
-    const data = json as { status?: string };
+    const data = json as { status?: Status };
     return data.status === "ok" ? { status: "ok" } : { status: "error" };
   },
 };
@@ -37,10 +39,10 @@ export const STATUS_PARSERS: Record<StatusShape, StatusParser> = {
  * Returns "error" if the response JSON has status "error", otherwise "ok".
  */
 function parseStandardAgentStatus(json: unknown): {
-  status: "ok" | "error";
+  status: Status;
   errorMessage?: string;
 } {
-  const data = json as { status?: string };
+  const data = json as { status?: Status };
   if (data.status === "error") return { status: "error" };
   return { status: "ok" };
 }

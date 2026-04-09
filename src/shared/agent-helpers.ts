@@ -1,4 +1,4 @@
-import type { Agent, AgentStatus, AgentStatusInfo } from "./types";
+import type { Agent, AgentStatus, AgentStatusInfo, Status } from "./types";
 
 /**
  * Normalize a URL by stripping trailing slashes and ensuring http:// prefix.
@@ -22,7 +22,7 @@ export const HEALTH_AFFECTING_FIELDS = [
 ] as const;
 
 /** Priority order for sorting: lower = shown first. */
-export function getStatusPriority(status: string): number {
+export function getStatusPriority(status: Status): number {
   switch (status) {
     case "ok":
       return 0;
@@ -56,7 +56,7 @@ export function mergeAgentsWithStatuses(
  * then alphabetically by name.
  */
 export function sortAgentsByStatus<
-  T extends { enabled?: boolean; status: string; name?: string },
+  T extends { enabled?: boolean; status: Status; name?: string },
 >(list: T[]): T[] {
   return [...list].sort((a, b) => {
     const enabledDiff = Number(Boolean(b.enabled)) - Number(Boolean(a.enabled));

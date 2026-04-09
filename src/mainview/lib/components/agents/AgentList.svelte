@@ -11,7 +11,7 @@
     createAgentSyncSignature,
     sortAgentsByStatus,
   } from "$shared/agent-helpers";
-  import type { AgentStatus } from "$shared/types";
+  import type { AgentStatus, Status } from "$shared/types";
   import { onMount } from "svelte";
 
   interface Props {
@@ -63,7 +63,7 @@
     return () => offAgentSync(key);
   });
 
-  function getStatusClass(status: string): string {
+  function getStatusClass(status: Status): string {
     switch (status) {
       case "ok":
         return "bg-green-500 dark:bg-green-400 shadow-[0_0_6px_var(--color-green-500)]";
@@ -75,7 +75,7 @@
     }
   }
 
-  function getStatusLabel(status: string): string {
+  function getStatusLabel(status: Status): string {
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
 

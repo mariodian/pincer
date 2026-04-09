@@ -1,6 +1,7 @@
+import type { Status } from "$shared/types";
 import { sql } from "drizzle-orm";
-import { stats } from "./schema";
 import { getDatabase } from "./db";
+import { stats } from "./schema";
 
 /**
  * Truncate a unix timestamp (seconds) to the start of the hour.
@@ -14,7 +15,7 @@ function truncateToHour(timestampSecs: number): number {
  */
 export function upsertHourlyStat(
   agentId: number,
-  status: "ok" | "offline" | "error",
+  status: Status,
   responseMs: number,
 ): void {
   const { db } = getDatabase();

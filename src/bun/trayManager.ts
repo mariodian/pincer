@@ -1,4 +1,5 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
+import type { Status } from "$shared/types";
 import { BrowserWindow, Tray, Utils } from "electrobun/bun";
 import { sortAgentsByStatus } from "../shared/agent-helpers";
 import {
@@ -242,7 +243,7 @@ function buildAgentMenuItem(
     name: string;
     url: string;
     port: number;
-    status: string;
+    status: Status;
   },
   errorMessage?: string,
 ): TrayMenuItem {
@@ -290,7 +291,7 @@ export async function updateTrayMenu() {
       const status = sync.getAgentStatus(agent.id);
       return {
         ...agent,
-        status: (status?.status ?? "offline") as "ok" | "offline" | "error",
+        status: (status?.status ?? "offline") as Status,
       };
     });
 

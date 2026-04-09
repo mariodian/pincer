@@ -1,6 +1,8 @@
 // Canonical type definitions shared between main process and renderer.
 // Import from this file instead of re-declaring interfaces.
 
+export type Status = "ok" | "error" | "offline";
+
 export interface Agent {
   id: number;
   type: string;
@@ -13,14 +15,14 @@ export interface Agent {
 }
 
 export interface AgentStatus extends Agent {
-  status: "ok" | "offline" | "error";
+  status: Status;
   lastChecked: number;
   errorMessage?: string;
 }
 
 export interface AgentStatusInfo {
   id: number;
-  status: "ok" | "offline" | "error";
+  status: Status;
   lastChecked: number;
   errorMessage?: string;
 }
