@@ -1,33 +1,22 @@
 // Report export service - generates self-contained HTML reports
 import packageJson from "../../../package.json";
+import { MIN_UPTIME_THRESHOLDS } from "../../mainview/lib/constants";
 import { formatDate } from "../../shared/date-helpers";
 import {
   formatMs,
   formatNumber,
   formatUptime,
 } from "../../shared/format-helpers";
+import { RANGE_LABELS } from "../../shared/time-range-helpers";
 import type { UptimeReport } from "../../shared/reportTypes";
 import { APP_NAME } from "../config";
 
 const appVersion = packageJson.version;
 
-function getRangeLabel(range: string): string {
-  switch (range) {
-    case "7d":
-      return "Last 7 Days";
-    case "30d":
-      return "Last 30 Days";
-    case "90d":
-      return "Last 90 Days";
-    default:
-      return range;
-  }
-}
-
 function getUptimeColor(pct: number): string {
-  if (pct >= 99) return "#22c55e";
-  if (pct >= 95) return "#eab308";
-  if (pct >= 50) return "#f97316";
+  if (pct >= MIN_UPTIME_THRESHOLDS.ok) return "#22c55e";
+  if (pct >= MIN_UPTIME_THRESHOLDS.good) return "#eab308";
+  if (pct >= MIN_UPTIME_THRESHOLDS.meh) return "#f97316";
   return "#ef4444";
 }
 
@@ -70,7 +59,7 @@ export function generateUptimeReportHTML(report: UptimeReport): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${APP_NAME} — Uptime Report (${getRangeLabel(report.range)})</title>
+  <title>${APP_NAME} — Uptime Report (${RANGE_LABELS[report.range]})</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -232,7 +221,7 @@ export function generateUptimeReportHTML(report: UptimeReport): string {
     <div class="header">
       <h1>${APP_NAME} — Uptime Report</h1>
       <p class="subtitle">
-        ${getRangeLabel(report.range)} · ${formatDate(report.periodStart)} – ${formatDate(report.periodEnd)}
+        ${RANGE_LABELS[report.range]} · ${formatDate(report.periodStart)} – ${formatDate(report.periodEnd)}
       </p>
     </div>
 
