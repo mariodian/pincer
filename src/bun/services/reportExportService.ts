@@ -1,22 +1,15 @@
 // Report export service - generates self-contained HTML reports
 import packageJson from "../../../package.json";
 import { formatDate } from "../../shared/date-helpers";
+import {
+  formatMs,
+  formatNumber,
+  formatUptime,
+} from "../../shared/format-helpers";
 import type { UptimeReport } from "../../shared/reportTypes";
 import { APP_NAME } from "../config";
 
 const appVersion = packageJson.version;
-
-function formatUptime(val: number): string {
-  return `${val.toFixed(2)}%`;
-}
-
-function formatMs(val: number): string {
-  return `${Math.round(val)}ms`;
-}
-
-function formatNumber(val: number): string {
-  return val.toLocaleString();
-}
 
 function getRangeLabel(range: string): string {
   switch (range) {

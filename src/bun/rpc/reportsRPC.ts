@@ -1,16 +1,15 @@
 // Reports RPC - Per-agent uptime report generation
 import type { TimeRange } from "$shared/types";
+import { getAgentColor } from "../../shared/agent-helpers";
 import type {
   AgentUptimeSummary,
   UptimeReport,
 } from "../../shared/reportTypes";
-import { stringToOklch } from "../../shared/string-helpers";
 import { readAgents } from "../services/agentService";
 import { logger } from "../services/loggerService";
 import { generateUptimeReportHTML } from "../services/reportExportService";
 import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { getRangeTimestamps } from "../utils/time-range";
-import { CHART_COLORS } from "./constants";
 
 export type ReportsRPCType = {
   bun: {
@@ -85,11 +84,7 @@ export const reportsRequestHandlers = {
           agentName: a.name,
           enabled: a.enabled !== false,
           status,
-          color:
-            stringToOklch(a.name, {
-              lightness: [0.6, 0.9],
-              chroma: [0.12, 0.18],
-            }) || CHART_COLORS[i % CHART_COLORS.length],
+          color: getAgentColor(a.name, i),
           uptimePct,
           totalChecks,
           okCount,

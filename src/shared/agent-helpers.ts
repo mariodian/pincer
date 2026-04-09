@@ -1,4 +1,30 @@
+import { stringToOklch } from "./string-helpers";
 import type { Agent, AgentStatus, AgentStatusInfo, Status } from "./types";
+
+// Fallback chart colors when stringToOklch fails
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
+];
+
+/**
+ * Get a deterministic color for an agent based on its name.
+ * Uses string-to-color conversion with fallback to chart colors.
+ */
+export function getAgentColor(name: string, index: number): string {
+  return (
+    stringToOklch(name, {
+      lightness: [0.6, 0.9],
+      chroma: [0.12, 0.18],
+    }) || CHART_COLORS[index % CHART_COLORS.length]
+  );
+}
 
 /**
  * Normalize a URL by stripping trailing slashes and ensuring http:// prefix.

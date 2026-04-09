@@ -1,3 +1,4 @@
+import { formatMs, formatUptime } from "$shared/format-helpers";
 import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
 import type { TimeRange } from "$shared/types";
 
@@ -214,10 +215,4 @@ export function formatDay(val: unknown): string {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-export function formatUptime(val: number | unknown): string {
-  return `${(val as number).toFixed(2)}%`;
-}
-
-export function formatMs(val: number | unknown): string {
-  return `${Math.round(val as number)}ms`;
-}
+export { formatMs, formatUptime };

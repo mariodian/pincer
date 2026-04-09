@@ -34,23 +34,3 @@ export interface UptimeReport {
   overallUptimePct: number | null;
   totalIncidents: number;
 }
-
-export type ReportsRPCType = {
-  bun: {
-    requests: {
-      getUptimeReport: {
-        params: { range: TimeRange };
-        response: UptimeReport;
-      };
-      exportHtmlReport: {
-        params: { range: TimeRange };
-        response: string; // HTML string
-      };
-    };
-    messages: Record<string, never>;
-  };
-  webview: {
-    requests: Record<string, never>;
-    messages: Record<string, never>;
-  };
-};
