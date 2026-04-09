@@ -215,7 +215,7 @@ export function formatDay(val: unknown): string {
 }
 
 export function formatUptime(val: number | unknown): string {
-  return `${(val as number).toFixed(1)}%`;
+  return `${(val as number).toFixed(2)}%`;
 }
 
 export function formatMs(val: number | unknown): string {

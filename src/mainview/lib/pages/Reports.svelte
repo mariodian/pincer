@@ -13,13 +13,14 @@
   import { formatDate } from "$shared/date-helpers";
   import type { AgentUptimeSummary, UptimeReport } from "$shared/reportTypes";
   import type { TimeRange } from "$shared/types";
+  import { format } from "@layerstack/utils";
   import { toast } from "svelte-sonner";
 
   type ReportRangeOption = { value: TimeRange; label: string };
   type SortKey = "name" | "uptime" | "checks" | "incidents" | "avgResponse";
 
-  let sortKey = $state<SortKey>("name");
-  let sortAsc = $state(true);
+  let sortKey = $state<SortKey>("uptime");
+  let sortAsc = $state(false);
 
   const RANGES: ReportRangeOption[] = [
     { value: "7d", label: "7d" },
@@ -156,7 +157,7 @@
 <div class="flex flex-col h-full">
   <PageHeader
     title="Uptime Reports"
-    description="Per-agent availability summaries"
+    description="Agent performance overview"
     {prevPath}
     {currentPath}
   >
@@ -264,7 +265,7 @@
                 : "text-green-600 dark:text-green-500",
             ]}
           >
-            {report.totalIncidents}
+            {format(report.totalIncidents, "metric")}
           </div>
         </div>
 
@@ -393,14 +394,14 @@
                 {/if}
               </Table.Cell>
               <Table.Cell>
-                {agent.totalChecks.toLocaleString()}
+                {format(agent.totalChecks, "metric")}
               </Table.Cell>
               <Table.Cell
                 class={agent.incidentCount > 0
                   ? "text-red-600 dark:text-red-500 font-medium"
                   : "text-muted-foreground"}
               >
-                {agent.incidentCount.toLocaleString()}
+                {format(agent.incidentCount, "metric")}
               </Table.Cell>
               <Table.Cell class="text-muted-foreground">
                 {agent.hasData ? formatMs(agent.avgResponseMs) : "—"}

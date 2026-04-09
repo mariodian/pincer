@@ -100,6 +100,11 @@ export const reportsRequestHandlers = {
         };
       });
 
+      agentSummaries.sort(
+        (a, b) =>
+          b.uptimePct - a.uptimePct || a.agentName.localeCompare(b.agentName),
+      );
+
       const agentsWithData = agentSummaries.filter((a) => a.hasData);
       const overallUptimePct =
         agentsWithData.length > 0
