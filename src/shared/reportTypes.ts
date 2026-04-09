@@ -7,6 +7,8 @@ export interface AgentUptimeSummary {
   agentName: string;
   color: string;
   enabled: boolean;
+  /** Derived status for sorting (ok if uptimePct > 50, error if > 0, offline otherwise) */
+  status: "ok" | "error" | "offline";
   /** Overall uptime percentage for the period (0-100) */
   uptimePct: number;
   /** Total number of checks in the period */

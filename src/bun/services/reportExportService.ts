@@ -17,8 +17,9 @@ function formatNumber(val: number): string {
   return val.toLocaleString();
 }
 
-function formatDate(d: Date): string {
-  return d.toLocaleDateString(undefined, {
+function formatDate(d: Date | number): string {
+  const date = typeof d === "number" ? new Date(d * 1000) : d;
+  return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
     day: "numeric",

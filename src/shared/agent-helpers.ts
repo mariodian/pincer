@@ -56,14 +56,16 @@ export function mergeAgentsWithStatuses(
  * then alphabetically by name.
  */
 export function sortAgentsByStatus<
-  T extends { enabled?: boolean; status: string; name: string },
+  T extends { enabled?: boolean; status: string; name?: string },
 >(list: T[]): T[] {
   return [...list].sort((a, b) => {
     const enabledDiff = Number(Boolean(b.enabled)) - Number(Boolean(a.enabled));
     if (enabledDiff !== 0) return enabledDiff;
     const orderDiff = getStatusPriority(a.status) - getStatusPriority(b.status);
     if (orderDiff !== 0) return orderDiff;
-    return a.name.localeCompare(b.name);
+    const nameA = a.name ?? "";
+    const nameB = b.name ?? "";
+    return nameA.localeCompare(nameB);
   });
 }
 

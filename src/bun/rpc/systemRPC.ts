@@ -39,6 +39,14 @@ export type SystemRPCType = {
         params: { url: string };
         response: { success: boolean };
       };
+      getDownloadsPath: {
+        params: Record<string, never>;
+        response: { path: string };
+      };
+      openFolder: {
+        params: { path: string };
+        response: { success: boolean };
+      };
     };
     messages: Record<string, never>;
   };
@@ -127,6 +135,26 @@ export const systemRequestHandlers = {
       logger.error(
         "systemRPC",
         "Failed to open external URL:",
+        error instanceof Error ? error.message : String(error),
+      );
+      return { success: false };
+    }
+  },
+  getDownloadsPath: async () => {
+    return { path: Utils.paths.downloads };
+  },
+  openFolder: async ({ path: folderPath }: { path: string }) => {
+    try {
+      // Use file:// URL to open folder in Finder/Explorer
+      const success = Utils.openExternal(`file://${folderPath}`);
+      if (!success) {
+        logger.warn("systemRPC", `Failed to open folder: ${folderPath}`);
+      }
+      return { success };
+    } catch (error) {
+      logger.error(
+        "systemRPC",
+        "Failed to open folder:",
         error instanceof Error ? error.message : String(error),
       );
       return { success: false };

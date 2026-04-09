@@ -82,6 +82,14 @@ export const reportsRequestHandlers = {
             ? Math.round((okCount * 10000) / totalChecks) / 100
             : 0;
 
+        // Derive status for sorting: ok if uptime >= 95%, error if < 95% but has data, offline if no data
+        const status: "ok" | "error" | "offline" =
+          totalChecks === 0
+            ? "offline"
+            : uptimePct >= 95
+              ? "ok"
+              : "error";
+
         // Weighted average response time
         const avgResponseMs =
           totalChecks > 0
@@ -99,6 +107,7 @@ export const reportsRequestHandlers = {
           agentId: a.id,
           agentName: a.name,
           enabled: a.enabled !== false,
+          status,
           color:
             stringToOklch(a.name, {
               lightness: [0.6, 0.9],

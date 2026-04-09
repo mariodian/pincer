@@ -8,6 +8,8 @@
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import type { ReportRange, UptimeReport } from "$shared/reportTypes";
+  import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import { toast } from "svelte-sonner";
 
   type ReportRangeOption = { value: ReportRange; label: string };
 
@@ -41,8 +43,9 @@
     return `${Math.round(val)}ms`;
   }
 
-  function formatDate(d: Date): string {
-    return d.toLocaleDateString(undefined, {
+  function formatDate(d: Date | string | number): string {
+    const date = typeof d === "string" ? new Date(d) : typeof d === "number" ? new Date(d * 1000) : d;
+    return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -70,10 +73,8 @@
       const rpc = getMainRPC();
       const html = await rpc.request.exportHtmlReport({ range });
 
-      // Use the native file dialog to let the user choose where to save
       const fileName = `pincer-uptime-${range}.html`;
 
-      // Fall back to browser download if dialog not available
       if (typeof window !== "undefined") {
         const blob = new Blob([html], { type: "text/html" });
         const url = URL.createObjectURL(blob);
@@ -84,6 +85,20 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+
+        const downloadsPath = (await rpc.request.getDownloadsPath({})).path;
+        toast.success(
+          "HTML report exported",
+          {
+            description: `Saved to ${downloadsPath}`,
+            action: {
+              label: "Show in Folder",
+              onClick: async () => {
+                await rpc.request.openFolder({ path: downloadsPath });
+              },
+            },
+          },
+        );
       }
     } catch (e) {
       console.error("Failed to export report:", e);
@@ -126,16 +141,6 @@
             </button>
           {/each}
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={exporting || loading}
-          onclick={handleExportHtml}
-        >
-          <Icon name="download" />
-          {exporting ? "Exporting..." : "Export HTML"}
-        </Button>
       </div>
     {/snippet}
   </PageHeader>
@@ -233,6 +238,21 @@
         </div>
       </div>
 
+      <!-- Export + Agent Table -->
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exporting || loading}
+            onclick={handleExportHtml}
+          >
+            <Icon name="download" />
+            {exporting ? "Exporting..." : "Export HTML"}
+          </Button>
+        </div>
+      </div>
+
       <!-- Agent Table -->
       <div class="rounded-lg border overflow-hidden">
         <table class="w-full">
@@ -266,7 +286,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each report.agents as agent (agent.agentId)}
+            {#each sortAgentsByStatus(report.agents) as agent (agent.agentId)}
               <tr class="border-t">
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-2">
@@ -274,7 +294,7 @@
                       class="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style="background-color: {agent.color}"
                     ></span>
-                    <span class="font-medium">{agent.agentName}</span>
+                    <span class="text-sm font-medium">{agent.agentName}</span>
                     {#if !agent.enabled}
                       <span
                         class="text-[10px] uppercase bg-muted px-1.5 py-0.5 rounded text-muted-foreground"
