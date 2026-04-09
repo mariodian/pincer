@@ -5,6 +5,29 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.7] - 2026-04-10
+
+### Added
+
+- Added per-agent uptime reporting with detailed status breakdowns.
+- Added HTML export functionality for uptime reports.
+- Added shared time range helpers and formatting utilities for consistent report data handling.
+- Added a reusable table component for structured data display.
+
+### Changed
+
+- Refactored report generation by moving HTML export logic to a dedicated service.
+- Refactored uptime report components to use shared time range helpers.
+- Unified status type across agent-related components and reports.
+- Improved agent color assignment in reports for consistency.
+- Enhanced uptime report sorting and formatting for improved clarity.
+- Refactored reports and stats RPCs to use `TimeRange` type with shared utility functions.
+- Streamlined agent guidelines and command descriptions for clarity.
+
+### Fixed
+
+- Fixed sorting behavior for report columns to improve user experience.
+
 ## [v0.1.6] - 2026-04-08
 
 ### Added
