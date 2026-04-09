@@ -4,6 +4,21 @@ import { getDatabase } from "./db";
 import { stats } from "./schema";
 
 /**
+ * Row structure returned from stats queries.
+ * Exported for reuse in RPC type definitions.
+ */
+export interface AgentStatRow {
+  agentId: number;
+  hourTimestamp: number;
+  totalChecks: number;
+  okCount: number;
+  offlineCount: number;
+  errorCount: number;
+  uptimePct: number;
+  avgResponseMs: number;
+}
+
+/**
  * Truncate a unix timestamp (seconds) to the start of the hour.
  */
 function truncateToHour(timestampSecs: number): number {
@@ -58,15 +73,7 @@ export function getAgentStats(
   agentId: number,
   fromTimestampSecs: number,
   toTimestampSecs: number,
-): {
-  hourTimestamp: number;
-  totalChecks: number;
-  okCount: number;
-  offlineCount: number;
-  errorCount: number;
-  uptimePct: number;
-  avgResponseMs: number;
-}[] {
+): Omit<AgentStatRow, "agentId">[] {
   const { db } = getDatabase();
 
   const rows = db
@@ -96,16 +103,7 @@ export function getAgentStats(
 export function getAllAgentStats(
   fromTimestampSecs: number,
   toTimestampSecs: number,
-): {
-  agentId: number;
-  hourTimestamp: number;
-  totalChecks: number;
-  okCount: number;
-  offlineCount: number;
-  errorCount: number;
-  uptimePct: number;
-  avgResponseMs: number;
-}[] {
+): AgentStatRow[] {
   const { db } = getDatabase();
 
   const rows = db

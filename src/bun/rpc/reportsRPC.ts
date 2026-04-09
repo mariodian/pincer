@@ -7,7 +7,7 @@ import type {
 } from "../../shared/reportTypes";
 import { readAgents } from "../services/agentService";
 import { logger } from "../services/loggerService";
-import { generateUptimeReportHTML } from "../services/reportExportService";
+import { generateUptimeReportHTML } from "../services/reportHtmlService";
 import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { getRangeTimestamps } from "../utils/time-range";
 

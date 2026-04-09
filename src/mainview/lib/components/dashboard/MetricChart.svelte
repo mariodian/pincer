@@ -1,6 +1,6 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
-  import { padToFullRange } from "$lib/utils/metrics-data";
+  import { padToFullRange, type PivotedRow } from "$lib/utils/metrics-data";
   import type { AgentWithColor } from "$shared/rpc";
   import type { TimeRange } from "$shared/types";
   import GapAreaChart from "../charts/GapAreaChart.svelte";
@@ -15,7 +15,7 @@
     title: string;
     description?: string;
     /** Pivoted data: each row has [xKey] + a key per agent (e.g. "uptime_1") */
-    data: Record<string, unknown>[];
+    data: PivotedRow[];
     /** X-axis key in data */
     xKey: string;
     /** Agents to render as series */
@@ -25,7 +25,7 @@
     /** Toggle an agent on/off */
     onToggleAgent: (id: number) => void;
     /** Y-axis value prefix used in data keys (e.g. "uptime", "response") */
-    yPrefix: string;
+    yPrefix: "uptime" | "response";
     /** Optional formatter for x-axis ticks */
     xFormat?: (val: unknown) => string;
     /** Optional formatter for y-axis ticks */

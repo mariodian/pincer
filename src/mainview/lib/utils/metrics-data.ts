@@ -3,20 +3,28 @@ import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
 import type { TimeRange } from "$shared/types";
 
 /**
+ * A pivoted row containing an hour timestamp and per-agent metric columns.
+ * Column names are dynamic based on agent IDs (e.g., "uptime_1", "response_2").
+ */
+export interface PivotedRow extends Record<string, unknown> {
+  hourTimestamp: Date;
+}
+
+/**
  * Pivot flat time-series rows into one row per hour with per-agent columns.
  *
  * @param series   Raw TimeSeriesPoint[] from the RPC layer
  * @param agents   Agents whose columns should appear in every row
  * @param valueKey Which metric to extract ("uptimePct" | "avgResponseMs")
- * @returns        Sorted array of { hourTimestamp: Date, [prefix_agentId]: number | null }
+ * @returns        Sorted array of pivoted rows
  */
 export function pivotTimeSeries(
   series: TimeSeriesPoint[],
   agents: AgentWithColor[],
   valueKey: "uptimePct" | "avgResponseMs",
-): Record<string, unknown>[] {
+): PivotedRow[] {
   const prefix = valueKey === "uptimePct" ? "uptime" : "response";
-  const byHour = new Map<number, Record<string, unknown>>();
+  const byHour = new Map<number, PivotedRow>();
 
   for (const point of series) {
     if (!byHour.has(point.hourTimestamp)) {
@@ -39,8 +47,7 @@ export function pivotTimeSeries(
   }
 
   return Array.from(byHour.values()).sort(
-    (a, b) =>
-      (a.hourTimestamp as Date).getTime() - (b.hourTimestamp as Date).getTime(),
+    (a, b) => a.hourTimestamp.getTime() - b.hourTimestamp.getTime(),
   );
 }
 
@@ -49,27 +56,27 @@ export function pivotTimeSeries(
  * so charts render visible gaps instead of interpolating across missing hours.
  */
 export function fillHourlySlots(
-  rows: Record<string, unknown>[],
+  rows: PivotedRow[],
   agents: AgentWithColor[],
-  yPrefix: string,
-): Record<string, unknown>[] {
+  yPrefix: "uptime" | "response",
+): PivotedRow[] {
   if (rows.length <= 1) return rows;
 
   const HOUR = 3600000;
-  const first = (rows[0].hourTimestamp as Date).getTime();
-  const last = (rows[rows.length - 1].hourTimestamp as Date).getTime();
+  const first = rows[0].hourTimestamp.getTime();
+  const last = rows[rows.length - 1].hourTimestamp.getTime();
 
-  const existing = new Map<number, Record<string, unknown>>();
+  const existing = new Map<number, PivotedRow>();
   for (const row of rows) {
-    existing.set((row.hourTimestamp as Date).getTime(), row);
+    existing.set(row.hourTimestamp.getTime(), row);
   }
 
-  const filled: Record<string, unknown>[] = [];
+  const filled: PivotedRow[] = [];
   for (let ts = first; ts <= last; ts += HOUR) {
     if (existing.has(ts)) {
       filled.push(existing.get(ts)!);
     } else {
-      const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
+      const row: PivotedRow = { hourTimestamp: new Date(ts) };
       for (const agent of agents) {
         row[`${yPrefix}_${agent.id}`] = null;
       }
@@ -84,16 +91,14 @@ export function fillHourlySlots(
  * Aggregate hourly pivoted data to daily averages.
  * Groups rows by local midnight and computes the mean of each numeric column.
  */
-export function aggregateByDay(
-  rows: Record<string, unknown>[],
-): Record<string, unknown>[] {
+export function aggregateByDay(rows: PivotedRow[]): PivotedRow[] {
   const byDay = new Map<
     number,
     { values: Record<string, number[]>; ts: number }
   >();
 
   for (const row of rows) {
-    const d = row.hourTimestamp as Date;
+    const d = row.hourTimestamp;
     const localMidnight = new Date(
       d.getFullYear(),
       d.getMonth(),
@@ -114,7 +119,7 @@ export function aggregateByDay(
 
   return Array.from(byDay.values())
     .map(({ values, ts }) => {
-      const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
+      const row: PivotedRow = { hourTimestamp: new Date(ts) };
       for (const [key, vals] of Object.entries(values)) {
         row[key] =
           Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 100) /
@@ -122,11 +127,7 @@ export function aggregateByDay(
       }
       return row;
     })
-    .sort(
-      (a, b) =>
-        (a.hourTimestamp as Date).getTime() -
-        (b.hourTimestamp as Date).getTime(),
-    );
+    .sort((a, b) => a.hourTimestamp.getTime() - b.hourTimestamp.getTime());
 }
 
 /**
@@ -135,11 +136,11 @@ export function aggregateByDay(
  * show the full range (7/30 days) even when data doesn't exist yet.
  */
 export function padToFullRange(
-  rows: Record<string, unknown>[],
+  rows: PivotedRow[],
   agents: AgentWithColor[],
-  yPrefix: string,
+  yPrefix: "uptime" | "response",
   timeRange: TimeRange,
-): Record<string, unknown>[] {
+): PivotedRow[] {
   if (rows.length === 0) return rows;
 
   const DAY_MS = 24 * 3600 * 1000;
@@ -155,11 +156,10 @@ export function padToFullRange(
   ).getTime();
 
   // Get actual first date in data
-  const firstDataDate = rows[0].hourTimestamp as Date;
   const firstDataMidnight = new Date(
-    firstDataDate.getFullYear(),
-    firstDataDate.getMonth(),
-    firstDataDate.getDate(),
+    rows[0].hourTimestamp.getFullYear(),
+    rows[0].hourTimestamp.getMonth(),
+    rows[0].hourTimestamp.getDate(),
   ).getTime();
 
   // If data starts on or before expected start, no padding needed
@@ -168,9 +168,9 @@ export function padToFullRange(
   }
 
   // Build map of existing days
-  const existing = new Map<number, Record<string, unknown>>();
+  const existing = new Map<number, PivotedRow>();
   for (const row of rows) {
-    const d = row.hourTimestamp as Date;
+    const d = row.hourTimestamp;
     const midnight = new Date(
       d.getFullYear(),
       d.getMonth(),
@@ -180,8 +180,8 @@ export function padToFullRange(
   }
 
   // Generate padded rows from expected start to last data point
-  const padded: Record<string, unknown>[] = [];
-  const lastDataDate = rows[rows.length - 1].hourTimestamp as Date;
+  const padded: PivotedRow[] = [];
+  const lastDataDate = rows[rows.length - 1].hourTimestamp;
   const lastMidnight = new Date(
     lastDataDate.getFullYear(),
     lastDataDate.getMonth(),
@@ -192,7 +192,7 @@ export function padToFullRange(
     if (existing.has(ts)) {
       padded.push(existing.get(ts)!);
     } else {
-      const row: Record<string, unknown> = { hourTimestamp: new Date(ts) };
+      const row: PivotedRow = { hourTimestamp: new Date(ts) };
       for (const agent of agents) {
         row[`${yPrefix}_${agent.id}`] = null;
       }
