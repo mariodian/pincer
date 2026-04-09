@@ -91,7 +91,7 @@
       sortAsc = !sortAsc;
     } else {
       sortKey = key;
-      sortAsc = true;
+      sortAsc = key !== "uptime" && key !== "checks";
     }
   }
 
