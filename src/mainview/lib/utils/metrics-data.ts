@@ -1,4 +1,5 @@
 import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
+import type { TimeRange } from "$shared/types";
 
 /**
  * Pivot flat time-series rows into one row per hour with per-agent columns.
@@ -136,7 +137,7 @@ export function padToFullRange(
   rows: Record<string, unknown>[],
   agents: AgentWithColor[],
   yPrefix: string,
-  timeRange: "7d" | "30d",
+  timeRange: TimeRange,
 ): Record<string, unknown>[] {
   if (rows.length === 0) return rows;
 
@@ -213,18 +214,10 @@ export function formatDay(val: unknown): string {
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
-export function formatUptime(val: unknown): string {
-  return `${val}%`;
+export function formatUptime(val: number | unknown): string {
+  return `${(val as number).toFixed(1)}%`;
 }
 
-export function formatMs(val: unknown): string {
-  return `${val}ms`;
-}
-
-export function formatUptimeKpi(val: number): string {
-  return `${val.toFixed(1)}%`;
-}
-
-export function formatMsKpi(val: number): string {
-  return `${Math.round(val)}ms`;
+export function formatMs(val: number | unknown): string {
+  return `${Math.round(val as number)}ms`;
 }

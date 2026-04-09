@@ -23,7 +23,12 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import {
+  ArrowDown10Icon,
+  ArrowDownZAIcon,
+  ArrowUp01Icon,
+  ArrowUpAZIcon,
   Bot,
+  ChartColumn,
   Check,
   ChevronLeftIcon,
   CircleAlert,
@@ -40,7 +45,6 @@ import {
   SquarePen,
   Sun,
   TrashIcon,
-  BarChart3,
 } from "@lucide/svelte";
 
 interface LucideIconProps extends SVGAttributes<SVGSVGElement> {
@@ -74,6 +78,18 @@ export const iconRegistry: Record<string, IconEntry> = {
   agents: {
     lucide: Bot,
     hugeicons: RoboticIcon,
+  },
+  arrowDownChar: {
+    lucide: ArrowDownZAIcon,
+  },
+  arrowUpChar: {
+    lucide: ArrowUpAZIcon,
+  },
+  arrowDownNumeric: {
+    lucide: ArrowDown10Icon,
+  },
+  arrowUpNumeric: {
+    lucide: ArrowUp01Icon,
   },
   chevronLeft: {
     lucide: ChevronLeftIcon,
@@ -132,7 +148,7 @@ export const iconRegistry: Record<string, IconEntry> = {
     hugeicons: Tick01Icon,
   },
   barChart: {
-    lucide: BarChart3,
+    lucide: ChartColumn,
   },
 };
 

@@ -14,8 +14,6 @@ export type LogEntry = {
   timestamp: string;
 };
 
-export type TimeRange = "24h" | "7d" | "30d";
-
 export interface AgentWithColor {
   id: number;
   name: string;

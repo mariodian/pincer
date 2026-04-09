@@ -1,7 +1,8 @@
 // Report export service - generates self-contained HTML reports
+import packageJson from "../../../package.json";
+import { formatDate } from "../../shared/date-helpers";
 import type { UptimeReport } from "../../shared/reportTypes";
 import { APP_NAME } from "../config";
-import packageJson from "../../../package.json";
 
 const appVersion = packageJson.version;
 
@@ -15,15 +16,6 @@ function formatMs(val: number): string {
 
 function formatNumber(val: number): string {
   return val.toLocaleString();
-}
-
-function formatDate(d: Date | number): string {
-  const date = typeof d === "number" ? new Date(d * 1000) : d;
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 function getRangeLabel(range: string): string {
@@ -62,7 +54,6 @@ export function generateUptimeReportHTML(report: UptimeReport): string {
         <td class="agent-name">
           <span class="color-dot" style="background-color: ${agent.color}"></span>
           ${agent.agentName}
-          ${!agent.enabled ? '<span class="disabled-badge">Disabled</span>' : ""}
         </td>
         <td class="uptime-cell">
           <div class="uptime-bar-container">
@@ -89,7 +80,7 @@ export function generateUptimeReportHTML(report: UptimeReport): string {
   <title>${APP_NAME} — Uptime Report (${getRangeLabel(report.range)})</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background: #f9fafb;

@@ -7,6 +7,7 @@
   import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { MIN_UPTIME_THRESHOLDS } from "$lib/constants";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import {
@@ -15,18 +16,15 @@
     formatDay,
     formatHour,
     formatMs,
-    formatMsKpi,
     formatUptime,
-    formatUptimeKpi,
     pivotTimeSeries,
-  } from "$lib/utils/dashboard-data";
+  } from "$lib/utils/metrics-data";
   import type {
     AgentWithColor,
     DashboardStats,
-    TimeRange,
     TimeSeriesPoint,
   } from "$shared/rpc";
-  import type { Settings } from "$shared/types";
+  import type { Settings, TimeRange } from "$shared/types";
   import { push } from "@bmlt-enabled/svelte-spa-router";
 
   type TimeRangeOption = { value: TimeRange; label: string };
@@ -34,10 +32,6 @@
   const MAX_RESPONSE_TIMES = {
     ok: 200,
     meh: 500,
-  };
-  const MIN_UPTIME_THRESHOLDS = {
-    ok: 99,
-    meh: 50,
   };
 
   const DEFAULT_TIME_RANGE: TimeRange = "7d";
@@ -227,7 +221,7 @@
               "default"}
             gradient
             value={stats && stats.kpis.avgUptime !== null
-              ? formatUptimeKpi(stats.kpis.avgUptime)
+              ? formatUptime(stats.kpis.avgUptime)
               : "—"}
             subtitle={showDisabledAgents
               ? "Across all agents"
@@ -246,7 +240,7 @@
                   : "green")) ||
               "default"}
             gradient
-            value={stats ? formatMsKpi(stats.kpis.avgResponseMs) : "—"}
+            value={stats ? formatMs(stats.kpis.avgResponseMs) : "—"}
             subtitle={showDisabledAgents
               ? "Across all agents"
               : "Across enabled agents"}

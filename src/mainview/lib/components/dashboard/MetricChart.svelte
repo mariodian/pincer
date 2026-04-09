@@ -1,7 +1,8 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
-  import { padToFullRange } from "$lib/utils/dashboard-data";
-  import type { AgentWithColor, TimeRange } from "$shared/rpc";
+  import { padToFullRange } from "$lib/utils/metrics-data";
+  import type { AgentWithColor } from "$shared/rpc";
+  import type { TimeRange } from "$shared/types";
   import GapAreaChart from "../charts/GapAreaChart.svelte";
   import GapLineChart from "../charts/GapLineChart.svelte";
   import GradientBarChart from "../charts/GradientBarChart.svelte";

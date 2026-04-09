@@ -5,13 +5,21 @@
   import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import * as Table from "$lib/components/ui/table";
+  import { MIN_UPTIME_THRESHOLDS } from "$lib/constants";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
-  import type { ReportRange, UptimeReport } from "$shared/reportTypes";
-  import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import { formatMs, formatUptime } from "$lib/utils/metrics-data";
+  import { formatDate } from "$shared/date-helpers";
+  import type { AgentUptimeSummary, UptimeReport } from "$shared/reportTypes";
+  import type { TimeRange } from "$shared/types";
   import { toast } from "svelte-sonner";
 
-  type ReportRangeOption = { value: ReportRange; label: string };
+  type ReportRangeOption = { value: TimeRange; label: string };
+  type SortKey = "name" | "uptime" | "checks" | "incidents" | "avgResponse";
+
+  let sortKey = $state<SortKey>("name");
+  let sortAsc = $state(true);
 
   const RANGES: ReportRangeOption[] = [
     { value: "7d", label: "7d" },
@@ -26,30 +34,64 @@
   let exporting = $state(false);
   let error = $state<string | null>(null);
   let report = $state<UptimeReport | null>(null);
-  let range = $state<ReportRange>("30d");
+  let range = $state<TimeRange>("30d");
 
-  function getUptimeColor(pct: number): string {
-    if (pct >= 99) return "text-green-600 dark:text-green-400";
-    if (pct >= 95) return "text-yellow-600 dark:text-yellow-400";
-    if (pct >= 50) return "text-orange-600 dark:text-orange-400";
-    return "text-red-600 dark:text-red-400";
+  function getUptimeColor(
+    pct: number,
+    colorType: "bg" | "text" = "text",
+  ): string {
+    if (pct >= MIN_UPTIME_THRESHOLDS.ok)
+      return colorType === "bg"
+        ? "bg-green-600 dark:bg-green-500"
+        : "text-green-600 dark:text-green-500";
+    if (pct >= MIN_UPTIME_THRESHOLDS.good)
+      return colorType === "bg"
+        ? "bg-amber-400 dark:bg-amber-400"
+        : "text-amber-400 dark:text-amber-400";
+    if (pct >= MIN_UPTIME_THRESHOLDS.meh)
+      return colorType === "bg" ? "bg-orange-500" : "text-orange-500";
+    return colorType === "bg"
+      ? "bg-red-600 dark:bg-red-500"
+      : "text-red-600 dark:text-red-500";
   }
 
-  function formatUptime(val: number): string {
-    return `${val.toFixed(2)}%`;
-  }
-
-  function formatMs(val: number): string {
-    return `${Math.round(val)}ms`;
-  }
-
-  function formatDate(d: Date | string | number): string {
-    const date = typeof d === "string" ? new Date(d) : typeof d === "number" ? new Date(d * 1000) : d;
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+  function sortedAgents(agents: AgentUptimeSummary[]): AgentUptimeSummary[] {
+    const sorted = [...agents].sort((a, b) => {
+      const dir = sortAsc ? 1 : -1;
+      switch (sortKey) {
+        case "name":
+          return dir * a.agentName.localeCompare(b.agentName);
+        case "uptime":
+          return dir * (a.uptimePct - b.uptimePct);
+        case "checks":
+          return dir * (a.totalChecks - b.totalChecks);
+        case "incidents":
+          return dir * (a.incidentCount - b.incidentCount);
+        case "avgResponse":
+          return dir * (a.avgResponseMs - b.avgResponseMs);
+        default:
+          return 0;
+      }
     });
+    return sorted;
+  }
+
+  function sortArrow(key: SortKey, type: "char" | "numeric") {
+    if (sortKey !== key) return "";
+    if (type === "char") {
+      return sortAsc ? "arrowUpChar" : "arrowDownChar";
+    } else {
+      return sortAsc ? "arrowUpNumeric" : "arrowDownNumeric";
+    }
+  }
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      sortAsc = !sortAsc;
+    } else {
+      sortKey = key;
+      sortAsc = true;
+    }
   }
 
   async function fetchData() {
@@ -87,18 +129,15 @@
         URL.revokeObjectURL(url);
 
         const downloadsPath = (await rpc.request.getDownloadsPath({})).path;
-        toast.success(
-          "HTML report exported",
-          {
-            description: `Saved to ${downloadsPath}`,
-            action: {
-              label: "Show in Folder",
-              onClick: async () => {
-                await rpc.request.openFolder({ path: downloadsPath });
-              },
+        toast.success("HTML report exported", {
+          description: `Saved to ${downloadsPath}`,
+          action: {
+            label: "Show in Folder",
+            onClick: async () => {
+              await rpc.request.openFolder({ path: downloadsPath });
             },
           },
-        );
+        });
       }
     } catch (e) {
       console.error("Failed to export report:", e);
@@ -168,13 +207,16 @@
       </ErrorState>
     {:else if loading}
       <div class="space-y-4">
-        <div class="grid gap-3 lg:gap-4 grid-cols-2 lg:grid-cols-4">
-          <Skeleton class="h-24 w-full rounded-lg" />
-          <Skeleton class="h-24 w-full rounded-lg" />
-          <Skeleton class="h-24 w-full rounded-lg" />
-          <Skeleton class="h-24 w-full rounded-lg" />
+        <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
+          <Skeleton class="h-21 w-full rounded-lg" />
+          <Skeleton class="h-21 w-full rounded-lg" />
+          <Skeleton class="h-21 w-full rounded-lg" />
+          <Skeleton class="h-21 w-full rounded-lg" />
         </div>
-        <Skeleton class="h-96 w-full rounded-lg" />
+        <div>
+          <Skeleton class="h-8 w-32 rounded-lg" />
+        </div>
+        <Skeleton class="h-48 w-full rounded-lg" />
       </div>
     {:else if report}
       <!-- KPI Summary -->
@@ -218,8 +260,8 @@
             class={[
               "text-2xl font-bold",
               report.totalIncidents > 0
-                ? "text-red-600 dark:text-red-400"
-                : "text-green-600 dark:text-green-400",
+                ? "text-red-600 dark:text-red-500"
+                : "text-green-600 dark:text-green-500",
             ]}
           >
             {report.totalIncidents}
@@ -253,110 +295,120 @@
         </div>
       </div>
 
-      <!-- Agent Table -->
-      <div class="rounded-lg border overflow-hidden">
-        <table class="w-full">
-          <thead class="bg-muted/50">
-            <tr>
-              <th
-                class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3"
+      <Table.Root>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head class="w-2/8">
+              <button
+                class="hover:text-foreground flex items-center gap-1"
+                onclick={() => toggleSort("name")}
               >
-                Agent
-              </th>
-              <th
-                class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3"
+                Agent{#if sortKey === "name"}
+                  <Icon name={sortArrow("name", "char")} class="size-4" />
+                {/if}
+              </button>
+            </Table.Head>
+            <Table.Head>
+              <button
+                class="hover:text-foreground flex items-center gap-1"
+                onclick={() => toggleSort("uptime")}
               >
-                Uptime
-              </th>
-              <th
-                class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3"
+                Uptime{#if sortKey === "uptime"}
+                  <Icon name={sortArrow("uptime", "numeric")} class="size-4" />
+                {/if}
+              </button>
+            </Table.Head>
+            <Table.Head class="w-1/8">
+              <button
+                class="hover:text-foreground flex items-center gap-1"
+                onclick={() => toggleSort("checks")}
               >
-                Checks
-              </th>
-              <th
-                class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3"
+                Checks{#if sortKey === "checks"}
+                  <Icon name={sortArrow("checks", "numeric")} class="size-4" />
+                {/if}
+              </button>
+            </Table.Head>
+            <Table.Head class="w-1/8">
+              <button
+                class="hover:text-foreground flex items-center gap-1"
+                onclick={() => toggleSort("incidents")}
               >
-                Incidents
-              </th>
-              <th
-                class="text-left text-xs font-medium text-muted-foreground uppercase tracking-wide px-4 py-3"
+                Incidents{#if sortKey === "incidents"}
+                  <Icon
+                    name={sortArrow("incidents", "numeric")}
+                    class="size-4"
+                  />
+                {/if}
+              </button>
+            </Table.Head>
+            <Table.Head class="w-1/8">
+              <button
+                class="hover:text-foreground flex items-center gap-1"
+                onclick={() => toggleSort("avgResponse")}
               >
-                Avg Response
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each sortAgentsByStatus(report.agents) as agent (agent.agentId)}
-              <tr class="border-t">
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style="background-color: {agent.color}"
-                    ></span>
-                    <span class="text-sm font-medium">{agent.agentName}</span>
-                    {#if !agent.enabled}
-                      <span
-                        class="text-[10px] uppercase bg-muted px-1.5 py-0.5 rounded text-muted-foreground"
-                        >Disabled</span
-                      >
-                    {/if}
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  {#if agent.hasData}
-                    <div class="flex items-center gap-3">
+                Avg Response{#if sortKey === "avgResponse"}
+                  <Icon
+                    name={sortArrow("avgResponse", "numeric")}
+                    class="size-4"
+                  />
+                {/if}
+              </button>
+            </Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {#each sortedAgents(report.agents) as agent (agent.agentId)}
+            <Table.Row>
+              <Table.Cell>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                    style="background-color: {agent.color}"
+                  ></span>
+                  <span class="font-medium">{agent.agentName}</span>
+                </div>
+              </Table.Cell>
+              <Table.Cell>
+                {#if agent.hasData}
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-30"
+                    >
                       <div
-                        class="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[120px]"
-                      >
-                        <div
-                          class="h-full rounded-full"
-                          style="width: {Math.min(
-                            agent.uptimePct,
-                            100,
-                          )}%; background-color: {agent.uptimePct >= 99
-                            ? 'hsl(142 76% 36%)'
-                            : agent.uptimePct >= 95
-                              ? 'hsl(45 93% 47%)'
-                              : agent.uptimePct >= 50
-                                ? 'hsl(24 94% 50%)'
-                                : 'hsl(0 84% 60%)'}"
-                        ></div>
-                      </div>
-                      <span
                         class={[
-                          "font-semibold text-sm",
-                          getUptimeColor(agent.uptimePct),
+                          "h-full rounded-full",
+                          getUptimeColor(agent.uptimePct, "bg"),
                         ]}
-                      >
-                        {formatUptime(agent.uptimePct)}
-                      </span>
+                        style="width: {Math.min(agent.uptimePct, 100)}%;"
+                      ></div>
                     </div>
-                  {:else}
-                    <span class="text-muted-foreground text-sm">No data</span>
-                  {/if}
-                </td>
-                <td class="px-4 py-3 text-sm">
-                  {agent.totalChecks.toLocaleString()}
-                </td>
-                <td
-                  class={[
-                    "px-4 py-3 text-sm font-medium",
-                    agent.incidentCount > 0
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-muted-foreground",
-                  ]}
-                >
-                  {agent.incidentCount.toLocaleString()}
-                </td>
-                <td class="px-4 py-3 text-sm text-muted-foreground">
-                  {agent.hasData ? formatMs(agent.avgResponseMs) : "—"}
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+                    <span
+                      class={["font-semibold", getUptimeColor(agent.uptimePct)]}
+                    >
+                      {formatUptime(agent.uptimePct)}
+                    </span>
+                  </div>
+                {:else}
+                  <span class="text-muted-foreground">No data</span>
+                {/if}
+              </Table.Cell>
+              <Table.Cell>
+                {agent.totalChecks.toLocaleString()}
+              </Table.Cell>
+              <Table.Cell
+                class={agent.incidentCount > 0
+                  ? "text-red-600 dark:text-red-500 font-medium"
+                  : "text-muted-foreground"}
+              >
+                {agent.incidentCount.toLocaleString()}
+              </Table.Cell>
+              <Table.Cell class="text-muted-foreground">
+                {agent.hasData ? formatMs(agent.avgResponseMs) : "—"}
+              </Table.Cell>
+            </Table.Row>
+          {/each}
+        </Table.Body>
+      </Table.Root>
     {:else}
       <Empty.Root class="border border-dashed">
         <Empty.Header>

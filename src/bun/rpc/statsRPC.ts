@@ -1,36 +1,17 @@
 // Stats RPC - Shared RPC definition for dashboard statistics
+import type { TimeRange } from "$shared/types";
 import type {
   AgentWithColor,
   DashboardKpis,
   DashboardStats,
-  TimeRange,
   TimeSeriesPoint,
 } from "../../shared/rpc";
 import { stringToOklch } from "../../shared/string-helpers";
 import { readAgents } from "../services/agentService";
-import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { logger } from "../services/loggerService";
-
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-  "var(--chart-7)",
-  "var(--chart-8)",
-];
-
-function getRangeTimestamps(range: TimeRange): { from: number; to: number } {
-  const to = Math.floor(Date.now() / 1000);
-  const seconds: Record<TimeRange, number> = {
-    "24h": 24 * 3600,
-    "7d": 7 * 24 * 3600,
-    "30d": 30 * 24 * 3600,
-  };
-  return { from: to - seconds[range], to };
-}
+import { getAllAgentStats } from "../storage/sqlite/statsRepo";
+import { getRangeTimestamps } from "../utils/time-range";
+import { CHART_COLORS } from "./constants";
 
 export type StatsRPCType = {
   bun: {

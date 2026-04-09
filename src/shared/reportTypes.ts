@@ -1,6 +1,6 @@
 // Report types for per-agent uptime summaries
 
-export type ReportRange = "7d" | "30d" | "90d";
+import type { TimeRange } from "./types";
 
 export interface AgentUptimeSummary {
   agentId: number;
@@ -26,7 +26,7 @@ export interface AgentUptimeSummary {
 }
 
 export interface UptimeReport {
-  range: ReportRange;
+  range: TimeRange;
   periodStart: Date;
   periodEnd: Date;
   agents: AgentUptimeSummary[];
@@ -39,11 +39,11 @@ export type ReportsRPCType = {
   bun: {
     requests: {
       getUptimeReport: {
-        params: { range: ReportRange };
+        params: { range: TimeRange };
         response: UptimeReport;
       };
       exportHtmlReport: {
-        params: { range: ReportRange };
+        params: { range: TimeRange };
         response: string; // HTML string
       };
     };

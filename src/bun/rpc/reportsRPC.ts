@@ -1,45 +1,26 @@
 // Reports RPC - Per-agent uptime report generation
+import type { TimeRange } from "$shared/types";
+import type {
+  AgentUptimeSummary,
+  UptimeReport,
+} from "../../shared/reportTypes";
 import { stringToOklch } from "../../shared/string-helpers";
 import { readAgents } from "../services/agentService";
-import { getAllAgentStats } from "../storage/sqlite/statsRepo";
-import type {
-  ReportRange,
-  UptimeReport,
-  AgentUptimeSummary,
-} from "../../shared/reportTypes";
 import { logger } from "../services/loggerService";
 import { generateUptimeReportHTML } from "../services/reportExportService";
-
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-  "var(--chart-7)",
-  "var(--chart-8)",
-];
-
-function getRangeTimestamps(range: ReportRange): { from: number; to: number } {
-  const to = Math.floor(Date.now() / 1000);
-  const seconds: Record<ReportRange, number> = {
-    "7d": 7 * 24 * 3600,
-    "30d": 30 * 24 * 3600,
-    "90d": 90 * 24 * 3600,
-  };
-  return { from: to - seconds[range], to };
-}
+import { getAllAgentStats } from "../storage/sqlite/statsRepo";
+import { getRangeTimestamps } from "../utils/time-range";
+import { CHART_COLORS } from "./constants";
 
 export type ReportsRPCType = {
   bun: {
     requests: {
       getUptimeReport: {
-        params: { range: ReportRange };
+        params: { range: TimeRange };
         response: UptimeReport;
       };
       exportHtmlReport: {
-        params: { range: ReportRange };
+        params: { range: TimeRange };
         response: string;
       };
     };
@@ -55,7 +36,7 @@ export const reportsRequestHandlers = {
   getUptimeReport: async ({
     range,
   }: {
-    range: ReportRange;
+    range: TimeRange;
   }): Promise<UptimeReport> => {
     try {
       const { from, to } = getRangeTimestamps(range);
@@ -84,11 +65,7 @@ export const reportsRequestHandlers = {
 
         // Derive status for sorting: ok if uptime >= 95%, error if < 95% but has data, offline if no data
         const status: "ok" | "error" | "offline" =
-          totalChecks === 0
-            ? "offline"
-            : uptimePct >= 95
-              ? "ok"
-              : "error";
+          totalChecks === 0 ? "offline" : uptimePct >= 95 ? "ok" : "error";
 
         // Weighted average response time
         const avgResponseMs =
@@ -155,7 +132,7 @@ export const reportsRequestHandlers = {
   exportHtmlReport: async ({
     range,
   }: {
-    range: ReportRange;
+    range: TimeRange;
   }): Promise<string> => {
     try {
       const report = await reportsRequestHandlers.getUptimeReport({ range });
