@@ -4,6 +4,7 @@
   import * as Sidebar from "$lib/components/ui/sidebar";
   import Agents from "$lib/pages/Agents.svelte";
   import Dashboard from "$lib/pages/Dashboard.svelte";
+  import Reports from "$lib/pages/Reports.svelte";
   import Settings from "$lib/pages/Settings.svelte";
   import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
@@ -35,6 +36,7 @@
     "/dashboard": Dashboard,
     "/agents": Agents,
     "/agents/*": Agents,
+    "/reports": Reports,
     "/settings": Settings,
   };
 

@@ -40,6 +40,7 @@ import {
   SquarePen,
   Sun,
   TrashIcon,
+  BarChart3,
 } from "@lucide/svelte";
 
 interface LucideIconProps extends SVGAttributes<SVGSVGElement> {
@@ -129,6 +130,9 @@ export const iconRegistry: Record<string, IconEntry> = {
   tick: {
     lucide: Check,
     hugeicons: Tick01Icon,
+  },
+  barChart: {
+    lucide: BarChart3,
   },
 };
 

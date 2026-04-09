@@ -1,4 +1,5 @@
 import type { AgentRPCType } from "$bun/rpc/agentRPC";
+import type { ReportsRPCType } from "$bun/rpc/reportsRPC";
 import type { SettingsRPCType } from "$bun/rpc/settingsRPC";
 import type { StatsRPCType } from "$bun/rpc/statsRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
@@ -21,11 +22,12 @@ export const rpcReady = writable(false);
  */
 export const pendingNavigationRoute = writable<string | null>(null);
 
-/** Composed RPC type: system + agent + settings + stats + update requests and messages. */
+/** Composed RPC type: system + agent + settings + stats + reports + update requests and messages. */
 export type MainRPCType = SystemRPCType &
   AgentRPCType &
   SettingsRPCType &
   StatsRPCType &
+  ReportsRPCType &
   UpdateRPCType;
 
 /** The typed request object available via getMainRPC().request */
@@ -34,11 +36,13 @@ export type MainRPCRequests = {
     AgentRPCType["bun"]["requests"] &
     SettingsRPCType["bun"]["requests"] &
     StatsRPCType["bun"]["requests"] &
+    ReportsRPCType["bun"]["requests"] &
     UpdateRPCType["bun"]["requests"])]: (
     ...args: (SystemRPCType["bun"]["requests"] &
       AgentRPCType["bun"]["requests"] &
       SettingsRPCType["bun"]["requests"] &
       StatsRPCType["bun"]["requests"] &
+      ReportsRPCType["bun"]["requests"] &
       UpdateRPCType["bun"]["requests"])[K] extends { params: infer P }
       ? [P]
       : []
@@ -47,6 +51,7 @@ export type MainRPCRequests = {
       AgentRPCType["bun"]["requests"] &
       SettingsRPCType["bun"]["requests"] &
       StatsRPCType["bun"]["requests"] &
+      ReportsRPCType["bun"]["requests"] &
       UpdateRPCType["bun"]["requests"])[K] extends { response: infer R }
       ? R
       : never

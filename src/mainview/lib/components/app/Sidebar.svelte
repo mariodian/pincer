@@ -12,6 +12,7 @@
     navMain: [
       { title: "Dashboard", icon: "dashboard" as const, url: "/dashboard" },
       { title: "Agents", icon: "agents" as const, url: "/agents" },
+      { title: "Reports", icon: "barChart" as const, url: "/reports" },
     ],
     navSecondary: [
       { title: "Settings", icon: "settings" as const, url: "/settings" },
