@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { AgentTable, KpiSummary } from "$lib/components/reports";
+  import { AgentTable } from "$lib/components/reports";
+  import KpiSummary from "$lib/components/reports/KpiSummary.svelte";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty/index.js";
   import { ErrorState } from "$lib/components/ui/error-state/index.js";
@@ -8,6 +9,7 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import { cn } from "$lib/utils";
   import type { UptimeReport } from "$shared/reportTypes";
   import {
     RANGE_SHORT_LABELS,
@@ -153,10 +155,10 @@
     {:else if loading}
       <div class="space-y-4">
         <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
-          <Skeleton class="h-21 w-full rounded-lg" />
-          <Skeleton class="h-21 w-full rounded-lg" />
-          <Skeleton class="h-21 w-full rounded-lg" />
-          <Skeleton class="h-21 w-full rounded-lg" />
+          <Skeleton class="h-25 w-full rounded-lg" />
+          <Skeleton class="h-25 w-full rounded-lg" />
+          <Skeleton class="h-25 w-full rounded-lg" />
+          <Skeleton class="h-25 w-full rounded-lg" />
         </div>
         <div>
           <Skeleton class="h-8 w-32 rounded-lg" />
@@ -164,7 +166,11 @@
         <Skeleton class="h-48 w-full rounded-lg" />
       </div>
     {:else if report}
-      <KpiSummary {report} />
+      <!-- KPI Row -->
+      <KpiSummary
+        class={cn(["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"])}
+        data={report}
+      />
 
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
@@ -190,7 +196,7 @@
       <Empty.Root class="border border-dashed">
         <Empty.Header>
           <Empty.Media variant="icon">
-            <Icon name="dashboard" class="text-muted-foreground" />
+            <Icon name="barChart" class="text-muted-foreground" />
           </Empty.Media>
           <Empty.Title>No report data</Empty.Title>
           <Empty.Description>

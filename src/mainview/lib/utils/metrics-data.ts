@@ -1,3 +1,4 @@
+import { MAX_RESPONSE_TIMES, MIN_UPTIME_THRESHOLDS } from "$lib/constants";
 import { formatMs, formatUptime } from "$shared/format-helpers";
 import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
 import type { TimeRange } from "$shared/types";
@@ -213,6 +214,56 @@ export function formatHour(val: unknown): string {
 export function formatDay(val: unknown): string {
   const d = val instanceof Date ? val : new Date(Number(val) * 1000);
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+// ── Color helpers ────────────────────────────────────────────────────────
+
+type UptimeColor = "green" | "yellow" | "orange" | "destructive";
+
+export function getUptimeColor(pct: number): UptimeColor;
+export function getUptimeColor(pct: number, colorType: "none"): UptimeColor;
+export function getUptimeColor(pct: number, colorType: "bg" | "text"): string;
+
+/**
+ * Determine the color based on uptime percentage thresholds.
+ * @param pct Uptime percentage
+ * @returns Color string ("green", "yellow", "orange", "destructive")
+ */
+export function getUptimeColor(
+  pct: number,
+  colorType: "bg" | "text" | "none" = "none",
+) {
+  if (colorType === "bg" || colorType === "text") {
+    if (pct >= MIN_UPTIME_THRESHOLDS.ok)
+      return colorType === "bg"
+        ? "bg-green-600 dark:bg-green-500"
+        : "text-green-600 dark:text-green-500";
+    if (pct >= MIN_UPTIME_THRESHOLDS.good)
+      return colorType === "bg"
+        ? "bg-amber-400 dark:bg-amber-400"
+        : "text-amber-400 dark:text-amber-400";
+    if (pct >= MIN_UPTIME_THRESHOLDS.meh)
+      return colorType === "bg" ? "bg-orange-500" : "text-orange-500";
+    return colorType === "bg"
+      ? "bg-red-600 dark:bg-red-500"
+      : "text-red-600 dark:text-red-500";
+  }
+
+  if (pct >= MIN_UPTIME_THRESHOLDS.ok) return "green";
+  if (pct >= MIN_UPTIME_THRESHOLDS.good) return "yellow";
+  if (pct >= MIN_UPTIME_THRESHOLDS.meh) return "orange";
+  return "destructive";
+}
+
+/**
+ * Determine the color based on response time thresholds.
+ * @param ms Response time in milliseconds
+ * @returns Color string ("green", "yellow", "destructive")
+ */
+export function getResponseColor(ms: number) {
+  if (ms >= MAX_RESPONSE_TIMES.meh) return "destructive";
+  if (ms >= MAX_RESPONSE_TIMES.ok) return "yellow";
+  return "green";
 }
 
 export { formatMs, formatUptime };

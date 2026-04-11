@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { KpiCard } from "$lib/components/ui/kpi-card";
   import { StatusPieChart } from "$lib/components/dashboard";
+  import KpiSummary from "$lib/components/dashboard/KpiSummary.svelte";
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Empty from "$lib/components/ui/empty/index.js";
@@ -8,9 +8,9 @@
   import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { MIN_UPTIME_THRESHOLDS } from "$lib/constants";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import { cn } from "$lib/utils";
   import {
     aggregateByDay,
     fillHourlySlots,
@@ -29,11 +29,6 @@
   import { push } from "@bmlt-enabled/svelte-spa-router";
 
   type TimeRangeOption = { value: TimeRange; label: string };
-
-  const MAX_RESPONSE_TIMES = {
-    ok: 200,
-    meh: 500,
-  };
 
   const DEFAULT_TIME_RANGE: TimeRange = "7d";
   const TIME_RANGES: TimeRangeOption[] = [
@@ -194,191 +189,133 @@
           </Button>
         {/snippet}
       </ErrorState>
+    {:else if loading}
+      <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
+        <Skeleton class="h-25 w-full rounded-lg" />
+        <Skeleton class="h-25 w-full rounded-lg" />
+        <Skeleton class="h-25 w-full rounded-lg" />
+        <Skeleton class="h-25 w-full rounded-lg" />
+      </div>
+      <div class="grid gap-4 lg:gap-6 mt-8 lg:mt-12">
+        <Skeleton class="h-75 w-full rounded-lg" />
+        <Skeleton class="h-75 w-full rounded-lg" />
+        <Skeleton class="h-75 w-full rounded-lg" />
+        <Skeleton class="h-75 w-full rounded-lg" />
+      </div>
+    {:else if stats && chartAgents.length > 0}
+      <!-- KPI Row -->
+      <KpiSummary
+        class={cn(["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"])}
+        data={stats.kpis}
+      />
+
+      <div
+        class={[
+          "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
+          "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
+          /* @TODO: remove when this is fixed in layerchart */
+          "[&_.lc-tooltip-container]:bg-background/85!",
+          "dark:[&_.lc-tooltip-container]:bg-background/95!",
+        ]}
+      >
+        <MetricChart
+          chartType="line"
+          title="Uptime % Over Time"
+          description="Agent availability over the selected period"
+          data={uptimeData}
+          xKey="hourTimestamp"
+          agents={chartAgents}
+          selectedIds={selectedUptime}
+          onToggleAgent={(id) =>
+            (selectedUptime = toggleAgent(selectedUptime)(id))}
+          yPrefix="uptime"
+          xFormat={xAxisFormat}
+          yFormat={formatUptime}
+          padding={{
+            left: 40,
+            right: 20,
+            top: 20,
+            bottom: 40,
+          }}
+          gaps={true}
+        />
+
+        <MetricChart
+          chartType="line"
+          title="Response Time"
+          description="Average response time per agent"
+          data={responseData}
+          xKey="hourTimestamp"
+          agents={chartAgents}
+          selectedIds={selectedResponse}
+          onToggleAgent={(id) =>
+            (selectedResponse = toggleAgent(selectedResponse)(id))}
+          yPrefix="response"
+          xFormat={xAxisFormat}
+          yFormat={formatMs}
+          padding={{
+            left: 40,
+            right: 20,
+            top: 20,
+            bottom: 40,
+          }}
+          gaps={true}
+        />
+
+        <StatusPieChart
+          title="Status Distribution"
+          description="Aggregate ok / offline / error counts"
+          timeSeries={chartTimeSeries}
+          agents={chartAgents}
+          selectedIds={selectedStatus}
+          onToggleAgent={(id) =>
+            (selectedStatus = toggleAgent(selectedStatus)(id))}
+          height={200}
+          padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
+        />
+
+        <MetricChart
+          chartType="bar"
+          title="Response Time (Bar)"
+          description="Compare response times visually (in ms)"
+          data={responseData}
+          xKey="hourTimestamp"
+          agents={chartAgents}
+          selectedIds={selectedResponseBar}
+          onToggleAgent={(id) =>
+            (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
+          yPrefix="response"
+          xFormat={xAxisFormat}
+          yFormat={formatMs}
+          padding={{
+            left: 0,
+            right: 0,
+            top: 20,
+            bottom: 32,
+          }}
+          gradient={true}
+          strokeWidth={0}
+          {timeRange}
+        />
+      </div>
     {:else}
-      {#if stats && chartAgents.length > 0}
-        <!-- KPI Row -->
-        <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
-          <KpiCard
-            title="Agents"
-            color={stats ? "blue" : "default"}
-            gradient
-            value={stats
-              ? `${stats.kpis.activeAgents} / ${stats.kpis.totalAgents}`
-              : "—"}
-            subtitle="Active / Total"
-            {loading}
-          />
-
-          <KpiCard
-            title="Avg Uptime"
-            color={(stats &&
-              stats.kpis.avgUptime !== null &&
-              stats.kpis.avgUptime > 0 &&
-              (stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.meh
-                ? "destructive"
-                : stats.kpis.avgUptime < MIN_UPTIME_THRESHOLDS.ok
-                  ? "yellow"
-                  : "green")) ||
-              "default"}
-            gradient
-            value={stats && stats.kpis.avgUptime !== null
-              ? formatUptime(stats.kpis.avgUptime)
-              : "—"}
-            subtitle={showDisabledAgents
-              ? "Across all agents"
-              : "Across enabled agents"}
-            {loading}
-          />
-
-          <KpiCard
-            title="Avg Response"
-            color={(stats &&
-              stats.kpis.avgResponseMs > 0 &&
-              (stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.meh
-                ? "destructive"
-                : stats.kpis.avgResponseMs >= MAX_RESPONSE_TIMES.ok
-                  ? "yellow"
-                  : "green")) ||
-              "default"}
-            gradient
-            value={stats ? formatMs(stats.kpis.avgResponseMs) : "—"}
-            subtitle={showDisabledAgents
-              ? "Across all agents"
-              : "Across enabled agents"}
-            {loading}
-          />
-
-          <KpiCard
-            title="Incidents"
-            color={(stats &&
-              stats.kpis.incidentCount > 0 &&
-              (stats.kpis.incidentCount > 0 ? "destructive" : "green")) ||
-              "default"}
-            gradient
-            value={stats ? stats.kpis.incidentCount : "—"}
-            subtitle="Offline + Error checks"
-            {loading}
-          />
-        </div>
-      {/if}
-
-      <!-- Charts -->
-      {#if loading}
-        <div class="grid gap-4 lg:gap-6 mt-8 lg:mt-12">
-          <Skeleton class="h-75 w-full rounded-lg" />
-          <Skeleton class="h-75 w-full rounded-lg" />
-          <Skeleton class="h-75 w-full rounded-lg" />
-          <Skeleton class="h-75 w-full rounded-lg" />
-        </div>
-      {:else if stats && chartAgents.length > 0}
-        <div
-          class={[
-            "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
-            "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
-            /* @TODO: remove when this is fixed in layerchart */
-            "[&_.lc-tooltip-container]:bg-background/85!",
-            "dark:[&_.lc-tooltip-container]:bg-background/95!",
-          ]}
-        >
-          <MetricChart
-            chartType="line"
-            title="Uptime % Over Time"
-            description="Agent availability over the selected period"
-            data={uptimeData}
-            xKey="hourTimestamp"
-            agents={chartAgents}
-            selectedIds={selectedUptime}
-            onToggleAgent={(id) =>
-              (selectedUptime = toggleAgent(selectedUptime)(id))}
-            yPrefix="uptime"
-            xFormat={xAxisFormat}
-            yFormat={formatUptime}
-            padding={{
-              left: 32,
-              right: 20,
-              bottom: 40,
-              top: 20,
-            }}
-            gaps={true}
-          />
-
-          <MetricChart
-            chartType="line"
-            title="Response Time"
-            description="Average response time per agent"
-            data={responseData}
-            xKey="hourTimestamp"
-            agents={chartAgents}
-            selectedIds={selectedResponse}
-            onToggleAgent={(id) =>
-              (selectedResponse = toggleAgent(selectedResponse)(id))}
-            yPrefix="response"
-            xFormat={xAxisFormat}
-            yFormat={formatMs}
-            padding={{
-              left: 40,
-              right: 20,
-              top: 20,
-              bottom: 40,
-            }}
-            gaps={true}
-          />
-
-          <StatusPieChart
-            title="Status Distribution"
-            description="Aggregate ok / offline / error counts"
-            timeSeries={chartTimeSeries}
-            agents={chartAgents}
-            selectedIds={selectedStatus}
-            onToggleAgent={(id) =>
-              (selectedStatus = toggleAgent(selectedStatus)(id))}
-            height={200}
-            padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
-          />
-
-          <MetricChart
-            chartType="bar"
-            title="Response Time (Bar)"
-            description="Compare response times visually"
-            data={responseData}
-            xKey="hourTimestamp"
-            agents={chartAgents}
-            selectedIds={selectedResponseBar}
-            onToggleAgent={(id) =>
-              (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
-            yPrefix="response"
-            xFormat={xAxisFormat}
-            yFormat={formatMs}
-            padding={{
-              left: 0,
-              right: 0,
-              top: 20,
-              bottom: 32,
-            }}
-            gradient={true}
-            strokeWidth={0}
-            {timeRange}
-          />
-        </div>
-      {:else}
-        <Empty.Root class="border border-dashed">
-          <Empty.Header>
-            <Empty.Media variant="icon">
-              <Icon name="agents" class="text-muted-foreground" />
-            </Empty.Media>
-            <Empty.Title>No agents yet</Empty.Title>
-            <Empty.Description>
-              You haven't created any agents yet. Add an agent to start
-              collecting stats.
-            </Empty.Description>
-          </Empty.Header>
-          <Empty.Content>
-            <div class="flex gap-2">
-              <Button onclick={() => push("/agents/add")}>Create Agent</Button>
-            </div>
-          </Empty.Content>
-        </Empty.Root>
-      {/if}
+      <Empty.Root class="border border-dashed">
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Icon name="agents" class="text-muted-foreground" />
+          </Empty.Media>
+          <Empty.Title>No agents yet</Empty.Title>
+          <Empty.Description>
+            You haven't created any agents yet. Add an agent to start collecting
+            stats.
+          </Empty.Description>
+        </Empty.Header>
+        <Empty.Content>
+          <div class="flex gap-2">
+            <Button onclick={() => push("/agents/add")}>Create Agent</Button>
+          </div>
+        </Empty.Content>
+      </Empty.Root>
     {/if}
   </PageBody>
 </div>

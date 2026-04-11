@@ -6,10 +6,16 @@ export function formatUptime(val: number | unknown): string {
   return `${num.toFixed(2)}%`;
 }
 
-/** Format milliseconds (e.g., 123.45 → "123ms") */
+/** Format milliseconds (e.g., 123.45 → "123ms", 12345 → "12s") */
 export function formatMs(val: number | unknown): string {
-  const num = typeof val === "number" ? val : Number(val);
-  return `${Math.round(num)}ms`;
+  let num = typeof val === "number" ? val : Number(val);
+  let time = "ms";
+  // Convert to seconds if greater than 10000ms
+  if (num >= 10000) {
+    num /= 1000;
+    time = "s";
+  }
+  return `${Math.round(num)}${time}`;
 }
 
 /** Format number with locale (e.g., 1234 → "1,234") */

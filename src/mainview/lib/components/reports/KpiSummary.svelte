@@ -1,74 +1,58 @@
 <script lang="ts">
+  import { KpiCard } from "$lib/components/ui/kpi-card";
+  import { NOT_AVAILABLE } from "$lib/constants";
+  import { cn } from "$lib/utils";
+  import { formatUptime, getUptimeColor } from "$lib/utils/metrics-data";
   import { formatDate } from "$shared/date-helpers";
   import type { UptimeReport } from "$shared/reportTypes";
   import { format } from "@layerstack/utils";
-  import { MIN_UPTIME_THRESHOLDS } from "$lib/constants";
-  import { formatUptime } from "$lib/utils/metrics-data";
 
   interface Props {
-    report: UptimeReport;
+    data: UptimeReport | null;
+    class?: string;
   }
 
-  let { report }: Props = $props();
-
-  function getUptimeColor(pct: number): string {
-    if (pct >= MIN_UPTIME_THRESHOLDS.ok)
-      return "text-green-600 dark:text-green-500";
-    if (pct >= MIN_UPTIME_THRESHOLDS.good)
-      return "text-amber-400 dark:text-amber-400";
-    if (pct >= MIN_UPTIME_THRESHOLDS.meh) return "text-orange-500";
-    return "text-red-600 dark:text-red-500";
-  }
+  let { data, class: className }: Props = $props();
+  const uptime = $derived(
+    data && data.overallUptimePct !== null ? data.overallUptimePct : 0,
+  );
+  const totalIncidents = $derived(data ? data.totalIncidents : 0);
 </script>
 
-<div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
-  <div class="rounded-lg border bg-background p-4">
-    <div class="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-      Overall Uptime
-    </div>
-    <div
-      class={[
-        "text-2xl font-bold",
-        report.overallUptimePct !== null
-          ? getUptimeColor(report.overallUptimePct)
-          : "text-muted-foreground",
-      ]}
-    >
-      {report.overallUptimePct !== null
-        ? formatUptime(report.overallUptimePct)
-        : "No data"}
-    </div>
-  </div>
+<div class={cn(className)}>
+  <KpiCard
+    title="Total Agents"
+    color={data ? "blue" : "default"}
+    gradient
+    value={data ? data.agents.length : NOT_AVAILABLE}
+    subtitle="Monitored agents"
+  />
 
-  <div class="rounded-lg border bg-background p-4">
-    <div class="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-      Total Agents
-    </div>
-    <div class="text-2xl font-bold">{report.agents.length}</div>
-  </div>
+  <KpiCard
+    class={data ? "**:data-[slot=value]:text-sm" : ""}
+    title="Period"
+    color={data ? "blue" : "default"}
+    gradient
+    value={data
+      ? `${formatDate(data.periodStart)} – ${formatDate(data.periodEnd)}`
+      : NOT_AVAILABLE}
+    subtitle="Report time range"
+  />
 
-  <div class="rounded-lg border bg-background p-4">
-    <div class="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-      Total Incidents
-    </div>
-    <div
-      class={[
-        "text-2xl font-bold",
-        report.totalIncidents > 0
-          ? "text-red-600 dark:text-red-500"
-          : "text-green-600 dark:text-green-500",
-      ]}
-    >
-      {format(report.totalIncidents, "metric")}
-    </div>
-  </div>
+  <KpiCard
+    title="Overall Uptime"
+    color={(data && uptime > 0 && getUptimeColor(uptime)) || "default"}
+    gradient
+    value={data ? formatUptime(uptime) : NOT_AVAILABLE}
+    subtitle="Across all agents"
+  />
 
-  <div class="rounded-lg border bg-background p-4">
-    <div class="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-      Period
-    </div>
-    <div class="text-sm font-medium">
-      {formatDate(report.periodStart)} – {formatDate(report.periodEnd)}
-    </div>
-  </div>
+  <KpiCard
+    title="Total Incidents"
+    color={(data && (totalIncidents > 0 ? "destructive" : "green")) ||
+      "default"}
+    gradient
+    value={data ? format(totalIncidents, "metric") : NOT_AVAILABLE}
+    subtitle="Offline + Error checks"
+  />
 </div>

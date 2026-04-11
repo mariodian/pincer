@@ -1,8 +1,11 @@
 <script lang="ts">
   import { Icon } from "$lib/components/ui/icon";
   import * as Table from "$lib/components/ui/table";
-  import { MIN_UPTIME_THRESHOLDS } from "$lib/constants";
-  import { formatMs, formatUptime } from "$lib/utils/metrics-data";
+  import {
+    formatMs,
+    formatUptime,
+    getUptimeColor,
+  } from "$lib/utils/metrics-data";
   import type { AgentUptimeSummary } from "$shared/reportTypes";
   import { format } from "@layerstack/utils";
 
@@ -16,25 +19,6 @@
   }
 
   let { agents, sortKey, sortAsc, onSort }: Props = $props();
-
-  function getUptimeColor(
-    pct: number,
-    colorType: "bg" | "text" = "text",
-  ): string {
-    if (pct >= MIN_UPTIME_THRESHOLDS.ok)
-      return colorType === "bg"
-        ? "bg-green-600 dark:bg-green-500"
-        : "text-green-600 dark:text-green-500";
-    if (pct >= MIN_UPTIME_THRESHOLDS.good)
-      return colorType === "bg"
-        ? "bg-amber-400 dark:bg-amber-400"
-        : "text-amber-400 dark:text-amber-400";
-    if (pct >= MIN_UPTIME_THRESHOLDS.meh)
-      return colorType === "bg" ? "bg-orange-500" : "text-orange-500";
-    return colorType === "bg"
-      ? "bg-red-600 dark:bg-red-500"
-      : "text-red-600 dark:text-red-500";
-  }
 
   function sortedAgents(items: AgentUptimeSummary[]): AgentUptimeSummary[] {
     const sorted = [...items].sort((a, b) => {
