@@ -1,4 +1,5 @@
 import type { AgentRPCType } from "$bun/rpc/agentRPC";
+import type { IncidentRPCType } from "$bun/rpc/incidentRPC";
 import type { ReportsRPCType } from "$bun/rpc/reportsRPC";
 import type { SettingsRPCType } from "$bun/rpc/settingsRPC";
 import type { StatsRPCType } from "$bun/rpc/statsRPC";
@@ -22,13 +23,14 @@ export const rpcReady = writable(false);
  */
 export const pendingNavigationRoute = writable<string | null>(null);
 
-/** Composed RPC type: system + agent + settings + stats + reports + update requests and messages. */
+/** Composed RPC type: system + agent + settings + stats + reports + update + incident requests and messages. */
 export type MainRPCType = SystemRPCType &
   AgentRPCType &
   SettingsRPCType &
   StatsRPCType &
   ReportsRPCType &
-  UpdateRPCType;
+  UpdateRPCType &
+  IncidentRPCType;
 
 /** The typed request object available via getMainRPC().request */
 export type MainRPCRequests = {
@@ -37,13 +39,15 @@ export type MainRPCRequests = {
     SettingsRPCType["bun"]["requests"] &
     StatsRPCType["bun"]["requests"] &
     ReportsRPCType["bun"]["requests"] &
-    UpdateRPCType["bun"]["requests"])]: (
+    UpdateRPCType["bun"]["requests"] &
+    IncidentRPCType["bun"]["requests"])]: (
     ...args: (SystemRPCType["bun"]["requests"] &
       AgentRPCType["bun"]["requests"] &
       SettingsRPCType["bun"]["requests"] &
       StatsRPCType["bun"]["requests"] &
       ReportsRPCType["bun"]["requests"] &
-      UpdateRPCType["bun"]["requests"])[K] extends { params: infer P }
+      UpdateRPCType["bun"]["requests"] &
+      IncidentRPCType["bun"]["requests"])[K] extends { params: infer P }
       ? [P]
       : []
   ) => Promise<
@@ -52,7 +56,8 @@ export type MainRPCRequests = {
       SettingsRPCType["bun"]["requests"] &
       StatsRPCType["bun"]["requests"] &
       ReportsRPCType["bun"]["requests"] &
-      UpdateRPCType["bun"]["requests"])[K] extends { response: infer R }
+      UpdateRPCType["bun"]["requests"] &
+      IncidentRPCType["bun"]["requests"])[K] extends { response: infer R }
       ? R
       : never
   >;

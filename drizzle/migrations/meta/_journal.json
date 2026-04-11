@@ -120,6 +120,13 @@
       "when": 1775640046107,
       "tag": "0016_sturdy_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1775931755041,
+      "tag": "0017_cuddly_stature",
+      "breakpoints": true
     }
   ]
 }

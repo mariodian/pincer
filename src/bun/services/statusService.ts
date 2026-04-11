@@ -6,6 +6,11 @@ import { getNotificationSettings } from "../storage/sqlite/settingsNotifications
 import { checkAllAgentsStatus, readAgents } from "./agentService";
 import { logger } from "./loggerService";
 import { getStatusSyncService } from "./statusSyncService";
+import {
+  initIncidentService,
+  reconstructState as reconstructIncidentState,
+} from "./incidentService";
+import { startRetentionService } from "./retentionService";
 
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;
@@ -344,6 +349,16 @@ export async function beginStatusUpdates() {
   }
 
   statusUpdatesStarted = true;
+
+  // Initialize incident tracking service
+  initIncidentService();
+
+  // Start retention cleanup service (runs startup cleanup + background job)
+  startRetentionService();
+
+  // Reconstruct incident state from database before first poll
+  await reconstructIncidentState();
+
   await startStatusUpdates();
 }
 

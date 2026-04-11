@@ -69,6 +69,8 @@ export const settingsNotifications = sqliteTable("settings_notifications", {
   silentNotifications: integer("silent_notifications", { mode: "boolean" })
     .notNull()
     .default(false),
+  failureThreshold: integer("failure_threshold").notNull().default(3),
+  recoveryThreshold: integer("recovery_threshold").notNull().default(2),
 });
 
 // Key-value store for ephemeral application state (window position, UI state, etc.)
@@ -104,5 +106,46 @@ export const stats = sqliteTable(
   (table) => [
     primaryKey({ columns: [table.agentId, table.hourTimestamp] }),
     index("idx_stats_hour").on(table.hourTimestamp),
+  ],
+);
+
+// Raw health checks - 7 day retention only
+export const checks = sqliteTable(
+  "checks",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    agentId: integer("agent_id").notNull(),
+    checkedAt: integer("checked_at", { mode: "timestamp_ms" }).notNull(),
+    status: text("status").notNull(), // "ok" | "offline" | "error" | "degraded"
+    responseMs: real("response_ms"),
+    httpStatus: integer("http_status"),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+  },
+  (table) => [
+    index("idx_checks_agent_time").on(table.agentId, table.checkedAt),
+    index("idx_checks_time").on(table.checkedAt),
+  ],
+);
+
+// Incident events - keep longer than raw checks
+export const incidentEvents = sqliteTable(
+  "incident_events",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    agentId: integer("agent_id").notNull(),
+    incidentId: text("incident_id").notNull(),
+    eventAt: integer("event_at", { mode: "timestamp_ms" }).notNull(),
+    eventType: text("event_type").notNull(), // "opened" | "status_changed" | "recovered"
+    fromStatus: text("from_status"),
+    toStatus: text("to_status"),
+    reason: text("reason"),
+  },
+  (table) => [
+    index("idx_incident_events_agent_incident").on(
+      table.agentId,
+      table.incidentId,
+    ),
+    index("idx_incident_events_time").on(table.eventAt),
   ],
 );

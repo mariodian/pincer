@@ -25,6 +25,7 @@ import {
 import {
   ArrowDown10Icon,
   ArrowDownZAIcon,
+  ArrowRight,
   ArrowUp01Icon,
   ArrowUpAZIcon,
   Bot,
@@ -45,6 +46,8 @@ import {
   SquarePen,
   Sun,
   TrashIcon,
+  TriangleAlert,
+  WifiOff,
 } from "@lucide/svelte";
 
 interface LucideIconProps extends SVGAttributes<SVGSVGElement> {
@@ -75,6 +78,9 @@ export const iconRegistry: Record<string, IconEntry> = {
     lucide: CircleAlert,
     hugeicons: AlertCircleIcon,
   },
+  alertTriangle: {
+    lucide: TriangleAlert,
+  },
   agents: {
     lucide: Bot,
     hugeicons: RoboticIcon,
@@ -90,6 +96,9 @@ export const iconRegistry: Record<string, IconEntry> = {
   },
   arrowUpNumeric: {
     lucide: ArrowUp01Icon,
+  },
+  arrowRight: {
+    lucide: ArrowRight,
   },
   chevronLeft: {
     lucide: ChevronLeftIcon,
@@ -149,6 +158,9 @@ export const iconRegistry: Record<string, IconEntry> = {
   },
   barChart: {
     lucide: ChartColumn,
+  },
+  wifiOff: {
+    lucide: WifiOff,
   },
 };
 

@@ -1,6 +1,7 @@
 import Electrobun, { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { agentRequestHandlers } from "./rpc/agentRPC";
+import { incidentRequestHandlers } from "./rpc/incidentRPC";
 import { reportsRequestHandlers } from "./rpc/reportsRPC";
 import { performAutoUpdateCheck, updateRequestHandlers } from "./rpc/updateRPC";
 import { settingsRequestHandlers } from "./rpc/settingsRPC";
@@ -107,6 +108,7 @@ combinedRPC.setRequestHandler({
   ...statsRequestHandlers,
   ...reportsRequestHandlers,
   ...updateRequestHandlers,
+  ...incidentRequestHandlers,
 });
 
 /**

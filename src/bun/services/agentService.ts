@@ -1,6 +1,11 @@
 // Agents Service - Handles agent CRUD and health checking
 import { agentStorage } from "../storage";
-import type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
+import type {
+  Agent,
+  AgentStatus,
+  AgentStatusInfo,
+  CheckStatus,
+} from "../../shared/types";
 import { normalizeUrl } from "../../shared/agent-helpers";
 import {
   getSettings as getSettingsFromDb,
@@ -16,9 +21,23 @@ import {
   type StatusShape,
   type StatusParser,
 } from "../agentTypes";
+import { recordCheck } from "./incidentService";
 
 export type { Settings } from "../storage/sqlite/settingsRepo";
 export type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
+
+/**
+ * Extended result from a health check including fields needed for incident tracking.
+ */
+export interface AgentCheckResult {
+  id: number;
+  status: CheckStatus;
+  lastChecked: number;
+  errorMessage?: string;
+  responseMs: number;
+  httpStatus: number | null;
+  errorCode: string | null;
+}
 
 export async function readAgents(): Promise<Agent[]> {
   return agentStorage.readAgents();
@@ -80,12 +99,18 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   const agentType = getAgentType(agent.type);
 
   if (!agentType) {
-    upsertHourlyStat(agent.id, "error", 0);
+    const responseMs = 0;
+    const status: CheckStatus = "error";
+    const errorMessage = `Unknown agent type: ${agent.type}`;
+
+    upsertHourlyStat(agent.id, status, responseMs);
+    recordCheck(agent.id, status, responseMs, null, null, errorMessage);
+
     return {
       ...agent,
-      status: "error",
+      status,
       lastChecked: Date.now(),
-      errorMessage: `Unknown agent type: ${agent.type}`,
+      errorMessage,
     };
   }
 
@@ -103,12 +128,24 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
 
     clearTimeout(timeoutId);
     const responseMs = Date.now() - startTime;
+    const httpStatus = response.status;
 
     if (response.ok) {
       try {
         const data = await response.json();
         const result = config.parseStatus(data);
+        const checkStatus = result.status as CheckStatus;
+
         upsertHourlyStat(agent.id, result.status, responseMs);
+        recordCheck(
+          agent.id,
+          checkStatus,
+          responseMs,
+          httpStatus,
+          null,
+          result.errorMessage ?? null,
+        );
+
         return {
           ...agent,
           status: result.status,
@@ -117,7 +154,18 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
         };
       } catch {
         const result = config.parseStatus(null);
+        const checkStatus = result.status as CheckStatus;
+
         upsertHourlyStat(agent.id, result.status, responseMs);
+        recordCheck(
+          agent.id,
+          checkStatus,
+          responseMs,
+          httpStatus,
+          null,
+          result.errorMessage ?? null,
+        );
+
         return {
           ...agent,
           status: result.status,
@@ -126,24 +174,83 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
         };
       }
     } else {
-      upsertHourlyStat(agent.id, "error", responseMs);
+      const checkStatus: CheckStatus = "error";
+      const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+
+      upsertHourlyStat(agent.id, checkStatus, responseMs);
+      recordCheck(
+        agent.id,
+        checkStatus,
+        responseMs,
+        httpStatus,
+        null,
+        errorMessage,
+      );
+
       return {
         ...agent,
-        status: "error",
+        status: checkStatus,
         lastChecked: Date.now(),
-        errorMessage: `HTTP ${response.status}: ${response.statusText}`,
+        errorMessage,
       };
     }
   } catch (error) {
     const responseMs = Date.now() - startTime;
-    upsertHourlyStat(agent.id, "offline", responseMs);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // Extract error code from common error patterns
+    const errorCode = extractErrorCode(error);
+    const checkStatus: CheckStatus = "offline";
+
+    upsertHourlyStat(agent.id, checkStatus, responseMs);
+    recordCheck(
+      agent.id,
+      checkStatus,
+      responseMs,
+      null,
+      errorCode,
+      errorMessage,
+    );
+
     return {
       ...agent,
-      status: "offline",
+      status: checkStatus,
       lastChecked: Date.now(),
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage,
     };
   }
+}
+
+/**
+ * Extract an error code from an error object for categorization.
+ */
+function extractErrorCode(error: unknown): string | null {
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const message = error.message.toLowerCase();
+
+  // Common fetch/network error patterns
+  if (message.includes("abort") || message.includes("timeout")) {
+    return "TIMEOUT";
+  }
+  if (
+    message.includes("econnrefused") ||
+    message.includes("connection refused")
+  ) {
+    return "CONN_REFUSED";
+  }
+  if (message.includes("enotfound") || message.includes("not found")) {
+    return "DNS_ERROR";
+  }
+  if (message.includes("econnreset") || message.includes("reset")) {
+    return "CONN_RESET";
+  }
+  if (message.includes("etimedout") || message.includes("timed out")) {
+    return "TIMEOUT";
+  }
+
+  return null;
 }
 
 export async function checkOneAgentStatus(

@@ -8,6 +8,8 @@ export interface NotificationSettings {
   notifyOnError: boolean;
   statusChangeThreshold: number;
   silentNotifications: boolean;
+  failureThreshold: number;
+  recoveryThreshold: number;
 }
 
 /**
@@ -24,6 +26,8 @@ export function getNotificationSettings(): NotificationSettings {
     notifyOnError: row?.notifyOnError ?? true,
     statusChangeThreshold: row?.statusChangeThreshold ?? 1,
     silentNotifications: row?.silentNotifications ?? false,
+    failureThreshold: row?.failureThreshold ?? 3,
+    recoveryThreshold: row?.recoveryThreshold ?? 2,
   };
 }
 
@@ -50,6 +54,12 @@ export function updateNotificationSettings(
   }
   if (partial.silentNotifications !== undefined) {
     set.silentNotifications = partial.silentNotifications;
+  }
+  if (partial.failureThreshold !== undefined) {
+    set.failureThreshold = partial.failureThreshold;
+  }
+  if (partial.recoveryThreshold !== undefined) {
+    set.recoveryThreshold = partial.recoveryThreshold;
   }
 
   if (Object.keys(set).length > 0) {
