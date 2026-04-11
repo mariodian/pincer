@@ -81,7 +81,7 @@ export const kpiCardVariants = tv({
       gradient: true,
       class: cn([
         "bg-radial bg-radial-default",
-        "border-card-foregound/10 dark:border-card-foreground/8",
+        "dark:border-muted/50",
         "text-primary text-shadow-xs text-shadow-primary-foreground",
       ]),
     },

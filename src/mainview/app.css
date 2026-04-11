@@ -253,12 +253,12 @@
 
   &:where(.dark, .dark *) {
     --bg: oklch(0.16 0.019 322.12);
-    --radial-1: color-mix(in oklch, var(--card) 85%, transparent);
-    --radial-2: color-mix(in oklch, var(--bg) 55%, transparent);
-    --radial-3: color-mix(in oklch, var(--card) 85%, transparent);
-    --radial-4: color-mix(in oklch, var(--bg) 30%, transparent);
-    --radial-base-from: var(--bg);
-    --radial-base-to: var(--card);
+    --radial-1: color-mix(in oklch, var(--muted) 85%, transparent);
+    --radial-2: color-mix(in oklch, var(--card) 55%, transparent);
+    --radial-3: color-mix(in oklch, var(--muted) 85%, transparent);
+    --radial-4: color-mix(in oklch, var(--card) 30%, transparent);
+    --radial-base-from: var(--card);
+    --radial-base-to: var(--muted);
   }
 }
 
@@ -300,18 +300,18 @@
 
 @utility bg-radial-orange {
   --radial-1: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
-  --radial-2: color-mix(in oklch, var(--color-orange-700) 55%, transparent);
+  --radial-2: color-mix(in oklch, var(--color-amber-700) 55%, transparent);
   --radial-3: color-mix(in oklch, var(--color-amber-400) 85%, transparent);
-  --radial-4: color-mix(in oklch, var(--color-orange-200) 30%, transparent);
-  --radial-base-from: var(--color-orange-600);
+  --radial-4: color-mix(in oklch, var(--color-amber-200) 30%, transparent);
+  --radial-base-from: var(--color-amber-600);
   --radial-base-to: var(--color-amber-400);
 
   &:where(.dark, .dark *) {
     --radial-1: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
-    --radial-2: color-mix(in oklch, var(--color-orange-800) 55%, transparent);
+    --radial-2: color-mix(in oklch, var(--color-amber-800) 55%, transparent);
     --radial-3: color-mix(in oklch, var(--color-amber-500) 85%, transparent);
-    --radial-4: color-mix(in oklch, var(--color-orange-300) 30%, transparent);
-    --radial-base-from: var(--color-orange-700);
+    --radial-4: color-mix(in oklch, var(--color-amber-300) 30%, transparent);
+    --radial-base-from: var(--color-amber-700);
     --radial-base-to: var(--color-amber-500);
   }
 }
