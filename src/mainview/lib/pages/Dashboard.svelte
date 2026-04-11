@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { KpiCard, StatusPieChart } from "$lib/components/dashboard";
+  import { KpiCard } from "$lib/components/ui/kpi-card";
+  import { StatusPieChart } from "$lib/components/dashboard";
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Empty from "$lib/components/ui/empty/index.js";
