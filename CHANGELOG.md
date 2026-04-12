@@ -5,6 +5,20 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.9] - 2026-04-12
+
+### Added
+
+- Added enhanced incident timeline behavior with unified day-level sorting and improved empty-state handling.
+
+### Changed
+
+- Refactored status presentation in `CheckDot`, `IncidentBadge`, and `IncidentCard` to use tone-based class handling for more consistent UI states.
+
+### Fixed
+
+- Fixed report handling behavior to improve stability in report-related flows.
+
 ## [v0.1.8] - 2026-04-12
 
 ### Added
