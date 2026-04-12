@@ -5,6 +5,25 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.8] - 2026-04-12
+
+### Added
+
+- Added incident tracking persistence with new SQLite schema/migration support (`incident_events`) and repository/storage wiring.
+- Added incident RPC endpoints and main-process services for incident lifecycle handling, grouping, and retention cleanup.
+- Added reusable UI primitives for incidents, including `Timeline` and `Badge` components.
+- Added incident-focused renderer components and pages (`IncidentCard`, `Timeline`, `CheckDotWithTooltip`, and Incidents page integration).
+- Added shared status configuration utilities to centralize status labels, colors, and icon mappings.
+
+### Changed
+
+- Refactored time-related constants and range utilities to improve consistency between main and renderer code paths.
+- Refactored dashboard and report views to incorporate incident-aware KPI/stat presentations and updated component organization.
+- Refactored KPI card placement into the `ui/kpi-card` module and updated dependent imports/exports.
+- Updated icon registry and sidebar/navigation wiring to support new incident and timeline visualization flows.
+- Unified date parsing logic by introducing a shared `normalizeDateInput` helper in shared date utilities.
+- Refactored renderer datetime utilities to use the shared date normalizer while preserving existing timestamp-unit behavior.
+
 ## [v0.1.7] - 2026-04-10
 
 ### Added
