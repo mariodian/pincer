@@ -23,6 +23,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import {
+  Activity,
   ArrowDown10Icon,
   ArrowDownZAIcon,
   ArrowRight,
@@ -46,6 +47,7 @@ import {
   SquarePen,
   Sun,
   TrashIcon,
+  TrendingUpDown,
   TriangleAlert,
   WifiOff,
 } from "@lucide/svelte";
@@ -100,6 +102,9 @@ export const iconRegistry: Record<string, IconEntry> = {
   arrowRight: {
     lucide: ArrowRight,
   },
+  barChart: {
+    lucide: ChartColumn,
+  },
   chevronLeft: {
     lucide: ChevronLeftIcon,
     hugeicons: ChevronLeft,
@@ -128,6 +133,13 @@ export const iconRegistry: Record<string, IconEntry> = {
     lucide: Loader,
     hugeicons: Loading03Icon,
   },
+  moon: {
+    lucide: Moon,
+    hugeicons: Moon02Icon,
+  },
+  pulse: {
+    lucide: Activity,
+  },
   refresh: {
     lucide: RefreshCw,
     hugeicons: Refresh01Icon,
@@ -148,16 +160,12 @@ export const iconRegistry: Record<string, IconEntry> = {
     lucide: Sun,
     hugeicons: SunIcon,
   },
-  moon: {
-    lucide: Moon,
-    hugeicons: Moon02Icon,
-  },
   tick: {
     lucide: Check,
     hugeicons: Tick01Icon,
   },
-  barChart: {
-    lucide: ChartColumn,
+  trendingUpDown: {
+    lucide: TrendingUpDown,
   },
   wifiOff: {
     lucide: WifiOff,

@@ -17,8 +17,6 @@
   const TIME_RANGES: TimeRangeOption[] = [
     { value: "24h", label: "24h" },
     { value: "7d", label: "7d" },
-    { value: "30d", label: "30d" },
-    { value: "90d", label: "90d" },
   ];
 
   let currentPath = $derived($currentRoute);
@@ -106,9 +104,11 @@
       </ErrorState>
     {:else if loading}
       <div class="space-y-4">
-        <Skeleton class="h-32 w-full rounded-lg" />
-        <Skeleton class="h-32 w-full rounded-lg" />
-        <Skeleton class="h-32 w-full rounded-lg" />
+        <Skeleton class="h-8 w-full mb-6 rounded-lg" />
+        <Skeleton class="h-3 w-20 rounded-lg" />
+        <Skeleton class="h-40 w-full mb-6 rounded-lg" />
+        <Skeleton class="h-3 w-12 rounded-lg" />
+        <Skeleton class="h-44 w-full rounded-lg" />
       </div>
     {:else if timeline}
       {@const allEvents = [
@@ -121,7 +121,7 @@
         <Empty.Root class="border border-dashed">
           <Empty.Header>
             <Empty.Media variant="icon">
-              <Icon name="checkCircle" class="text-muted-foreground" />
+              <Icon name="trendingUpDown" class="text-muted-foreground" />
             </Empty.Media>
             <Empty.Title>No incidents</Empty.Title>
             <Empty.Description>
@@ -140,7 +140,7 @@
       <Empty.Root class="border border-dashed">
         <Empty.Header>
           <Empty.Media variant="icon">
-            <Icon name="alertCircle" class="text-muted-foreground" />
+            <Icon name="pulse" class="text-muted-foreground" />
           </Empty.Media>
           <Empty.Title>No data</Empty.Title>
           <Empty.Description>Unable to load incident data.</Empty.Description>

@@ -1,8 +1,13 @@
 <script lang="ts">
   import { IncidentBadge } from "$lib/components/incidents";
+  import { Badge } from "$lib/components/ui/badge/";
+  import * as Card from "$lib/components/ui/card";
   import { Icon } from "$lib/components/ui/icon";
+  import * as Timeline from "$lib/components/ui/timeline";
   import { cn } from "$lib/utils";
+  import { formatDateTime } from "$lib/utils/datetime";
   import type { CheckStatus, IncidentEvent } from "$shared/types";
+  import { Duration, DurationUnits } from "@layerstack/utils";
 
   interface Props {
     incidentId: string;
@@ -13,6 +18,10 @@
   }
 
   let { events, agentName, agentColor, class: className }: Props = $props();
+
+  const ICON_SIZE = "size-6";
+  const ICON_STATUS_SIZE = "size-4";
+  const ICON_STROKE = 2;
 
   // Sort events by time (oldest first for display)
   const sortedEvents = $derived(
@@ -37,21 +46,25 @@
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (days > 0) return `${days}d ${hours % 24}h`;
-    if (hours > 0) return `${hours}h ${minutes % 60}m`;
-    return `${minutes}m`;
-  });
-
-  const formatTime = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    return date.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
+    const duration = new Duration({
+      start: new Date(openedEvent.eventAt),
+      end: new Date(endTime),
     });
-  };
+
+    const minUnits =
+      days > 0
+        ? DurationUnits.Day
+        : hours > 0
+          ? DurationUnits.Hour
+          : minutes > 0
+            ? DurationUnits.Minute
+            : DurationUnits.Second;
+
+    return duration.format({
+      minUnits: minUnits,
+      variant: "short",
+    });
+  });
 
   const statusIcons: Record<CheckStatus, string> = {
     ok: "checkCircle",
@@ -61,10 +74,10 @@
   };
 
   const statusColors: Record<CheckStatus, string> = {
-    ok: "text-green-500",
-    offline: "text-red-500",
-    error: "text-orange-500",
-    degraded: "text-yellow-500",
+    ok: "text-green-600 dark:text-green-800",
+    offline: "text-muted-foreground",
+    error: "text-amber-500",
+    degraded: "text-red-500 dark:text-red-700",
   };
 
   const statusLabels: Record<CheckStatus, string> = {
@@ -75,108 +88,132 @@
   };
 </script>
 
-<div
+<Card.Root
   class={cn(
-    "rounded-lg border bg-card p-4 transition-all",
-    isOpen &&
-      "border-red-200 bg-red-50/30 dark:border-red-900/30 dark:bg-red-900/10",
     className,
+    "gap-4",
+    isOpen ? "ring-destructive dark:ring-red-800 ring-3 " : "",
   )}
 >
-  <!-- Header -->
-  <div class="flex items-start justify-between">
-    <div class="flex items-center gap-2">
-      <div
-        class="h-2 w-2 rounded-full"
-        style="background-color: {agentColor}"
-      ></div>
-      <span class="font-medium">{agentName}</span>
-      {#if isOpen}
-        <span
-          class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300"
-        >
-          Open
-        </span>
-      {/if}
-    </div>
-    <div class="text-sm text-muted-foreground">
+  <Card.Header>
+    <Card.Title>
+      <div class="flex items-center gap-2">
+        <div
+          class="size-2 rounded-full"
+          style="background-color: {agentColor}"
+        ></div>
+        <span class="font-medium">{agentName}</span>
+        {#if isOpen}
+          <Badge variant="secondary">Open</Badge>
+        {/if}
+      </div>
+    </Card.Title>
+    <Card.Action class="text-muted-foreground text-xs">
       {#if duration()}
         Duration: {duration()}
       {/if}
+    </Card.Action>
+  </Card.Header>
+  <Card.Content>
+    <div class="ml-2 space-y-2">
+      {#each sortedEvents as event, i}
+        <Timeline.Root withoutBorder={i === sortedEvents.length - 1}>
+          <Timeline.Item>
+            <Timeline.Icon class="bg-card ring-card">
+              {#if event.eventType === "opened"}
+                <Icon
+                  name="alertCircle"
+                  strokeWidth={ICON_STROKE}
+                  class={cn(ICON_SIZE, "text-red-500")}
+                />
+              {:else if event.eventType === "recovered"}
+                <Icon
+                  name="checkCircle"
+                  strokeWidth={ICON_STROKE}
+                  class={cn(ICON_SIZE, "text-green-500")}
+                />
+              {:else}
+                <Icon
+                  name="refresh"
+                  strokeWidth={ICON_STROKE}
+                  class={cn(ICON_SIZE, "text-yellow-500")}
+                />
+              {/if}
+            </Timeline.Icon>
+            <Timeline.Content>
+              <div class="mb-2">
+                <IncidentBadge eventType={event.eventType} />
+                <Timeline.Time
+                  >{formatDateTime(event.eventAt, {
+                    month: "short",
+                    day: "numeric",
+                    second: undefined,
+                  })}</Timeline.Time
+                >
+              </div>
+              {#if event.eventType === "opened" || event.eventType === "status_changed"}
+                <Timeline.Title class="text-sm mt-2">
+                  {#if event.eventType === "opened" && event.toStatus}
+                    <div class="flex items-center gap-1.5">
+                      <Icon
+                        name={statusIcons[event.toStatus]}
+                        class={cn(
+                          ICON_STATUS_SIZE,
+                          statusColors[event.toStatus],
+                        )}
+                      />
+                      <span>Started as {statusLabels[event.toStatus]}</span>
+                    </div>
+                  {/if}
+
+                  {#if event.eventType === "status_changed" && event.fromStatus && event.toStatus}
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-1.5">
+                        <Icon
+                          name={statusIcons[event.fromStatus]}
+                          class={cn(
+                            ICON_STATUS_SIZE,
+                            statusColors[event.fromStatus],
+                          )}
+                        />
+                        <span>
+                          {statusLabels[event.fromStatus]}
+                        </span>
+                      </div>
+                      <Icon
+                        name="arrowRight"
+                        class={cn(ICON_STATUS_SIZE, "text-muted-foreground")}
+                      />
+                      <div class="flex items-center gap-1.5">
+                        <Icon
+                          name={statusIcons[event.toStatus]}
+                          class={cn(
+                            ICON_STATUS_SIZE,
+                            statusColors[event.toStatus],
+                          )}
+                        />
+                        <span>
+                          {statusLabels[event.toStatus]}
+                        </span>
+                      </div>
+                    </div>
+                  {/if}
+                </Timeline.Title>
+              {/if}
+
+              {#if event.reason}
+                <Timeline.Description
+                  class="mb-3 text-sm text-muted-foreground"
+                >
+                  <p>
+                    {event.reason}
+                  </p>
+                </Timeline.Description>
+              {/if}
+            </Timeline.Content>
+          </Timeline.Item>
+        </Timeline.Root>
+      {/each}
     </div>
-  </div>
-
-  <!-- Events Timeline -->
-  <div class="mt-4 space-y-3">
-    {#each sortedEvents as event, i}
-      <div class="flex items-start gap-3">
-        <!-- Timeline line -->
-        <div class="relative flex flex-col items-center">
-          <div
-            class={cn(
-              "flex h-6 w-6 items-center justify-center rounded-full border-2 bg-background",
-              event.eventType === "opened" && "border-red-500",
-              event.eventType === "recovered" && "border-green-500",
-              event.eventType === "status_changed" && "border-yellow-500",
-            )}
-          >
-            {#if event.eventType === "opened"}
-              <Icon name="alertCircle" class="h-3 w-3 text-red-500" />
-            {:else if event.eventType === "recovered"}
-              <Icon name="checkCircle" class="h-3 w-3 text-green-500" />
-            {:else}
-              <Icon name="refresh" class="h-3 w-3 text-yellow-500" />
-            {/if}
-          </div>
-          {#if i < sortedEvents.length - 1}
-            <div class="mt-1 h-full min-h-6 w-px bg-border"></div>
-          {/if}
-        </div>
-
-        <!-- Event details -->
-        <div class="flex-1 pb-3">
-          <div class="flex items-center gap-2">
-            <IncidentBadge eventType={event.eventType} />
-            <span class="text-sm text-muted-foreground">
-              {formatTime(event.eventAt)}
-            </span>
-          </div>
-
-          {#if event.eventType === "opened" && event.toStatus}
-            <div class="mt-1 flex items-center gap-1 text-sm">
-              <Icon
-                name={statusIcons[event.toStatus]}
-                class={cn("h-4 w-4", statusColors[event.toStatus])}
-              />
-              <span>Started as {statusLabels[event.toStatus]}</span>
-            </div>
-          {/if}
-
-          {#if event.eventType === "status_changed" && event.fromStatus && event.toStatus}
-            <div class="mt-1 flex items-center gap-2 text-sm">
-              <span class="flex items-center gap-1">
-                <Icon
-                  name={statusIcons[event.fromStatus]}
-                  class={cn("h-4 w-4", statusColors[event.fromStatus])}
-                />
-                {statusLabels[event.fromStatus]}
-              </span>
-              <Icon name="arrowRight" class="h-3 w-3 text-muted-foreground" />
-              <span class="flex items-center gap-1">
-                <Icon
-                  name={statusIcons[event.toStatus]}
-                  class={cn("h-4 w-4", statusColors[event.toStatus])}
-                />
-                {statusLabels[event.toStatus]}
-              </span>
-            </div>
-          {/if}
-
-          {#if event.reason}
-            <p class="mt-1 text-sm text-muted-foreground">{event.reason}</p>
-          {/if}
-        </div>
-      </div>
-    {/each}
-  </div>
-</div>
+  </Card.Content>
+</Card.Root>

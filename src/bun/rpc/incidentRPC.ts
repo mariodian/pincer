@@ -93,6 +93,11 @@ export const incidentRequestHandlers = {
         allEvents = getEventsForTimeRange(fromMs, toMs);
       }
 
+      logger.debug(
+        "incidentRPC",
+        `Queried ${allEvents.length} events from ${new Date(fromMs).toISOString()} to ${new Date(toMs).toISOString()}`,
+      );
+
       // Group events by incidentId
       const eventsByIncident = new Map<string, IncidentEvent[]>();
       for (const event of allEvents) {
@@ -161,7 +166,7 @@ export const incidentRequestHandlers = {
         }
       }
 
-      return {
+      const result = {
         agentId,
         range,
         agents: agentsWithColors,
@@ -174,6 +179,13 @@ export const incidentRequestHandlers = {
           stats: olderStats,
         },
       };
+
+      logger.debug(
+        "incidentRPC",
+        `Returning timeline: ${recentEvents.length} recent events, ${olderEvents.length} older events, ${recentChecks.length} checks`,
+      );
+
+      return result;
     } catch (error) {
       logger.error("incidentRPC", "Failed to get incident timeline:", error);
       throw error;

@@ -81,12 +81,10 @@ export function getEventsForAgent(
   untilMs?: number,
 ): IncidentEvent[] {
   const { db } = getDatabase();
-  const sinceDate = new Date(sinceMs);
 
-  let whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceDate}`;
+  let whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceMs}`;
   if (untilMs !== undefined) {
-    const untilDate = new Date(untilMs);
-    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceDate} AND ${incidentEvents.eventAt} <= ${untilDate}`;
+    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceMs} AND ${incidentEvents.eventAt} <= ${untilMs}`;
   }
 
   const rows = db
@@ -109,19 +107,16 @@ export function getEventsForTimeRange(
   agentId?: number,
 ): IncidentEvent[] {
   const { db } = getDatabase();
-  const sinceDate = new Date(sinceMs);
 
   let whereClause: ReturnType<typeof sql>;
   if (agentId !== undefined && untilMs !== undefined) {
-    const untilDate = new Date(untilMs);
-    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceDate} AND ${incidentEvents.eventAt} <= ${untilDate}`;
+    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceMs} AND ${incidentEvents.eventAt} <= ${untilMs}`;
   } else if (agentId !== undefined) {
-    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceDate}`;
+    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceMs}`;
   } else if (untilMs !== undefined) {
-    const untilDate = new Date(untilMs);
-    whereClause = sql`${incidentEvents.eventAt} >= ${sinceDate} AND ${incidentEvents.eventAt} <= ${untilDate}`;
+    whereClause = sql`${incidentEvents.eventAt} >= ${sinceMs} AND ${incidentEvents.eventAt} <= ${untilMs}`;
   } else {
-    whereClause = sql`${incidentEvents.eventAt} >= ${sinceDate}`;
+    whereClause = sql`${incidentEvents.eventAt} >= ${sinceMs}`;
   }
 
   const rows = db

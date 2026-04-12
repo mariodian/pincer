@@ -44,12 +44,10 @@ export function getRecentChecks(
   untilMs?: number,
 ): Check[] {
   const { db } = getDatabase();
-  const sinceDate = new Date(sinceMs);
 
-  let whereClause = sql`${checks.agentId} = ${agentId} AND ${checks.checkedAt} >= ${sinceDate}`;
+  let whereClause = sql`${checks.agentId} = ${agentId} AND ${checks.checkedAt} >= ${sinceMs}`;
   if (untilMs !== undefined) {
-    const untilDate = new Date(untilMs);
-    whereClause = sql`${checks.agentId} = ${agentId} AND ${checks.checkedAt} >= ${sinceDate} AND ${checks.checkedAt} <= ${untilDate}`;
+    whereClause = sql`${checks.agentId} = ${agentId} AND ${checks.checkedAt} >= ${sinceMs} AND ${checks.checkedAt} <= ${untilMs}`;
   }
 
   const rows = db
@@ -86,12 +84,10 @@ export function getAgentLastNChecks(agentId: number, n: number): Check[] {
  */
 export function getAllChecks(sinceMs: number, untilMs?: number): Check[] {
   const { db } = getDatabase();
-  const sinceDate = new Date(sinceMs);
 
-  let whereClause = sql`${checks.checkedAt} >= ${sinceDate}`;
+  let whereClause = sql`${checks.checkedAt} >= ${sinceMs}`;
   if (untilMs !== undefined) {
-    const untilDate = new Date(untilMs);
-    whereClause = sql`${checks.checkedAt} >= ${sinceDate} AND ${checks.checkedAt} <= ${untilDate}`;
+    whereClause = sql`${checks.checkedAt} >= ${sinceMs} AND ${checks.checkedAt} <= ${untilMs}`;
   }
 
   const rows = db
@@ -110,11 +106,10 @@ export function getAllChecks(sinceMs: number, untilMs?: number): Check[] {
  */
 export function deleteOldChecks(cutoffMs: number): number {
   const { db } = getDatabase();
-  const cutoffDate = new Date(cutoffMs);
 
   const result = db
     .delete(checks)
-    .where(sql`${checks.checkedAt} < ${cutoffDate}`)
+    .where(sql`${checks.checkedAt} < ${cutoffMs}`)
     .run();
 
   // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
@@ -127,12 +122,11 @@ export function deleteOldChecks(cutoffMs: number): number {
  */
 export function countOldChecks(cutoffMs: number): number {
   const { db } = getDatabase();
-  const cutoffDate = new Date(cutoffMs);
 
   const row = db
     .select({ count: sql<number>`count(*)` })
     .from(checks)
-    .where(sql`${checks.checkedAt} < ${cutoffDate}`)
+    .where(sql`${checks.checkedAt} < ${cutoffMs}`)
     .get();
 
   return row?.count ?? 0;
