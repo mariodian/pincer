@@ -6,11 +6,15 @@
   import * as Timeline from "$lib/components/ui/timeline";
   import { cn } from "$lib/utils";
   import { formatDateTime } from "$lib/utils/datetime";
-  import type { CheckStatus, IncidentEvent } from "$shared/types";
+  import {
+    statusColors,
+    statusIcons,
+    statusLabels,
+  } from "$shared/status-config";
+  import type { IncidentEvent } from "$shared/types";
   import { Duration, DurationUnits } from "@layerstack/utils";
 
   interface Props {
-    incidentId: string;
     events: IncidentEvent[];
     agentName: string;
     agentColor: string;
@@ -65,27 +69,6 @@
       variant: "short",
     });
   });
-
-  const statusIcons: Record<CheckStatus, string> = {
-    ok: "checkCircle",
-    offline: "wifiOff",
-    error: "alertCircle",
-    degraded: "alertTriangle",
-  };
-
-  const statusColors: Record<CheckStatus, string> = {
-    ok: "text-green-600 dark:text-green-800",
-    offline: "text-muted-foreground",
-    error: "text-amber-500",
-    degraded: "text-red-500 dark:text-red-700",
-  };
-
-  const statusLabels: Record<CheckStatus, string> = {
-    ok: "OK",
-    offline: "Offline",
-    error: "Error",
-    degraded: "Degraded",
-  };
 </script>
 
 <Card.Root

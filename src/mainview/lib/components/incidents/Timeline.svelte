@@ -2,7 +2,12 @@
   import { CheckDot, IncidentCard } from "$lib/components/incidents";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { cn } from "$lib/utils";
-  import { formatDateTime, formatShortDate } from "$lib/utils/datetime";
+  import {
+    formatDateTime,
+    formatDuration,
+    formatShortDate,
+  } from "$lib/utils/datetime";
+  import { statusLabels } from "$shared/status-config";
   import type { Check, IncidentEvent } from "$shared/types";
   import { Tooltip as TooltipPrimitive } from "bits-ui";
 
@@ -40,19 +45,6 @@
 
   const getAgent = (agentId: number) => {
     return agents.find((a) => a.id === agentId);
-  };
-
-  const formatDuration = (ms: number | null): string => {
-    if (ms === null) return "N/A";
-    if (ms < 1000) return `${Math.round(ms)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
-
-  const statusLabels: Record<string, string> = {
-    ok: "OK",
-    offline: "Offline",
-    error: "Error",
-    degraded: "Degraded",
   };
 
   // Pre-group and sort checks once so hover-driven tooltip updates do not
@@ -147,7 +139,6 @@
             {@const agent = getAgent(firstEvent.agentId)}
             {#if agent}
               <IncidentCard
-                {incidentId}
                 events={incidentEvents}
                 agentName={agent.name}
                 agentColor={agent.color}
