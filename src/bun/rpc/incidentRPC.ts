@@ -11,6 +11,11 @@ import { readAgents } from "../services/agentService";
 import { logger } from "../services/loggerService";
 import { getRangeTimestamps } from "../utils/time-range";
 import { getAgentColor } from "../../shared/agent-helpers";
+import {
+  groupEventsByIncident,
+  splitIncidentsByActivity,
+} from "../utils/incident-grouping";
+import { SEVEN_DAYS_MS } from "../utils/constants";
 
 export interface IncidentTimeline {
   agentId?: number;
@@ -56,9 +61,6 @@ export type IncidentRPCType = {
   };
 };
 
-// 7 days in milliseconds
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
 export const incidentRequestHandlers = {
   getIncidentTimeline: async ({
     agentId,
@@ -98,42 +100,12 @@ export const incidentRequestHandlers = {
         `Queried ${allEvents.length} events from ${new Date(fromMs).toISOString()} to ${new Date(toMs).toISOString()}`,
       );
 
-      // Group events by incidentId
-      const eventsByIncident = new Map<string, IncidentEvent[]>();
-      for (const event of allEvents) {
-        const existing = eventsByIncident.get(event.incidentId) || [];
-        existing.push(event);
-        eventsByIncident.set(event.incidentId, existing);
-      }
-
-      // Split incidents based on whether they have ANY activity in the last 7 days
-      const recentIncidentIds = new Set<string>();
-      const olderIncidentIds = new Set<string>();
-
-      for (const [incidentId, events] of eventsByIncident) {
-        const hasRecentActivity = events.some((e) => e.eventAt >= sevenDaysAgo);
-        if (hasRecentActivity) {
-          recentIncidentIds.add(incidentId);
-        } else {
-          olderIncidentIds.add(incidentId);
-        }
-      }
-
-      // Collect events for each bucket
-      const recentEvents: IncidentEvent[] = [];
-      const olderEvents: IncidentEvent[] = [];
-
-      for (const [incidentId, events] of eventsByIncident) {
-        if (recentIncidentIds.has(incidentId)) {
-          recentEvents.push(...events);
-        } else {
-          olderEvents.push(...events);
-        }
-      }
-
-      // Sort events within each bucket by time (descending for display)
-      recentEvents.sort((a, b) => b.eventAt - a.eventAt);
-      olderEvents.sort((a, b) => b.eventAt - a.eventAt);
+      // Group events by incident and split by recent activity
+      const eventsByIncident = groupEventsByIncident(allEvents);
+      const { recentEvents, olderEvents } = splitIncidentsByActivity(
+        eventsByIncident,
+        sevenDaysAgo,
+      );
 
       // Query raw checks only for the last 7 days (retention period)
       let recentChecks: Check[] = [];

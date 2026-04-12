@@ -100,24 +100,19 @@ export function getEventsForAgent(
 /**
  * Get events for all agents within a time range.
  * Useful for global incident timeline views.
+ *
+ * Note: Use getEventsForAgent() if you need to filter by a specific agent.
  */
 export function getEventsForTimeRange(
   sinceMs: number,
   untilMs?: number,
-  agentId?: number,
 ): IncidentEvent[] {
   const { db } = getDatabase();
 
-  let whereClause: ReturnType<typeof sql>;
-  if (agentId !== undefined && untilMs !== undefined) {
-    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceMs} AND ${incidentEvents.eventAt} <= ${untilMs}`;
-  } else if (agentId !== undefined) {
-    whereClause = sql`${incidentEvents.agentId} = ${agentId} AND ${incidentEvents.eventAt} >= ${sinceMs}`;
-  } else if (untilMs !== undefined) {
-    whereClause = sql`${incidentEvents.eventAt} >= ${sinceMs} AND ${incidentEvents.eventAt} <= ${untilMs}`;
-  } else {
-    whereClause = sql`${incidentEvents.eventAt} >= ${sinceMs}`;
-  }
+  const whereClause =
+    untilMs !== undefined
+      ? sql`${incidentEvents.eventAt} >= ${sinceMs} AND ${incidentEvents.eventAt} <= ${untilMs}`
+      : sql`${incidentEvents.eventAt} >= ${sinceMs}`;
 
   const rows = db
     .select()
