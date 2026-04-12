@@ -7,9 +7,10 @@
   import { cn } from "$lib/utils";
   import { formatDateTime } from "$lib/utils/datetime";
   import {
-    statusColors,
     statusIcons,
     statusLabels,
+    statusTones,
+    type StatusTone,
   } from "$shared/status-config";
   import type { IncidentEvent } from "$shared/types";
   import { Duration, DurationUnits } from "@layerstack/utils";
@@ -26,6 +27,13 @@
   const ICON_SIZE = "size-6";
   const ICON_STATUS_SIZE = "size-4";
   const ICON_STROKE = 2;
+
+  const iconToneClasses: Record<StatusTone, string> = {
+    success: "text-green-600 dark:text-green-800",
+    neutral: "text-muted-foreground",
+    warning: "text-amber-500",
+    danger: "text-red-500 dark:text-red-700",
+  };
 
   // Sort events by time (oldest first for display)
   const sortedEvents = $derived(
@@ -75,7 +83,7 @@
   class={cn(
     className,
     "gap-4",
-    isOpen ? "ring-destructive dark:ring-red-800 ring-3 " : "",
+    isOpen ? "ring-destructive dark:ring-red-800 ring-2 " : "",
   )}
 >
   <Card.Header>
@@ -142,7 +150,7 @@
                         name={statusIcons[event.toStatus]}
                         class={cn(
                           ICON_STATUS_SIZE,
-                          statusColors[event.toStatus],
+                          iconToneClasses[statusTones[event.toStatus]],
                         )}
                       />
                       <span>Started as {statusLabels[event.toStatus]}</span>
@@ -156,7 +164,7 @@
                           name={statusIcons[event.fromStatus]}
                           class={cn(
                             ICON_STATUS_SIZE,
-                            statusColors[event.fromStatus],
+                            iconToneClasses[statusTones[event.fromStatus]],
                           )}
                         />
                         <span>
@@ -172,7 +180,7 @@
                           name={statusIcons[event.toStatus]}
                           class={cn(
                             ICON_STATUS_SIZE,
-                            statusColors[event.toStatus],
+                            iconToneClasses[statusTones[event.toStatus]],
                           )}
                         />
                         <span>
