@@ -32,6 +32,12 @@
   let report = $state<UptimeReport | null>(null);
   let range = $state<TimeRange>("30d");
 
+  const reportWithData = $derived(
+    report !== null && report.agents.some((agent) => agent.hasData)
+      ? report
+      : null,
+  );
+
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
       sortAsc = !sortAsc;
@@ -165,11 +171,11 @@
         </div>
         <Skeleton class="h-48 w-full rounded-lg" />
       </div>
-    {:else if report}
+    {:else if reportWithData}
       <!-- KPI Row -->
       <KpiSummary
         class={cn(["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"])}
-        data={report}
+        data={reportWithData}
       />
 
       <div class="flex items-center justify-between mb-4">
@@ -187,7 +193,7 @@
       </div>
 
       <AgentTable
-        agents={report.agents}
+        agents={reportWithData.agents}
         {sortKey}
         {sortAsc}
         onSort={toggleSort}
