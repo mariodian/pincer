@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as Card from "$lib/components/ui/card";
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
   import { format } from "@layerstack/utils";
@@ -108,74 +109,79 @@
   );
 </script>
 
-<div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
-  <div>
-    <h3 class="text-sm font-semibold">{title}</h3>
+<Card.Root>
+  <Card.Header>
+    <Card.Title class="text-sm font-semibold">{title}</Card.Title>
     {#if description}
-      <p class="text-xs text-muted-foreground mt-0.5">{description}</p>
+      <Card.Description class="text-sm">{description}</Card.Description>
     {/if}
-  </div>
-
-  {#if totalCount === 0}
-    <div
-      class={[
-        "min-h-50",
-        "flex flex-1 items-center justify-center",
-        "text-sm text-muted-foreground",
-      ]}
-    >
-      No data for this period.
-    </div>
-  {:else}
-    <div class="w-full h-50 lg:h-60">
-      <PieChart
-        data={statusData}
-        key="status"
-        value="count"
-        cRange={[colors.ok, colors.offline, colors.error]}
-        // height={chartHeight}
-        range={[-90, 90]}
-        {outerRadius}
-        {innerRadius}
-        cornerRadius={chartHeight / CORNER_RADIUS_DIVISOR}
-        padAngle={0.02}
-        props={{ group: { y: chartHeight / GROUP_Y_DIVISOR + GROUP_Y_OFFSET } }}
-        padding={{
-          ...defaultChartPadding({
-            top: DEFAULT_PADDING,
-            right: DEFAULT_PADDING,
-            bottom: DEFAULT_PADDING,
-            left: DEFAULT_PADDING,
-          }),
-          ...padding,
-        }}
-        // padding={{ right: 80, top: 40, bottom: 40 }}
-        legend={{
-          placement: "right",
-          orientation: "vertical",
-          variant: "swatches",
-        }}
+  </Card.Header>
+  <Card.Content class={cn("flex flex-col", className)}>
+    {#if totalCount === 0}
+      <div
+        class={[
+          "min-h-50",
+          "flex flex-1 items-center justify-center",
+          "text-sm text-muted-foreground",
+        ]}
       >
-        {#snippet aboveMarks()}
-          <Text
-            value={format(totalCount, "metric")}
-            textAnchor="middle"
-            verticalAnchor="middle"
-            class="font-semibold"
-            font-size={fontSize}
-            dy={textPosition}
-          />
-          <Text
-            value="Total"
-            textAnchor="middle"
-            verticalAnchor="middle"
-            class="text-sm font-medium text-muted-foreground"
-            dy={textPosition * SUBTITLE_DY_MULTIPLIER}
-          />
-        {/snippet}
-      </PieChart>
-    </div>
-  {/if}
-
-  <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />
-</div>
+        No data for this period.
+      </div>
+    {:else}
+      <div class="w-full h-50 lg:h-60">
+        <PieChart
+          data={statusData}
+          key="status"
+          value="count"
+          cRange={[colors.ok, colors.offline, colors.error]}
+          // height={chartHeight}
+          range={[-90, 90]}
+          {outerRadius}
+          {innerRadius}
+          cornerRadius={chartHeight / CORNER_RADIUS_DIVISOR}
+          padAngle={0.02}
+          props={{
+            group: { y: chartHeight / GROUP_Y_DIVISOR + GROUP_Y_OFFSET },
+          }}
+          padding={{
+            ...defaultChartPadding({
+              top: DEFAULT_PADDING,
+              right: DEFAULT_PADDING,
+              bottom: DEFAULT_PADDING,
+              left: DEFAULT_PADDING,
+            }),
+            ...padding,
+          }}
+          // padding={{ right: 80, top: 40, bottom: 40 }}
+          legend={{
+            placement: "right",
+            orientation: "vertical",
+            variant: "swatches",
+          }}
+        >
+          {#snippet aboveMarks()}
+            <Text
+              value={format(totalCount, "metric")}
+              textAnchor="middle"
+              verticalAnchor="middle"
+              class="font-semibold"
+              font-size={fontSize}
+              dy={textPosition}
+            />
+            <Text
+              value="Total"
+              textAnchor="middle"
+              verticalAnchor="middle"
+              class="text-sm font-medium text-muted-foreground"
+              dy={textPosition * SUBTITLE_DY_MULTIPLIER}
+            />
+          {/snippet}
+        </PieChart>
+      </div>
+    {/if}
+  </Card.Content>
+  <Card.Footer>
+    <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />
+  </Card.Footer>
+</Card.Root>
+<!-- </div> -->

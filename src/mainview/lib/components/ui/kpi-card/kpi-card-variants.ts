@@ -2,7 +2,12 @@ import { cn } from "$lib/utils.js";
 import { tv, type VariantProps } from "tailwind-variants";
 
 export const kpiCardVariants = tv({
-  base: ["rounded-lg border p-4 flex flex-col gap-1", "text-primary"],
+  base: [
+    "rounded-lg border p-4 flex flex-col gap-1",
+    "text-primary",
+    "shadow-sm shadow-black/10",
+    "dark:shadow-xs dark:shadow-black/25"
+  ],
   variants: {
     color: {
       default: "",

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { cn } from "$lib/utils.js";
+  import * as Card from "$lib/components/ui/card";
+  import { cn } from "$lib/utils";
   import { padToFullRange, type PivotedRow } from "$lib/utils/metrics-data";
   import type { AgentWithColor } from "$shared/rpc";
   import type { TimeRange } from "$shared/types";
@@ -135,47 +136,47 @@
   });
 </script>
 
-<div class={cn("rounded-lg border bg-card p-4 flex flex-col gap-3", className)}>
-  <div class="flex items-start justify-between gap-4">
-    <div>
-      <h3 class="text-sm font-semibold">{title}</h3>
-      {#if description}
-        <p class="text-xs text-muted-foreground mt-0.5">{description}</p>
-      {/if}
-    </div>
-  </div>
-
-  {#if data.length === 0 || series.length === 0}
-    <div
-      class={[
-        "min-h-50",
-        "flex flex-1 items-center justify-center",
-        "text-sm text-muted-foreground",
-      ]}
-    >
-      No data for this period.
-    </div>
-  {:else}
-    <div class="w-full min-h-50 lg:h-60">
-      {#if chartType === "line"}
-        <GapLineChart
-          {...commonChartProps}
-          {gaps}
-          colorGradient={gradient}
-          xDomainPadding={0.025}
-        />
-      {:else if chartType === "bar"}
-        <GradientBarChart {...commonChartProps} colorGradient={gradient} />
-      {:else if chartType === "area"}
-        <GapAreaChart
-          {...commonChartProps}
-          {gaps}
-          colorGradient={gradient}
-          xDomainPadding={0.025}
-        />
-      {/if}
-    </div>
-  {/if}
-
-  <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />
-</div>
+<Card.Root>
+  <Card.Header>
+    <Card.Title class="text-sm font-semibold">{title}</Card.Title>
+    {#if description}
+      <Card.Description class="text-sm">{description}</Card.Description>
+    {/if}
+  </Card.Header>
+  <Card.Content class={cn("flex flex-col", className)}>
+    {#if data.length === 0 || series.length === 0}
+      <div
+        class={[
+          "min-h-50",
+          "flex flex-1 items-center justify-center",
+          "text-sm text-muted-foreground",
+        ]}
+      >
+        No data for this period.
+      </div>
+    {:else}
+      <div class="w-full min-h-50 lg:h-60">
+        {#if chartType === "line"}
+          <GapLineChart
+            {...commonChartProps}
+            {gaps}
+            colorGradient={gradient}
+            xDomainPadding={0.025}
+          />
+        {:else if chartType === "bar"}
+          <GradientBarChart {...commonChartProps} colorGradient={gradient} />
+        {:else if chartType === "area"}
+          <GapAreaChart
+            {...commonChartProps}
+            {gaps}
+            colorGradient={gradient}
+            xDomainPadding={0.025}
+          />
+        {/if}
+      </div>
+    {/if}
+  </Card.Content>
+  <Card.Footer>
+    <AgentToggle {agents} {selectedIds} onToggle={onToggleAgent} />
+  </Card.Footer>
+</Card.Root>

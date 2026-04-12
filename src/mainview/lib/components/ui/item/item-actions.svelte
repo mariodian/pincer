@@ -13,7 +13,7 @@
 <div
 	bind:this={ref}
 	data-slot="item-actions"
-	class={cn("gap-2 flex items-center", className)}
+	class={cn("gap-2 flex items-end", className)}
 	{...restProps}
 >
 	{@render children?.()}

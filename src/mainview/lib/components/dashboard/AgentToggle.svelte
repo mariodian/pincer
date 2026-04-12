@@ -1,6 +1,7 @@
 <script lang="ts">
   import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
+  import Button from "../ui/button/button.svelte";
 
   interface Props {
     agents: AgentWithColor[];
@@ -8,6 +9,8 @@
     onToggle: (id: number) => void;
     class?: string;
   }
+
+  const BUTTON_SIZE = "sm";
 
   let { agents, selectedIds, onToggle, class: className }: Props = $props();
 
@@ -34,29 +37,19 @@
 </script>
 
 <div class={cn("flex flex-wrap items-center gap-1.5", className)}>
-  <button
-    type="button"
-    class={cn(
-      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-      "border shadow-xs",
-      allSelected
-        ? "bg-primary text-primary-foreground border-primary"
-        : "bg-background text-muted-foreground border-border hover:bg-muted",
-    )}
-    onclick={handleToggleAll}
+  <Button
+    variant={allSelected ? "default" : "outline"}
+    size={BUTTON_SIZE}
+    onclick={handleToggleAll}>All</Button
   >
-    All
-  </button>
   {#each agents as agent (agent.id)}
-    <button
-      type="button"
+    <Button
       class={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
-        "border shadow-xs",
-        isActive(agent.id)
-          ? "bg-background text-foreground border-border"
-          : "bg-muted/50 text-muted-foreground border-transparent line-through opacity-60",
+        "gap-2",
+        isActive(agent.id) ? "" : "line-through border-transparent! opacity-50",
       )}
+      variant="outline"
+      size={BUTTON_SIZE}
       onclick={() => onToggle(agent.id)}
     >
       <span
@@ -64,6 +57,6 @@
         style="background-color: {agent.color};"
       ></span>
       {agent.name}
-    </button>
+    </Button>
   {/each}
 </div>

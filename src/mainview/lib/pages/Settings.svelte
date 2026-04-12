@@ -89,7 +89,13 @@
 
   <PageBody>
     <Tabs.Root bind:value={activeTab} class="flex-1">
-      <Tabs.List class="mb-6">
+      <Tabs.List
+        class={[
+          "mb-6",
+          "shadow-2xs shadow-white/50 inset-shadow-xs inset-shadow-black/4",
+          "dark:shadow-xs dark:shadow-black/25 dark:inset-shadow-2xs dark:inset-shadow-white/2",
+        ]}
+      >
         <Tabs.Trigger value="general">General</Tabs.Trigger>
         <Tabs.Trigger value="advanced">Advanced</Tabs.Trigger>
         <Tabs.Trigger value="notifications">Notifications</Tabs.Trigger>

@@ -67,7 +67,8 @@
         class={[
           "min-w-0 m-1.5 py-5 px-4",
           "rounded-xl",
-          "shadow-xs shadow-black/10 dark:shadow-none",
+          "shadow-xs shadow-black/10 inset-shadow-2xs inset-shadow-white/50",
+          "dark:shadow-none dark:inset-shadow-none",
           "bg-content-background",
         ]}
       >

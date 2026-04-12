@@ -22,7 +22,7 @@
         {#if item.title === "Agents"}
           <Sidebar.MenuItem class="flex items-center gap-2">
             <Sidebar.MenuButton
-              class="min-w-8 duration-200 ease-linear"
+              class={["min-w-8 duration-200 ease-linear"]}
               tooltipContent="Agents"
               isActive={isActiveUrl(currentLocation, item.url)}
             >

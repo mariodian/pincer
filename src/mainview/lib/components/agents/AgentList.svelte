@@ -157,127 +157,139 @@
     {:else if agents.length > 0}
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-x-hidden">
         {#each agents as agent (agent.id)}
-          <div class="relative overflow-x-hidden">
-            <!-- Delete Confirmation -->
-            <div
-              class={[
-                "absolute w-full",
-                confirmDeleteId === agent.id
-                  ? "right-0 duration-300"
-                  : "-right-200 duration-300 opacity-0",
-              ]}
-            >
-              <Item.Root
-                variant="outline"
+          <div class="">
+            <div class={["relative overflow-x-hidden", "p-1"]}>
+              <!-- Delete Confirmation -->
+              <div
                 class={[
-                  "group",
-                  "min-h-18 h-full w-full",
-                  "border-red-700/80 bg-red-700/80",
-                  "dark:border-destructive/60 dark:bg-destructive/50",
+                  "rounded-md shadow-sm shadow-black/5 dark:shadow-none",
+                  "absolute w-full",
+                  confirmDeleteId === agent.id
+                    ? "right-0 duration-300"
+                    : "-right-200 duration-300 opacity-0",
                 ]}
               >
-                <Item.Content>
-                  <span
-                    class={[
-                      "text-sm font-medium",
-                      "text-primary-foreground dark:text-primary",
-                    ]}
-                  >
-                    Delete {agent.name}? This can't be undone.
-                  </span>
-                </Item.Content>
-                <Item.Actions>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onclick={() => handleDelete(agent)}
-                    disabled={deletingId === agent.id}
-                  >
-                    Yes, delete
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onclick={() => (confirmDeleteId = null)}
-                  >
-                    Cancel
-                  </Button>
-                </Item.Actions>
-              </Item.Root>
-            </div>
-
-            <!-- Agent Item -->
-            <div
-              class={[
-                "relative w-full",
-                confirmDeleteId === agent.id
-                  ? "-left-200 duration-300 opacity-0"
-                  : "left-0 duration-300",
-              ]}
-            >
-              <Item.Root
-                variant="outline"
-                class={["group", "bg-card", "min-h-18 h-full w-full"]}
-              >
-                <Item.Media class="min-h-9">
-                  <span
-                    class={[
-                      "shrink-0 size-3 rounded-full transition-all",
-                      getStatusClass(agent.status),
-                    ]}
-                    title={getStatusLabel(agent.status)}
-                  ></span>
-                </Item.Media>
-
-                <Item.Content>
-                  <div class="flex items-center gap-2">
-                    <Item.Title>{agent.name}</Item.Title>
+                <Item.Root
+                  variant="outline"
+                  class={[
+                    "group",
+                    "min-h-18 h-full w-full",
+                    "border-red-700/80 bg-red-700/80",
+                    "dark:border-destructive/60 dark:bg-destructive/50",
+                  ]}
+                >
+                  <Item.Content>
                     <span
-                      class="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium"
+                      class={[
+                        "text-sm font-medium",
+                        "text-primary-foreground dark:text-primary",
+                      ]}
                     >
-                      {getTypeName(agent.type)}
+                      Delete {agent.name}? This can't be undone.
                     </span>
-                    {#if !agent.enabled}
-                      <span
-                        class="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium"
-                      >
-                        Disabled
-                      </span>
-                    {/if}
-                  </div>
-                  <Item.Description class="text-xs"
-                    >{stripProtocol(agent.url)}:{agent.port}</Item.Description
-                  >
-                </Item.Content>
+                  </Item.Content>
+                  <Item.Actions>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onclick={() => handleDelete(agent)}
+                      disabled={deletingId === agent.id}
+                    >
+                      Yes, delete
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onclick={() => (confirmDeleteId = null)}
+                    >
+                      Cancel
+                    </Button>
+                  </Item.Actions>
+                </Item.Root>
+              </div>
 
-                <Item.Actions>
-                  <div
-                    class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onclick={() => onNavigate(`/agents/${agent.id}`)}
-                      title="Edit agent"
+              <!-- Agent Item -->
+              <div
+                class={[
+                  "rounded-md shadow-sm shadow-black/4",
+                  "dark:shadow-xs dark:shadow-black/20",
+                  "relative w-full",
+                  confirmDeleteId === agent.id
+                    ? "-left-200 duration-300 opacity-0"
+                    : "left-0 duration-300",
+                ]}
+              >
+                <Item.Root
+                  variant="outline"
+                  class={[
+                    "group",
+                    "bg-card ",
+                    "border-transparent",
+                    "ring-1 ring-black/5",
+                    "dark:inset-shadow-2xs dark:inset-shadow-white/2",
+                    "min-h-18 h-full w-full",
+                  ]}
+                >
+                  <Item.Media class="min-h-9">
+                    <span
+                      class={[
+                        "shrink-0 size-3 rounded-full transition-all",
+                        getStatusClass(agent.status),
+                      ]}
+                      title={getStatusLabel(agent.status)}
+                    ></span>
+                  </Item.Media>
+
+                  <Item.Content>
+                    <div class="flex items-center gap-2">
+                      <Item.Title>{agent.name}</Item.Title>
+                      <span
+                        class="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium"
+                      >
+                        {getTypeName(agent.type)}
+                      </span>
+                      {#if !agent.enabled}
+                        <span
+                          class="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium"
+                        >
+                          Disabled
+                        </span>
+                      {/if}
+                    </div>
+                    <Item.Description class="text-xs"
+                      >{stripProtocol(agent.url)}:{agent.port}</Item.Description
                     >
-                      <Icon name="edit" />
-                      <span class="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onclick={() => (confirmDeleteId = agent.id)}
-                      disabled={confirmDeleteId !== null ||
-                        deletingId === agent.id}
-                      title="Delete agent"
-                      class="hover:text-destructive hover:bg-destructive/10"
+                  </Item.Content>
+
+                  <Item.Actions>
+                    <div
+                      class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Icon name="delete" />
-                      <span class="sr-only">Delete</span>
-                    </Button>
-                  </div>
-                </Item.Actions>
-              </Item.Root>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onclick={() => onNavigate(`/agents/${agent.id}`)}
+                        title="Edit agent"
+                      >
+                        <Icon name="edit" />
+                        <span class="sr-only">Edit</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onclick={() => (confirmDeleteId = agent.id)}
+                        disabled={confirmDeleteId !== null ||
+                          deletingId === agent.id}
+                        title="Delete agent"
+                        class="hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Icon name="delete" />
+                        <span class="sr-only">Delete</span>
+                      </Button>
+                    </div>
+                  </Item.Actions>
+                </Item.Root>
+              </div>
             </div>
           </div>
         {/each}
