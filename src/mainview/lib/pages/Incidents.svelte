@@ -2,8 +2,8 @@
   import type { IncidentTimeline } from "$bun/rpc/incidentRPC";
   import { Timeline } from "$lib/components/incidents";
   import { Button } from "$lib/components/ui/button";
-  import * as Empty from "$lib/components/ui/empty/index.js";
-  import { ErrorState } from "$lib/components/ui/error-state/index.js";
+  import * as Empty from "$lib/components/ui/empty";
+  import { ErrorState } from "$lib/components/ui/error-state";
   import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
@@ -13,7 +13,7 @@
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
-  const DEFAULT_TIME_RANGE: TimeRange = "7d";
+  const DEFAULT_TIME_RANGE: TimeRange = "24h";
   const TIME_RANGES: TimeRangeOption[] = [
     { value: "24h", label: "24h" },
     { value: "7d", label: "7d" },
@@ -52,6 +52,20 @@
   function handleTimeRangeChange(range: TimeRange) {
     timeRange = range;
   }
+
+  // Derived state for empty check - ensures proper reactivity
+  let isEmpty = $derived(
+    timeline !== null &&
+      timeline.recent7d.events.length === 0 &&
+      timeline.older.events.length === 0 &&
+      timeline.recent7d.checks.length === 0,
+  );
+
+  let allEvents = $derived(
+    timeline ? [...timeline.recent7d.events, ...timeline.older.events] : [],
+  );
+
+  let allChecks = $derived(timeline ? timeline.recent7d.checks : []);
 </script>
 
 <div class="flex flex-col h-full">
@@ -110,32 +124,12 @@
         <Skeleton class="h-3 w-12 rounded-lg" />
         <Skeleton class="h-44 w-full rounded-lg" />
       </div>
-    {:else if timeline}
-      {@const allEvents = [
-        ...timeline.recent7d.events,
-        ...timeline.older.events,
-      ]}
-      {@const allChecks = timeline.recent7d.checks}
-
-      {#if allEvents.length === 0 && allChecks.length === 0}
-        <Empty.Root class="border border-dashed">
-          <Empty.Header>
-            <Empty.Media variant="icon">
-              <Icon name="trendingUpDown" class="text-muted-foreground" />
-            </Empty.Media>
-            <Empty.Title>No incidents</Empty.Title>
-            <Empty.Description>
-              No incidents have been recorded for the selected time period.
-            </Empty.Description>
-          </Empty.Header>
-        </Empty.Root>
-      {:else}
-        <Timeline
-          events={allEvents}
-          checks={allChecks}
-          agents={timeline.agents}
-        />
-      {/if}
+    {:else if timeline && !isEmpty}
+      <Timeline
+        events={allEvents}
+        checks={allChecks}
+        agents={timeline.agents}
+      />
     {:else}
       <Empty.Root class="border border-dashed">
         <Empty.Header>
@@ -143,7 +137,10 @@
             <Icon name="pulse" class="text-muted-foreground" />
           </Empty.Media>
           <Empty.Title>No data</Empty.Title>
-          <Empty.Description>Unable to load incident data.</Empty.Description>
+          <Empty.Description>
+            No events and incidents have been recorded for the selected time
+            period.
+          </Empty.Description>
         </Empty.Header>
       </Empty.Root>
     {/if}

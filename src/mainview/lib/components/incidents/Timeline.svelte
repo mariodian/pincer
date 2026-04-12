@@ -1,5 +1,7 @@
 <script lang="ts">
   import { CheckDotWithTooltip, IncidentCard } from "$lib/components/incidents";
+  import * as Empty from "$lib/components/ui/empty";
+  import { Icon } from "$lib/components/ui/icon";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { cn } from "$lib/utils";
   import {
@@ -83,11 +85,48 @@
     }
     return grouped;
   });
+
+  // Combine all days from both checks and incidents
+  const allDays = $derived.by(() => {
+    const days = new Set<string>();
+    for (const day of checksByDay.keys()) {
+      days.add(day);
+    }
+    for (const day of incidentsByDay.keys()) {
+      days.add(day);
+    }
+    // Sort days descending (newest first)
+    return Array.from(days).sort((a, b) => {
+      // Parse dates for comparison (formatShortDate produces strings like "Apr 12")
+      // We'll compare by finding the earliest check/incident for each day
+      const getDayTimestamp = (dayStr: string) => {
+        const dayChecks = checksByDay.get(dayStr);
+        const dayIncidents = incidentsByDay.get(dayStr);
+        let minTime = Infinity;
+        if (dayChecks) {
+          for (const check of dayChecks) {
+            minTime = Math.min(minTime, check.checkedAt);
+          }
+        }
+        if (dayIncidents) {
+          for (const [, incEvents] of dayIncidents) {
+            for (const evt of incEvents) {
+              minTime = Math.min(minTime, evt.eventAt);
+            }
+          }
+        }
+        return minTime;
+      };
+      return getDayTimestamp(b) - getDayTimestamp(a);
+    });
+  });
 </script>
 
 <Tooltip.Root tether={checksTooltipTether} delayDuration={0}>
   <div class={cn("space-y-6", className)}>
-    {#each Array.from(incidentsByDay.entries()) as [day, dayIncidents] (day)}
+    {#each allDays as day (day)}
+      {@const dayChecks = checksByDay.get(day)}
+      {@const dayIncidents = incidentsByDay.get(day)}
       <div class="relative">
         <!-- Day header -->
         <div
@@ -102,7 +141,7 @@
         </div>
 
         <!-- Raw checks section for this day -->
-        {#if checks.length > 0}
+        {#if dayChecks && dayChecks.length > 0}
           <div class="mb-6">
             <h4
               class="mb-3 text-xs font-medium uppercase text-muted-foreground"
@@ -110,7 +149,7 @@
               Raw Checks
             </h4>
             <div class="flex flex-wrap gap-px">
-              {#each checksByDay.get(day) || [] as check (check.id)}
+              {#each dayChecks as check (check.id)}
                 <CheckDotWithTooltip
                   {check}
                   tether={checksTooltipTether}
@@ -122,31 +161,41 @@
         {/if}
 
         <!-- Incidents for this day -->
-        <div class="space-y-4">
-          <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
-            Events
-          </h4>
-          {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
-            {@const firstEvent = incidentEvents[0]}
-            {@const agent = getAgent(firstEvent.agentId)}
-            {#if agent}
-              <IncidentCard
-                events={incidentEvents}
-                agentName={agent.name}
-                agentColor={agent.color}
-              />
-            {/if}
-          {/each}
-        </div>
+        {#if dayIncidents && dayIncidents.length > 0}
+          <div class="space-y-4">
+            <h4
+              class="mb-3 text-xs font-medium uppercase text-muted-foreground"
+            >
+              Events
+            </h4>
+            {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
+              {@const firstEvent = incidentEvents[0]}
+              {@const agent = getAgent(firstEvent.agentId)}
+              {#if agent}
+                <IncidentCard
+                  events={incidentEvents}
+                  agentName={agent.name}
+                  agentColor={agent.color}
+                />
+              {/if}
+            {/each}
+          </div>
+        {/if}
       </div>
     {/each}
 
-    {#if events.length === 0 && checks.length === 0}
-      <div class="flex flex-col items-center justify-center py-16 text-center">
-        <p class="text-muted-foreground">
-          No incidents or checks found for this period.
-        </p>
-      </div>
+    {#if events.length === 0}
+      <Empty.Root class="border border-dashed">
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Icon name="trendingUpDown" class="text-muted-foreground" />
+          </Empty.Media>
+          <Empty.Title>No incidents</Empty.Title>
+          <Empty.Description>
+            No incidents have been recorded for the selected time period.
+          </Empty.Description>
+        </Empty.Header>
+      </Empty.Root>
     {/if}
   </div>
 
