@@ -8,6 +8,7 @@ import {
   getLastUpdateCheck as getLastUpdateCheckFromDb,
   setLastUpdateCheck as setLastUpdateCheckToDb,
 } from "../storage/sqlite/appStateRepo";
+import { ONE_DAY_MS } from "../utils/constants";
 
 import { logger } from "../services/loggerService";
 
@@ -181,10 +182,9 @@ export async function performAutoUpdateCheck(): Promise<void> {
     }
 
     const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000;
 
     const lastCheckTimestamp = getLastUpdateCheckFromDb();
-    if (lastCheckTimestamp && now - lastCheckTimestamp < oneDayMs) {
+    if (lastCheckTimestamp && now - lastCheckTimestamp < ONE_DAY_MS) {
       logger.debug(
         "update",
         `Last check was ${new Date(lastCheckTimestamp).toLocaleString()}, skipping auto-check`,

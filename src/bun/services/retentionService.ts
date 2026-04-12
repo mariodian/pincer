@@ -1,12 +1,13 @@
 import { logger } from "./loggerService";
 import { countOldChecks, deleteOldChecks } from "../storage/sqlite/checksRepo";
+import { SEVEN_DAYS_MS, ONE_HOUR_MS } from "../utils/constants";
 
-// Retention configuration
+// Retention configuration (7 days)
 const CHECK_RETENTION_DAYS = 7;
-const CHECK_RETENTION_MS = CHECK_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+const CHECK_RETENTION_MS = SEVEN_DAYS_MS;
 
-// Background cleanup interval
-const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+// Background cleanup interval (1 hour)
+const CLEANUP_INTERVAL_MS = ONE_HOUR_MS;
 
 let cleanupIntervalId: NodeJS.Timeout | null = null;
 let cleanupStarted = false;

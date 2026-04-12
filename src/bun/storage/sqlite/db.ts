@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { runDatabaseInitialization } from "../../services/dbInitService";
 import { logger } from "../../services/loggerService";
 import { ensureAppDataDir } from "../../utils/fs";
+import { ONE_DAY_MS, ONE_DAY_SEC } from "../../utils/constants";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 let sqliteInstance: Database | null = null;
@@ -101,12 +102,9 @@ function startPruningJob(db: ReturnType<typeof drizzle>): void {
   // Run pruning on startup, then every 24 hours
   pruneOldStats(db);
 
-  setInterval(
-    () => {
-      pruneOldStats(db);
-    },
-    24 * 60 * 60 * 1000,
-  );
+  setInterval(() => {
+    pruneOldStats(db);
+  }, ONE_DAY_MS);
 }
 
 async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
@@ -119,7 +117,7 @@ async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
     if (retentionDays === 0) return;
 
     const cutoffTimestamp =
-      Math.floor(Date.now() / 1000) - retentionDays * 86400;
+      Math.floor(Date.now() / 1000) - retentionDays * ONE_DAY_SEC;
 
     db.run(`DELETE FROM stats WHERE hour_timestamp < ${cutoffTimestamp}`);
 

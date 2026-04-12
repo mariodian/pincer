@@ -15,7 +15,7 @@ import {
   groupEventsByIncident,
   splitIncidentsByActivity,
 } from "../utils/incident-grouping";
-import { SEVEN_DAYS_MS } from "../utils/constants";
+import { SEVEN_DAYS_MS, ONE_SECOND_MS } from "../utils/constants";
 
 export interface IncidentTimeline {
   agentId?: number;
@@ -84,8 +84,8 @@ export const incidentRequestHandlers = {
       const sevenDaysAgo = now - SEVEN_DAYS_MS;
 
       // Convert query range to milliseconds
-      const fromMs = from * 1000;
-      const toMs = to * 1000;
+      const fromMs = from * ONE_SECOND_MS;
+      const toMs = to * ONE_SECOND_MS;
 
       // Query ALL events for the full time range (incidents persist longer than checks)
       let allEvents: IncidentEvent[] = [];
@@ -120,7 +120,10 @@ export const incidentRequestHandlers = {
 
       // Query hourly stats for periods older than 7 days (for chart context)
       let olderStats: Array<AgentStatRow & { agentId: number }> = [];
-      const statsQueryEnd = Math.min(to, Math.floor(sevenDaysAgo / 1000));
+      const statsQueryEnd = Math.min(
+        to,
+        Math.floor(sevenDaysAgo / ONE_SECOND_MS),
+      );
       if (from < statsQueryEnd) {
         if (agentId !== undefined) {
           const stats = getAgentStats(agentId, from, statsQueryEnd);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CheckDot, IncidentCard } from "$lib/components/incidents";
+  import { CheckDotWithTooltip, IncidentCard } from "$lib/components/incidents";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { cn } from "$lib/utils";
   import {
@@ -26,6 +26,10 @@
   let activeCheck: Check | null = $state(null);
 
   const checksTooltipTether = TooltipPrimitive.createTether<Check>();
+
+  function handleCheckHover(check: Check | null) {
+    activeCheck = check;
+  }
 
   // Group events by incident
   const incidents = $derived.by(() => {
@@ -107,23 +111,11 @@
             </h4>
             <div class="flex flex-wrap gap-px">
               {#each checksByDay.get(day) || [] as check (check.id)}
-                <Tooltip.Trigger tether={checksTooltipTether} payload={check}>
-                  {#snippet child({ props })}
-                    {@const triggerPropsWithHover = {
-                      ...props,
-                      onpointerenter: (event: PointerEvent) => {
-                        const pointerEnter = (
-                          props as {
-                            onpointerenter?: (e: PointerEvent) => void;
-                          }
-                        ).onpointerenter;
-                        pointerEnter?.(event);
-                        activeCheck = check;
-                      },
-                    }}
-                    <CheckDot {check} triggerProps={triggerPropsWithHover} />
-                  {/snippet}
-                </Tooltip.Trigger>
+                <CheckDotWithTooltip
+                  {check}
+                  tether={checksTooltipTether}
+                  onHover={handleCheckHover}
+                />
               {/each}
             </div>
           </div>
