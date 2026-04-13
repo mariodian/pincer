@@ -20,6 +20,7 @@
   let savedPollingIntervalSec = $state(30);
   let autoCheckUpdate = $state(true);
   let useNativeTray = $state(false);
+  let platform = $state<"macos" | "win" | "linux" | "">("");
 
   async function loadSettings() {
     try {
@@ -28,11 +29,13 @@
       const settings: AdvancedSettings = await rpc.request.getAdvancedSettings(
         {},
       );
+      const platformResult = await rpc.request.getPlatform({});
 
       pollingIntervalSec = Math.round(settings.pollingInterval / 1000);
       savedPollingIntervalSec = pollingIntervalSec;
       autoCheckUpdate = settings.autoCheckUpdate;
       useNativeTray = settings.useNativeTray;
+      platform = platformResult.os;
     } catch (error) {
       console.error("Failed to load advanced settings:", error);
     } finally {
@@ -142,9 +145,12 @@
           class="border-none bg-transparent! shadow-none p-0"
           id="use-native-tray"
           title="Use native tray"
-          description="Native tray integrates better with your platform's appearance but the custom tray offers a more polished design. Restart required for changes to take effect."
-          checked={useNativeTray}
+          description={platform === "linux"
+            ? "Linux always uses native tray. Custom tray popover is not supported due to libayatana-appindicator limitations."
+            : "Native tray integrates better with your platform's appearance but the custom tray offers a more polished design. Restart required for changes to take effect."}
+          checked={platform === "linux" ? true : useNativeTray}
           onCheckedChange={handleUseNativeTrayChange}
+          disabled={platform === "linux"}
         />
       </Card.Content>
     </Card.Root>

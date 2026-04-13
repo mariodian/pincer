@@ -25,7 +25,8 @@ import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
 import { isMacOS, isWindows } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { readWindowConfig } from "./utils/windowConfig";
+import { POPOVER_CONFIGS, readWindowConfig } from "./utils/windowConfig";
+import type { PopoverWindowConfig } from "./utils/windowConfig";
 
 // Re-export for backward compat with setRefreshCallback in this file
 export { refreshAndPush };
@@ -34,8 +35,26 @@ const platformIsMacOS = isMacOS();
 const platformIsWindows = isWindows();
 const platformIsLinux = !platformIsMacOS && !platformIsWindows;
 
-/** Check if native menu should be used based on advanced settings. */
+/** Get platform-specific popover window configuration */
+function getPopoverWindowConfig(): PopoverWindowConfig {
+  if (platformIsMacOS) {
+    return POPOVER_CONFIGS.macos;
+  }
+  if (platformIsWindows) {
+    return POPOVER_CONFIGS.windows;
+  }
+  return POPOVER_CONFIGS.linux;
+}
+
+/** Check if native menu should be used based on advanced settings.
+ *  Note: Linux always uses native menu due to libayatana-appindicator limitations
+ *  (tray icon click events are not supported).
+ */
 function useNativeMenu(): boolean {
+  // Force native menu on Linux - tray click events don't work with libayatana-appindicator
+  if (platformIsLinux) {
+    return true;
+  }
   return getAdvancedSettings().useNativeTray;
 }
 
@@ -83,9 +102,10 @@ let useNativeTrayCached: boolean | null = null;
 export async function initializeTray() {
   // Cache the useNativeTray setting at startup - changes require restart
   useNativeTrayCached = useNativeMenu();
+
   logger.info(
     "tray",
-    `Tray initializing with useNativeTray=${useNativeTrayCached}`,
+    `Tray initializing with useNativeTray=${useNativeTrayCached}${platformIsLinux ? " (forced on Linux)" : ""}`,
   );
 
   // Create tray icon
@@ -119,37 +139,34 @@ export async function initializeTray() {
 
         // @ts-ignore - getBounds may not be in types
         const bounds = tray.getBounds();
-        const windowConfig = await readWindowConfig("popover");
+        const popoverConfig = getPopoverWindowConfig();
+
+        logger.debug(
+          "tray",
+          `Creating popover: bounds=${JSON.stringify(bounds)}, platform=${process.platform}, config=${JSON.stringify(popoverConfig)}`,
+        );
+
         const wc: Record<string, unknown> = {
-          title: "",
+          title: "test",
           url: await getViewUrl("tray-popover.html"),
-          titleBarStyle: "hiddenInset",
           rpc: trayPopoverRPC,
-          ...(platformIsMacOS
-            ? {
-                trafficLights: windowConfig.trafficLights,
-                titleBarStyle: windowConfig.titleBarStyle,
-                transparent: windowConfig.transparent,
-                styleMask: {
-                  Borderless: true,
-                  Titled: false,
-                  Closable: false,
-                  Miniaturizable: false,
-                  Resizable: false,
-                },
-              }
-            : {}),
+          titleBarStyle: popoverConfig.titleBarStyle,
+          transparent: popoverConfig.transparent,
+          trafficLights: popoverConfig.trafficLights,
           frame: {
             width: POPOVER_WINDOW.width,
             height: POPOVER_WINDOW.height,
             x: bounds.x,
             y: 0 + bounds.height,
           },
+          // styleMask is macOS-only
+          ...(popoverConfig.styleMask ? { styleMask: popoverConfig.styleMask } : {}),
         };
 
         popoverWindow = new BrowserWindow(wc);
 
-        if (platformIsMacOS) {
+        if (popoverConfig.applyMacOSEffects) {
+          const windowConfig = await readWindowConfig("popover");
           applyMacOSWindowEffects("popover", popoverWindow, windowConfig);
         }
         getStatusSyncService().setPopoverWindow(popoverWindow);

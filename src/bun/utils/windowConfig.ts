@@ -17,6 +17,24 @@ export interface WindowConfig {
   minHeight?: number;
 }
 
+export interface StyleMaskConfig {
+  Borderless?: boolean;
+  Titled?: boolean;
+  Closable?: boolean;
+  Miniaturizable?: boolean;
+  Resizable?: boolean;
+}
+
+export interface PopoverWindowConfig {
+  titleBarStyle: "hiddenInset" | "hidden" | "default";
+  transparent: boolean;
+  trafficLights: boolean;
+  /** macOS-only window style mask */
+  styleMask?: StyleMaskConfig;
+  /** Whether to apply macOS-specific window effects (vibrancy, etc.) */
+  applyMacOSEffects: boolean;
+}
+
 export type WindowName = "main" | "popover";
 
 export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
@@ -45,6 +63,38 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
     nativeDragRegion: false,
     nativeDragRegionX: 0,
     nativeDragRegionHeight: 0,
+  },
+};
+
+/** Platform-specific popover window configurations */
+export const POPOVER_CONFIGS: Record<
+  "macos" | "linux" | "windows",
+  PopoverWindowConfig
+> = {
+  macos: {
+    titleBarStyle: "hiddenInset",
+    transparent: true,
+    trafficLights: false,
+    styleMask: {
+      Borderless: true,
+      Titled: false,
+      Closable: false,
+      Miniaturizable: false,
+      Resizable: false,
+    },
+    applyMacOSEffects: true,
+  },
+  linux: {
+    titleBarStyle: "hidden",
+    transparent: false,
+    trafficLights: false,
+    applyMacOSEffects: false,
+  },
+  windows: {
+    titleBarStyle: "hidden",
+    transparent: false,
+    trafficLights: false,
+    applyMacOSEffects: false,
   },
 };
 

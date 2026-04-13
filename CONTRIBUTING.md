@@ -60,6 +60,10 @@ bun run dev
 - HMR for secondary windows requires Vite URL routing in development
 - Run `bun run build:native-libs` if the app crashes on startup (macOS native effects)
 
+### Platform Limitations
+
+- **Linux**: Custom tray popover is not supported due to Electrobun's use of deprecated `libayatana-appindicator`. See [docs/linux-tray-limitation.md](./docs/linux-tray-limitation.md) for details.
+
 ## Code Style
 
 Pincer uses strict TypeScript and Svelte 5. Before submitting, run:
