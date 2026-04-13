@@ -5,6 +5,23 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0] - 2026-04-13
+
+### Added
+
+- Added Linux tray icon support and updated tray manager behavior for Linux environments.
+- Added support for Hermes and OpenCode agent types across agent configuration and listing flows.
+
+### Changed
+
+- Refactored incident status rendering by removing `CheckDotWithTooltip` to improve renderer performance.
+
+### Fixed
+
+- Fixed AgentForm URL input behavior by disabling browser autocomplete and spellcheck.
+- Fixed OpenClaw default port configuration and aligned OpenCode agent type handling.
+- Fixed Linux tray behavior by enforcing native tray usage and documenting platform limitations.
+
 ## [v0.1.9] - 2026-04-12
 
 ### Added
