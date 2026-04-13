@@ -36,12 +36,12 @@
   }: Props = $props();
 
   const isEdit = $derived(agentId !== undefined);
-  const DEFAULT_PORT = "18790";
+  const FALLBACK_PORT = 18790;
 
   let type = $state("");
   let name = $state("");
   let url = $state("");
-  let port = $state(DEFAULT_PORT);
+  let port = $state(String(FALLBACK_PORT));
   let enabled = $state(true);
   let healthEndpoint = $state("/health");
   let statusShape = $state("always_ok");
@@ -56,6 +56,7 @@
   type AgentTypeInfo = {
     id: string;
     name: string;
+    defaultPort: number;
     statusShapeOptions: { value: string; label: string }[];
   };
   let agentTypes = $state<AgentTypeInfo[]>([]);
@@ -67,6 +68,11 @@
 
   const isCustom = $derived(type === "custom");
 
+  const defaultPortForType = $derived.by(() => {
+    const selected = agentTypes.find((t) => t.id === type);
+    return selected?.defaultPort ?? FALLBACK_PORT;
+  });
+
   const hasUnsavedChanges = $derived.by(() => {
     if (loading || saving) return false;
     if (isEdit && initialEditSnapshot) {
@@ -77,10 +83,11 @@
       return Object.keys(updates).length > 0;
     }
     // Add mode: dirty if any field differs from defaults
+    const expectedDefaultPort = String(defaultPortForType);
     return (
       name !== "" ||
       url !== "" ||
-      port !== DEFAULT_PORT ||
+      port !== expectedDefaultPort ||
       enabled !== true ||
       type !== ""
     );
@@ -164,6 +171,14 @@
   $effect(() => {
     if (isEdit) loading = true;
     loadData();
+  });
+
+  // Reset port to default when agent type changes in add mode
+  $effect(() => {
+    if (!isEdit && type && agentTypes.length > 0) {
+      const newDefault = defaultPortForType;
+      port = String(newDefault);
+    }
   });
 
   function validate(): boolean {

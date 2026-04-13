@@ -9,6 +9,7 @@ export interface AgentTypeConfig {
   headers?: Record<string, string>;
   parseStatus: StatusParser;
   timeout?: number;
+  defaultPort: number;
 }
 
 /** Signature for a health response parser. */
@@ -54,6 +55,7 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthEndpoint: "/health",
     healthMethod: "GET",
     parseStatus: STATUS_PARSERS.always_ok,
+    defaultPort: 18790,
   },
   openclaw: {
     id: "openclaw",
@@ -61,6 +63,7 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthEndpoint: "/health",
     healthMethod: "GET",
     parseStatus: parseStandardAgentStatus,
+    defaultPort: 18790,
   },
   opencrabs: {
     id: "opencrabs",
@@ -68,6 +71,15 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthEndpoint: "/a2a/health",
     healthMethod: "GET",
     parseStatus: parseStandardAgentStatus,
+    defaultPort: 18790,
+  },
+  hermes: {
+    id: "hermes",
+    name: "Hermes",
+    healthEndpoint: "/health",
+    healthMethod: "GET",
+    parseStatus: parseStandardAgentStatus,
+    defaultPort: 8642,
   },
 };
 
@@ -75,6 +87,14 @@ export function getAgentType(id: string): AgentTypeConfig | undefined {
   return AGENT_TYPES[id];
 }
 
-export function getAgentTypeList(): { id: string; name: string }[] {
-  return Object.values(AGENT_TYPES).map(({ id, name }) => ({ id, name }));
+export function getAgentTypeList(): {
+  id: string;
+  name: string;
+  defaultPort: number;
+}[] {
+  return Object.values(AGENT_TYPES).map(({ id, name, defaultPort }) => ({
+    id,
+    name,
+    defaultPort,
+  }));
 }

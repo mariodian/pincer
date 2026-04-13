@@ -31,6 +31,7 @@ export type AgentRPCType = {
         response: {
           id: string;
           name: string;
+          defaultPort: number;
           statusShapeOptions: { value: string; label: string }[];
         }[];
       };
