@@ -453,6 +453,10 @@
                 placeholder="example.com or http(s)://example.com"
                 bind:value={url}
                 aria-invalid={!!errors.url}
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
               />
               {#if errors.url}
                 <p class="text-xs text-destructive">{errors.url}</p>
