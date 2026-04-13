@@ -13,6 +13,7 @@ export const TRAY_TITLE = "Pincer";
 export const TRAY_ICON_SIZE = 22;
 export const TRAY_ICON_SIZE_WINDOWS = 16;
 export const TRAY_ICON_PATH = "views://resources/tray-icon.png";
+export const TRAY_ICON_LINUX_PATH = "views://resources/tray-icon-symbolic.svg";
 
 // LocalStorage keys
 export const KEY_AGENTS = "agents";

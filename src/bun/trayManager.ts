@@ -4,6 +4,7 @@ import { BrowserWindow, Tray, Utils } from "electrobun/bun";
 import { sortAgentsByStatus } from "../shared/agent-helpers";
 import {
   POPOVER_WINDOW,
+  TRAY_ICON_LINUX_PATH,
   TRAY_ICON_PATH,
   TRAY_ICON_SIZE,
   TRAY_ICON_SIZE_WINDOWS,
@@ -31,6 +32,7 @@ export { refreshAndPush };
 
 const platformIsMacOS = isMacOS();
 const platformIsWindows = isWindows();
+const platformIsLinux = !platformIsMacOS && !platformIsWindows;
 
 /** Check if native menu should be used based on advanced settings. */
 function useNativeMenu(): boolean {
@@ -70,6 +72,7 @@ const NAV_MENU_ITEMS = [
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
 const iconSize = platformIsWindows ? TRAY_ICON_SIZE_WINDOWS : TRAY_ICON_SIZE;
+const iconPath = platformIsLinux ? TRAY_ICON_LINUX_PATH : TRAY_ICON_PATH;
 
 // Cache the useNativeTray setting at startup - changes require restart
 let useNativeTrayCached: boolean | null = null;
@@ -87,7 +90,7 @@ export async function initializeTray() {
 
   // Create tray icon
   tray = new Tray({
-    image: TRAY_ICON_PATH,
+    image: iconPath,
     template: true,
     width: iconSize,
     height: iconSize,
