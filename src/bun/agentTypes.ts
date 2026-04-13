@@ -63,7 +63,7 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthEndpoint: "/health",
     healthMethod: "GET",
     parseStatus: parseStandardAgentStatus,
-    defaultPort: 18790,
+    defaultPort: 18789,
   },
   opencrabs: {
     id: "opencrabs",
@@ -80,6 +80,14 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthMethod: "GET",
     parseStatus: parseStandardAgentStatus,
     defaultPort: 8642,
+  },
+  opencode: {
+    id: "opencode",
+    name: "OpenCode",
+    healthEndpoint: "/global/health",
+    healthMethod: "GET",
+    parseStatus: parseStandardAgentStatus,
+    defaultPort: 4096,
   },
 };
 
