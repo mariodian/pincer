@@ -87,6 +87,10 @@
         return "OpenClaw";
       case "opencrabs":
         return "OpenCrabs";
+      case "hermes":
+        return "Hermes";
+      case "opencode":
+        return "OpenCode";
       default:
         return type;
     }
