@@ -25,6 +25,8 @@
     let degraded = 0;
     for (const check of checks) {
       if (check.status === "error") failed++;
+      // Note: offline is treated as degraded per project convention (see HEAT-07 pattern).
+      // This is intentional as offline indicates reduced monitoring capability.
       else if (check.status === "degraded" || check.status === "offline") degraded++;
     }
     return (failed + 0.5 * degraded) / checks.length;
@@ -43,13 +45,12 @@
   // Format time period for tooltip title (D-01)
   function formatTimePeriod(slot: TimeSlot, range: TimeRange): string {
     const { startTime, endTime } = slot;
+    const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
     if (range === "24h") {
       // 24h format: "10:00 - 10:10"
-      const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
       return `${formatTime(startTime)} - ${formatTime(endTime)}`;
     } else {
       // 7d format: "Mon 14:00 - 15:00"
-      const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
       const dayName = startTime.toLocaleDateString([], { weekday: "short" });
       return `${dayName} ${formatTime(startTime)} - ${formatTime(endTime)}`;
     }
@@ -71,7 +72,7 @@
   const counts = $derived(getStatusCounts(slot.checks));
 </script>
 
-<Tooltip.Root>
+<Tooltip.Root disableHoverableContent>
   <Tooltip.Trigger>
     {#snippet child({ props })}
       <div
