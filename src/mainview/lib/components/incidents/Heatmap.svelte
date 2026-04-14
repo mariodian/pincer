@@ -1,5 +1,6 @@
 <script lang="ts">
   import { cn } from "$lib/utils";
+  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
   import type { Check } from "$shared/types";
 
   interface Props {
@@ -52,10 +53,19 @@
   const heatmapColor = $derived(getHeatmapVar(intensity));
 </script>
 
-<div
-  class={cn("rounded-xs transition-colors duration-100", cellSize, className)}
-  style="background-color: {heatmapColor};"
-  title={checks.length > 0
-    ? `${checks.filter((c) => c.status === "ok").length} ok, ${checks.filter((c) => c.status === "degraded").length} degraded, ${checks.filter((c) => c.status === "error").length} failed`
-    : "No checks"}
-></div>
+<Tooltip.Root>
+  <Tooltip.Trigger>
+    {#snippet child({ props })}
+      <div
+        class={cn("rounded-xs transition-colors duration-100", cellSize, className)}
+        style="background-color: {heatmapColor};"
+        {...props}
+      ></div>
+    {/snippet}
+  </Tooltip.Trigger>
+  <Tooltip.Content>
+    {checks.length > 0
+      ? `${checks.filter((c) => c.status === "ok").length} ok, ${checks.filter((c) => c.status === "degraded").length} degraded, ${checks.filter((c) => c.status === "error").length} failed`
+      : "No checks"}
+  </Tooltip.Content>
+</Tooltip.Root>
