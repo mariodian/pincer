@@ -27,7 +27,8 @@
       if (check.status === "error") failed++;
       // Note: offline is treated as degraded per project convention (see HEAT-07 pattern).
       // This is intentional as offline indicates reduced monitoring capability.
-      else if (check.status === "degraded" || check.status === "offline") degraded++;
+      else if (check.status === "degraded" || check.status === "offline")
+        degraded++;
     }
     return (failed + 0.5 * degraded) / checks.length;
   }
@@ -46,8 +47,14 @@
   // Format time period for tooltip title (D-01)
   function formatTimePeriod(slot: TimeSlot, range: TimeRange): string {
     const { startTime, endTime } = slot;
-    const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
-    const formatDate = (d: Date) => d.toLocaleDateString([], { month: "short", day: "numeric" });
+    const formatTime = (d: Date) =>
+      d.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+    const formatDate = (d: Date) =>
+      d.toLocaleDateString([], { month: "short", day: "numeric" });
 
     if (range === "24h") {
       // 24h format: always show date since window spans two days
@@ -55,7 +62,11 @@
       return `${formatDate(startTime)} ${formatTime(startTime)} - ${formatTime(endTime)}`;
     } else {
       // 7d format: "Mon Apr 14 14:00 - 15:00"
-      const dayName = startTime.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+      const dayName = startTime.toLocaleDateString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
       return `${dayName} ${formatTime(startTime)} - ${formatTime(endTime)}`;
     }
   }
@@ -64,9 +75,11 @@
   function getStatusCounts(checks: Check[]) {
     return {
       total: checks.length,
-      ok: checks.filter(c => c.status === "ok").length,
-      degraded: checks.filter(c => c.status === "degraded" || c.status === "offline").length,
-      failed: checks.filter(c => c.status === "error").length,
+      ok: checks.filter((c) => c.status === "ok").length,
+      degraded: checks.filter(
+        (c) => c.status === "degraded" || c.status === "offline",
+      ).length,
+      failed: checks.filter((c) => c.status === "error").length,
     };
   }
 
@@ -81,7 +94,11 @@
   <Tooltip.Trigger>
     {#snippet child({ props })}
       <div
-        class={cn("rounded-xs transition-colors duration-100", cellSize, className)}
+        class={cn(
+          "rounded-xs transition-colors duration-100",
+          cellSize,
+          className,
+        )}
         style="background-color: {heatmapColor};"
         {...props}
       ></div>
@@ -91,7 +108,8 @@
     <div class="text-xs font-medium">{timePeriod}</div>
     {#if counts.total > 0}
       <div class="text-xs text-muted-foreground">
-        {counts.total} checks | {counts.ok} ok | {counts.degraded} degraded | {counts.failed} failed
+        {counts.total} checks | {counts.ok} ok | {counts.degraded} degraded | {counts.failed}
+        failed
       </div>
     {:else}
       <div class="text-xs text-muted-foreground">No checks</div>

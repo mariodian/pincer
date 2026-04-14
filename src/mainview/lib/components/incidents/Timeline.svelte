@@ -19,7 +19,13 @@
     class?: string;
   }
 
-  let { events, checks, agents, range = "24h", class: className }: Props = $props();
+  let {
+    events,
+    checks,
+    agents,
+    range = "24h",
+    class: className,
+  }: Props = $props();
 
   // Group events by incident
   const incidents = $derived.by(() => {
@@ -111,7 +117,9 @@
         <!-- Incidents for this day -->
         {#if dayIncidents && dayIncidents.length > 0}
           <div class="space-y-4">
-            <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
+            <h4
+              class="mb-3 text-xs font-medium uppercase text-muted-foreground"
+            >
               Events
             </h4>
             {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
