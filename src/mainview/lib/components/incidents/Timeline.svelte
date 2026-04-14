@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CheckDot, IncidentCard } from "$lib/components/incidents";
+  import { CheckDot, IncidentCard, Heatmap } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
   import { Icon } from "$lib/components/ui/icon";
   import { cn } from "$lib/utils";
