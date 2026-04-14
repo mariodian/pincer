@@ -2,10 +2,10 @@
   import { Heatmap, IncidentCard } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
   import { Icon } from "$lib/components/ui/icon";
+  import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
   import { cn } from "$lib/utils";
   import { formatShortDate } from "$lib/utils/datetime";
   import type { Check, IncidentEvent, TimeRange } from "$shared/types";
-  import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
 
   interface Props {
     events: IncidentEvent[];
@@ -93,10 +93,10 @@
 </script>
 
 <TooltipProvider delayDuration={0} skipDelayDuration={300}>
-  <div class={cn("space-y-6", className)}>
+  <div class={cn("space-y-3", className)}>
     <!-- Single heatmap for the entire period (24h or 7d) -->
     {#if checks.length > 0}
-      <Heatmap {checks} {range} cellSize="size-4" />
+      <Heatmap {range} {checks} cellSize={4} />
     {/if}
 
     {#each allDays as day (day)}

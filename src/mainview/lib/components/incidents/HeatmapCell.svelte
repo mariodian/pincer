@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { cn } from "$lib/utils";
   import * as Tooltip from "$lib/components/ui/tooltip";
+  import { cn } from "$lib/utils";
   import type { Check, TimeRange } from "$shared/types";
 
   interface TimeSlot {
@@ -12,11 +12,13 @@
   interface Props {
     slot: TimeSlot;
     range: TimeRange;
-    cellSize?: string;
+    cellSize?: number;
     class?: string;
   }
 
-  let { slot, range, cellSize = "size-4", class: className }: Props = $props();
+  let { slot, range, cellSize = 4, class: className }: Props = $props();
+
+  const CELL_SIZE = $derived(`calc(var(--spacing) * ${cellSize})`);
 
   // Calculate intensity from checks
   function calculateIntensity(checks: Check[]): number {
@@ -95,11 +97,10 @@
     {#snippet child({ props })}
       <div
         class={cn(
-          "rounded-xs transition-colors duration-100",
-          cellSize,
+          "block shrink-0 rounded-xs transition-colors duration-100",
           className,
         )}
-        style="background-color: {heatmapColor};"
+        style={`background-color: ${heatmapColor}; width: ${CELL_SIZE}; min-width: ${CELL_SIZE}; max-width: ${CELL_SIZE}; height: ${CELL_SIZE}; min-height: ${CELL_SIZE}; max-height: ${CELL_SIZE}; box-sizing: border-box;`}
         {...props}
       ></div>
     {/snippet}

@@ -121,6 +121,7 @@
       </ErrorState>
     {:else if loading}
       <div class="space-y-4">
+        <Skeleton class="h-29 w-120 mb-6 rounded-lg" />
         <Skeleton class="h-8 w-full mb-6 rounded-lg" />
         <Skeleton class="h-3 w-20 rounded-lg" />
         <Skeleton class="h-40 w-full mb-6 rounded-lg" />

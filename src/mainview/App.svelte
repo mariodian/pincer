@@ -66,7 +66,7 @@
         data-slot="content"
         class={[
           "w-full m-1.5 py-5 px-4",
-          "rounded-xl",
+          "rounded-xl overflow-x-hidden",
           "shadow-xs shadow-black/10 dark:shadow-none",
           "bg-content-background",
         ]}

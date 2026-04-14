@@ -1,13 +1,13 @@
 <script lang="ts">
-  import HeatmapCell from "./HeatmapCell.svelte";
-  import type { Check, TimeRange } from "$shared/types";
   import { cn } from "$lib/utils";
+  import type { Check, TimeRange } from "$shared/types";
+  import HeatmapCell from "./HeatmapCell.svelte";
 
   interface Props {
     checks: Check[];
     range: TimeRange;
     columns?: number;
-    cellSize?: string;
+    cellSize?: number;
     class?: string;
     anchorDate?: Date;
   }
@@ -15,11 +15,13 @@
   let {
     checks,
     range,
-    columns,
-    cellSize = "size-4",
+    columns = 24,
+    cellSize = 4,
     class: className,
     anchorDate = new Date(),
   }: Props = $props();
+
+  const CELL_SIZE = $derived(`calc(var(--spacing) * ${cellSize})`);
 
   // Create time buckets from checks
   // D-03: 24h view = 24 cols × 6 rows of 10-min cells = 144 cells
@@ -158,11 +160,13 @@
   const timeBuckets = $derived(createTimeBuckets(checks, range, anchorDate));
 </script>
 
-<div
-  class={cn("grid gap-1 grid-cols-24", className)}
-  style={columns ? `grid-template-columns: repeat(${columns}, 1fr);` : ""}
->
-  {#each timeBuckets as slot (slot.startTime.getTime())}
-    <HeatmapCell {slot} {range} {cellSize} />
-  {/each}
+<div class="overflow-x-auto w-full min-w-0">
+  <div
+    class={cn("grid gap-1 mb-3", className)}
+    style={`grid-template-columns: repeat(${columns}, minmax(0, ${CELL_SIZE})); width: max-content;`}
+  >
+    {#each timeBuckets as slot (slot.startTime.getTime())}
+      <HeatmapCell {slot} {range} {cellSize} />
+    {/each}
+  </div>
 </div>
