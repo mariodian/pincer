@@ -5,6 +5,26 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.1] - 2026-04-15
+
+### Added
+
+- Added heatmap component with CSS variable system (`--heatmap` through `--heatmap-5`) for color-coded status visualization.
+- Added HeatmapCell component with time-period tooltip showing status breakdown (ok/degraded/failed counts).
+- Added 24h view (144 ten-minute cells) and 7d view (168 hourly cells) for incident heatmap.
+- Added error intensity formula: `(failed + 0.5 * degraded) / total_checks` for perceptual weighting.
+- Added horizontal scroll for heatmap grid overflow.
+
+### Changed
+
+- Replaced raw CheckDot grid with glanceable Heatmap component in Timeline.
+- Updated heatmap CSS variables to use Tailwind CSS color palette with oklch() color space.
+- Enhanced tooltip content layout and styling in HeatmapCell.
+
+### Fixed
+
+- Fixed heatmap lightness for light mode visibility.
+
 ## [v0.3.0] - 2026-04-14
 
 ### Added
