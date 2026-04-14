@@ -5,6 +5,7 @@
   import { cn } from "$lib/utils";
   import { formatShortDate } from "$lib/utils/datetime";
   import type { Check, IncidentEvent, TimeRange } from "$shared/types";
+  import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
 
   interface Props {
     events: IncidentEvent[];
@@ -37,7 +38,11 @@
   });
 
   const getAgent = (agentId: number) => {
-    return agents.find((a) => a.id === agentId);
+    const agent = agents.find((a) => a.id === agentId);
+    if (!agent) {
+      console.warn(`Agent ${agentId} not found in agents list`);
+    }
+    return agent;
   };
 
   // Pre-group and sort checks once so hover-driven tooltip updates do not
@@ -109,70 +114,72 @@
   });
 </script>
 
-<div class={cn("space-y-6", className)}>
-  {#each allDays as day (day)}
-    {@const dayChecks = checksByDay.get(day)}
-    {@const dayIncidents = incidentsByDay.get(day)}
-    <div class="relative">
-      <!-- Day header -->
-      <div
-        class={cn(
-          "sticky top-0 -mx-2 px-2 z-10 mb-4 py-2",
-          "flex items-center gap-4",
-          "bg-content-background border-content-background",
-        )}
-      >
-        <h3 class="text-sm font-medium">{day}</h3>
-        <div class="flex-1 border-t"></div>
+<TooltipProvider delayDuration={0} skipDelayDuration={300}>
+  <div class={cn("space-y-6", className)}>
+    {#each allDays as day (day)}
+      {@const dayChecks = checksByDay.get(day)}
+      {@const dayIncidents = incidentsByDay.get(day)}
+      <div class="relative">
+        <!-- Day header -->
+        <div
+          class={cn(
+            "sticky top-0 -mx-2 px-2 z-10 mb-4 py-2",
+            "flex items-center gap-4",
+            "bg-content-background border-content-background",
+          )}
+        >
+          <h3 class="text-sm font-medium">{day}</h3>
+          <div class="flex-1 border-t"></div>
+        </div>
+
+        <!-- Heatmap section for this day (Phase 4) -->
+        {#if dayChecks && dayChecks.length > 0}
+          <div class="mb-6">
+            <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
+              Raw Checks
+            </h4>
+            <Heatmap checks={dayChecks} {range} cellSize="size-4" />
+          </div>
+        {/if}
+
+        <!-- Incidents for this day -->
+        {#if dayIncidents && dayIncidents.length > 0}
+          <div class="space-y-4">
+            <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
+              Events
+            </h4>
+            {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
+              {@const firstEvent = incidentEvents[0]}
+              {@const agent = getAgent(firstEvent.agentId)}
+              {#if agent}
+                <IncidentCard
+                  events={incidentEvents}
+                  agentName={agent.name}
+                  agentColor={agent.color}
+                />
+              {:else}
+                <div class="text-xs text-muted-foreground">
+                  Unknown agent (ID: {firstEvent.agentId})
+                </div>
+              {/if}
+            {/each}
+          </div>
+        {/if}
       </div>
+    {/each}
 
-      <!-- Heatmap section for this day (Phase 4) -->
-      {#if dayChecks && dayChecks.length > 0}
-        <div class="mb-6">
-          <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
-            Raw Checks
-          </h4>
-          <Heatmap checks={dayChecks} {range} cellSize="size-4" />
-        </div>
-      {/if}
-
-      <!-- Incidents for this day -->
-      {#if dayIncidents && dayIncidents.length > 0}
-        <div class="space-y-4">
-          <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
-            Events
-          </h4>
-          {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
-            {@const firstEvent = incidentEvents[0]}
-            {@const agent = getAgent(firstEvent.agentId)}
-            {#if agent}
-              <IncidentCard
-                events={incidentEvents}
-                agentName={agent.name}
-                agentColor={agent.color}
-              />
-            {:else}
-              <div class="text-xs text-muted-foreground">
-                Unknown agent (ID: {firstEvent.agentId})
-              </div>
-            {/if}
-          {/each}
-        </div>
-      {/if}
-    </div>
-  {/each}
-
-  {#if events.length === 0}
-    <Empty.Root class="border border-dashed">
-      <Empty.Header>
-        <Empty.Media variant="icon">
-          <Icon name="trendingUpDown" class="text-muted-foreground" />
-        </Empty.Media>
-        <Empty.Title>No incidents</Empty.Title>
-        <Empty.Description>
-          No incidents have been recorded for the selected time period.
-        </Empty.Description>
-      </Empty.Header>
-    </Empty.Root>
-  {/if}
-</div>
+    {#if events.length === 0}
+      <Empty.Root class="border border-dashed">
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Icon name="trendingUpDown" class="text-muted-foreground" />
+          </Empty.Media>
+          <Empty.Title>No incidents</Empty.Title>
+          <Empty.Description>
+            No incidents have been recorded for the selected time period.
+          </Empty.Description>
+        </Empty.Header>
+      </Empty.Root>
+    {/if}
+  </div>
+</TooltipProvider>
