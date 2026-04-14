@@ -28,11 +28,7 @@
     for (const check of checks) {
       if (check.status === "error") {
         failed++;
-      } else if (
-        check.status === "degraded" ||
-        check.status === "offline" ||
-        check.status === null
-      ) {
+      } else if (check.status === "degraded" || check.status === "offline") {
         // D-06: unknown/no-result treated as degraded
         // Also treating offline as degraded (D-06 covers "unknown/no-result")
         degraded++;

@@ -150,6 +150,10 @@
                 agentName={agent.name}
                 agentColor={agent.color}
               />
+            {:else}
+              <div class="text-xs text-muted-foreground">
+                Unknown agent (ID: {firstEvent.agentId})
+              </div>
             {/if}
           {/each}
         </div>
