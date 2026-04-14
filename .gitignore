@@ -15,8 +15,10 @@ drizzle/dev.db-wal
 libMacOS.dylib
 
 # Local tooling temp/state
+.claude
 .githooks
 .opencode
+.planning
 .tmp/
 
 # Mempalace state
