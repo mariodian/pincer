@@ -375,3 +375,24 @@ export function stopStatusUpdates(): void {
   statusUpdatesStarted = false;
   logger.info("status", "Status updates stopped");
 }
+
+/**
+ * Remove an agent from all status tracking structures.
+ * Call this when an agent is deleted to prevent memory leaks.
+ */
+export function removeAgentStatusTracking(agentId: number): void {
+  // Remove from baseline tracking
+  agentBaseline.delete(agentId);
+
+  // Remove from pending agents tracking
+  const pending = pendingAgents.get(agentId);
+  if (pending) {
+    pendingAgents.delete(agentId);
+    // Also remove from status groups
+    for (const group of statusGroups.values()) {
+      group.delete(agentId);
+    }
+  }
+
+  logger.debug("status", `[Agent ${agentId}] Removed from status tracking`);
+}
