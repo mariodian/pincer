@@ -13,8 +13,10 @@ import {
   readAgents,
   updateAgent,
 } from "../services/agentService";
-import { getStatusSyncService } from "../services/statusSyncService";
+import { getStatusSyncService, removeAgentStatus } from "../services/statusSyncService";
 import { logger } from "../services/loggerService";
+import { removeAgentState } from "../services/incidentService";
+import { removeAgentStatusTracking } from "../services/statusService";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;
@@ -161,6 +163,12 @@ export const agentRequestHandlers = {
   deleteAgent: async (id: number) => {
     try {
       const result = await deleteAgent(id);
+
+      // Clean up in-memory state to prevent memory leaks
+      removeAgentState(id);
+      removeAgentStatus(id);
+      removeAgentStatusTracking(id);
+
       if (onAgentMutation) onAgentMutation();
       return result;
     } catch (error) {
