@@ -19,7 +19,9 @@
     class: className,
   }: Props = $props();
 
-  // Create time buckets from checks (D-03: 24h = 24×6 = 144 cells, D-04: 7d = 24×7 = 168 cells)
+  // Create time buckets from checks
+  // D-03: 24h view = 24 hours × 6 (10-min cells) = 144 cells
+  // D-04: 7d view = 7 days × 24 hours = 168 hourly cells
   function createTimeBuckets(checks: Check[], range: TimeRange): Array<{ startTime: Date; endTime: Date; checks: Check[] }> {
     const now = new Date();
     const buckets: Array<{ startTime: Date; endTime: Date; checks: Check[] }> = [];
@@ -33,6 +35,9 @@
           startTime.setHours(h, m * 10, 0, 0);
           const endTime = new Date(startTime.getTime() + msPerBucket);
           
+          // Note: uses half-open interval [startTime, endTime) intentionally.
+          // Checks at the exact current moment may not be captured (data lag).
+          // This is acceptable for historical bucket views.
           const bucketChecks = checks.filter((c) => {
             const checkTime = new Date(c.checkedAt);
             return checkTime >= startTime && checkTime < endTime;
@@ -69,7 +74,7 @@
 
 <div
   class={cn(
-    "grid gap-1",
+    "grid gap-1 grid-cols-24",
     className,
   )}
   style={columns ? `grid-template-columns: repeat(${columns}, 1fr);` : ""}
