@@ -14,7 +14,8 @@ import {
 import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
 import { initLogger, logger } from "./services/loggerService";
-import { beginStatusUpdates } from "./services/statusService";
+import { beginStatusUpdates, stopStatusUpdates } from "./services/statusService";
+import { stopRetentionService } from "./services/retentionService";
 import { getSettings } from "./storage/sqlite/settingsRepo";
 import {
   getWindowBounds,
@@ -287,6 +288,10 @@ Electrobun.events.on("before-quit", () => {
     // in case quit happens without close firing (e.g., Cmd+Q with no window)
     setMainWindow(null);
   }
+
+  // Stop status polling and retention services
+  stopStatusUpdates();
+  stopRetentionService();
 });
 
 // Start centralized polling regardless of whether the window is open.

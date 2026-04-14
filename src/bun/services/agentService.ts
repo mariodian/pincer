@@ -98,7 +98,15 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   const startTime = Date.now();
   const agentType = getAgentType(agent.type);
 
-  if (!agentType) {
+  // Pre-compute config and internal network check before any early returns
+  const config = agentType ? resolveHealthConfig(agent) : null;
+  const isInternal = config ? isPrivateOrInternalNetwork(config.url) : false;
+
+  if (isInternal) {
+    logger.warn("agent", `Agent ${agent.name} uses internal network URL: ${config?.url}`);
+  }
+
+  if (!agentType || !config) {
     const responseMs = 0;
     const status: CheckStatus = "error";
     const errorMessage = `Unknown agent type: ${agent.type}`;
@@ -113,14 +121,6 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       errorMessage,
       internalNetworkWarning: isInternal,
     };
-  }
-
-  const config = resolveHealthConfig(agent);
-
-  // Check if URL is private/internal network
-  const isInternal = isPrivateOrInternalNetwork(config.url);
-  if (isInternal) {
-    logger.warn("agent", `Agent ${agent.name} uses internal network URL: ${config.url}`);
   }
 
   try {

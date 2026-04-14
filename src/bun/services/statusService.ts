@@ -366,3 +366,12 @@ export async function restartStatusUpdates() {
   statusUpdatesStarted = true;
   await startStatusUpdates();
 }
+
+export function stopStatusUpdates(): void {
+  if (statusUpdateInterval !== null) {
+    clearTimeout(statusUpdateInterval);
+    statusUpdateInterval = null;
+  }
+  statusUpdatesStarted = false;
+  logger.info("status", "Status updates stopped");
+}
