@@ -105,15 +105,28 @@
       ></div>
     {/snippet}
   </Tooltip.Trigger>
-  <Tooltip.Content class="flex flex-col gap-0.5">
-    <div class="text-xs font-medium">{timePeriod}</div>
-    {#if counts.total > 0}
-      <div class="text-xs text-muted-foreground">
-        {counts.total} checks | {counts.ok} ok | {counts.degraded} degraded | {counts.failed}
-        failed
-      </div>
-    {:else}
-      <div class="text-xs text-muted-foreground">No checks</div>
-    {/if}
+  <Tooltip.Content class="flex flex-col items-start gap-1">
+    <div class="text-xs font-bold">{timePeriod}</div>
+    <div class="text-muted w-full">
+      {#if counts.total > 0}
+        <p class="font-medium">
+          {counts.total} checks
+        </p>
+        <p>
+          <span class="font-medium w-20">Ok:</span>
+          {counts.ok}
+        </p>
+        <p>
+          <span class="font-medium w-20">Degraded:</span>
+          {counts.degraded}
+        </p>
+        <p>
+          <span class="font-medium w-20">Failed:</span>
+          {counts.failed}
+        </p>
+      {:else}
+        <p>No checks</p>
+      {/if}
+    </div>
   </Tooltip.Content>
 </Tooltip.Root>
