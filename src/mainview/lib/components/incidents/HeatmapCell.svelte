@@ -46,12 +46,15 @@
   function formatTimePeriod(slot: TimeSlot, range: TimeRange): string {
     const { startTime, endTime } = slot;
     const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+    const formatDate = (d: Date) => d.toLocaleDateString([], { month: "short", day: "numeric" });
+
     if (range === "24h") {
-      // 24h format: "10:00 - 10:10"
-      return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+      // 24h format: always show date since window spans two days
+      // "Apr 13 22:00 - 22:10"
+      return `${formatDate(startTime)} ${formatTime(startTime)} - ${formatTime(endTime)}`;
     } else {
-      // 7d format: "Mon 14:00 - 15:00"
-      const dayName = startTime.toLocaleDateString([], { weekday: "short" });
+      // 7d format: "Mon Apr 14 14:00 - 15:00"
+      const dayName = startTime.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
       return `${dayName} ${formatTime(startTime)} - ${formatTime(endTime)}`;
     }
   }
@@ -82,7 +85,7 @@
       ></div>
     {/snippet}
   </Tooltip.Trigger>
-  <Tooltip.Content>
+  <Tooltip.Content class="flex flex-col gap-0.5">
     <div class="text-xs font-medium">{timePeriod}</div>
     {#if counts.total > 0}
       <div class="text-xs text-muted-foreground">

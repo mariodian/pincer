@@ -45,24 +45,6 @@
     return agent;
   };
 
-  // Pre-group and sort checks once so hover-driven tooltip updates do not
-  // repeatedly filter/sort in the template.
-  const checksByDay = $derived.by(() => {
-    const grouped = new Map<string, Check[]>();
-    for (const check of checks) {
-      const day = formatShortDate(check.checkedAt);
-      const existing = grouped.get(day) || [];
-      existing.push(check);
-      grouped.set(day, existing);
-    }
-
-    for (const dayChecks of grouped.values()) {
-      dayChecks.sort((a, b) => a.checkedAt - b.checkedAt);
-    }
-
-    return grouped;
-  });
-
   // Group incidents by day
   const incidentsByDay = $derived.by(() => {
     const grouped = new Map<string, Array<[string, IncidentEvent[]]>>();
@@ -78,36 +60,26 @@
     return grouped;
   });
 
-  // Combine all days from both checks and incidents
+  // Combine all days from incidents (heatmap shows all checks at top)
   const allDays = $derived.by(() => {
     const days = new Set<string>();
-    for (const day of checksByDay.keys()) {
-      days.add(day);
-    }
     for (const day of incidentsByDay.keys()) {
       days.add(day);
     }
     // Sort days descending (newest first)
     return Array.from(days).sort((a, b) => {
-      // Parse dates for comparison (formatShortDate produces strings like "Apr 12")
-      // We'll compare by finding the earliest check/incident for each day
+      // Compare by the most recent incident time for each day
       const getDayTimestamp = (dayStr: string) => {
-        const dayChecks = checksByDay.get(dayStr);
         const dayIncidents = incidentsByDay.get(dayStr);
-        let minTime = Infinity;
-        if (dayChecks) {
-          for (const check of dayChecks) {
-            minTime = Math.min(minTime, check.checkedAt);
-          }
-        }
+        let maxTime = 0;
         if (dayIncidents) {
           for (const [, incEvents] of dayIncidents) {
             for (const evt of incEvents) {
-              minTime = Math.min(minTime, evt.eventAt);
+              maxTime = Math.max(maxTime, evt.eventAt);
             }
           }
         }
-        return minTime;
+        return maxTime;
       };
       return getDayTimestamp(b) - getDayTimestamp(a);
     });
@@ -116,8 +88,12 @@
 
 <TooltipProvider delayDuration={0} skipDelayDuration={300}>
   <div class={cn("space-y-6", className)}>
+    <!-- Single heatmap for the entire period (24h or 7d) -->
+    {#if checks.length > 0}
+      <Heatmap {checks} {range} cellSize="size-4" />
+    {/if}
+
     {#each allDays as day (day)}
-      {@const dayChecks = checksByDay.get(day)}
       {@const dayIncidents = incidentsByDay.get(day)}
       <div class="relative">
         <!-- Day header -->
@@ -131,16 +107,6 @@
           <h3 class="text-sm font-medium">{day}</h3>
           <div class="flex-1 border-t"></div>
         </div>
-
-        <!-- Heatmap section for this day (Phase 4) -->
-        {#if dayChecks && dayChecks.length > 0}
-          <div class="mb-6">
-            <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
-              Raw Checks
-            </h4>
-            <Heatmap checks={dayChecks} {range} cellSize="size-4" />
-          </div>
-        {/if}
 
         <!-- Incidents for this day -->
         {#if dayIncidents && dayIncidents.length > 0}

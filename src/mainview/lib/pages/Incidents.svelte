@@ -129,6 +129,7 @@
         events={allEvents}
         checks={allChecks}
         agents={timeline.agents}
+        range={timeRange}
       />
     {:else}
       <Empty.Root class="border border-dashed">
