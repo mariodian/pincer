@@ -182,7 +182,7 @@
             class="w-20"
           />
           <p class="text-xs text-muted-foreground">
-            Days to keep historical stats. Set to 0 to keep forever.
+            Days to keep stats and incident history. Set to 0 to keep forever.
           </p>
         </div>
       </Card.Content>

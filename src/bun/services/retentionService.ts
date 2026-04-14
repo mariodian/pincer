@@ -3,13 +3,9 @@ import { countOldChecks, deleteOldChecks } from "../storage/sqlite/checksRepo";
 import { countOldEvents, deleteOldEvents } from "../storage/sqlite/incidentEventsRepo";
 import { SEVEN_DAYS_MS, ONE_HOUR_MS } from "../utils/constants";
 
-// Retention configuration (7 days)
+// Retention configuration for raw checks (7 days - hardcoded minimum)
 const CHECK_RETENTION_DAYS = 7;
 const CHECK_RETENTION_MS = SEVEN_DAYS_MS;
-
-// Incident events retention configuration (90 days)
-const INCIDENT_RETENTION_DAYS = 90;
-const INCIDENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 // Background cleanup interval (1 hour)
 const CLEANUP_INTERVAL_MS = ONE_HOUR_MS;
@@ -41,32 +37,39 @@ export function runRetentionCleanup(): number {
 }
 
 /**
- * Run incident events retention cleanup - delete events older than 90 days.
+ * Run incident events retention cleanup - delete events older than the retention window.
  * Returns the number of deleted rows.
+ * @param retentionDays Number of days to retain incident events (uses settings.retentionDays)
  */
-export function runIncidentRetentionCleanup(): number {
-  const cutoffMs = Date.now() - INCIDENT_RETENTION_MS;
+export function runIncidentRetentionCleanup(retentionDays: number): number {
+  const retentionMs = retentionDays * 24 * 60 * 60 * 1000;
+  const cutoffMs = Date.now() - retentionMs;
   const countBefore = countOldEvents(cutoffMs);
   if (countBefore === 0) {
     logger.debug("retention", "No old incident events to clean up");
     return 0;
   }
   const deletedCount = deleteOldEvents(cutoffMs);
-  logger.info("retention", `Cleaned up ${deletedCount} incident events older than ${INCIDENT_RETENTION_DAYS} days`);
+  logger.info("retention", `Cleaned up ${deletedCount} incident events older than ${retentionDays} days`);
   return deletedCount;
 }
 
 /**
  * Start the retention cleanup service.
  * Runs cleanup immediately (startup), then schedules background cleanup every hour.
+ * Uses settings.retentionDays for incident events retention.
  */
-export function startRetentionService(): void {
+export async function startRetentionService(): Promise<void> {
   if (cleanupStarted) {
     logger.debug("retention", "Retention service already started");
     return;
   }
 
   cleanupStarted = true;
+
+  // Get retention days from settings
+  const { getSettings } = await import("../storage/sqlite/settingsRepo");
+  const { retentionDays } = getSettings();
 
   // Run startup cleanup immediately
   logger.info("retention", "Running startup cleanup...");
@@ -76,16 +79,16 @@ export function startRetentionService(): void {
     `Startup cleanup complete: ${startupDeleted} checks deleted`,
   );
 
-  // Run startup cleanup for incident events
-  const incidentDeleted = runIncidentRetentionCleanup();
-  logger.info("retention", `Startup incident retention cleanup: ${incidentDeleted} events deleted`);
+  // Run startup cleanup for incident events using settings value
+  const incidentDeleted = runIncidentRetentionCleanup(retentionDays);
+  logger.info("retention", `Startup incident retention cleanup: ${incidentDeleted} events deleted (${retentionDays} days)`);
 
-  // Schedule background cleanup
-  startBackgroundCleanup();
+  // Schedule background cleanup with retention days
+  startBackgroundCleanup(retentionDays);
 
   logger.info(
     "retention",
-    `Retention service started (interval: ${CLEANUP_INTERVAL_MS}ms)`,
+    `Retention service started (interval: ${CLEANUP_INTERVAL_MS}ms, incident retention: ${retentionDays} days)`,
   );
 }
 
@@ -103,8 +106,9 @@ export function stopRetentionService(): void {
 
 /**
  * Start the background cleanup interval.
+ * @param retentionDays Number of days to retain incident events
  */
-function startBackgroundCleanup(): void {
+function startBackgroundCleanup(retentionDays: number): void {
   if (cleanupIntervalId !== null) {
     clearInterval(cleanupIntervalId);
   }
@@ -113,7 +117,7 @@ function startBackgroundCleanup(): void {
     logger.debug("retention", "Running scheduled background cleanup...");
     try {
       const deletedChecks = runRetentionCleanup();
-      const deletedIncidents = runIncidentRetentionCleanup();
+      const deletedIncidents = runIncidentRetentionCleanup(retentionDays);
       if (deletedChecks > 0 || deletedIncidents > 0) {
         logger.info("retention", `Background cleanup: ${deletedChecks} checks, ${deletedIncidents} incidents deleted`);
       }
