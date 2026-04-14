@@ -160,7 +160,7 @@
   const timeBuckets = $derived(createTimeBuckets(checks, range, anchorDate));
 </script>
 
-<div class="overflow-x-auto w-full min-w-0">
+<div class="overflow-x-auto w-full min-w-0 max-w-full">
   <div
     class={cn("grid gap-1 mb-3", className)}
     style={`grid-template-columns: repeat(${columns}, minmax(0, ${CELL_SIZE})); width: max-content;`}

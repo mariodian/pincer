@@ -93,7 +93,7 @@
 </script>
 
 <TooltipProvider delayDuration={0} skipDelayDuration={300}>
-  <div class={cn("space-y-3", className)}>
+  <div class={cn("space-y-3 w-full min-w-0 max-w-full", className)}>
     <!-- Single heatmap for the entire period (24h or 7d) -->
     {#if checks.length > 0}
       <Heatmap {range} {checks} cellSize={4} />

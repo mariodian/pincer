@@ -62,17 +62,17 @@
   {#if $rpcReady}
     <Sidebar.Provider>
       <AppSidebar />
-      <main
+      <Sidebar.Inset
         data-slot="content"
         class={[
-          "w-full m-1.5 py-5 px-4",
-          "rounded-xl overflow-x-hidden",
+          "min-w-0 m-1.5 py-5 px-4",
+          "rounded-xl",
           "shadow-xs shadow-black/10 dark:shadow-none",
           "bg-content-background",
         ]}
       >
         <Router {routes} />
-      </main>
+      </Sidebar.Inset>
     </Sidebar.Provider>
   {/if}
 </Window>
