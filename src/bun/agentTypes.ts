@@ -28,10 +28,20 @@ export type StatusShape = (typeof STATUS_SHAPE_OPTIONS)[number]["value"];
 
 /** Maps a status shape preset to its parser function. */
 export const STATUS_PARSERS: Record<StatusShape, StatusParser> = {
-  always_ok: (_json) => ({ status: "ok" }),
+  always_ok: (_json) => {
+    try {
+      return { status: "ok" };
+    } catch {
+      return { status: "error", errorMessage: "Parser error" };
+    }
+  },
   json_status: (json) => {
-    const data = json as { status?: Status };
-    return data.status === "ok" ? { status: "ok" } : { status: "error" };
+    try {
+      const data = json as { status?: Status };
+      return data.status === "ok" ? { status: "ok" } : { status: "error" };
+    } catch {
+      return { status: "error", errorMessage: "Invalid JSON status format" };
+    }
   },
 };
 
@@ -43,9 +53,13 @@ function parseStandardAgentStatus(json: unknown): {
   status: Status;
   errorMessage?: string;
 } {
-  const data = json as { status?: Status };
-  if (data.status === "error") return { status: "error" };
-  return { status: "ok" };
+  try {
+    const data = json as { status?: Status };
+    if (data.status === "error") return { status: "error" };
+    return { status: "ok" };
+  } catch {
+    return { status: "error", errorMessage: "Invalid health response format" };
+  }
 }
 
 export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
