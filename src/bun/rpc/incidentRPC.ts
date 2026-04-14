@@ -129,15 +129,13 @@ export const incidentRequestHandlers = {
           const stats = getAgentStats(agentId, from, statsQueryEnd);
           olderStats = stats.map((s) => ({ ...s, agentId }));
         } else {
-          for (const agent of agents) {
-            const stats = getAgentStats(agent.id, from, statsQueryEnd);
-            olderStats.push(
-              ...stats.map((s) => ({
-                ...s,
-                agentId: agent.id,
-              })),
-            );
-          }
+          // Parallelize across agents for faster response
+          const statsResults = await Promise.all(
+            agents.map((agent) => getAgentStats(agent.id, from, statsQueryEnd)),
+          );
+          olderStats = statsResults.flatMap((stats, i) =>
+            stats.map((s) => ({ ...s, agentId: agents[i].id })),
+          );
         }
       }
 

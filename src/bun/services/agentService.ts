@@ -6,7 +6,10 @@ import type {
   AgentStatusInfo,
   CheckStatus,
 } from "../../shared/types";
-import { normalizeUrl, isPrivateOrInternalNetwork } from "../../shared/agent-helpers";
+import {
+  normalizeUrl,
+  isPrivateOrInternalNetwork,
+} from "../../shared/agent-helpers";
 import {
   getSettings as getSettingsFromDb,
   updateSettings as updateSettingsToDb,
@@ -105,7 +108,10 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
   const isInternal = config ? isPrivateOrInternalNetwork(config.url) : false;
 
   if (isInternal) {
-    logger.warn("agent", `Agent ${agent.name} uses internal network URL: ${config?.url}`);
+    logger.warn(
+      "agent",
+      `Agent ${agent.name} uses internal network URL: ${config?.url}`,
+    );
   }
 
   if (!agentType || !config) {
@@ -338,7 +344,7 @@ export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
       } finally {
         healthCheckSemaphore.release();
       }
-    })
+    }),
   );
 
   if (errors.length > 0) {

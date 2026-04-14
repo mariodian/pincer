@@ -29,8 +29,6 @@
   let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
 
   async function fetchData() {
-    loading = true;
-    error = null;
     try {
       await whenReady();
       const rpc = getMainRPC();
@@ -50,6 +48,10 @@
   });
 
   function handleTimeRangeChange(range: TimeRange) {
+    if (range === timeRange) return; // No change (prevents re-clicking same)
+    loading = true; // Immediate skeleton feedback
+    error = null;
+    timeline = null; // Clear old data
     timeRange = range;
   }
 
@@ -80,8 +82,9 @@
         {#each TIME_RANGES as tr}
           <button
             type="button"
+            disabled={timeRange === tr.value}
             class={[
-              "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              "rounded-md px-3 py-1 text-xs font-medium",
               timeRange === tr.value
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted",
@@ -118,6 +121,7 @@
       </ErrorState>
     {:else if loading}
       <div class="space-y-4">
+        <Skeleton class="h-29 w-120 mb-6 rounded-lg" />
         <Skeleton class="h-8 w-full mb-6 rounded-lg" />
         <Skeleton class="h-3 w-20 rounded-lg" />
         <Skeleton class="h-40 w-full mb-6 rounded-lg" />
@@ -129,6 +133,7 @@
         events={allEvents}
         checks={allChecks}
         agents={timeline.agents}
+        range={timeRange}
       />
     {:else}
       <Empty.Root class="border border-dashed">

@@ -43,6 +43,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.87 0.012 322.12);
   --sidebar-ring: oklch(0.711 0.019 323.02);
+
+  /* Heatmap colors */
+  --heatmap: var(--color-green-600);
+  --heatmap-1: var(--color-amber-400);
+  --heatmap-2: var(--color-amber-500);
+  --heatmap-3: var(--color-amber-600);
+  --heatmap-4: var(--color-red-500);
+  --heatmap-5: var(--color-red-700);
+  --heatmap-empty: var(--muted);
 }
 
 .dark {
@@ -85,6 +94,15 @@
   --sidebar-accent-foreground: oklch(0.212 0.019 322.12);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.542 0.034 322.5);
+
+  /* Heatmap colors - dark mode */
+  --heatmap: var(--color-green-700);
+  --heatmap-1: var(--color-amber-400);
+  --heatmap-2: var(--color-amber-500);
+  --heatmap-3: var(--color-amber-600);
+  --heatmap-4: var(--color-red-600);
+  --heatmap-5: var(--color-red-800);
+  --heatmap-empty: var(--muted);
 }
 
 @theme inline {

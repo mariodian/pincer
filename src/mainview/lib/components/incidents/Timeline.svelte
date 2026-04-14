@@ -1,15 +1,11 @@
 <script lang="ts">
-  import { CheckDot, IncidentCard } from "$lib/components/incidents";
+  import { Heatmap, IncidentCard } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
   import { Icon } from "$lib/components/ui/icon";
+  import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
   import { cn } from "$lib/utils";
-  import {
-    formatDateTime,
-    formatDuration,
-    formatShortDate,
-  } from "$lib/utils/datetime";
-  import { statusLabels } from "$shared/status-config";
-  import type { Check, IncidentEvent } from "$shared/types";
+  import { formatShortDate } from "$lib/utils/datetime";
+  import type { Check, IncidentEvent, TimeRange } from "$shared/types";
 
   interface Props {
     events: IncidentEvent[];
@@ -19,27 +15,17 @@
       name: string;
       color: string;
     }>;
+    range?: TimeRange;
     class?: string;
   }
 
-  let { events, checks, agents, class: className }: Props = $props();
-  let activeCheck: Check | null = $state(null);
-
-  let tooltipX = $state(0);
-  let tooltipY = $state(0);
-
-  function handleCheckHover(check: Check | null, event?: PointerEvent) {
-    activeCheck = check;
-    if (check && event) {
-      tooltipX = event.clientX;
-      tooltipY = event.clientY;
-    }
-  }
-
-  function handleCheckMove(event: PointerEvent) {
-    tooltipX = event.clientX;
-    tooltipY = event.clientY;
-  }
+  let {
+    events,
+    checks,
+    agents,
+    range = "24h",
+    class: className,
+  }: Props = $props();
 
   // Group events by incident
   const incidents = $derived.by(() => {
@@ -58,26 +44,12 @@
   });
 
   const getAgent = (agentId: number) => {
-    return agents.find((a) => a.id === agentId);
+    const agent = agents.find((a) => a.id === agentId);
+    if (!agent) {
+      console.warn(`Agent ${agentId} not found in agents list`);
+    }
+    return agent;
   };
-
-  // Pre-group and sort checks once so hover-driven tooltip updates do not
-  // repeatedly filter/sort in the template.
-  const checksByDay = $derived.by(() => {
-    const grouped = new Map<string, Check[]>();
-    for (const check of checks) {
-      const day = formatShortDate(check.checkedAt);
-      const existing = grouped.get(day) || [];
-      existing.push(check);
-      grouped.set(day, existing);
-    }
-
-    for (const dayChecks of grouped.values()) {
-      dayChecks.sort((a, b) => a.checkedAt - b.checkedAt);
-    }
-
-    return grouped;
-  });
 
   // Group incidents by day
   const incidentsByDay = $derived.by(() => {
@@ -94,144 +66,92 @@
     return grouped;
   });
 
-  // Combine all days from both checks and incidents
+  // Combine all days from incidents (heatmap shows all checks at top)
   const allDays = $derived.by(() => {
     const days = new Set<string>();
-    for (const day of checksByDay.keys()) {
-      days.add(day);
-    }
     for (const day of incidentsByDay.keys()) {
       days.add(day);
     }
     // Sort days descending (newest first)
     return Array.from(days).sort((a, b) => {
-      // Parse dates for comparison (formatShortDate produces strings like "Apr 12")
-      // We'll compare by finding the earliest check/incident for each day
+      // Compare by the most recent incident time for each day
       const getDayTimestamp = (dayStr: string) => {
-        const dayChecks = checksByDay.get(dayStr);
         const dayIncidents = incidentsByDay.get(dayStr);
-        let minTime = Infinity;
-        if (dayChecks) {
-          for (const check of dayChecks) {
-            minTime = Math.min(minTime, check.checkedAt);
-          }
-        }
+        let maxTime = 0;
         if (dayIncidents) {
           for (const [, incEvents] of dayIncidents) {
             for (const evt of incEvents) {
-              minTime = Math.min(minTime, evt.eventAt);
+              maxTime = Math.max(maxTime, evt.eventAt);
             }
           }
         }
-        return minTime;
+        return maxTime;
       };
       return getDayTimestamp(b) - getDayTimestamp(a);
     });
   });
 </script>
 
-<div class={cn("space-y-6", className)}>
-  {#each allDays as day (day)}
-    {@const dayChecks = checksByDay.get(day)}
-    {@const dayIncidents = incidentsByDay.get(day)}
-    <div class="relative">
-      <!-- Day header -->
-      <div
-        class={cn(
-          "sticky top-0 -mx-2 px-2 z-10 mb-4 py-2",
-          "flex items-center gap-4",
-          "bg-content-background border-content-background",
-        )}
-      >
-        <h3 class="text-sm font-medium">{day}</h3>
-        <div class="flex-1 border-t"></div>
-      </div>
+<TooltipProvider delayDuration={0} skipDelayDuration={300}>
+  <div class={cn("space-y-3 w-full min-w-0 max-w-full", className)}>
+    <!-- Single heatmap for the entire period (24h or 7d) -->
+    <Heatmap {range} {checks} cellSize={4} />
 
-      <!-- Raw checks section for this day -->
-      {#if dayChecks && dayChecks.length > 0}
-        <div class="mb-6">
-          <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
-            Raw Checks
-          </h4>
-          <div class="flex flex-wrap gap-px">
-            {#each dayChecks as check (check.id)}
-              <CheckDot
-                {check}
-                triggerProps={{
-                  onpointerenter: (event: PointerEvent) =>
-                    handleCheckHover(check, event),
-                  onpointermove: handleCheckMove,
-                  onpointerleave: () => handleCheckHover(null),
-                }}
-              />
+    {#each allDays as day (day)}
+      {@const dayIncidents = incidentsByDay.get(day)}
+      <div class="relative">
+        <!-- Day header -->
+        <div
+          class={cn(
+            "sticky top-0 -mx-2 px-2 z-10 mb-4 py-2",
+            "flex items-center gap-4",
+            "bg-content-background border-content-background",
+          )}
+        >
+          <h3 class="text-sm font-medium">{day}</h3>
+          <div class="flex-1 border-t"></div>
+        </div>
+
+        <!-- Incidents for this day -->
+        {#if dayIncidents && dayIncidents.length > 0}
+          <div class="space-y-4">
+            <h4
+              class="mb-3 text-xs font-medium uppercase text-muted-foreground"
+            >
+              Events
+            </h4>
+            {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
+              {@const firstEvent = incidentEvents[0]}
+              {@const agent = getAgent(firstEvent.agentId)}
+              {#if agent}
+                <IncidentCard
+                  events={incidentEvents}
+                  agentName={agent.name}
+                  agentColor={agent.color}
+                />
+              {:else}
+                <div class="text-xs text-muted-foreground">
+                  Unknown agent (ID: {firstEvent.agentId})
+                </div>
+              {/if}
             {/each}
           </div>
-        </div>
-      {/if}
-
-      <!-- Incidents for this day -->
-      {#if dayIncidents && dayIncidents.length > 0}
-        <div class="space-y-4">
-          <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
-            Events
-          </h4>
-          {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
-            {@const firstEvent = incidentEvents[0]}
-            {@const agent = getAgent(firstEvent.agentId)}
-            {#if agent}
-              <IncidentCard
-                events={incidentEvents}
-                agentName={agent.name}
-                agentColor={agent.color}
-              />
-            {/if}
-          {/each}
-        </div>
-      {/if}
-    </div>
-  {/each}
-
-  {#if events.length === 0}
-    <Empty.Root class="border border-dashed">
-      <Empty.Header>
-        <Empty.Media variant="icon">
-          <Icon name="trendingUpDown" class="text-muted-foreground" />
-        </Empty.Media>
-        <Empty.Title>No incidents</Empty.Title>
-        <Empty.Description>
-          No incidents have been recorded for the selected time period.
-        </Empty.Description>
-      </Empty.Header>
-    </Empty.Root>
-  {/if}
-  {#if activeCheck}
-    <div
-      class="fixed z-50 max-w-55 rounded-md border border-transparent bg-foreground px-2 py-1 text-xs text-background shadow-md"
-      style={`left: ${tooltipX}px; top: ${tooltipY - 12}px; transform: translate(-50%, -100%); pointer-events: none;`}
-    >
-      <div class="flex flex-col">
-        <div class="font-medium">
-          {statusLabels[activeCheck.status] || activeCheck.status}
-        </div>
-        <div class="text-background/80">
-          {formatDateTime(activeCheck.checkedAt)}
-        </div>
-        {#if activeCheck.responseMs !== null}
-          <div class="text-background/80">
-            Response: {formatDuration(activeCheck.responseMs)}
-          </div>
-        {/if}
-        {#if activeCheck.httpStatus !== null}
-          <div class="text-background/80">
-            HTTP {activeCheck.httpStatus}
-          </div>
-        {/if}
-        {#if activeCheck.errorMessage}
-          <div class="max-w-50 truncate text-red-500 dark:text-red-600">
-            {activeCheck.errorMessage}
-          </div>
         {/if}
       </div>
-    </div>
-  {/if}
-</div>
+    {/each}
+
+    {#if events.length === 0}
+      <Empty.Root class="border border-dashed">
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Icon name="trendingUpDown" class="text-muted-foreground" />
+          </Empty.Media>
+          <Empty.Title>No incidents</Empty.Title>
+          <Empty.Description>
+            No incidents have been recorded for the selected time period.
+          </Empty.Description>
+        </Empty.Header>
+      </Empty.Root>
+    {/if}
+  </div>
+</TooltipProvider>
