@@ -6,7 +6,7 @@ import type {
   AgentStatusInfo,
   CheckStatus,
 } from "../../shared/types";
-import { normalizeUrl } from "../../shared/agent-helpers";
+import { normalizeUrl, isPrivateOrInternalNetwork } from "../../shared/agent-helpers";
 import {
   getSettings as getSettingsFromDb,
   updateSettings as updateSettingsToDb,
@@ -111,10 +111,17 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       status,
       lastChecked: Date.now(),
       errorMessage,
+      internalNetworkWarning: isInternal,
     };
   }
 
   const config = resolveHealthConfig(agent);
+
+  // Check if URL is private/internal network
+  const isInternal = isPrivateOrInternalNetwork(config.url);
+  if (isInternal) {
+    logger.warn("agent", `Agent ${agent.name} uses internal network URL: ${config.url}`);
+  }
 
   try {
     const controller = new AbortController();
@@ -151,6 +158,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
           status: result.status,
           lastChecked: Date.now(),
           errorMessage: result.errorMessage,
+          internalNetworkWarning: isInternal,
         };
       } catch {
         const result = config.parseStatus(null);
@@ -171,6 +179,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
           status: result.status,
           lastChecked: Date.now(),
           errorMessage: result.errorMessage,
+          internalNetworkWarning: isInternal,
         };
       }
     } else {
@@ -192,6 +201,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
         status: checkStatus,
         lastChecked: Date.now(),
         errorMessage,
+        internalNetworkWarning: isInternal,
       };
     }
   } catch (error) {
@@ -216,6 +226,7 @@ export async function checkAgentStatus(agent: Agent): Promise<AgentStatus> {
       status: checkStatus,
       lastChecked: Date.now(),
       errorMessage,
+      internalNetworkWarning: isInternal,
     };
   }
 }
