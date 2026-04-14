@@ -26,6 +26,8 @@ import { recordCheck } from "./incidentService";
 export type { Settings } from "../storage/sqlite/settingsRepo";
 export type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
 
+const MAX_CONCURRENT_HEALTH_CHECKS = 10;
+
 /**
  * Extended result from a health check including fields needed for incident tracking.
  */
@@ -264,6 +266,39 @@ function extractErrorCode(error: unknown): string | null {
   return null;
 }
 
+/**
+ * Semaphore to limit concurrent health check requests.
+ */
+class Semaphore {
+  private permits: number;
+  private waitQueue: Array<() => void> = [];
+
+  constructor(permits: number) {
+    this.permits = permits;
+  }
+
+  async acquire(): Promise<void> {
+    if (this.permits > 0) {
+      this.permits--;
+      return;
+    }
+    return new Promise<void>((resolve) => {
+      this.waitQueue.push(resolve);
+    });
+  }
+
+  release(): void {
+    this.permits++;
+    const next = this.waitQueue.shift();
+    if (next) {
+      this.permits--;
+      next();
+    }
+  }
+}
+
+const healthCheckSemaphore = new Semaphore(MAX_CONCURRENT_HEALTH_CHECKS);
+
 export async function checkOneAgentStatus(
   id: number,
 ): Promise<AgentStatusInfo | null> {
@@ -282,14 +317,35 @@ export async function checkOneAgentStatus(
 export async function checkAllAgentsStatus(): Promise<AgentStatusInfo[]> {
   const agents = await readAgents();
   const enabledAgents = agents.filter((a) => a.enabled !== false);
-  const statusPromises = enabledAgents.map((agent) => checkAgentStatus(agent));
-  const results = await Promise.all(statusPromises);
-  return results.map(({ id, status, lastChecked, errorMessage }) => ({
-    id,
-    status,
-    lastChecked,
-    errorMessage,
-  }));
+
+  // Use semaphore to limit concurrent checks
+  const results: AgentStatusInfo[] = [];
+  const errors: Error[] = [];
+
+  await Promise.all(
+    enabledAgents.map(async (agent) => {
+      await healthCheckSemaphore.acquire();
+      try {
+        const result = await checkAgentStatus(agent);
+        results.push({
+          id: result.id,
+          status: result.status,
+          lastChecked: result.lastChecked,
+          errorMessage: result.errorMessage,
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      } finally {
+        healthCheckSemaphore.release();
+      }
+    })
+  );
+
+  if (errors.length > 0) {
+    logger.error("agent", `${errors.length} health checks failed:`, errors);
+  }
+
+  return results;
 }
 
 export function resolveHealthConfig(agent: Agent): {
