@@ -50,7 +50,7 @@
   --heatmap-2: oklch(0.65 0.14 80);
   --heatmap-3: oklch(0.55 0.17 80);
   --heatmap-4: oklch(0.45 0.19 45);
-  --heatmap-5: oklch(0.40 0.25 27.33);
+  --heatmap-5: oklch(0.4 0.25 27.33);
 }
 
 .dark {

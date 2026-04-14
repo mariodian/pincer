@@ -57,7 +57,11 @@
   <Tooltip.Trigger>
     {#snippet child({ props })}
       <div
-        class={cn("rounded-xs transition-colors duration-100", cellSize, className)}
+        class={cn(
+          "rounded-xs transition-colors duration-100",
+          cellSize,
+          className,
+        )}
         style="background-color: {heatmapColor};"
         {...props}
       ></div>
