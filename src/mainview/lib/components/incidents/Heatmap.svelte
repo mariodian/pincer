@@ -1,10 +1,11 @@
 <script lang="ts">
+  import HeatmapCell from "./HeatmapCell.svelte";
+  import type { Check, TimeRange } from "$shared/types";
   import { cn } from "$lib/utils";
-  import * as Tooltip from "$lib/components/ui/tooltip/index.js";
-  import type { Check } from "$shared/types";
 
   interface Props {
     checks: Check[];
+    range: TimeRange;
     columns?: number;
     cellSize?: string;
     class?: string;
@@ -12,64 +13,68 @@
 
   let {
     checks,
-    columns: _columns,
+    range,
+    columns,
     cellSize = "size-4",
     class: className,
   }: Props = $props();
 
-  // Error intensity calculation per HEAT-05, HEAT-06
-  // Formula: (failed + 0.5 * degraded) / total_checks
-  // Unknown/offline treated as degraded per D-06
-  function calculateIntensity(checks: Check[]): number {
-    if (checks.length === 0) return 0;
+  // Create time buckets from checks (D-03: 24h = 24×6 = 144 cells, D-04: 7d = 24×7 = 168 cells)
+  function createTimeBuckets(checks: Check[], range: TimeRange): Array<{ startTime: Date; endTime: Date; checks: Check[] }> {
+    const now = new Date();
+    const buckets: Array<{ startTime: Date; endTime: Date; checks: Check[] }> = [];
 
-    let failed = 0;
-    let degraded = 0;
-
-    for (const check of checks) {
-      if (check.status === "error") {
-        failed++;
-      } else if (check.status === "degraded" || check.status === "offline") {
-        // D-06: unknown/no-result treated as degraded
-        // Also treating offline as degraded (D-06 covers "unknown/no-result")
-        degraded++;
+    if (range === "24h") {
+      // 24h view: 144 x 10-minute cells
+      const msPerBucket = 10 * 60 * 1000; // 10 minutes
+      for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 6; m++) {
+          const startTime = new Date(now);
+          startTime.setHours(h, m * 10, 0, 0);
+          const endTime = new Date(startTime.getTime() + msPerBucket);
+          
+          const bucketChecks = checks.filter((c) => {
+            const checkTime = new Date(c.checkedAt);
+            return checkTime >= startTime && checkTime < endTime;
+          });
+          
+          buckets.push({ startTime, endTime, checks: bucketChecks });
+        }
+      }
+    } else {
+      // 7d view: 168 x hourly cells
+      const msPerBucket = 60 * 60 * 1000; // 1 hour
+      for (let d = 0; d < 7; d++) {
+        for (let h = 0; h < 24; h++) {
+          const startTime = new Date(now);
+          startTime.setDate(startTime.getDate() - (6 - d)); // Go back 6 days, then forward
+          startTime.setHours(h, 0, 0, 0);
+          const endTime = new Date(startTime.getTime() + msPerBucket);
+          
+          const bucketChecks = checks.filter((c) => {
+            const checkTime = new Date(c.checkedAt);
+            return checkTime >= startTime && checkTime < endTime;
+          });
+          
+          buckets.push({ startTime, endTime, checks: bucketChecks });
+        }
       }
     }
 
-    return (failed + 0.5 * degraded) / checks.length;
+    return buckets;
   }
 
-  // Map intensity (0-1) to CSS variable
-  function getHeatmapVar(intensity: number): string {
-    if (intensity === 0) return "var(--heatmap)";
-    if (intensity <= 0.2) return "var(--heatmap-1)";
-    if (intensity <= 0.4) return "var(--heatmap-2)";
-    if (intensity <= 0.6) return "var(--heatmap-3)";
-    if (intensity <= 0.8) return "var(--heatmap-4)";
-    return "var(--heatmap-5)";
-  }
-
-  const intensity = $derived(calculateIntensity(checks));
-  const heatmapColor = $derived(getHeatmapVar(intensity));
+  const timeBuckets = $derived(createTimeBuckets(checks, range));
 </script>
 
-<Tooltip.Root>
-  <Tooltip.Trigger>
-    {#snippet child({ props })}
-      <div
-        class={cn(
-          "rounded-xs transition-colors duration-100",
-          cellSize,
-          className,
-        )}
-        style="background-color: {heatmapColor};"
-        {...props}
-      ></div>
-    {/snippet}
-  </Tooltip.Trigger>
-  <Tooltip.Content>
-    {checks.length > 0
-      ? `${checks.filter((c) => c.status === "ok").length} ok, ${checks.filter((c) => c.status === "degraded").length} degraded, ${checks.filter((c) => c.status === "error").length} failed`
-      : "No checks"}
-  </Tooltip.Content>
-</Tooltip.Root>
+<div
+  class={cn(
+    "grid gap-1",
+    className,
+  )}
+  style={columns ? `grid-template-columns: repeat(${columns}, 1fr);` : ""}
+>
+  {#each timeBuckets as slot (slot.startTime.getTime())}
+    <HeatmapCell {slot} {range} {cellSize} />
+  {/each}
+</div>

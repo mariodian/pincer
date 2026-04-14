@@ -4,7 +4,7 @@
   import { Icon } from "$lib/components/ui/icon";
   import { cn } from "$lib/utils";
   import { formatShortDate } from "$lib/utils/datetime";
-  import type { Check, IncidentEvent } from "$shared/types";
+  import type { Check, IncidentEvent, TimeRange } from "$shared/types";
 
   interface Props {
     events: IncidentEvent[];
@@ -14,10 +14,11 @@
       name: string;
       color: string;
     }>;
+    range?: TimeRange;
     class?: string;
   }
 
-  let { events, checks, agents, class: className }: Props = $props();
+  let { events, checks, agents, range = "24h", class: className }: Props = $props();
 
   // Group events by incident
   const incidents = $derived.by(() => {
@@ -131,7 +132,7 @@
           <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
             Raw Checks
           </h4>
-          <Heatmap checks={dayChecks} cellSize="size-4" />
+          <Heatmap checks={dayChecks} {range} cellSize="size-4" />
         </div>
       {/if}
 
