@@ -11,9 +11,10 @@ import {
 } from "../storage/sqlite/incidentEventsRepo";
 import { readAgents } from "./agentService";
 
-// Hardcoded defaults - these can be promoted to configurable settings later
-const DEFAULT_FAILURE_THRESHOLD = 3;
-const DEFAULT_RECOVERY_THRESHOLD = 2;
+// Default thresholds for incident detection
+// These can be overridden via settings at runtime
+export const DEFAULT_FAILURE_THRESHOLD = 3;
+export const DEFAULT_RECOVERY_THRESHOLD = 2;
 
 /**
  * Per-agent incident tracking state.

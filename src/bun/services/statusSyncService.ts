@@ -191,8 +191,18 @@ let instance: StatusSyncService | null = null;
 
 export function getStatusSyncService(): StatusSyncService {
   if (!instance) {
-    throw new Error(
-      "StatusSyncService not initialized. Call initStatusSyncService() first.",
+    // Lazy initialization with sensible defaults
+    // This allows getStatusSyncService() to be called before explicit init
+    instance = new StatusSyncService({
+      getMainWindow: () => {
+        // Import here to avoid circular dependency
+        const { getMainWindow } = require("../rpc/windowRegistry");
+        return getMainWindow();
+      },
+    });
+    logger.debug(
+      "statusSync",
+      "StatusSyncService auto-initialized on first access",
     );
   }
   return instance;

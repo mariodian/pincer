@@ -75,7 +75,9 @@ const platformIsMacOS = isMacOS();
  * The fix: subtract the title bar offset when saving, so we always save
  * and restore the content size, not the total window size.
  */
-const TITLE_BAR_OFFSET = 28; // pixels
+// Title bar offset for Electrobun bug #182 workaround
+// On macOS, getSize() includes title bar, causing window growth on restore
+export const TITLE_BAR_OFFSET = 28; // pixels
 
 /**
  * Save the current window bounds to persistent storage.
