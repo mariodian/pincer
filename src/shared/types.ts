@@ -48,6 +48,7 @@ export interface AgentStatus extends Agent {
   status: Status;
   lastChecked: number;
   errorMessage?: string;
+  internalNetworkWarning?: boolean;
 }
 
 export interface AgentStatusInfo {
@@ -55,6 +56,7 @@ export interface AgentStatusInfo {
   status: Status;
   lastChecked: number;
   errorMessage?: string;
+  internalNetworkWarning?: boolean;
 }
 
 export interface Settings {
