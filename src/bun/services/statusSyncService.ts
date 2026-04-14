@@ -80,6 +80,14 @@ export class StatusSyncService {
   }
 
   /**
+   * Remove an agent's status from the internal Map.
+   * Call this when an agent is deleted to prevent memory leaks.
+   */
+  removeAgentStatus(id: number): void {
+    this.agentStatusMap.delete(id);
+  }
+
+  /**
    * Get current status for an agent, or null if not found.
    */
   getAgentStatus(id: number): AgentStatusInfo | undefined {
@@ -196,4 +204,15 @@ export function initStatusSyncService(opts: {
 }): StatusSyncService {
   instance = new StatusSyncService(opts);
   return instance;
+}
+
+/**
+ * Remove an agent's status from the singleton's internal Map.
+ * Convenience wrapper around getStatusSyncService().removeAgentStatus().
+ */
+export function removeAgentStatus(id: number): void {
+  if (instance) {
+    instance.removeAgentStatus(id);
+    logger.debug("statusSync", `[Agent ${id}] Removed from status map`);
+  }
 }
