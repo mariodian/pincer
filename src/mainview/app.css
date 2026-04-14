@@ -45,12 +45,12 @@
   --sidebar-ring: oklch(0.711 0.019 323.02);
 
   /* Heatmap colors */
-  --heatmap: oklch(0.627 0.194 142.66);
-  --heatmap-1: oklch(0.75 0.1 80);
-  --heatmap-2: oklch(0.65 0.14 80);
-  --heatmap-3: oklch(0.55 0.17 80);
-  --heatmap-4: oklch(0.45 0.19 45);
-  --heatmap-5: oklch(0.4 0.25 27.33);
+  --heatmap: var(--color-green-600);
+  --heatmap-1: var(--color-amber-400);
+  --heatmap-2: var(--color-amber-500);
+  --heatmap-3: var(--color-amber-600);
+  --heatmap-4: var(--color-red-500);
+  --heatmap-5: var(--color-red-700);
   --heatmap-empty: var(--muted);
 }
 
@@ -96,12 +96,12 @@
   --sidebar-ring: oklch(0.542 0.034 322.5);
 
   /* Heatmap colors - dark mode */
-  --heatmap: oklch(0.494 0.167 142.66);
-  --heatmap-1: oklch(0.727 0.104 80);
-  --heatmap-2: oklch(0.607 0.144 80);
-  --heatmap-3: oklch(0.507 0.174 80);
-  --heatmap-4: oklch(0.437 0.204 45);
-  --heatmap-5: oklch(0.377 0.255 27.33);
+  --heatmap: var(--color-green-700);
+  --heatmap-1: var(--color-amber-400);
+  --heatmap-2: var(--color-amber-500);
+  --heatmap-3: var(--color-amber-600);
+  --heatmap-4: var(--color-red-600);
+  --heatmap-5: var(--color-red-800);
   --heatmap-empty: var(--muted);
 }
 
