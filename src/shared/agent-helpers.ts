@@ -38,6 +38,55 @@ export function normalizeUrl(url: string): string {
   return normalized;
 }
 
+/**
+ * Check if a hostname/IP is a private or internal network address.
+ * Returns true for:
+ * - localhost and 127.0.0.1
+ * - 10.0.0.0/8 (10.x.x.x)
+ * - 172.16.0.0/12 (172.16.x.x - 172.31.x.x)
+ * - 192.168.0.0/16 (192.168.x.x)
+ * - *.local domains
+ */
+export function isPrivateOrInternalNetwork(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+
+    // Check for localhost
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+      return true;
+    }
+
+    // Check for .local domains
+    if (hostname.endsWith(".local")) {
+      return true;
+    }
+
+    // Check for private IP ranges
+    const ip = hostname;
+
+    // 10.0.0.0/8
+    if (/^10\.\d+\.\d+\.\d+$/.test(ip)) {
+      return true;
+    }
+
+    // 172.16.0.0/12 (172.16.x.x - 172.31.x.x)
+    if (/^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/.test(ip)) {
+      return true;
+    }
+
+    // 192.168.0.0/16
+    if (/^192\.168\.\d+\.\d+$/.test(ip)) {
+      return true;
+    }
+
+    return false;
+  } catch {
+    // Invalid URL, treat as not internal
+    return false;
+  }
+}
+
 /** Fields whose change should trigger an immediate health check. */
 export const HEALTH_AFFECTING_FIELDS = [
   "url",

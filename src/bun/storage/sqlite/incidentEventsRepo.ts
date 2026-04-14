@@ -155,6 +155,35 @@ export function getTotalEventsCount(): number {
 }
 
 /**
+ * Delete incident events older than the cutoff timestamp.
+ * Returns the number of deleted rows.
+ */
+export function deleteOldEvents(cutoffMs: number): number {
+  const { db } = getDatabase();
+
+  const result = db
+    .delete(incidentEvents)
+    .where(sql`${incidentEvents.eventAt} < ${cutoffMs}`)
+    .run();
+
+  // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
+  return result.changes ?? 0;
+}
+
+/**
+ * Count incident events older than the cutoff timestamp.
+ */
+export function countOldEvents(cutoffMs: number): number {
+  const { db } = getDatabase();
+  const row = db
+    .select({ count: sql<number>`count(*)` })
+    .from(incidentEvents)
+    .where(sql`${incidentEvents.eventAt} < ${cutoffMs}`)
+    .get();
+  return row?.count ?? 0;
+}
+
+/**
  * Convert a database row to an IncidentEvent object.
  */
 function rowToIncidentEvent(row: {
