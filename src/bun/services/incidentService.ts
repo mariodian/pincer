@@ -331,3 +331,14 @@ export function updateThresholds(
     `Updated thresholds: failureThreshold=${failureThreshold}, recoveryThreshold=${recoveryThreshold}`,
   );
 }
+
+/**
+ * Remove an agent's state from the in-memory Map.
+ * Call this when an agent is deleted to prevent memory leaks.
+ */
+export function removeAgentState(agentId: number): void {
+  const existed = agentStates.delete(agentId);
+  if (existed) {
+    logger.debug("incident", `[Agent ${agentId}] Removed from incident state`);
+  }
+}
