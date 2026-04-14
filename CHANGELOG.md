@@ -5,6 +5,28 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0] - 2026-04-14
+
+### Added
+
+- Added `stopStatusUpdates()` export and integrated into quit handler to prevent dangling timers.
+- Added `internalNetworkWarning` field for agents on private/internal networks with security-conscious user notifications.
+- Added `Semaphore` class with `MAX_CONCURRENT_HEALTH_CHECKS=10` for concurrency limiting.
+- Added incident retention with configurable cleanup (`runIncidentRetentionCleanup()`) unified with settings.retentionDays.
+
+### Changed
+
+- Wrapped all `parseStatus` functions in try/catch for graceful error handling.
+- Exported magic number constants (`DEFAULT_FAILURE_THRESHOLD`, `DEFAULT_RECOVERY_THRESHOLD`, `TITLE_BAR_OFFSET`) for maintainability.
+- Refactored `getStatusSyncService()` to lazy-initialize instead of throwing on missing dependency.
+
+### Fixed
+
+- Fixed memory leaks on agent deletion — `removeAgentState`, `removeAgentStatus`, `removeAgentStatusTracking` now wired to `deleteAgent` handler.
+- Fixed unbounded status map growth by cleaning up tracking on agent deletion.
+- Fixed unbounded incident events table growth with configurable retention (unified with settings.retentionDays).
+- Fixed electrobun compatibility by using static imports instead of `require()`.
+
 ## [v0.2.0] - 2026-04-13
 
 ### Added
