@@ -160,7 +160,9 @@ export async function initializeTray() {
             y: 0 + bounds.height,
           },
           // styleMask is macOS-only
-          ...(popoverConfig.styleMask ? { styleMask: popoverConfig.styleMask } : {}),
+          ...(popoverConfig.styleMask
+            ? { styleMask: popoverConfig.styleMask }
+            : {}),
         };
 
         popoverWindow = new BrowserWindow(wc);

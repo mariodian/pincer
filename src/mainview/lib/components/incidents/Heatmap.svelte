@@ -9,27 +9,36 @@
     class?: string;
   }
 
-  let { checks, columns: _columns, cellSize = "size-4", class: className }: Props = $props();
+  let {
+    checks,
+    columns: _columns,
+    cellSize = "size-4",
+    class: className,
+  }: Props = $props();
 
   // Error intensity calculation per HEAT-05, HEAT-06
   // Formula: (failed + 0.5 * degraded) / total_checks
   // Unknown/offline treated as degraded per D-06
   function calculateIntensity(checks: Check[]): number {
     if (checks.length === 0) return 0;
-    
+
     let failed = 0;
     let degraded = 0;
-    
+
     for (const check of checks) {
       if (check.status === "error") {
         failed++;
-      } else if (check.status === "degraded" || check.status === "offline" || check.status === null) {
+      } else if (
+        check.status === "degraded" ||
+        check.status === "offline" ||
+        check.status === null
+      ) {
         // D-06: unknown/no-result treated as degraded
         // Also treating offline as degraded (D-06 covers "unknown/no-result")
         degraded++;
       }
     }
-    
+
     return (failed + 0.5 * degraded) / checks.length;
   }
 
@@ -48,11 +57,9 @@
 </script>
 
 <div
-  class={cn(
-    "rounded-xs transition-colors duration-100",
-    cellSize,
-    className
-  )}
+  class={cn("rounded-xs transition-colors duration-100", cellSize, className)}
   style="background-color: {heatmapColor};"
-  title={checks.length > 0 ? `${checks.filter(c => c.status === 'ok').length} ok, ${checks.filter(c => c.status === 'degraded').length} degraded, ${checks.filter(c => c.status === 'error').length} failed` : 'No checks'}
+  title={checks.length > 0
+    ? `${checks.filter((c) => c.status === "ok").length} ok, ${checks.filter((c) => c.status === "degraded").length} degraded, ${checks.filter((c) => c.status === "error").length} failed`
+    : "No checks"}
 ></div>

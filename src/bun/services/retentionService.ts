@@ -1,6 +1,9 @@
 import { logger } from "./loggerService";
 import { countOldChecks, deleteOldChecks } from "../storage/sqlite/checksRepo";
-import { countOldEvents, deleteOldEvents } from "../storage/sqlite/incidentEventsRepo";
+import {
+  countOldEvents,
+  deleteOldEvents,
+} from "../storage/sqlite/incidentEventsRepo";
 import { SEVEN_DAYS_MS, ONE_HOUR_MS } from "../utils/constants";
 
 // Retention configuration for raw checks (7 days - hardcoded minimum)
@@ -50,7 +53,10 @@ export function runIncidentRetentionCleanup(retentionDays: number): number {
     return 0;
   }
   const deletedCount = deleteOldEvents(cutoffMs);
-  logger.info("retention", `Cleaned up ${deletedCount} incident events older than ${retentionDays} days`);
+  logger.info(
+    "retention",
+    `Cleaned up ${deletedCount} incident events older than ${retentionDays} days`,
+  );
   return deletedCount;
 }
 
@@ -81,7 +87,10 @@ export async function startRetentionService(): Promise<void> {
 
   // Run startup cleanup for incident events using settings value
   const incidentDeleted = runIncidentRetentionCleanup(retentionDays);
-  logger.info("retention", `Startup incident retention cleanup: ${incidentDeleted} events deleted (${retentionDays} days)`);
+  logger.info(
+    "retention",
+    `Startup incident retention cleanup: ${incidentDeleted} events deleted (${retentionDays} days)`,
+  );
 
   // Schedule background cleanup with retention days
   startBackgroundCleanup(retentionDays);
@@ -119,7 +128,10 @@ function startBackgroundCleanup(retentionDays: number): void {
       const deletedChecks = runRetentionCleanup();
       const deletedIncidents = runIncidentRetentionCleanup(retentionDays);
       if (deletedChecks > 0 || deletedIncidents > 0) {
-        logger.info("retention", `Background cleanup: ${deletedChecks} checks, ${deletedIncidents} incidents deleted`);
+        logger.info(
+          "retention",
+          `Background cleanup: ${deletedChecks} checks, ${deletedIncidents} incidents deleted`,
+        );
       }
     } catch (error) {
       logger.error("retention", "Background cleanup failed:", error);

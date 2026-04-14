@@ -13,7 +13,10 @@ import {
   readAgents,
   updateAgent,
 } from "../services/agentService";
-import { getStatusSyncService, removeAgentStatus } from "../services/statusSyncService";
+import {
+  getStatusSyncService,
+  removeAgentStatus,
+} from "../services/statusSyncService";
 import { logger } from "../services/loggerService";
 import { removeAgentState } from "../services/incidentService";
 import { removeAgentStatusTracking } from "../services/statusService";

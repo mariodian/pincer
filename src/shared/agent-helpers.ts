@@ -53,7 +53,11 @@ export function isPrivateOrInternalNetwork(url: string): boolean {
     const hostname = urlObj.hostname.toLowerCase();
 
     // Check for localhost
-    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+    if (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1"
+    ) {
       return true;
     }
 

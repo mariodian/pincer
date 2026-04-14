@@ -14,7 +14,10 @@ import {
 import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
 import { initLogger, logger } from "./services/loggerService";
-import { beginStatusUpdates, stopStatusUpdates } from "./services/statusService";
+import {
+  beginStatusUpdates,
+  stopStatusUpdates,
+} from "./services/statusService";
 import { stopRetentionService } from "./services/retentionService";
 import { getSettings } from "./storage/sqlite/settingsRepo";
 import {
