@@ -1,14 +1,9 @@
 <script lang="ts">
-  import { CheckDot, IncidentCard, Heatmap } from "$lib/components/incidents";
+  import { Heatmap, IncidentCard } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
   import { Icon } from "$lib/components/ui/icon";
   import { cn } from "$lib/utils";
-  import {
-    formatDateTime,
-    formatDuration,
-    formatShortDate,
-  } from "$lib/utils/datetime";
-  import { statusLabels } from "$shared/status-config";
+  import { formatShortDate } from "$lib/utils/datetime";
   import type { Check, IncidentEvent } from "$shared/types";
 
   interface Props {
@@ -23,23 +18,6 @@
   }
 
   let { events, checks, agents, class: className }: Props = $props();
-  let activeCheck: Check | null = $state(null);
-
-  let tooltipX = $state(0);
-  let tooltipY = $state(0);
-
-  function handleCheckHover(check: Check | null, event?: PointerEvent) {
-    activeCheck = check;
-    if (check && event) {
-      tooltipX = event.clientX;
-      tooltipY = event.clientY;
-    }
-  }
-
-  function handleCheckMove(event: PointerEvent) {
-    tooltipX = event.clientX;
-    tooltipY = event.clientY;
-  }
 
   // Group events by incident
   const incidents = $derived.by(() => {
@@ -147,25 +125,13 @@
         <div class="flex-1 border-t"></div>
       </div>
 
-      <!-- Raw checks section for this day -->
+      <!-- Heatmap section for this day (Phase 4) -->
       {#if dayChecks && dayChecks.length > 0}
         <div class="mb-6">
           <h4 class="mb-3 text-xs font-medium uppercase text-muted-foreground">
             Raw Checks
           </h4>
-          <div class="flex flex-wrap gap-px">
-            {#each dayChecks as check (check.id)}
-              <CheckDot
-                {check}
-                triggerProps={{
-                  onpointerenter: (event: PointerEvent) =>
-                    handleCheckHover(check, event),
-                  onpointermove: handleCheckMove,
-                  onpointerleave: () => handleCheckHover(null),
-                }}
-              />
-            {/each}
-          </div>
+          <Heatmap checks={dayChecks} cellSize="size-4" />
         </div>
       {/if}
 
@@ -203,35 +169,5 @@
         </Empty.Description>
       </Empty.Header>
     </Empty.Root>
-  {/if}
-  {#if activeCheck}
-    <div
-      class="fixed z-50 max-w-55 rounded-md border border-transparent bg-foreground px-2 py-1 text-xs text-background shadow-md"
-      style={`left: ${tooltipX}px; top: ${tooltipY - 12}px; transform: translate(-50%, -100%); pointer-events: none;`}
-    >
-      <div class="flex flex-col">
-        <div class="font-medium">
-          {statusLabels[activeCheck.status] || activeCheck.status}
-        </div>
-        <div class="text-background/80">
-          {formatDateTime(activeCheck.checkedAt)}
-        </div>
-        {#if activeCheck.responseMs !== null}
-          <div class="text-background/80">
-            Response: {formatDuration(activeCheck.responseMs)}
-          </div>
-        {/if}
-        {#if activeCheck.httpStatus !== null}
-          <div class="text-background/80">
-            HTTP {activeCheck.httpStatus}
-          </div>
-        {/if}
-        {#if activeCheck.errorMessage}
-          <div class="max-w-50 truncate text-red-500 dark:text-red-600">
-            {activeCheck.errorMessage}
-          </div>
-        {/if}
-      </div>
-    </div>
   {/if}
 </div>
