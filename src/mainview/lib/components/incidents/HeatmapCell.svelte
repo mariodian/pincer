@@ -33,8 +33,9 @@
   }
 
   // Map intensity to CSS variable
-  function getHeatmapVar(intensity: number): string {
-    if (intensity === 0) return "var(--heatmap)";
+  function getHeatmapVar(intensity: number, isEmpty: boolean): string {
+    if (isEmpty) return "var(--heatmap-empty)"; // No checks performed — muted/neutral
+    if (intensity === 0) return "var(--heatmap)"; // All checks passed
     if (intensity <= 0.2) return "var(--heatmap-1)";
     if (intensity <= 0.4) return "var(--heatmap-2)";
     if (intensity <= 0.6) return "var(--heatmap-3)";
@@ -69,8 +70,9 @@
     };
   }
 
+  const isEmpty = $derived(slot.checks.length === 0);
   const intensity = $derived(calculateIntensity(slot.checks));
-  const heatmapColor = $derived(getHeatmapVar(intensity));
+  const heatmapColor = $derived(getHeatmapVar(intensity, isEmpty));
   const timePeriod = $derived(formatTimePeriod(slot, range));
   const counts = $derived(getStatusCounts(slot.checks));
 </script>

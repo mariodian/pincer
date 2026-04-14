@@ -51,6 +51,7 @@
   --heatmap-3: oklch(0.55 0.17 80);
   --heatmap-4: oklch(0.45 0.19 45);
   --heatmap-5: oklch(0.4 0.25 27.33);
+  --heatmap-empty: var(--muted);
 }
 
 .dark {
@@ -101,6 +102,7 @@
   --heatmap-3: oklch(0.507 0.174 80);
   --heatmap-4: oklch(0.437 0.204 45);
   --heatmap-5: oklch(0.377 0.255 27.33);
+  --heatmap-empty: var(--muted);
 }
 
 @theme inline {
