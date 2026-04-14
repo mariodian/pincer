@@ -9,6 +9,7 @@ import {
 } from "../utils/windowBroadcaster";
 import { readAgents } from "./agentService";
 import { logger } from "./loggerService";
+import { getMainWindow } from "../rpc/windowRegistry";
 
 type BroadcastTargets = {
   popoverWindow?: BrowserWindow | null;
@@ -194,11 +195,7 @@ export function getStatusSyncService(): StatusSyncService {
     // Lazy initialization with sensible defaults
     // This allows getStatusSyncService() to be called before explicit init
     instance = new StatusSyncService({
-      getMainWindow: () => {
-        // Import here to avoid circular dependency
-        const { getMainWindow } = require("../rpc/windowRegistry");
-        return getMainWindow();
-      },
+      getMainWindow,
     });
     logger.debug(
       "statusSync",
