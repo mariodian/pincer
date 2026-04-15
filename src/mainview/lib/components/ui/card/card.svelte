@@ -16,9 +16,8 @@
 	data-slot="card"
 	data-size={size}
 	class={cn("ring-foreground/10 bg-card text-card-foreground gap-6 overflow-hidden rounded-xl py-6 text-sm shadow-xs ring-1 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl group/card flex flex-col",
-  // "shadow-sm shadow-black/8",
   "ring-black/4 shadow-md shadow-black/4",
-  "dark:shadow-xs dark:shadow-black/20 dark:inset-shadow-2xs dark:inset-shadow-white/2 dark:ring-0",
+  "dark:shadow-xs dark:shadow-black/25 dark:inset-shadow-2xs dark:inset-shadow-white/4 dark:ring-0",
   className)}
 	{...restProps}
 >

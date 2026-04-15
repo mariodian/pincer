@@ -65,7 +65,7 @@
       <Sidebar.Inset
         data-slot="content"
         class={[
-          "min-w-0 m-1.5 py-5 px-4",
+          "min-w-0 m-1.5 pt-5 pb-4 px-4",
           "rounded-xl",
           "shadow-xs shadow-black/10 inset-shadow-2xs inset-shadow-white/50",
           "dark:shadow-none dark:inset-shadow-none",
@@ -85,7 +85,21 @@
   :global([data-slot="sidebar-container"]) {
     border-color: transparent !important;
   }
-  /* :global(input, textarea, select, [data-slot="select-trigger"]) {
+  :global(
+    html.dark input,
+    html.dark textarea,
+    html.dark select,
+    html.dark [data-slot="select-trigger"]
+  ) {
     background-color: var(--input-background);
-  } */
+    border-color: var(--input-border);
+
+    --tw-inset-shadow-color: color-mix(
+      in oklab,
+      color-mix(in oklab, #000 15%, transparent) 100%,
+      transparent
+    );
+    --tw-inset-shadow: inset 0 1px 2px var(--tw-inset-shadow-color);
+    box-shadow: var(--tw-inset-shadow);
+  }
 </style>

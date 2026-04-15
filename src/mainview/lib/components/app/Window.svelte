@@ -152,12 +152,10 @@
   }
   /* macOS light */
   :global(html:not(.dark) body[data-os="macos"]) {
-    /* background-color: oklch(94.974% 0.01133 320.903 / 0.35); */
     background-color: oklch(0.912 0.012 322.12 / 40%);
   }
   /* macOS dark */
   :global(html.dark body[data-os="macos"]) {
-    /* background-color: oklch(30.029% 0.01875 318.593 / 0.55); */
-    background-color: oklch(0.3 0.019 322.12 / 85%);
+    background-color: oklch(0.3 0.019 322.12 / 75%);
   }
 </style>

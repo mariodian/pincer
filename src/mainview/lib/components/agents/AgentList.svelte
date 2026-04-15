@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Badge } from "$lib/components/ui/badge/";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Empty from "$lib/components/ui/empty/index.js";
   import { Icon } from "$lib/components/ui/icon";
@@ -6,6 +7,7 @@
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getMainRPC, offAgentSync, onAgentSync } from "$lib/services/mainRPC";
+  import { cn } from "$lib/utils";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
   import {
     createAgentSyncSignature,
@@ -137,10 +139,17 @@
 
   <PageBody>
     {#if loading}
-      <div class="flex flex-col gap-3">
+      <div class="flex flex-col gap-4">
         {#each [1, 2, 3] as _}
           <div
-            class="flex items-center gap-4 p-4 rounded-lg border border-border/50 bg-card"
+            class={cn(
+              "flex items-center gap-3 mt-0.5 p-4 min-h-18",
+              "bg-card rounded-md",
+              "border-none ring-1 ring-black/4 dark:ring-0",
+              "shadow-xs shadow-black/6",
+              "dark:shadow-xs dark:shadow-black/25",
+              "dark:inset-shadow-2xs dark:inset-shadow-white/4",
+            )}
           >
             <Skeleton class="size-3 rounded-full" />
             <div class="flex-1 space-y-2">
@@ -155,105 +164,51 @@
         {/each}
       </div>
     {:else if agents.length > 0}
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 overflow-x-hidden">
+      <div
+        class="grid grid-cols-1 xl:grid-cols-2 gap-3 -mx-0.5 overflow-x-hidden"
+      >
         {#each agents as agent (agent.id)}
-          <div class="">
-            <div class={["relative overflow-x-hidden", "p-1"]}>
-              <!-- Delete Confirmation -->
-              <div
-                class={[
-                  "rounded-md shadow-sm shadow-black/5 dark:shadow-none",
-                  "absolute w-full",
-                  confirmDeleteId === agent.id
-                    ? "right-0 duration-300"
-                    : "-right-200 duration-300 opacity-0",
-                ]}
-              >
-                <Item.Root
-                  variant="outline"
-                  class={[
-                    "group",
-                    "min-h-18 h-full w-full",
-                    "border-red-700/80 bg-red-700/80",
-                    "dark:border-destructive/60 dark:bg-destructive/50",
-                  ]}
-                >
-                  <Item.Content>
-                    <span
-                      class={[
-                        "text-sm font-medium",
-                        "text-primary-foreground dark:text-primary",
-                      ]}
-                    >
-                      Delete {agent.name}? This can't be undone.
-                    </span>
-                  </Item.Content>
-                  <Item.Actions>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onclick={() => handleDelete(agent)}
-                      disabled={deletingId === agent.id}
-                    >
-                      Yes, delete
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onclick={() => (confirmDeleteId = null)}
-                    >
-                      Cancel
-                    </Button>
-                  </Item.Actions>
-                </Item.Root>
-              </div>
-
+          <div class="p-0.5 overflow-x-hidden">
+            <div
+              class={cn(
+                "relative w-full",
+                "duration-300 transition-all",
+                confirmDeleteId === agent.id ? "-left-full -ml-2" : "left-0",
+              )}
+            >
               <!-- Agent Item -->
               <div
-                class={[
-                  "rounded-md shadow-sm shadow-black/4",
-                  "dark:shadow-xs dark:shadow-black/20",
-                  "relative w-full",
-                  confirmDeleteId === agent.id
-                    ? "-left-200 duration-300 opacity-0"
-                    : "left-0 duration-300",
-                ]}
+                class={cn(
+                  "rounded-md shadow-xs shadow-black/6",
+                  "dark:shadow-xs dark:shadow-black/25",
+                )}
               >
                 <Item.Root
-                  variant="outline"
-                  class={[
+                  class={cn(
                     "group",
-                    "bg-card ",
-                    "border-transparent",
-                    "ring-1 ring-black/5",
-                    "dark:inset-shadow-2xs dark:inset-shadow-white/2",
-                    "min-h-18 h-full w-full",
-                  ]}
+                    "bg-card",
+                    !agent.enabled ? "bg-card/50 opacity-70" : "",
+                    "min-h-18",
+                    "border-none ring-1 ring-black/4 dark:ring-0",
+                    "dark:inset-shadow-2xs dark:inset-shadow-white/4",
+                  )}
                 >
-                  <Item.Media class="min-h-9">
-                    <span
-                      class={[
-                        "shrink-0 size-3 rounded-full transition-all",
-                        getStatusClass(agent.status),
-                      ]}
-                      title={getStatusLabel(agent.status)}
-                    ></span>
-                  </Item.Media>
+                  <span
+                    class={[
+                      "shrink-0 size-3 rounded-full transition-all",
+                      getStatusClass(agent.status),
+                    ]}
+                    title={getStatusLabel(agent.status)}
+                  ></span>
 
                   <Item.Content>
                     <div class="flex items-center gap-2">
                       <Item.Title>{agent.name}</Item.Title>
-                      <span
-                        class="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium"
+                      <Badge variant="secondary"
+                        >{getTypeName(agent.type)}</Badge
                       >
-                        {getTypeName(agent.type)}
-                      </span>
                       {#if !agent.enabled}
-                        <span
-                          class="text-[11px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive font-medium"
-                        >
-                          Disabled
-                        </span>
+                        <Badge variant="destructive">Disabled</Badge>
                       {/if}
                     </div>
                     <Item.Description class="text-xs"
@@ -287,6 +242,53 @@
                         <span class="sr-only">Delete</span>
                       </Button>
                     </div>
+                  </Item.Actions>
+                </Item.Root>
+              </div>
+              <!-- Delete Confirmation -->
+              <div
+                class={cn(
+                  "absolute left-full top-0 w-full ml-2",
+                  "rounded-md shadow-xs shadow-black/6",
+                  "dark:shadow-xs dark:shadow-black/20",
+                )}
+              >
+                <Item.Root
+                  variant="outline"
+                  class={cn(
+                    "group",
+                    "min-h-18",
+                    "border-red-700/80 bg-red-700/80",
+                    "dark:border-destructive/60 dark:bg-destructive/50",
+                    "dark:shadow-black/30",
+                  )}
+                >
+                  <Item.Content>
+                    <span
+                      class={cn(
+                        "text-sm font-medium",
+                        "text-primary-foreground dark:text-primary",
+                      )}
+                    >
+                      Delete {agent.name}? This can't be undone.
+                    </span>
+                  </Item.Content>
+                  <Item.Actions>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onclick={() => handleDelete(agent)}
+                      disabled={deletingId === agent.id}
+                    >
+                      Yes, delete
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onclick={() => (confirmDeleteId = null)}
+                    >
+                      Cancel
+                    </Button>
                   </Item.Actions>
                 </Item.Root>
               </div>

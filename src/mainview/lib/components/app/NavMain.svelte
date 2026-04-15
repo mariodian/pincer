@@ -38,7 +38,7 @@
               size="icon"
               class={[
                 "size-8 group-data-[collapsible=icon]:opacity-0",
-                "border-input bg-primary-foreground/70 hover:bg-primary-foreground/80",
+                "border-input bg-primary-foreground/70 hover:bg-primary-foreground",
               ]}
               variant="outline"
               onclick={() => push("/agents/add")}
