@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   build-macos:
     runs-on: macos-latest
@@ -51,8 +54,6 @@ jobs:
   release:
     needs: [build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
