@@ -45,14 +45,13 @@ Running multiple local AI agents means constantly switching between terminals an
 
 ## ✨ Features
 
-- **Tray-first visibility**: check agent health at a glance from your system tray
-- **Real-time monitoring**: status indicators for each running agent
-- **Charts & history**: visualize agent activity and health trends over time
-- **Persistent storage**: activity logged locally with SQLite via Drizzle ORM
-- **Minimal resource usage**: local-first, no cloud dependency
-- **Cross-platform**: runs on macOS, Windows, and Linux
-- **Light/dark mode**: automatic system theme detection with manual override
-- **Agent support**: works with [OpenClaw](https://github.com/openclaw/openclaw), [OpenCrabs](https://github.com/adolfousier/opencrabs), and custom agents via HTTP health endpoints
+- **Tray-first monitoring**: live agent status from the system tray
+- **Dashboards and trends**: KPIs, charts, and response-time history
+- **Incidents and checks**: timeline + heatmap over 24h/7d windows
+- **Reports**: per-agent uptime summary with HTML export
+- **Flexible controls**: polling, retention, notifications, startup, and auto-update settings
+- **Local and cross-platform**: SQLite-backed, runs on macOS, Windows, and Linux
+- **Agent support**: [OpenClaw](https://github.com/openclaw/openclaw), [OpenCrabs](https://github.com/adolfousier/opencrabs), [Hermes](https://github.com/nousresearch/hermes-agent), [OpenCode](https://github.com/anomalyco/opencode), and custom HTTP health endpoints
 
 ## 📥 Installation
 
