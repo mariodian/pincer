@@ -56,6 +56,15 @@ Running multiple local AI agents means constantly switching between terminals an
 
 ## 📥 Installation
 
+### Homebrew (macOS)
+
+```bash
+brew tap mariodian/tap
+brew install --cask pincer
+```
+
+### From source
+
 ```bash
 git clone https://github.com/mariodian/pincer.git
 cd pincer

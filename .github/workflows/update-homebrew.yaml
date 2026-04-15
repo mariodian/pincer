@@ -1,0 +1,81 @@
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-tap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release info
+        id: release
+        run: |
+          version="${GITHUB_REF#refs/tags/}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "version_bare=${version#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download macOS artifact and compute SHA256
+        id: sha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ steps.release.outputs.version }}"
+
+          gh release download "$version" \
+            --repo "${{ github.repository }}" \
+            --pattern "stable-macos-arm64-Pincer.dmg" \
+            --dir /tmp/assets
+
+          file="/tmp/assets/stable-macos-arm64-Pincer.dmg"
+          sha256=$(sha256sum "$file" | awk '{print $1}')
+
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Update Homebrew tap
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          version="${{ steps.release.outputs.version }}"
+          version_bare="${{ steps.release.outputs.version_bare }}"
+          sha256="${{ steps.sha.outputs.sha256 }}"
+
+          # Clone the tap repo
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/mariodian/homebrew-tap.git" /tmp/tap
+          cd /tmp/tap
+
+          mkdir -p Casks
+
+          # Write the updated cask formula
+          cat > Casks/pincer.rb << 'CASK_EOF'
+          cask "pincer" do
+            version "VERSION_PLACEHOLDER"
+            sha256 "SHA256_PLACEHOLDER"
+
+            url "https://github.com/mariodian/pincer/releases/download/v#{version}/stable-macos-arm64-Pincer.dmg"
+            name "Pincer"
+            desc "Desktop monitoring for local AI agents"
+            homepage "https://github.com/mariodian/pincer"
+
+            depends_on arch: :arm64
+
+            app "Pincer.app"
+
+            zap trash: [
+              "~/Library/Application Support/com.mariodian.pincer",
+              "~/Library/Caches/com.mariodian.pincer",
+            ]
+          end
+          CASK_EOF
+
+
+          # Replace placeholders with actual values
+          sed -i "s/VERSION_PLACEHOLDER/$version_bare/" Casks/pincer.rb
+          sed -i "s/SHA256_PLACEHOLDER/$sha256/" Casks/pincer.rb
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/pincer.rb
+          git commit -m "Update pincer to $version"
+          git push
