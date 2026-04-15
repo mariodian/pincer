@@ -133,3 +133,4 @@ jobs:
         with:
           files: all-artifacts/*
           body_path: /tmp/release_notes.md
+          token: ${{ secrets.TAP_GITHUB_TOKEN }}
