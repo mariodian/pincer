@@ -5,6 +5,18 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.2] - 2026-04-16
+
+### Added
+
+- Added Homebrew installation instructions in README.
+
+### Changed
+
+- Enhanced UI component styling with improved shadow treatment and visual polish.
+- Updated the README features section for clearer wording and structure.
+- Updated Homebrew tap workflow to support release publishing flow.
+
 ## [v0.3.1] - 2026-04-15
 
 ### Added
