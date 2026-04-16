@@ -41,7 +41,27 @@ Pincer will appear in your system tray.
 
 Running multiple local AI agents means constantly switching between terminals and browser tabs just to check what's healthy and what's not. Pincer lives in your system tray and gives you instant visibility into agent health, status history, and usage charts — no context switching required.
 
-![pincer-dashboard](media/pincer-screenshot.webp)
+<table border="0" align="center" cellspacing="0" cellpadding="10">
+  <tr>
+    <td colspan="4" align="center" valign="middle">
+      <a href="media/screenshots/dashboard-tray.webp"><img src="./media/screenshots/dashboard-tray.webp" alt="Dashboard Tray" width="100%"></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="25%" align="center" valign="middle">
+      <a href="media/screenshots/agents.webp"><img src="./media/screenshots/agents-thumb.webp" alt="Agents List" width="100%"></a>
+    </td>
+    <td width="25%" align="center" valign="middle">
+      <a href="media/screenshots/incidents.webp"><img src="./media/screenshots/incidents-thumb.webp" alt="Heatmap and Incidents" width="100%"></a>
+    </td>
+    <td width="25%" align="center" valign="middle">
+      <a href="media/screenshots/reports.webp"><img src="./media/screenshots/reports-thumb.webp" alt="Reports" width="100%"></a>
+    </td>
+    <td width="25%" align="center" valign="middle">
+      <a href="media/screenshots/light-mode.webp"><img src="./media/screenshots/light-mode-thumb.webp" alt="Light Mode" width="100%"></a>
+    </td>
+  </tr>
+</table>
 
 ## ✨ Features
 
