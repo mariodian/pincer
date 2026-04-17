@@ -122,10 +122,10 @@ bun run build:stable
 
 ### App won't launch on macOS
 
-If macOS blocks the app from running, run:
+If macOS blocks the app from opening because it is quarantined, run:
 
 ```bash
-xattr -cr /path/to/Pincer.app
+xattr -r -d com.apple.quarantine /Applications/Pincer.app
 ```
 
 ### HMR not updating in secondary windows
