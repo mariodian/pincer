@@ -7,7 +7,7 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
-  import type { AdvancedSettings } from "$shared/types";
+  import type { AdvancedSettings, Platform } from "$shared/types";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -20,7 +20,7 @@
   let savedPollingIntervalSec = $state(30);
   let autoCheckUpdate = $state(true);
   let useNativeTray = $state(false);
-  let platform = $state<"macos" | "win" | "linux" | "">("");
+  let platform = $state<Platform | "">("");
 
   async function loadSettings() {
     try {

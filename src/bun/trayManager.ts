@@ -23,17 +23,18 @@ import { getAdvancedSettings } from "./storage/sqlite/advancedSettingsRepo";
 import { getSettings } from "./storage/sqlite/settingsRepo";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
-import { isMacOS, isWindows } from "./utils/platform";
+import { isBSD, isLinux, isMacOS, isWindows } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
-import { POPOVER_CONFIGS, readWindowConfig } from "./utils/windowConfig";
 import type { PopoverWindowConfig } from "./utils/windowConfig";
+import { POPOVER_CONFIGS, readWindowConfig } from "./utils/windowConfig";
 
 // Re-export for backward compat with setRefreshCallback in this file
 export { refreshAndPush };
 
 const platformIsMacOS = isMacOS();
 const platformIsWindows = isWindows();
-const platformIsLinux = !platformIsMacOS && !platformIsWindows;
+const platformIsLinux = isLinux();
+const platformIsBSD = isBSD();
 
 /** Get platform-specific popover window configuration */
 function getPopoverWindowConfig(): PopoverWindowConfig {
@@ -91,7 +92,8 @@ const NAV_MENU_ITEMS = [
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
 const iconSize = platformIsWindows ? TRAY_ICON_SIZE_WINDOWS : TRAY_ICON_SIZE;
-const iconPath = platformIsLinux ? TRAY_ICON_LINUX_PATH : TRAY_ICON_PATH;
+const iconPath =
+  platformIsLinux || platformIsBSD ? TRAY_ICON_LINUX_PATH : TRAY_ICON_PATH;
 
 // Cache the useNativeTray setting at startup - changes require restart
 let useNativeTrayCached: boolean | null = null;

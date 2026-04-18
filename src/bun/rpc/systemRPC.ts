@@ -1,6 +1,7 @@
 // System RPC - Shared RPC definition for system info
 import { BrowserView, Utils } from "electrobun/bun";
 import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
+import type { Platform } from "../../shared/types";
 import { logger } from "../services/loggerService";
 import {
   setMacOSWindowAppearance,
@@ -25,7 +26,7 @@ export type SystemRPCType = {
     requests: {
       getPlatform: {
         params: Record<string, never>;
-        response: { os: "macos" | "win" | "linux" };
+        response: { os: Platform };
       };
       setWindowAppearance: {
         params: { appearance: WindowAppearance };

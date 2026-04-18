@@ -6,7 +6,7 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
-  import type { Settings } from "$shared/types";
+  import type { Platform, Settings } from "$shared/types";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -15,7 +15,7 @@
   let { onSaveStatus }: Props = $props();
 
   let loading = $state(true);
-  let platform: "macos" | "win" | "linux" | null = $state(null);
+  let platform: Platform | null = $state(null);
 
   // Form state
   let retentionDays = $state(90);
@@ -30,13 +30,11 @@
     try {
       await whenReady();
       const rpc = getMainRPC();
-      const [settings, platformInfo]: [
-        Settings,
-        { os: "macos" | "win" | "linux" },
-      ] = await Promise.all([
-        rpc.request.getSettings({}),
-        rpc.request.getPlatform({}),
-      ]);
+      const [settings, platformInfo]: [Settings, { os: Platform }] =
+        await Promise.all([
+          rpc.request.getSettings({}),
+          rpc.request.getPlatform({}),
+        ]);
 
       retentionDays = settings.retentionDays;
       openMainWindow = settings.openMainWindow;

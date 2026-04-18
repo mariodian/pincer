@@ -1,6 +1,8 @@
 // Canonical type definitions shared between main process and renderer.
 // Import from this file instead of re-declaring interfaces.
 
+export type Platform = "macos" | "win" | "linux" | "bsd";
+
 export type Status = "ok" | "error" | "offline";
 
 // Extended status including "degraded" for checks

@@ -1,3 +1,4 @@
+import type { Platform } from "$shared/types";
 import { execSync } from "node:child_process";
 
 export function isMacOS(): boolean {
@@ -8,9 +9,29 @@ export function isWindows(): boolean {
   return process.platform === "win32";
 }
 
-export function getPlatform(): "macos" | "win" | "linux" {
+export function isLinux(): boolean {
+  return process.platform === "linux";
+}
+
+export function isBSD(): boolean {
+  return ["freebsd", "openbsd"].includes(process.platform);
+}
+
+export function getPlatform(): Platform {
   const p = process.platform;
-  return p === "darwin" ? "macos" : p === "win32" ? "win" : "linux";
+  switch (p) {
+    case "darwin":
+      return "macos";
+    case "win32":
+      return "win";
+    case "linux":
+      return "linux";
+    case "freebsd":
+    case "openbsd":
+      return "bsd";
+    default:
+      return "linux"; // Default to linux for unknown platforms
+  }
 }
 
 /**

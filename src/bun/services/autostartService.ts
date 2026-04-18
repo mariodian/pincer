@@ -6,17 +6,17 @@
  * - Windows: Registry-based autostart
  * - Linux: .desktop entry in autostart directory
  */
-import { join } from "node:path";
-import { mkdirSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
 import { $ } from "bun";
 import { Updater, Utils } from "electrobun/bun";
-import { isMacOS, isWindows } from "../utils/platform";
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { isBSD, isLinux, isMacOS, isWindows } from "../utils/platform";
+import { logger } from "./loggerService";
 import {
-  enableMacOSAutostart,
   disableMacOSAutostart,
+  enableMacOSAutostart,
   isMacOSAutostartEnabled,
 } from "./macOSAutostartService";
-import { logger } from "./loggerService";
 
 const APP_NAME = "Pincer";
 
@@ -116,12 +116,17 @@ export async function disableAutostart(): Promise<void> {
 /**
  * Get the path to the launcher executable.
  * On macOS bundled apps, this points to the 'launcher' binary inside the .app bundle.
+ * On Linux bundled apps, this points to the 'launcher' binary in the same bin/ directory.
  */
 function getLauncherPath(): string {
   if (isMacOS()) {
     // Replace the current executable name with 'launcher'
     // e.g., /Applications/Pincer.app/Contents/MacOS/bun -> /Applications/Pincer.app/Contents/MacOS/launcher
     return process.execPath.replace(/\/MacOS\/[^/]+$/, "/MacOS/launcher");
+  } else if (isLinux() || isBSD()) {
+    // Linux/BSD: replace the executable name with 'launcher' in the same bin/ directory
+    // e.g., ~/.local/share/com.mariodian.pincer/stable/app/bin/bun -> .../bin/launcher
+    return process.execPath.replace(/\/[^/]+$/, "/launcher");
   }
   return process.execPath;
 }

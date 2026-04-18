@@ -5,6 +5,7 @@
     pendingNavigationRoute,
     rpcReady,
   } from "$lib/services/mainRPC";
+  import type { Platform } from "$shared/types";
   import { userPrefersMode } from "mode-watcher";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
@@ -22,7 +23,7 @@
     actions?: Snippet;
   }
 
-  let os = $state<"macos" | "win" | "linux" | "">("");
+  let os = $state<Platform | "">("");
   let pushWindowAppearance: ((appearance: WindowAppearance) => void) | null =
     null;
 
