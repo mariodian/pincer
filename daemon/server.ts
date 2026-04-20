@@ -1,6 +1,6 @@
 import { serve, type Server } from "bun";
 import { sql } from "drizzle-orm";
-import { appConfig } from "../src/shared/appConfig";
+import { daemonConfig } from "../src/shared/appConfig";
 import { logger } from "../src/shared/logger";
 import type { Agent, Check, IncidentEvent } from "../src/shared/types";
 import { config } from "./config";
@@ -9,7 +9,7 @@ import { agents, checks, incidentEvents, stats } from "./schema";
 
 type DaemonServer = Server<undefined>;
 
-const VERSION = appConfig.version;
+const VERSION = daemonConfig.version;
 const startTime = Date.now();
 
 function checkAuth(req: Request): boolean {
@@ -154,9 +154,7 @@ async function handleRequest(req: Request): Promise<Response> {
 
       const hasMore = rows.length > limit;
       const page = rows.slice(0, limit);
-      const nextCursor = hasMore
-        ? page[page.length - 1].checkedAt
-        : null;
+      const nextCursor = hasMore ? page[page.length - 1].checkedAt : null;
 
       return jsonResponse({
         checks: page.map(rowToCheck),

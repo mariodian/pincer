@@ -1,15 +1,15 @@
-import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
-import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
-import { readAgents } from "./agentService";
-import { logger } from "./loggerService";
 import type {
   Check,
-  IncidentEvent,
-  HourlyStat,
   DaemonSyncResult,
   DaemonTestResult,
+  HourlyStat,
+  IncidentEvent,
 } from "../../shared/types";
+import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
+import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { getDatabase } from "../storage/sqlite/db";
+import { readAgents } from "./agentService";
+import { logger } from "./loggerService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
 
@@ -33,8 +33,10 @@ async function daemonFetch(
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
   if (days > 0) return `${days}d ${hours}h`;
-  return `${hours}h`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
 }
 
 export async function testDaemonConnection(): Promise<DaemonTestResult> {

@@ -11,7 +11,10 @@ function getAppDataDir(): string {
     return join(home, "Library", "Application Support", appConfig.identifier);
   }
   if (plat === "win32") {
-    return join(process.env.APPDATA || join(home, "AppData", "Roaming"), appConfig.identifier);
+    return join(
+      process.env.APPDATA || join(home, "AppData", "Roaming"),
+      appConfig.identifier,
+    );
   }
   // Linux
   const xdgData = process.env.XDG_DATA_HOME || join(home, ".local", "share");
@@ -25,13 +28,15 @@ export const config = {
   secret: process.env.DAEMON_SECRET,
   dbPath: process.env.DB_PATH || join(appDataDir, "daemon.sqlite"),
   pollingIntervalMs: parseInt(process.env.POLLING_INTERVAL_MS || "15000", 10),
-  logFilePath: process.env.LOG_FILE_PATH || join(appDataDir, "logs", "daemon.log"),
+  logFilePath:
+    process.env.LOG_FILE_PATH || join(appDataDir, "logs", "daemon.log"),
 };
 
 // Initialize logger early so we can use it for config validation errors
 initLogger({
   logFilePath: config.logFilePath,
-  minLevel: (process.env.LOG_LEVEL as "debug" | "info" | "warn" | "error") || "info",
+  minLevel:
+    (process.env.LOG_LEVEL as "debug" | "info" | "warn" | "error") || "info",
   consoleOutput: true,
   componentPrefix: "[daemon]",
 });
