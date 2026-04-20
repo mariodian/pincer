@@ -5,6 +5,25 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.4-dev] - 2026-04-21
+
+### Added
+
+- Added daemon synchronization and incident backfill support so the desktop app can recover monitoring gaps after sleep or downtime.
+- Added Linux daemon release packaging so GitHub releases now publish a `pincerd-vX.Y.Z-linux-x64.tar.gz` bundle.
+- Added daemon logging controls and release-tagging guidance for validating daemon version metadata before publishing.
+
+### Changed
+
+- Updated daemon channel resolution and bundling to derive version and release context more reliably.
+- Renamed the daemon package and bundled output to `pincerd` for consistent release and deployment naming.
+- Improved daemon settings feedback in the app for connection testing and synchronization visibility.
+
+### Fixed
+
+- Fixed daemon timestamp normalization for synced checks to keep status history aligned after import.
+- Fixed daemon request handling around server imports and date parsing for more reliable runtime behavior.
+
 ## [v0.3.3] - 2026-04-18
 
 ### Added
