@@ -1,13 +1,15 @@
 <script lang="ts">
+  import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Separator } from "$lib/components/ui/separator";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import Spinner from "$lib/components/ui/spinner/spinner.svelte";
   import { SwitchCard } from "$lib/components/ui/switch-card";
-  import { Button } from "$lib/components/ui/button";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import type { DaemonSettings } from "$shared/types";
+  import { toast } from "svelte-sonner";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -21,10 +23,9 @@
   let secret = $state("");
   let savedUrl = $state("");
   let savedSecret = $state("");
-  let testStatus = $state<"testing" | "success" | "error" | null>(null);
-  let testMessage = $state("");
+  let testStatus = $state<"testing" | null>(null);
+  let syncStatus = $state<"syncing" | null>(null);
   let lastSync = $state<number | null>(null);
-  let syncing = $state(false);
 
   async function loadSettings() {
     try {
@@ -83,36 +84,36 @@
 
   async function testConnection() {
     testStatus = "testing";
-    testMessage = "";
     try {
       const rpc = getMainRPC();
       const result = await rpc.request.testDaemonConnection({});
       if (result.connected) {
-        testStatus = "success";
-        testMessage = `Connected — daemon v${result.version}, uptime ${result.uptimeFormatted}`;
+        toast.success(
+          `Connected: daemon v${result.version}, uptime ${result.uptimeFormatted}`,
+        );
       } else {
-        testStatus = "error";
-        testMessage = result.error || "Unreachable";
+        toast.error(result.error || "Unreachable");
       }
-    } catch (error) {
-      testStatus = "error";
-      testMessage = "Unreachable";
+    } catch {
+      toast.error("Unreachable");
+    } finally {
+      testStatus = null;
     }
   }
 
   async function syncNow() {
-    syncing = true;
+    syncStatus = "syncing";
     try {
       const rpc = getMainRPC();
       const result = await rpc.request.syncDaemon({});
       lastSync = Date.now();
-      testStatus = "success";
-      testMessage = `Synced: ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents`;
-    } catch (error) {
-      testStatus = "error";
-      testMessage = "Sync failed";
+      toast.success(
+        `Synced: ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents`,
+      );
+    } catch {
+      toast.error("Sync failed");
     } finally {
-      syncing = false;
+      syncStatus = null;
     }
   }
 
@@ -152,7 +153,7 @@
 
       <Separator class="my-0" />
 
-      <Card.Content class="space-y-4 pt-4">
+      <Card.Content class="space-y-4">
         <div class="space-y-2">
           <Label for="daemon-url">Daemon URL</Label>
           <Input
@@ -184,23 +185,19 @@
             onclick={testConnection}
             disabled={!enabled || testStatus === "testing"}
           >
-            {testStatus === "testing" ? "Testing..." : "Test connection"}
+            {#if testStatus === "testing"}
+              <Spinner />
+              Testing...
+            {:else}
+              Test connection
+            {/if}
           </Button>
-          {#if testMessage}
-            <span
-              class="text-xs {testStatus === 'success'
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-destructive'}"
-            >
-              {testMessage}
-            </span>
-          {/if}
         </div>
       </Card.Content>
     </Card.Root>
 
     <Card.Root>
-      <Card.Content class="space-y-4 pt-4">
+      <Card.Content class="space-y-4 min-h-11">
         <div class="flex items-center justify-between">
           <div>
             <Label class="text-sm">Last synced</Label>
@@ -212,9 +209,14 @@
             size="sm"
             variant="outline"
             onclick={syncNow}
-            disabled={syncing || !enabled}
+            disabled={syncStatus === "syncing" || !enabled}
           >
-            {syncing ? "Syncing..." : "Sync now"}
+            {#if syncStatus === "syncing"}
+              <Spinner />
+              Syncing...
+            {:else}
+              Sync now
+            {/if}
           </Button>
         </div>
       </Card.Content>
