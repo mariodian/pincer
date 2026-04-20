@@ -108,73 +108,79 @@ export async function sync(): Promise<DaemonSyncResult> {
     return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
   }
 
-  // Verify daemon is reachable
-  try {
-    const healthResponse = await daemonFetch(
-      settings.url,
-      settings.secret,
-      "/health",
-    );
-    if (!healthResponse.ok) {
-      logger.warn(
-        "daemon",
-        `Daemon health check failed: HTTP ${healthResponse.status}`,
-      );
-      return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
-    }
-  } catch (error) {
-    logger.warn("daemon", "Daemon unreachable during sync:", error);
-    return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
-  }
-
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
   let totalChecks = 0;
   let totalStats = 0;
   let totalIncidents = 0;
 
-  // Import checks with pagination
+  // Import checks with pagination - serves as connectivity test too
   let cursor: number | null = lastSyncAt;
+  let firstRequestFailed = false;
   while (cursor !== null) {
     const url = `/checks?since=${cursor}&limit=1000`;
-    const response = await daemonFetch(settings.url, settings.secret, url);
-    if (!response.ok) {
-      logger.warn("daemon", `Failed to fetch checks: HTTP ${response.status}`);
+    try {
+      const response = await daemonFetch(settings.url, settings.secret, url);
+      if (!response.ok) {
+        if (cursor === lastSyncAt) {
+          // First request failed - daemon is unreachable
+          logger.warn(
+            "daemon",
+            `Daemon unreachable: HTTP ${response.status}`,
+          );
+          firstRequestFailed = true;
+        } else {
+          // Subsequent page failed - log but continue with what we have
+          logger.warn("daemon", `Failed to fetch checks: HTTP ${response.status}`);
+        }
+        break;
+      }
+
+      const data = (await response.json()) as {
+        checks: Check[];
+        nextCursor: number | null;
+      };
+      if (data.checks.length > 0) {
+        const { sqlite } = getDatabase();
+
+        sqlite.exec("BEGIN IMMEDIATE");
+        try {
+          for (const check of data.checks) {
+            sqlite.run(
+              `INSERT OR IGNORE INTO checks (agent_id, checked_at, status, response_ms, http_status, error_code, error_message)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [
+                check.agentId,
+                check.checkedAt,
+                check.status,
+                check.responseMs,
+                check.httpStatus,
+                check.errorCode,
+                check.errorMessage,
+              ],
+            );
+          }
+          sqlite.exec("COMMIT");
+          totalChecks += data.checks.length;
+        } catch (err) {
+          sqlite.exec("ROLLBACK");
+          throw err;
+        }
+      }
+
+      cursor = data.nextCursor;
+    } catch (error) {
+      // Network error on first request means daemon is unreachable
+      if (cursor === lastSyncAt) {
+        logger.warn("daemon", "Daemon unreachable during sync:", error);
+        firstRequestFailed = true;
+      }
       break;
     }
+  }
 
-    const data = (await response.json()) as {
-      checks: Check[];
-      nextCursor: number | null;
-    };
-    if (data.checks.length > 0) {
-      const { sqlite } = getDatabase();
-
-      sqlite.exec("BEGIN IMMEDIATE");
-      try {
-        for (const check of data.checks) {
-          sqlite.run(
-            `INSERT OR IGNORE INTO checks (agent_id, checked_at, status, response_ms, http_status, error_code, error_message)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [
-              check.agentId,
-              check.checkedAt,
-              check.status,
-              check.responseMs,
-              check.httpStatus,
-              check.errorCode,
-              check.errorMessage,
-            ],
-          );
-        }
-        sqlite.exec("COMMIT");
-        totalChecks += data.checks.length;
-      } catch (err) {
-        sqlite.exec("ROLLBACK");
-        throw err;
-      }
-    }
-
-    cursor = data.nextCursor;
+  // If daemon was unreachable, return zeros to signal caller to fall back
+  if (firstRequestFailed) {
+    return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
   }
 
   // Import stats
