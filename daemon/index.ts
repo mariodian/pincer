@@ -1,20 +1,21 @@
 import { daemonConfig } from "../src/shared/appConfig";
+import { logger } from "../src/shared/logger";
 import { config } from "./config";
 import { initializeDatabase } from "./db";
 import { startPolling, stopPolling } from "./poll";
 import { startServer, stopServer } from "./server";
 
-console.log(`[daemon] Starting ${daemonConfig.name} v${daemonConfig.version}`);
-console.log(`[daemon] Port: ${config.port}`);
-console.log(`[daemon] DB: ${config.dbPath}`);
-console.log(`[daemon] Polling interval: ${config.pollingIntervalMs}ms`);
+logger.info("daemon", `Starting ${daemonConfig.name} v${daemonConfig.version}`);
+logger.info("daemon", `Port: ${config.port}`);
+logger.info("daemon", `DB: ${config.dbPath}`);
+logger.info("daemon", `Polling interval: ${config.pollingIntervalMs}ms`);
 
 await initializeDatabase();
 startPolling();
 startServer();
 
 function shutdown() {
-  console.log("[daemon] Shutting down...");
+  logger.info("daemon", "Shutting down...");
   stopPolling();
   stopServer();
   process.exit(0);
@@ -23,4 +24,4 @@ function shutdown() {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
-console.log("[daemon] Ready");
+logger.info("daemon", "Ready");

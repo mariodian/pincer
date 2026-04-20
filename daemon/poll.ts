@@ -1,9 +1,10 @@
-import { getDatabase } from "./db";
-import { config } from "./config";
-import { agents, checks, stats } from "./schema";
-import { AGENT_TYPES, STATUS_PARSERS, getAgentType, type StatusParser, type StatusShape } from "./agentTypes";
+import { logger } from "../src/shared/logger";
 import type { Agent, CheckStatus } from "../src/shared/types";
 import { sql } from "drizzle-orm";
+import { AGENT_TYPES, STATUS_PARSERS, getAgentType, type StatusParser, type StatusShape } from "./agentTypes";
+import { config } from "./config";
+import { getDatabase } from "./db";
+import { agents, checks, stats } from "./schema";
 
 const MAX_CONCURRENT_CHECKS = 10;
 
@@ -129,7 +130,7 @@ async function runPoll(): Promise<void> {
         try {
           return await checkAgent(agent as Agent);
         } catch (error) {
-          console.error(`[daemon] Check failed for agent ${agent.id}:`, error);
+          logger.error("poll", `Check failed for agent ${agent.id}`, error);
           return null;
         }
       }),
@@ -179,7 +180,7 @@ async function runPoll(): Promise<void> {
     }).run();
   }
 
-  console.log(`[daemon] Poll complete: ${validResults.length} checks recorded`);
+  logger.info("poll", `Poll complete: ${validResults.length} checks recorded`);
 }
 
 let pollInterval: Timer | null = null;
@@ -187,12 +188,12 @@ let pollInterval: Timer | null = null;
 export function startPolling(): void {
   if (pollInterval) clearInterval(pollInterval);
 
-  console.log(`[daemon] Starting polling every ${config.pollingIntervalMs}ms`);
+  logger.info("poll", `Starting polling every ${config.pollingIntervalMs}ms`);
 
   // Run immediately, then on interval
-  runPoll().catch((err) => console.error("[daemon] Initial poll failed:", err));
+  runPoll().catch((err) => logger.error("poll", "Initial poll failed", err));
   pollInterval = setInterval(() => {
-    runPoll().catch((err) => console.error("[daemon] Poll failed:", err));
+    runPoll().catch((err) => logger.error("poll", "Poll failed", err));
   }, config.pollingIntervalMs);
 }
 

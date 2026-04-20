@@ -1,6 +1,7 @@
 import { serve, type Server } from "bun";
 import { sql } from "drizzle-orm";
 import { appConfig } from "../src/shared/appConfig";
+import { logger } from "../src/shared/logger";
 import type { Agent, Check, IncidentEvent } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
@@ -197,7 +198,7 @@ async function handleRequest(req: Request): Promise<Response> {
 
     return errorResponse("Not found", 404);
   } catch (error) {
-    console.error("[daemon] Server error:", error);
+    logger.error("server", "Request handler error", error);
     return errorResponse("Internal server error", 500);
   }
 }
@@ -210,7 +211,7 @@ export function startServer(): DaemonServer {
     fetch: handleRequest,
   });
 
-  console.log(`[daemon] HTTP server listening on port ${config.port}`);
+  logger.info("server", `HTTP server listening on port ${config.port}`);
   return server;
 }
 
