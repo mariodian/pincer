@@ -5,13 +5,14 @@ import { PATHS, Utils } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  createDatabase,
+  getDatabaseInstances,
+} from "../../../shared/db-core";
 import { runDatabaseInitialization } from "../../services/dbInitService";
 import { logger } from "../../services/loggerService";
 import { ONE_DAY_MS, ONE_DAY_SEC } from "../../utils/constants";
 import { ensureAppDataDir } from "../../utils/fs";
-
-let dbInstance: ReturnType<typeof drizzle> | null = null;
-let sqliteInstance: Database | null = null;
 
 function getMigrationDir(): string {
   // In source context, walk up from this file until we find drizzle/migrations
@@ -40,24 +41,9 @@ function getDbPath(): string {
 }
 
 export function getDatabase() {
-  if (sqliteInstance && dbInstance) {
-    return { db: dbInstance, sqlite: sqliteInstance };
-  }
-
-  const dbPath = getDbPath();
-  const sqlite = new Database(dbPath, { create: true });
-
-  // Enable WAL mode for better concurrent read performance
-  sqlite.run("PRAGMA journal_mode = WAL");
-  // Set busy timeout to handle concurrent write contention
-  sqlite.run("PRAGMA busy_timeout = 5000");
-
-  const db = drizzle(sqlite);
-
-  sqliteInstance = sqlite;
-  dbInstance = db;
-
-  return { db, sqlite };
+  const existing = getDatabaseInstances();
+  if (existing) return existing;
+  return createDatabase({ dbPath: getDbPath() });
 }
 
 export async function initializeDatabase(): Promise<{

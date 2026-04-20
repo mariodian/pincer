@@ -1,13 +1,12 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
+import {
+  createDatabase,
+  getDatabaseInstances,
+} from "../src/shared/db-core";
 import { logger } from "../src/shared/logger";
 import { config } from "./config";
-
-let dbInstance: ReturnType<typeof drizzle> | null = null;
-let sqliteInstance: Database | null = null;
 
 function getRuntimeBaseDir(): string {
   // In compiled Bun binaries, source modules are loaded from /$bunfs.
@@ -19,24 +18,9 @@ function getRuntimeBaseDir(): string {
 }
 
 export function getDatabase() {
-  if (sqliteInstance && dbInstance) {
-    return { db: dbInstance, sqlite: sqliteInstance };
-  }
-
-  const dbDir = dirname(config.dbPath);
-  if (!existsSync(dbDir)) {
-    mkdirSync(dbDir, { recursive: true });
-  }
-
-  const sqlite = new Database(config.dbPath, { create: true });
-  sqlite.run("PRAGMA journal_mode = WAL");
-  sqlite.run("PRAGMA busy_timeout = 5000");
-
-  const db = drizzle(sqlite);
-  sqliteInstance = sqlite;
-  dbInstance = db;
-
-  return { db, sqlite };
+  const existing = getDatabaseInstances();
+  if (existing) return existing;
+  return createDatabase({ dbPath: config.dbPath });
 }
 
 export async function initializeDatabase(): Promise<void> {
