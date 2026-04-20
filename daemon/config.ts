@@ -3,6 +3,15 @@ import { join } from "node:path";
 import { appConfig } from "../src/shared/appConfig";
 import { initLogger } from "../src/shared/logger";
 
+function parseBooleanEnv(value: string | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return undefined;
+}
+
 function getAppDataDir(): string {
   const plat = platform();
   const home = homedir();
@@ -23,20 +32,40 @@ function getAppDataDir(): string {
 
 const appDataDir = getAppDataDir();
 const daemonDataDir = join(appDataDir, "daemon");
+const defaultLogFilePath =
+  process.env.LOG_FILE_PATH || join(daemonDataDir, "daemon.log");
+const isDevelopment = process.env.NODE_ENV !== "production";
+const fileLoggingOverride = parseBooleanEnv(process.env.DAEMON_FILE_LOGGING);
+
+if (
+  process.env.DAEMON_FILE_LOGGING !== undefined &&
+  fileLoggingOverride === undefined
+) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    "Invalid DAEMON_FILE_LOGGING value. Use one of: true/false, 1/0, yes/no, on/off.",
+  );
+}
+
+const daemonLogLevel =
+  (process.env.DAEMON_LOG_LEVEL as "debug" | "info" | "warn" | "error") ||
+  (process.env.LOG_LEVEL as "debug" | "info" | "warn" | "error") ||
+  "info";
 
 export const config = {
   port: parseInt(process.env.DAEMON_PORT || "7378", 10),
   secret: process.env.DAEMON_SECRET,
   dbPath: process.env.DB_PATH || join(daemonDataDir, "daemon.sqlite"),
   pollingIntervalMs: parseInt(process.env.POLLING_INTERVAL_MS || "15000", 10),
-  logFilePath: process.env.LOG_FILE_PATH || join(daemonDataDir, "daemon.log"),
+  logFilePath: defaultLogFilePath,
+  fileLoggingEnabled: fileLoggingOverride ?? isDevelopment,
+  logLevel: daemonLogLevel,
 };
 
 // Initialize logger early so we can use it for config validation errors
 initLogger({
-  logFilePath: config.logFilePath,
-  minLevel:
-    (process.env.LOG_LEVEL as "debug" | "info" | "warn" | "error") || "info",
+  logFilePath: config.fileLoggingEnabled ? config.logFilePath : undefined,
+  minLevel: config.logLevel,
   consoleOutput: true,
   componentPrefix: "[daemon]",
 });

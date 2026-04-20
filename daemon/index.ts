@@ -36,6 +36,13 @@ logger.info("daemon", `Starting ${daemonConfig.name} v${daemonConfig.version}`);
 logger.info("daemon", `Port: ${config.port}`);
 logger.info("daemon", `DB: ${config.dbPath}`);
 logger.info("daemon", `Polling interval: ${config.pollingIntervalMs}ms`);
+logger.info("daemon", `Log level: ${config.logLevel}`);
+logger.info(
+  "daemon",
+  config.fileLoggingEnabled
+    ? `File logging: enabled (${config.logFilePath})`
+    : "File logging: disabled",
+);
 
 await initializeDatabase();
 
