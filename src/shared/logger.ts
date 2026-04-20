@@ -1,7 +1,14 @@
 // Shared Logger - Works in both main process and daemon
 // Supports file logging with rotation and log level filtering
 
-import { appendFileSync, existsSync, renameSync, statSync, mkdirSync, unlinkSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  renameSync,
+  statSync,
+  mkdirSync,
+  unlinkSync,
+} from "node:fs";
 import { dirname } from "node:path";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
@@ -130,9 +137,10 @@ function log(
 export function initLogger(userConfig: LoggerConfig): void {
   // Check for LOG_LEVEL env var override
   const envLevel = process.env.LOG_LEVEL as LogLevel | undefined;
-  const effectiveLevel = envLevel && envLevel in LOG_LEVELS
-    ? envLevel
-    : (userConfig.minLevel ?? "info");
+  const effectiveLevel =
+    envLevel && envLevel in LOG_LEVELS
+      ? envLevel
+      : (userConfig.minLevel ?? "info");
 
   config = {
     ...userConfig,

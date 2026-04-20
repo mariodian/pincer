@@ -178,11 +178,20 @@
         </div>
 
         <div class="flex items-center gap-2 pt-2">
-          <Button size="sm" variant="outline" onclick={testConnection} disabled={!enabled || testStatus === "testing"}>
+          <Button
+            size="sm"
+            variant="outline"
+            onclick={testConnection}
+            disabled={!enabled || testStatus === "testing"}
+          >
             {testStatus === "testing" ? "Testing..." : "Test connection"}
           </Button>
           {#if testMessage}
-            <span class="text-xs {testStatus === 'success' ? 'text-green-600 dark:text-green-400' : 'text-destructive'}">
+            <span
+              class="text-xs {testStatus === 'success'
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-destructive'}"
+            >
               {testMessage}
             </span>
           {/if}
@@ -195,9 +204,16 @@
         <div class="flex items-center justify-between">
           <div>
             <Label class="text-sm">Last synced</Label>
-            <p class="text-xs text-muted-foreground mt-1">{formatRelativeTime(lastSync)}</p>
+            <p class="text-xs text-muted-foreground mt-1">
+              {formatRelativeTime(lastSync)}
+            </p>
           </div>
-          <Button size="sm" variant="outline" onclick={syncNow} disabled={syncing || !enabled}>
+          <Button
+            size="sm"
+            variant="outline"
+            onclick={syncNow}
+            disabled={syncing || !enabled}
+          >
             {syncing ? "Syncing..." : "Sync now"}
           </Button>
         </div>

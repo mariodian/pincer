@@ -24,6 +24,9 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
 
   if (Object.keys(set).length > 0) {
     db.update(settingsDaemon).set(set).run();
-    logger.debug("daemon", `Daemon settings updated: ${Object.keys(set).join(", ")}`);
+    logger.debug(
+      "daemon",
+      `Daemon settings updated: ${Object.keys(set).join(", ")}`,
+    );
   }
 }

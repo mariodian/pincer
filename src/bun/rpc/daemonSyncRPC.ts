@@ -1,4 +1,8 @@
-import type { DaemonSettings, DaemonSyncResult, DaemonTestResult } from "../../shared/types";
+import type {
+  DaemonSettings,
+  DaemonSyncResult,
+  DaemonTestResult,
+} from "../../shared/types";
 import { logger } from "../services/loggerService";
 import {
   getDaemonSettings as getDaemonSettingsFromDb,
@@ -10,15 +14,24 @@ import { sync, testDaemonConnection } from "../services/daemonSyncService";
 export type DaemonSyncRPCType = {
   bun: {
     requests: {
-      getDaemonSettings: { params: Record<string, never>; response: DaemonSettings };
+      getDaemonSettings: {
+        params: Record<string, never>;
+        response: DaemonSettings;
+      };
       updateDaemonSettings: { params: Partial<DaemonSettings>; response: void };
       syncDaemon: { params: Record<string, never>; response: DaemonSyncResult };
-      testDaemonConnection: { params: Record<string, never>; response: DaemonTestResult };
-      getLastDaemonSync: { params: Record<string, never>; response: number | null };
+      testDaemonConnection: {
+        params: Record<string, never>;
+        response: DaemonTestResult;
+      };
+      getLastDaemonSync: {
+        params: Record<string, never>;
+        response: number | null;
+      };
     };
     messages: Record<string, never>;
   };
-  webview: { requests: Record<string, never>; messages: Record<string, never>; };
+  webview: { requests: Record<string, never>; messages: Record<string, never> };
 };
 
 export const daemonRequestHandlers = {

@@ -2,7 +2,13 @@ import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { readAgents } from "./agentService";
 import { logger } from "./loggerService";
-import type { Check, IncidentEvent, HourlyStat, DaemonSyncResult, DaemonTestResult } from "../../shared/types";
+import type {
+  Check,
+  IncidentEvent,
+  HourlyStat,
+  DaemonSyncResult,
+  DaemonTestResult,
+} from "../../shared/types";
 import { getDatabase } from "../storage/sqlite/db";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
@@ -38,11 +44,15 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
   }
 
   try {
-    const response = await daemonFetch(settings.url, settings.secret, "/health");
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      "/health",
+    );
     if (!response.ok) {
       return { connected: false, error: `HTTP ${response.status}` };
     }
-    const data = await response.json() as { version: string; uptime: number };
+    const data = (await response.json()) as { version: string; uptime: number };
     return {
       connected: true,
       version: data.version,
@@ -65,17 +75,25 @@ export async function pushAgentsToDaemon(): Promise<void> {
 
   try {
     const agents = await readAgents();
-    const response = await daemonFetch(settings.url, settings.secret, "/agents", {
-      method: "PUT",
-      body: JSON.stringify(agents),
-    });
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      "/agents",
+      {
+        method: "PUT",
+        body: JSON.stringify(agents),
+      },
+    );
 
     if (!response.ok) {
-      logger.warn("daemon", `Failed to push agents to daemon: HTTP ${response.status}`);
+      logger.warn(
+        "daemon",
+        `Failed to push agents to daemon: HTTP ${response.status}`,
+      );
       return;
     }
 
-    const data = await response.json() as { updated: number };
+    const data = (await response.json()) as { updated: number };
     logger.info("daemon", `Pushed ${data.updated} agents to daemon`);
   } catch (error) {
     logger.warn("daemon", "Failed to push agents to daemon:", error);
@@ -90,9 +108,16 @@ export async function sync(): Promise<DaemonSyncResult> {
 
   // Verify daemon is reachable
   try {
-    const healthResponse = await daemonFetch(settings.url, settings.secret, "/health");
+    const healthResponse = await daemonFetch(
+      settings.url,
+      settings.secret,
+      "/health",
+    );
     if (!healthResponse.ok) {
-      logger.warn("daemon", `Daemon health check failed: HTTP ${healthResponse.status}`);
+      logger.warn(
+        "daemon",
+        `Daemon health check failed: HTTP ${healthResponse.status}`,
+      );
       return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
     }
   } catch (error) {
@@ -115,7 +140,10 @@ export async function sync(): Promise<DaemonSyncResult> {
       break;
     }
 
-    const data = await response.json() as { checks: Check[]; nextCursor: number | null };
+    const data = (await response.json()) as {
+      checks: Check[];
+      nextCursor: number | null;
+    };
     if (data.checks.length > 0) {
       const { sqlite } = getDatabase();
       sqlite.exec("BEGIN IMMEDIATE");
@@ -124,7 +152,15 @@ export async function sync(): Promise<DaemonSyncResult> {
           sqlite.run(
             `INSERT OR IGNORE INTO checks (agent_id, checked_at, status, response_ms, http_status, error_code, error_message)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [check.agentId, check.checkedAt, check.status, check.responseMs, check.httpStatus, check.errorCode, check.errorMessage],
+            [
+              check.agentId,
+              check.checkedAt,
+              check.status,
+              check.responseMs,
+              check.httpStatus,
+              check.errorCode,
+              check.errorMessage,
+            ],
           );
         }
         sqlite.exec("COMMIT");
@@ -140,9 +176,13 @@ export async function sync(): Promise<DaemonSyncResult> {
 
   // Import stats
   try {
-    const response = await daemonFetch(settings.url, settings.secret, `/stats?since=${lastSyncAt}`);
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      `/stats?since=${lastSyncAt}`,
+    );
     if (response.ok) {
-      const statsData = await response.json() as HourlyStat[];
+      const statsData = (await response.json()) as HourlyStat[];
       if (statsData.length > 0) {
         const { sqlite } = getDatabase();
         sqlite.exec("BEGIN IMMEDIATE");
@@ -151,7 +191,16 @@ export async function sync(): Promise<DaemonSyncResult> {
             sqlite.run(
               `INSERT OR REPLACE INTO stats (agent_id, hour_timestamp, total_checks, ok_count, offline_count, error_count, uptime_pct, avg_response_ms)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-              [stat.agentId, stat.hourTimestamp, stat.totalChecks, stat.okCount, stat.offlineCount, stat.errorCount, stat.uptimePct, stat.avgResponseMs],
+              [
+                stat.agentId,
+                stat.hourTimestamp,
+                stat.totalChecks,
+                stat.okCount,
+                stat.offlineCount,
+                stat.errorCount,
+                stat.uptimePct,
+                stat.avgResponseMs,
+              ],
             );
           }
           sqlite.exec("COMMIT");
@@ -168,9 +217,13 @@ export async function sync(): Promise<DaemonSyncResult> {
 
   // Import incident events
   try {
-    const response = await daemonFetch(settings.url, settings.secret, `/incident-events?since=${lastSyncAt}`);
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      `/incident-events?since=${lastSyncAt}`,
+    );
     if (response.ok) {
-      const incidentsData = await response.json() as IncidentEvent[];
+      const incidentsData = (await response.json()) as IncidentEvent[];
       if (incidentsData.length > 0) {
         const { sqlite } = getDatabase();
         sqlite.exec("BEGIN IMMEDIATE");
@@ -179,7 +232,15 @@ export async function sync(): Promise<DaemonSyncResult> {
             sqlite.run(
               `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason)
                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [event.agentId, event.incidentId, event.eventAt, event.eventType, event.fromStatus, event.toStatus, event.reason],
+              [
+                event.agentId,
+                event.incidentId,
+                event.eventAt,
+                event.eventType,
+                event.fromStatus,
+                event.toStatus,
+                event.reason,
+              ],
             );
           }
           sqlite.exec("COMMIT");
@@ -205,5 +266,9 @@ export async function sync(): Promise<DaemonSyncResult> {
   // Push canonical agent list to daemon
   await pushAgentsToDaemon();
 
-  return { checksImported: totalChecks, statsImported: totalStats, incidentsImported: totalIncidents };
+  return {
+    checksImported: totalChecks,
+    statsImported: totalStats,
+    incidentsImported: totalIncidents,
+  };
 }
