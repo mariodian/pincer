@@ -8,14 +8,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "rootDir": "../",
+    "noEmit": true
   },
-  "include": ["*.ts", "../src/shared/**/*.ts"],
+  "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
 }
