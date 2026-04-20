@@ -64,8 +64,7 @@ jobs:
 
             app "Pincer.app"
 
-            uninstall quit:  "com.mariodian.pincer",
-                      delete: "/Applications/Pincer.app"
+            uninstall quit: "com.mariodian.pincer"
 
             zap trash: [
               "~/Library/Application Support/com.mariodian.pincer",
