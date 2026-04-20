@@ -5,6 +5,25 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.4-dev.1] - 2026-04-21
+
+### Added
+
+- Added root-level daemon development, formatting, typechecking, and bundling scripts so daemon workflows run from the main workspace.
+- Added shared database core and helper utilities to consolidate SQLite access across the app and daemon codepaths.
+
+### Changed
+
+- Updated daemon packaging to use the root workspace dependencies and root package version metadata instead of a separate daemon package manifest.
+- Updated release automation to bundle the Linux daemon from the root scripts and restrict Homebrew tap updates to stable tags.
+- Refined daemon and contributor documentation for release tagging, installation, and development commands.
+
+### Fixed
+
+- Fixed daemon sync handling to recover more cleanly from connectivity issues and reset sync timestamps when re-enabling synchronization.
+- Fixed SQLite transaction handling by using `sqlite.run` in affected codepaths for more reliable database operations.
+- Fixed Bun-process shared imports by replacing `$shared` aliases with relative paths where needed.
+
 ## [v0.3.4-dev] - 2026-04-21
 
 ### Added
