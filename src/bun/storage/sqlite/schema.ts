@@ -73,6 +73,14 @@ export const settingsNotifications = sqliteTable("settings_notifications", {
   recoveryThreshold: integer("recovery_threshold").notNull().default(2),
 });
 
+// Daemon sync settings table - for remote pincer-daemon configuration
+export const settingsDaemon = sqliteTable("settings_daemon", {
+  id: integer("id").primaryKey().default(1),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  url: text("url").notNull().default(""),
+  secret: text("secret").notNull().default(""),
+});
+
 // Key-value store for ephemeral application state (window position, UI state, etc.)
 export const appState = sqliteTable("app_state", {
   key: text("key").primaryKey(),

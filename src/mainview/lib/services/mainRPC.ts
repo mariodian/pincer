@@ -1,4 +1,5 @@
 import type { AgentRPCType } from "$bun/rpc/agentRPC";
+import type { DaemonSyncRPCType } from "$bun/rpc/daemonSyncRPC";
 import type { IncidentRPCType } from "$bun/rpc/incidentRPC";
 import type { ReportsRPCType } from "$bun/rpc/reportsRPC";
 import type { SettingsRPCType } from "$bun/rpc/settingsRPC";
@@ -23,14 +24,15 @@ export const rpcReady = writable(false);
  */
 export const pendingNavigationRoute = writable<string | null>(null);
 
-/** Composed RPC type: system + agent + settings + stats + reports + update + incident requests and messages. */
+/** Composed RPC type: system + agent + settings + stats + reports + update + incident + daemon requests and messages. */
 export type MainRPCType = SystemRPCType &
   AgentRPCType &
   SettingsRPCType &
   StatsRPCType &
   ReportsRPCType &
   UpdateRPCType &
-  IncidentRPCType;
+  IncidentRPCType &
+  DaemonSyncRPCType;
 
 /** The typed request object available via getMainRPC().request */
 export type MainRPCRequests = {
@@ -40,14 +42,16 @@ export type MainRPCRequests = {
     StatsRPCType["bun"]["requests"] &
     ReportsRPCType["bun"]["requests"] &
     UpdateRPCType["bun"]["requests"] &
-    IncidentRPCType["bun"]["requests"])]: (
+    IncidentRPCType["bun"]["requests"] &
+    DaemonSyncRPCType["bun"]["requests"])]: (
     ...args: (SystemRPCType["bun"]["requests"] &
       AgentRPCType["bun"]["requests"] &
       SettingsRPCType["bun"]["requests"] &
       StatsRPCType["bun"]["requests"] &
       ReportsRPCType["bun"]["requests"] &
       UpdateRPCType["bun"]["requests"] &
-      IncidentRPCType["bun"]["requests"])[K] extends { params: infer P }
+      IncidentRPCType["bun"]["requests"] &
+      DaemonSyncRPCType["bun"]["requests"])[K] extends { params: infer P }
       ? [P]
       : []
   ) => Promise<
@@ -57,7 +61,8 @@ export type MainRPCRequests = {
       StatsRPCType["bun"]["requests"] &
       ReportsRPCType["bun"]["requests"] &
       UpdateRPCType["bun"]["requests"] &
-      IncidentRPCType["bun"]["requests"])[K] extends { response: infer R }
+      IncidentRPCType["bun"]["requests"] &
+      DaemonSyncRPCType["bun"]["requests"])[K] extends { response: infer R }
       ? R
       : never
   >;

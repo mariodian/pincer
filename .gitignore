@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 artifacts/
+*.bun-build
 
 # Local database
 drizzle/dev.db

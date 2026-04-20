@@ -25,6 +25,7 @@ import {
   type StatusParser,
 } from "../agentTypes";
 import { recordCheck } from "./incidentService";
+import { pushAgentsToDaemon } from "./daemonSyncService";
 
 export type { Settings } from "../storage/sqlite/settingsRepo";
 export type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";
@@ -65,6 +66,7 @@ export async function updateSettings(
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
   const result = await agentStorage.insertAgent(agent);
   logger.info("agent", `Agent added: ${result.name} (id=${result.id})`);
+  pushAgentsToDaemon().catch((err) => logger.warn("agent", "Failed to push agent to daemon:", err));
   return result;
 }
 
@@ -82,6 +84,7 @@ export async function updateAgent(
   agents[index] = { ...agents[index], ...updates };
   await writeAgents(agents);
   logger.debug("agent", `Agent updated: id=${id}`);
+  pushAgentsToDaemon().catch((err) => logger.warn("agent", "Failed to push agent to daemon:", err));
   return agents[index];
 }
 
@@ -96,6 +99,7 @@ export async function deleteAgent(id: number): Promise<boolean> {
 
   await writeAgents(filteredAgents);
   logger.info("agent", `Agent deleted: id=${id}`);
+  pushAgentsToDaemon().catch((err) => logger.warn("agent", "Failed to push agent to daemon:", err));
   return true;
 }
 

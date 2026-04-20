@@ -1,14 +1,11 @@
 import type { ElectrobunConfig } from "electrobun";
-import { readFileSync } from "fs";
-
-// Read version from package.json
-const packageJson = JSON.parse(readFileSync("./package.json", "utf8"));
+import { appConfig } from "./src/shared/appConfig";
 
 export default {
   app: {
-    name: "Pincer",
-    identifier: "com.mariodian.pincer",
-    version: packageJson.version,
+    name: appConfig.name,
+    identifier: appConfig.identifier,
+    version: appConfig.version,
   },
   runtime: {
     exitOnLastWindowClosed: false, // keep running when all windows are closed

@@ -3,6 +3,7 @@ import {
   settingsGeneral,
   settingsAdvanced,
   settingsNotifications,
+  settingsDaemon,
 } from "../storage/sqlite/schema";
 import { isMacOS } from "../utils/platform";
 import { logger } from "./loggerService";
@@ -26,6 +27,9 @@ export async function runDatabaseInitialization(
 
   // Seed the settings_notifications row if it doesn't exist
   seedSettingsNotifications(db);
+
+  // Seed the settings_daemon row if it doesn't exist
+  seedSettingsDaemon(db);
 
   // Handle fresh install platform-specific defaults
   await handleFreshInstallDefaults(db);
@@ -66,6 +70,18 @@ function seedSettingsNotifications(
     logger.debug("db-init", "Seeded settings_notifications row");
   } catch (error) {
     logger.warn("db-init", "Failed to seed settings_notifications:", error);
+  }
+}
+
+function seedSettingsDaemon(
+  db: BunSQLiteDatabase<Record<string, unknown>>,
+): void {
+  try {
+    // Insert default row - uses schema defaults (enabled=false by default)
+    db.insert(settingsDaemon).values({ id: 1 }).onConflictDoNothing().run();
+    logger.debug("db-init", "Seeded settings_daemon row");
+  } catch (error) {
+    logger.warn("db-init", "Failed to seed settings_daemon:", error);
   }
 }
 

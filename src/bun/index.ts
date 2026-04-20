@@ -2,7 +2,9 @@ import Electrobun, { BrowserWindow, Screen, Utils } from "electrobun/bun";
 import { setupMainWindowMenu } from "./applicationMenu";
 import { agentRequestHandlers } from "./rpc/agentRPC";
 import { incidentRequestHandlers } from "./rpc/incidentRPC";
+import { daemonRequestHandlers } from "./rpc/daemonSyncRPC";
 import { reportsRequestHandlers } from "./rpc/reportsRPC";
+import { sync as daemonSync } from "./services/daemonSyncService";
 import { performAutoUpdateCheck, updateRequestHandlers } from "./rpc/updateRPC";
 import { settingsRequestHandlers } from "./rpc/settingsRPC";
 import { statsRequestHandlers } from "./rpc/statsRPC";
@@ -115,6 +117,7 @@ combinedRPC.setRequestHandler({
   ...reportsRequestHandlers,
   ...updateRequestHandlers,
   ...incidentRequestHandlers,
+  ...daemonRequestHandlers,
 });
 
 /**
@@ -255,6 +258,9 @@ logger.info("app", "Logger initialized");
 // Initialize database before any other operations
 await initDatabase();
 logger.info("app", "Database initialized");
+
+// Sync with daemon on startup (fire-and-forget, never blocks)
+void daemonSync();
 
 // Apply autostart setting on startup
 void applyAutostartSetting(getSettings().launchAtLogin);

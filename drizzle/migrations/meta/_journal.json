@@ -127,6 +127,13 @@
       "when": 1775931755041,
       "tag": "0017_cuddly_stature",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1775931755042,
+      "tag": "0018_add_daemon_settings",
+      "breakpoints": true
     }
   ]
 }

@@ -83,3 +83,38 @@ export interface NotificationSettings {
 }
 
 export type TimeRange = "24h" | "7d" | "30d" | "90d";
+
+// Daemon sync settings
+export interface DaemonSettings {
+  enabled: boolean;
+  url: string;
+  secret: string;
+}
+
+// Hourly statistics from daemon
+export interface HourlyStat {
+  agentId: number;
+  hourTimestamp: number;
+  totalChecks: number;
+  okCount: number;
+  offlineCount: number;
+  errorCount: number;
+  uptimePct: number;
+  avgResponseMs: number;
+}
+
+// Results from daemon sync operation
+export interface DaemonSyncResult {
+  checksImported: number;
+  statsImported: number;
+  incidentsImported: number;
+}
+
+// Result from daemon connection test
+export interface DaemonTestResult {
+  connected: boolean;
+  version?: string;
+  uptime?: number;
+  uptimeFormatted?: string;
+  error?: string;
+}
