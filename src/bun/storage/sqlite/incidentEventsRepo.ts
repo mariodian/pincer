@@ -1,4 +1,8 @@
-import type { CheckStatus, EventType, IncidentEvent } from "../../../shared/types";
+import type {
+  CheckStatus,
+  EventType,
+  IncidentEvent,
+} from "../../../shared/types";
 import { rowToIncidentEvent } from "../../../shared/db-helpers";
 import { desc, sql } from "drizzle-orm";
 import { getDatabase } from "./db";

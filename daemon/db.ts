@@ -1,10 +1,7 @@
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
-import {
-  createDatabase,
-  getDatabaseInstances,
-} from "../src/shared/db-core";
+import { createDatabase, getDatabaseInstances } from "../src/shared/db-core";
 import { logger } from "../src/shared/logger";
 import { config } from "./config";
 
