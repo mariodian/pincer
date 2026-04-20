@@ -1,22 +1,44 @@
-import { readFileSync } from "fs";
-import { join } from "path";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-// Read version from package.json
-const appPackageJson = JSON.parse(
-  readFileSync(join(import.meta.dirname, "../../package.json"), "utf8"),
-);
-const daemonPackageJson = JSON.parse(
-  readFileSync(join(import.meta.dirname, "../../daemon/package.json"), "utf8"),
-);
+const DEFAULT_VERSION = "unknown";
+
+function readVersionFile(path: string): string | null {
+  if (!existsSync(path)) return null;
+
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as {
+      version?: unknown;
+    };
+    return typeof parsed.version === "string" ? parsed.version : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveVersion(candidates: string[]): string {
+  for (const candidate of candidates) {
+    const version = readVersionFile(candidate);
+    if (version) return version;
+  }
+  return DEFAULT_VERSION;
+}
+
+const appVersion = resolveVersion([
+  join(import.meta.dirname, "../../package.json"),
+  join(process.cwd(), "package.json"),
+]);
+
+const daemonVersion = resolveVersion([join(process.cwd(), "package.json")]);
 
 export const appConfig = {
   name: "Pincer",
   identifier: "com.mariodian.pincer",
-  version: appPackageJson.version,
+  version: appVersion,
 } as const;
 
 export const daemonConfig = {
   name: "Pincer Daemon",
   identifier: "com.mariodian.pincer",
-  version: daemonPackageJson.version,
+  version: daemonVersion,
 } as const;

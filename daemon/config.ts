@@ -1,5 +1,5 @@
-import { join } from "node:path";
 import { homedir, platform } from "node:os";
+import { join } from "node:path";
 import { appConfig } from "../src/shared/appConfig";
 import { initLogger } from "../src/shared/logger";
 
@@ -22,14 +22,14 @@ function getAppDataDir(): string {
 }
 
 const appDataDir = getAppDataDir();
+const daemonDataDir = join(appDataDir, "daemon");
 
 export const config = {
   port: parseInt(process.env.DAEMON_PORT || "7378", 10),
   secret: process.env.DAEMON_SECRET,
-  dbPath: process.env.DB_PATH || join(appDataDir, "daemon.sqlite"),
+  dbPath: process.env.DB_PATH || join(daemonDataDir, "daemon.sqlite"),
   pollingIntervalMs: parseInt(process.env.POLLING_INTERVAL_MS || "15000", 10),
-  logFilePath:
-    process.env.LOG_FILE_PATH || join(appDataDir, "logs", "daemon.log"),
+  logFilePath: process.env.LOG_FILE_PATH || join(daemonDataDir, "daemon.log"),
 };
 
 // Initialize logger early so we can use it for config validation errors

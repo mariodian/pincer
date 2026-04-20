@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run index.ts",
+    "bundle": "bash ./scripts/bundle.sh",
     "db:generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit",
     "format": "bunx prettier --write '**/*.{ts,js}'"

@@ -9,6 +9,15 @@ import { config } from "./config";
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 let sqliteInstance: Database | null = null;
 
+function getRuntimeBaseDir(): string {
+  // In compiled Bun binaries, source modules are loaded from /$bunfs.
+  // Use the executable directory to locate sibling resources like migrations.
+  if (import.meta.dirname.startsWith("/$bunfs/")) {
+    return dirname(process.execPath);
+  }
+  return import.meta.dirname;
+}
+
 export function getDatabase() {
   if (sqliteInstance && dbInstance) {
     return { db: dbInstance, sqlite: sqliteInstance };
@@ -32,7 +41,7 @@ export function getDatabase() {
 
 export async function initializeDatabase(): Promise<void> {
   const { db } = getDatabase();
-  const migrationDir = join(import.meta.dirname, "migrations");
+  const migrationDir = join(getRuntimeBaseDir(), "migrations");
 
   if (existsSync(migrationDir)) {
     migrate(db, { migrationsFolder: migrationDir });
