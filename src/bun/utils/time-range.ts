@@ -1,4 +1,4 @@
-import type { TimeRange } from "$shared/types";
+import type { TimeRange } from "../../shared/types";
 import {
   ONE_DAY_SEC,
   SEVEN_DAYS_SEC,

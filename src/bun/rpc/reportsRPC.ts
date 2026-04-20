@@ -1,5 +1,5 @@
 // Reports RPC - Per-agent uptime report generation
-import type { TimeRange } from "$shared/types";
+import type { TimeRange } from "../../shared/types";
 import { getAgentColor } from "../../shared/agent-helpers";
 import type {
   AgentUptimeSummary,

@@ -1,4 +1,5 @@
-import type { CheckStatus, EventType, IncidentEvent } from "$shared/types";
+import type { CheckStatus, EventType, IncidentEvent } from "../../../shared/types";
+import { rowToIncidentEvent } from "../../../shared/db-helpers";
 import { desc, sql } from "drizzle-orm";
 import { getDatabase } from "./db";
 import { incidentEvents } from "./schema";
@@ -181,29 +182,4 @@ export function countOldEvents(cutoffMs: number): number {
     .where(sql`${incidentEvents.eventAt} < ${cutoffMs}`)
     .get();
   return row?.count ?? 0;
-}
-
-/**
- * Convert a database row to an IncidentEvent object.
- */
-function rowToIncidentEvent(row: {
-  id: number;
-  agentId: number;
-  incidentId: string;
-  eventAt: Date;
-  eventType: string;
-  fromStatus: string | null;
-  toStatus: string | null;
-  reason: string | null;
-}): IncidentEvent {
-  return {
-    id: row.id,
-    agentId: row.agentId,
-    incidentId: row.incidentId,
-    eventAt: row.eventAt.getTime(), // Convert Date to ms timestamp
-    eventType: row.eventType as EventType,
-    fromStatus: row.fromStatus as CheckStatus | null,
-    toStatus: row.toStatus as CheckStatus | null,
-    reason: row.reason,
-  };
 }

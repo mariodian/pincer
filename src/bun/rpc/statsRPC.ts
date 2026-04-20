@@ -1,5 +1,5 @@
 // Stats RPC - Shared RPC definition for dashboard statistics
-import type { TimeRange } from "$shared/types";
+import type { TimeRange } from "../../shared/types";
 import { getAgentColor } from "../../shared/agent-helpers";
 import type {
   AgentWithColor,

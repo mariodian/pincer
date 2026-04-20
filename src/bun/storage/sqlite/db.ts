@@ -5,10 +5,7 @@ import { PATHS, Utils } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  createDatabase,
-  getDatabaseInstances,
-} from "../../../shared/db-core";
+import { createDatabase, getDatabaseInstances } from "../../../shared/db-core";
 import { runDatabaseInitialization } from "../../services/dbInitService";
 import { logger } from "../../services/loggerService";
 import { ONE_DAY_MS, ONE_DAY_SEC } from "../../utils/constants";

@@ -1,4 +1,4 @@
-import type { IncidentEvent } from "$shared/types";
+import type { IncidentEvent } from "../../shared/types";
 
 /**
  * Group incident events by their incident ID.

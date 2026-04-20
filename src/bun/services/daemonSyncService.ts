@@ -5,6 +5,7 @@ import type {
   HourlyStat,
   IncidentEvent,
 } from "../../shared/types";
+import { runInTransaction } from "../../shared/db-core";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { getDatabase } from "../storage/sqlite/db";
@@ -39,11 +40,21 @@ function formatUptime(seconds: number): string {
   return `${minutes}m`;
 }
 
+/**
+ * Check if the daemon is properly configured and enabled.
+ * Returns false if disabled, missing URL, or missing secret.
+ */
+function isDaemonConfigured(): boolean {
+  const s = getDaemonSettings();
+  return s.enabled && !!s.url && !!s.secret;
+}
+
 export async function testDaemonConnection(): Promise<DaemonTestResult> {
-  const settings = getDaemonSettings();
-  if (!settings.enabled || !settings.url || !settings.secret) {
+  if (!isDaemonConfigured()) {
     return { connected: false, error: "Daemon not configured" };
   }
+
+  const settings = getDaemonSettings();
 
   try {
     const response = await daemonFetch(
@@ -70,10 +81,11 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
 }
 
 export async function pushAgentsToDaemon(): Promise<void> {
-  const settings = getDaemonSettings();
-  if (!settings.enabled || !settings.url || !settings.secret) {
+  if (!isDaemonConfigured()) {
     return;
   }
+
+  const settings = getDaemonSettings();
 
   try {
     const agents = await readAgents();
@@ -103,11 +115,11 @@ export async function pushAgentsToDaemon(): Promise<void> {
 }
 
 export async function sync(): Promise<DaemonSyncResult> {
-  const settings = getDaemonSettings();
-  if (!settings.enabled || !settings.url || !settings.secret) {
+  if (!isDaemonConfigured()) {
     return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
   }
 
+  const settings = getDaemonSettings();
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
   let totalChecks = 0;
   let totalStats = 0;
@@ -142,8 +154,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       if (data.checks.length > 0) {
         const { sqlite } = getDatabase();
 
-        sqlite.run("BEGIN IMMEDIATE");
-        try {
+        runInTransaction(sqlite, () => {
           for (const check of data.checks) {
             sqlite.run(
               `INSERT OR IGNORE INTO checks (agent_id, checked_at, status, response_ms, http_status, error_code, error_message)
@@ -159,12 +170,8 @@ export async function sync(): Promise<DaemonSyncResult> {
               ],
             );
           }
-          sqlite.run("COMMIT");
           totalChecks += data.checks.length;
-        } catch (err) {
-          sqlite.run("ROLLBACK");
-          throw err;
-        }
+        });
       }
 
       cursor = data.nextCursor;
@@ -194,8 +201,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       const statsData = (await response.json()) as HourlyStat[];
       if (statsData.length > 0) {
         const { sqlite } = getDatabase();
-        sqlite.run("BEGIN IMMEDIATE");
-        try {
+        runInTransaction(sqlite, () => {
           for (const stat of statsData) {
             sqlite.run(
               `INSERT OR REPLACE INTO stats (agent_id, hour_timestamp, total_checks, ok_count, offline_count, error_count, uptime_pct, avg_response_ms)
@@ -212,12 +218,8 @@ export async function sync(): Promise<DaemonSyncResult> {
               ],
             );
           }
-          sqlite.run("COMMIT");
           totalStats = statsData.length;
-        } catch (err) {
-          sqlite.run("ROLLBACK");
-          throw err;
-        }
+        });
       }
     }
   } catch (error) {
@@ -235,8 +237,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       const incidentsData = (await response.json()) as IncidentEvent[];
       if (incidentsData.length > 0) {
         const { sqlite } = getDatabase();
-        sqlite.run("BEGIN IMMEDIATE");
-        try {
+        runInTransaction(sqlite, () => {
           for (const event of incidentsData) {
             sqlite.run(
               `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason)
@@ -252,12 +253,8 @@ export async function sync(): Promise<DaemonSyncResult> {
               ],
             );
           }
-          sqlite.run("COMMIT");
           totalIncidents = incidentsData.length;
-        } catch (err) {
-          sqlite.run("ROLLBACK");
-          throw err;
-        }
+        });
       }
     }
   } catch (error) {

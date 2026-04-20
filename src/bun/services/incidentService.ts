@@ -1,4 +1,4 @@
-import type { CheckStatus } from "$shared/types";
+import type { CheckStatus } from "../../shared/types";
 import { logger } from "./loggerService";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import {

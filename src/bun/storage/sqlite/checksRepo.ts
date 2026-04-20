@@ -1,4 +1,5 @@
-import type { Check, CheckStatus } from "$shared/types";
+import type { Check, CheckStatus } from "../../../shared/types";
+import { rowToCheck } from "../../../shared/db-helpers";
 import { desc, eq, sql } from "drizzle-orm";
 import { getDatabase } from "./db";
 import { checks } from "./schema";
@@ -168,30 +169,4 @@ export function getAgentLatestCheck(agentId: number): Check | null {
   }
 
   return rowToCheck(row);
-}
-
-/**
- * Convert a database row to a Check object.
- * checkedAt is stored as INTEGER (milliseconds) and returned as number.
- */
-function rowToCheck(row: {
-  id: number;
-  agentId: number;
-  checkedAt: number;
-  status: string;
-  responseMs: number | null;
-  httpStatus: number | null;
-  errorCode: string | null;
-  errorMessage: string | null;
-}): Check {
-  return {
-    id: row.id,
-    agentId: row.agentId,
-    checkedAt: row.checkedAt, // Already in milliseconds
-    status: row.status as CheckStatus,
-    responseMs: row.responseMs,
-    httpStatus: row.httpStatus,
-    errorCode: row.errorCode,
-    errorMessage: row.errorMessage,
-  };
 }

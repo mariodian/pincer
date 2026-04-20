@@ -1,4 +1,5 @@
-import type { Status } from "$shared/types";
+import type { Status } from "../../../shared/types";
+import { truncateToHour } from "../../../shared/time-utils";
 import { sql } from "drizzle-orm";
 import { getDatabase } from "./db";
 import { stats } from "./schema";
@@ -16,13 +17,6 @@ export interface AgentStatRow {
   errorCount: number;
   uptimePct: number;
   avgResponseMs: number;
-}
-
-/**
- * Truncate a unix timestamp (seconds) to the start of the hour.
- */
-function truncateToHour(timestampSecs: number): number {
-  return Math.floor(timestampSecs / 3600) * 3600;
 }
 
 /**

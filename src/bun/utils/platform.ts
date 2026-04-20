@@ -1,4 +1,4 @@
-import type { Platform } from "$shared/types";
+import type { Platform } from "../../shared/types";
 import { execSync } from "node:child_process";
 
 export function isMacOS(): boolean {

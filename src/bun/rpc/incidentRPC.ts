@@ -1,5 +1,5 @@
 // Incident RPC - Shared RPC definition for incident timeline and events
-import type { Check, IncidentEvent, TimeRange } from "$shared/types";
+import type { Check, IncidentEvent, TimeRange } from "../../shared/types";
 import type { AgentStatRow } from "../storage/sqlite/statsRepo";
 import { getAgentStats } from "../storage/sqlite/statsRepo";
 import { getRecentChecks, getAllChecks } from "../storage/sqlite/checksRepo";
