@@ -29,8 +29,8 @@ export function getDatabase() {
   }
 
   const sqlite = new Database(config.dbPath, { create: true });
-  sqlite.exec("PRAGMA journal_mode = WAL");
-  sqlite.exec("PRAGMA busy_timeout = 5000");
+  sqlite.run("PRAGMA journal_mode = WAL");
+  sqlite.run("PRAGMA busy_timeout = 5000");
 
   const db = drizzle(sqlite);
   sqliteInstance = sqlite;

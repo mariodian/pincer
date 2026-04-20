@@ -107,7 +107,7 @@ async function handleRequest(req: Request): Promise<Response> {
       }
 
       const { db, sqlite } = getDatabase();
-      sqlite.exec("BEGIN IMMEDIATE");
+      sqlite.run("BEGIN IMMEDIATE");
       try {
         sqlite.run("DELETE FROM agents");
         for (const agent of body) {
@@ -126,9 +126,9 @@ async function handleRequest(req: Request): Promise<Response> {
             })
             .run();
         }
-        sqlite.exec("COMMIT");
+        sqlite.run("COMMIT");
       } catch (err) {
-        sqlite.exec("ROLLBACK");
+        sqlite.run("ROLLBACK");
         throw err;
       }
 

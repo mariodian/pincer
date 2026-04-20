@@ -123,14 +123,14 @@ export async function sync(): Promise<DaemonSyncResult> {
       if (!response.ok) {
         if (cursor === lastSyncAt) {
           // First request failed - daemon is unreachable
-          logger.warn(
-            "daemon",
-            `Daemon unreachable: HTTP ${response.status}`,
-          );
+          logger.warn("daemon", `Daemon unreachable: HTTP ${response.status}`);
           firstRequestFailed = true;
         } else {
           // Subsequent page failed - log but continue with what we have
-          logger.warn("daemon", `Failed to fetch checks: HTTP ${response.status}`);
+          logger.warn(
+            "daemon",
+            `Failed to fetch checks: HTTP ${response.status}`,
+          );
         }
         break;
       }
@@ -142,7 +142,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       if (data.checks.length > 0) {
         const { sqlite } = getDatabase();
 
-        sqlite.exec("BEGIN IMMEDIATE");
+        sqlite.run("BEGIN IMMEDIATE");
         try {
           for (const check of data.checks) {
             sqlite.run(
@@ -159,10 +159,10 @@ export async function sync(): Promise<DaemonSyncResult> {
               ],
             );
           }
-          sqlite.exec("COMMIT");
+          sqlite.run("COMMIT");
           totalChecks += data.checks.length;
         } catch (err) {
-          sqlite.exec("ROLLBACK");
+          sqlite.run("ROLLBACK");
           throw err;
         }
       }
@@ -194,7 +194,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       const statsData = (await response.json()) as HourlyStat[];
       if (statsData.length > 0) {
         const { sqlite } = getDatabase();
-        sqlite.exec("BEGIN IMMEDIATE");
+        sqlite.run("BEGIN IMMEDIATE");
         try {
           for (const stat of statsData) {
             sqlite.run(
@@ -212,10 +212,10 @@ export async function sync(): Promise<DaemonSyncResult> {
               ],
             );
           }
-          sqlite.exec("COMMIT");
+          sqlite.run("COMMIT");
           totalStats = statsData.length;
         } catch (err) {
-          sqlite.exec("ROLLBACK");
+          sqlite.run("ROLLBACK");
           throw err;
         }
       }
@@ -235,7 +235,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       const incidentsData = (await response.json()) as IncidentEvent[];
       if (incidentsData.length > 0) {
         const { sqlite } = getDatabase();
-        sqlite.exec("BEGIN IMMEDIATE");
+        sqlite.run("BEGIN IMMEDIATE");
         try {
           for (const event of incidentsData) {
             sqlite.run(
@@ -252,10 +252,10 @@ export async function sync(): Promise<DaemonSyncResult> {
               ],
             );
           }
-          sqlite.exec("COMMIT");
+          sqlite.run("COMMIT");
           totalIncidents = incidentsData.length;
         } catch (err) {
-          sqlite.exec("ROLLBACK");
+          sqlite.run("ROLLBACK");
           throw err;
         }
       }

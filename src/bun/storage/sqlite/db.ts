@@ -7,8 +7,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runDatabaseInitialization } from "../../services/dbInitService";
 import { logger } from "../../services/loggerService";
-import { ensureAppDataDir } from "../../utils/fs";
 import { ONE_DAY_MS, ONE_DAY_SEC } from "../../utils/constants";
+import { ensureAppDataDir } from "../../utils/fs";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 let sqliteInstance: Database | null = null;
@@ -48,9 +48,9 @@ export function getDatabase() {
   const sqlite = new Database(dbPath, { create: true });
 
   // Enable WAL mode for better concurrent read performance
-  sqlite.exec("PRAGMA journal_mode = WAL");
+  sqlite.run("PRAGMA journal_mode = WAL");
   // Set busy timeout to handle concurrent write contention
-  sqlite.exec("PRAGMA busy_timeout = 5000");
+  sqlite.run("PRAGMA busy_timeout = 5000");
 
   const db = drizzle(sqlite);
 
