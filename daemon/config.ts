@@ -1,6 +1,6 @@
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
-import { appConfig } from "../src/shared/appConfig";
+import { appConfig, daemonConfig } from "../src/shared/appConfig";
 import { initLogger } from "../src/shared/logger";
 
 function parseBooleanEnv(value: string | undefined): boolean | undefined {
@@ -30,10 +30,59 @@ function getAppDataDir(): string {
   return join(xdgData, appConfig.identifier);
 }
 
+type ChannelName = "stable" | "dev" | "canary" | string;
+
+function inferChannelFromRuntime(): ChannelName {
+  const combined = [process.execPath, ...process.argv]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  // Prefer explicit channel directory hints to avoid accidental matches from version strings.
+  if (combined.includes("/canary/")) return "canary";
+  if (combined.includes("/stable/")) return "stable";
+
+  const runningWithBun =
+    process.execPath.toLowerCase().includes("bun") ||
+    process.execArgv.some((arg) => arg.toLowerCase().includes("bun"));
+
+  const entrypoint = process.argv[1]?.toLowerCase() ?? "";
+  const looksLikeSourceRun =
+    entrypoint.endsWith(".ts") ||
+    entrypoint.endsWith(".js") ||
+    entrypoint.includes("/daemon/");
+
+  if (runningWithBun && looksLikeSourceRun) {
+    return "dev";
+  }
+
+  if (process.env.NODE_ENV === "development" && runningWithBun) {
+    return "dev";
+  }
+
+  return "stable";
+}
+
+function resolveDaemonChannel(): { channel: ChannelName; source: string } {
+  const envValue = process.env.DAEMON_CHANNEL?.trim();
+  if (envValue) {
+    return { channel: envValue.toLowerCase(), source: "DAEMON_CHANNEL" };
+  }
+
+  const version = daemonConfig.version.trim();
+  if (version !== "unknown" && version.includes("-")) {
+    return { channel: "canary", source: "version" };
+  }
+
+  return { channel: inferChannelFromRuntime(), source: "auto" };
+}
+
 const appDataDir = getAppDataDir();
-const daemonDataDir = join(appDataDir, "daemon");
+const channelResolution = resolveDaemonChannel();
+const daemonChannel = channelResolution.channel;
+const channelDataDir = join(appDataDir, daemonChannel);
 const defaultLogFilePath =
-  process.env.LOG_FILE_PATH || join(daemonDataDir, "daemon.log");
+  process.env.LOG_FILE_PATH || join(channelDataDir, "logs", "daemon.log");
 const isDevelopment = process.env.NODE_ENV !== "production";
 const fileLoggingOverride = parseBooleanEnv(process.env.DAEMON_FILE_LOGGING);
 
@@ -53,9 +102,11 @@ const daemonLogLevel =
   "info";
 
 export const config = {
+  channel: daemonChannel,
+  channelSource: channelResolution.source,
   port: parseInt(process.env.DAEMON_PORT || "7378", 10),
   secret: process.env.DAEMON_SECRET,
-  dbPath: process.env.DB_PATH || join(daemonDataDir, "daemon.sqlite"),
+  dbPath: process.env.DB_PATH || join(channelDataDir, "daemon.db"),
   pollingIntervalMs: parseInt(process.env.POLLING_INTERVAL_MS || "15000", 10),
   logFilePath: defaultLogFilePath,
   fileLoggingEnabled: fileLoggingOverride ?? isDevelopment,
@@ -67,7 +118,7 @@ initLogger({
   logFilePath: config.fileLoggingEnabled ? config.logFilePath : undefined,
   minLevel: config.logLevel,
   consoleOutput: true,
-  componentPrefix: "[daemon]",
+  componentPrefix: "[pincerd]",
 });
 
 if (!config.secret) {

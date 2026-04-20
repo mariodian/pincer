@@ -33,6 +33,7 @@ function startDaemon(): void {
 }
 
 logger.info("daemon", `Starting ${daemonConfig.name} v${daemonConfig.version}`);
+logger.info("daemon", `Channel: ${config.channel} (${config.channelSource})`);
 logger.info("daemon", `Port: ${config.port}`);
 logger.info("daemon", `DB: ${config.dbPath}`);
 logger.info("daemon", `Polling interval: ${config.pollingIntervalMs}ms`);
