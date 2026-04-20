@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
@@ -9,7 +9,20 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "rootDir": "../",
-    "noEmit": true
+    "noEmit": true,
+    "lib": ["ES2020"],
+    "useDefineForClassFields": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "$shared/*": ["../src/shared/*"],
+      "$bun/*": ["../src/bun/*"]
+    }
   },
   "include": ["*.ts"],
   "exclude": ["node_modules", "dist"]
