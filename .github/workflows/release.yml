@@ -17,7 +17,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun run build:stable
+      - run: bun run ${{ contains(github.ref_name, '-') && 'build:canary' || 'build:stable' }}
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-macos
@@ -31,7 +31,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun run build:stable
+      - run: bun run ${{ contains(github.ref_name, '-') && 'build:canary' || 'build:stable' }}
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-windows
@@ -45,14 +45,32 @@ jobs:
         with:
           bun-version: latest
       - run: bun install
-      - run: bun run build:stable
+      - run: bun run ${{ contains(github.ref_name, '-') && 'build:canary' || 'build:stable' }}
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-linux
           path: artifacts/
 
+  build-daemon-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --cwd daemon
+      - run: bun run bundle --cwd daemon
+      - name: Package daemon bundle
+        run: |
+          mkdir -p artifacts
+          tar -czf artifacts/pincerd-${{ github.ref_name }}-linux-x64.tar.gz -C daemon/dist pincerd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-daemon
+          path: artifacts/pincerd-${{ github.ref_name }}-linux-x64.tar.gz
+
   release:
-    needs: [build-macos, build-windows, build-linux]
+    needs: [build-macos, build-windows, build-linux, build-daemon-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -134,4 +152,5 @@ jobs:
         with:
           files: all-artifacts/*
           body_path: /tmp/release_notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
           token: ${{ secrets.TAP_GITHUB_TOKEN }}
