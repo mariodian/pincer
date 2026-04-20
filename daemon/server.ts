@@ -1,8 +1,9 @@
 import { serve, type Server } from "bun";
 import { sql } from "drizzle-orm";
 import { daemonConfig } from "../src/shared/appConfig";
+import { rowToCheck, rowToIncidentEvent } from "../src/shared/db-helpers";
 import { logger } from "../src/shared/logger";
-import type { Agent, Check, IncidentEvent } from "../src/shared/types";
+import type { Agent } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents, stats } from "./schema";
@@ -27,50 +28,6 @@ function jsonResponse(data: unknown, status = 200): Response {
 
 function errorResponse(message: string, status = 400): Response {
   return jsonResponse({ error: message }, status);
-}
-
-function rowToCheck(row: {
-  id: number;
-  agentId: number;
-  checkedAt: Date;
-  status: string;
-  responseMs: number | null;
-  httpStatus: number | null;
-  errorCode: string | null;
-  errorMessage: string | null;
-}): Check {
-  return {
-    id: row.id,
-    agentId: row.agentId,
-    checkedAt: row.checkedAt.getTime(),
-    status: row.status as Check["status"],
-    responseMs: row.responseMs,
-    httpStatus: row.httpStatus,
-    errorCode: row.errorCode,
-    errorMessage: row.errorMessage,
-  };
-}
-
-function rowToIncidentEvent(row: {
-  id: number;
-  agentId: number;
-  incidentId: string;
-  eventAt: Date;
-  eventType: string;
-  fromStatus: string | null;
-  toStatus: string | null;
-  reason: string | null;
-}): IncidentEvent {
-  return {
-    id: row.id,
-    agentId: row.agentId,
-    incidentId: row.incidentId,
-    eventAt: row.eventAt.getTime(),
-    eventType: row.eventType as IncidentEvent["eventType"],
-    fromStatus: row.fromStatus as IncidentEvent["fromStatus"],
-    toStatus: row.toStatus as IncidentEvent["toStatus"],
-    reason: row.reason,
-  };
 }
 
 async function handleRequest(req: Request): Promise<Response> {

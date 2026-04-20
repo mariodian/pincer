@@ -1,21 +1,14 @@
 import { logger } from "../src/shared/logger";
 import type { Agent, CheckStatus } from "../src/shared/types";
 import { sql } from "drizzle-orm";
-import { getAgentType } from "./agentTypes";
+import { truncateToHour } from "../src/shared/time-utils";
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { agents, checks, stats } from "./schema";
 import { recordCheck as recordIncidentCheck } from "./incidents";
-import {
-  resolveHealthConfig,
-  executeHealthCheck,
-} from "../src/shared/agentHealthCheck";
+import { executeHealthCheck } from "../src/shared/agentHealthCheck";
 
 const MAX_CONCURRENT_CHECKS = 10;
-
-function truncateToHour(timestampSecs: number): number {
-  return Math.floor(timestampSecs / 3600) * 3600;
-}
 
 async function runPoll(): Promise<void> {
   const { db } = getDatabase();
