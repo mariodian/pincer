@@ -1,0 +1,6 @@
+# Build artifacts
+dist/
+*.bun-build
+
+# Runtime logs
+daemon.log
