@@ -373,7 +373,7 @@ async function startStatusUpdates() {
       const wasConnected = daemonConnected;
       const syncResult = await daemonSync();
 
-      if (syncResult.checksImported >= 0) {
+      if (syncResult.checksImported > 0) {
         // Daemon sync succeeded
         if (!wasConnected) {
           // Transitioning from local mode to daemon mode
