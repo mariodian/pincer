@@ -74,3 +74,24 @@ export function resetDatabaseInstances(): void {
   dbInstance = null;
   sqliteInstance = null;
 }
+
+/**
+ * Execute operations within a database transaction.
+ * Automatically handles BEGIN IMMEDIATE, COMMIT, and ROLLBACK.
+ *
+ * @param sqlite - The raw SQLite database instance
+ * @param fn - Function containing database operations to execute
+ * @returns The result of the function
+ * @throws Re-throws the original error after rolling back
+ */
+export function runInTransaction<T>(sqlite: Database, fn: () => T): T {
+  sqlite.run("BEGIN IMMEDIATE");
+  try {
+    const result = fn();
+    sqlite.run("COMMIT");
+    return result;
+  } catch (err) {
+    sqlite.run("ROLLBACK");
+    throw err;
+  }
+}
