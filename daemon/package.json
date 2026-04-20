@@ -1,5 +1,5 @@
 {
-  "name": "pincer-daemon",
+  "name": "pincerd",
   "version": "0.0.9",
   "private": true,
   "type": "module",
