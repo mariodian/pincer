@@ -48,12 +48,27 @@ bun run dev
 
 ### Commands
 
-| Command           | Description                          |
-| ----------------- | ------------------------------------ |
-| `bun run dev`     | Full desktop dev flow                |
-| `bun run dev:hmr` | Fast renderer iteration with HMR     |
-| `bun run build`   | Production build                     |
-| `bun run dev:web` | Vite dev server only (no Electrobun) |
+| Command                    | Description                      |
+| -------------------------- | -------------------------------- |
+| `bun run dev`              | Full desktop dev flow            |
+| `bun run dev:hmr`          | Fast renderer iteration with HMR |
+| `bun run build`            | Production build                 |
+| `bun run daemon:start`     | Run daemon in development        |
+| `bun run daemon:bundle`    | Build daemon binary              |
+
+### Daemon Development
+
+The daemon is a separate TypeScript project in `daemon/`. It uses dependencies from the root `package.json`.
+
+| Command                       | Description                          |
+| ----------------------------- | ------------------------------------ |
+| `bun run daemon:start`        | Run daemon in development            |
+| `bun run daemon:typecheck`    | Typecheck daemon code                |
+| `bun run daemon:format`       | Format daemon code                   |
+| `bun run daemon:db:generate`  | Generate daemon migrations           |
+| `bun run daemon:bundle`       | Build daemon binary for distribution |
+
+The daemon has its own `schema.ts` and `migrations/` directory (separate from the main app's `drizzle/migrations/`) because the daemon and app have different `__drizzle_migrations` tracking tables.
 
 ### Development Notes
 
@@ -70,8 +85,14 @@ bun run dev
 Pincer uses strict TypeScript and Svelte 5. Before submitting, run:
 
 ```bash
+# Format all code (app + daemon)
 bun run format
+
+# Typecheck main app
 bun run typecheck
+
+# Typecheck daemon (if you modified daemon code)
+bun run daemon:typecheck
 ```
 
 See [AGENTS.md](./AGENTS.md) for full coding standards.
@@ -105,12 +126,12 @@ Release automation runs when a git tag matching `v*` is pushed.
 
 When pushing a `v*` tag, `.githooks/pre-push` validates:
 
-- `daemon/package.json` version matches the tag version without the `v` prefix.
+- `package.json` version matches the tag version without the `v` prefix.
 - `CHANGELOG.md` contains a matching release heading.
 
 Example: pushing `v0.3.4-dev` requires:
 
-- `daemon/package.json` version `0.3.4-dev`
+- `package.json` version `0.3.4-dev`
 - a changelog heading `## [0.3.4-dev]` or `## [v0.3.4-dev]`
 
 ## Open a Pull Request

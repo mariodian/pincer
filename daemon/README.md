@@ -2,61 +2,84 @@
 
 A lightweight, always-on Bun HTTP server that runs the same collection pipeline as Pincer and exposes a pull API so Pincer can sync the gap when it wakes up from sleep.
 
-> Current support: Linux deployment is supported. Other platforms are not yet officially supported.
+> **Platform support:** Linux deployment is supported. Other platforms are not yet officially supported.
 
-## Architecture
-
-```
-┌─────────────────┐         ┌──────────────────┐
-│   Pincer (GUI)  │         │   pincerd        │
-│                 │  sync   │                  │
-│  - Agent list   │───────▶ │  - Dumb collector│
-│  - Analyzer     │         │  - No LLM/No UI  │
-│  - Source of    │◀─────── │  - SQLite + HTTP │
-│    truth        │  pull   │                  │
-└─────────────────┘         └──────────────────┘
-```
-
-## Environment Variables
-
-| Variable              | Default                                         | Description                                                           |
-| --------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
-| `DAEMON_PORT`         | `7378`                                          | HTTP server port                                                      |
-| `DAEMON_SECRET`       | _required_                                      | Bearer token for API auth                                             |
-| `DAEMON_CHANNEL`      | auto-detected (`stable` fallback)               | Storage channel override (`stable`, `dev`, `canary`, or custom)       |
-| `DB_PATH`             | `<app-data>/<app-id>/<channel>/daemon.db`       | SQLite database path (sits next to app DB in channel data directory)  |
-| `POLLING_INTERVAL_MS` | `15000`                                         | Health check interval                                                 |
-| `DAEMON_LOG_LEVEL`    | `info`                                          | Console log level (`debug`, `info`, `warn`, `error`)                  |
-| `DAEMON_FILE_LOGGING` | `true` in development, `false` in production    | Enable/disable file logging (`true/false`, `1/0`, `yes/no`, `on/off`) |
-| `LOG_FILE_PATH`       | `<app-data>/<app-id>/<channel>/logs/daemon.log` | File path for daemon logs (used when file logging is enabled)         |
-
-Channel resolution order:
-
-1. `DAEMON_CHANNEL` (explicit override)
-2. Daemon version with prerelease suffix (`-...`) -> `canary` (for example `0.3.4-dev`, `0.3.4-alpha.1`)
-3. Auto-detection from runtime context (for example Bun/source run -> `dev`, channel directory hints like `/canary/` -> `canary`)
-4. Fallback to `stable`
-
-### Logging presets
-
-Development (console info + file logging on):
+## Quick Start
 
 ```bash
-export NODE_ENV=development
-export DAEMON_LOG_LEVEL=info
-export DAEMON_FILE_LOGGING=true
+# Download and extract the latest release
+curl -L -o /tmp/pincerd.tar.gz \
+  "https://github.com/mariodian/pincer/releases/latest/download/pincerd-linux-x64.tar.gz"
+sudo tar -xzf /tmp/pincerd.tar.gz -C /opt
+
+# Set your secret and start
+export DAEMON_SECRET=your-secret-here
+/opt/pincerd/pincerd
 ```
 
-Production (console warn + file logging off):
+## Installation
 
+The daemon bundle contains a standalone binary, database migrations, and version metadata. Install it to `/opt/pincerd` (or any location you prefer).
+
+### Option A: Download from GitHub Releases (Recommended)
+
+```bash
+VERSION="v0.3.4"  # Change to desired version
+curl -L -o /tmp/pincerd.tar.gz \
+  "https://github.com/mariodian/pincer/releases/download/${VERSION}/pincerd-${VERSION}-linux-x64.tar.gz"
+
+sudo mkdir -p /opt
+sudo tar -xzf /tmp/pincerd.tar.gz -C /opt
+
+# The installed directory contains:
+# - /opt/pincerd/pincerd (binary)
+# - /opt/pincerd/migrations/ (database migrations)
+# - /opt/pincerd/version.json (version metadata)
+```
+
+### Option B: Build from Source
+
+If you have the Pincer source repository:
+
+```bash
+# From the project root
+bun run daemon:bundle
+
+# Install to /opt
+sudo cp -R daemon/dist/pincerd /opt/
+```
+
+## Configuration
+
+The daemon is configured via environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DAEMON_SECRET` | _required_ | Bearer token for API authentication |
+| `DAEMON_PORT` | `7378` | HTTP server port |
+| `DAEMON_CHANNEL` | auto-detected | Storage channel (`stable`, `dev`, `canary`) |
+| `DB_PATH` | `<app-data>/<channel>/daemon.db` | SQLite database path |
+| `POLLING_INTERVAL_MS` | `15000` | Health check interval |
+| `DAEMON_LOG_LEVEL` | `info` | Log level (`debug`, `info`, `warn`, `error`) |
+| `DAEMON_FILE_LOGGING` | `false` (prod), `true` (dev) | Enable file logging |
+| `LOG_FILE_PATH` | `<app-data>/<channel>/logs/daemon.log` | Log file path |
+
+Channel is resolved in this order:
+1. `DAEMON_CHANNEL` environment variable
+2. Version suffix (e.g., `0.3.4-dev` → `canary`)
+3. Auto-detection from runtime context
+4. Fallback to `stable`
+
+### Logging Presets
+
+**Production (minimal logging):**
 ```bash
 export NODE_ENV=production
 export DAEMON_LOG_LEVEL=warn
 export DAEMON_FILE_LOGGING=false
 ```
 
-Production with file logging enabled:
-
+**Production with file logging:**
 ```bash
 export NODE_ENV=production
 export DAEMON_LOG_LEVEL=info
@@ -64,47 +87,20 @@ export DAEMON_FILE_LOGGING=true
 export LOG_FILE_PATH=/var/log/pincerd/daemon.log
 ```
 
-## Deployment
+## Running the Daemon
 
-### 1) Install the daemon bundle
+### With systemd (Recommended)
 
-Install the daemon bundle in `/opt/pincerd` using one of these options. This is required for both `systemd` and PM2.
-
-#### Option A: Build locally
-
-```bash
-sudo mkdir -p /opt
-
-# Local build output example
-sudo cp -R daemon/dist/pincerd /opt/
-
-# The installed directory must contain: pincerd and migrations/
-```
-
-#### Option B: Download the release tarball from GitHub
-
-```bash
-VERSION="v0.3.4" # change to the version you want
-curl -L -o /tmp/pincerd.tar.gz \
-	"https://github.com/mariodian/pincer/releases/download/${VERSION}/pincerd-${VERSION}-linux-x64.tar.gz"
-
-sudo mkdir -p /opt
-sudo tar -xzf /tmp/pincerd.tar.gz -C /opt
-
-# The installed directory must contain: /opt/pincerd/pincerd and /opt/pincerd/migrations/
-```
-
-### 2) Run with systemd (Linux)
+Create `/etc/systemd/system/pincerd.service`:
 
 ```ini
-# /etc/systemd/system/pincerd.service
 [Unit]
 Description=Pincer Daemon
 After=network.target
 
 [Service]
 Type=simple
-User=<your user>
+User=<your-user>
 WorkingDirectory=/opt/pincerd
 Environment=DAEMON_SECRET=your-secret-here
 Environment=DAEMON_PORT=7378
@@ -116,13 +112,14 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
+Enable and start:
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable pincerd
 sudo systemctl start pincerd
 ```
 
-### 3) Run with PM2
+### With PM2
 
 ```bash
 export DAEMON_SECRET=your-secret-here
@@ -131,7 +128,7 @@ pm2 start /opt/pincerd/pincerd --name pincerd
 pm2 save
 ```
 
-## API Endpoints
+## API Reference
 
 All endpoints require Bearer token authentication: `Authorization: Bearer <DAEMON_SECRET>`
 
@@ -139,22 +136,63 @@ All endpoints require Bearer token authentication: `Authorization: Bearer <DAEMO
 
 Returns daemon status and uptime.
 
+**Response:**
+```json
+{
+  "status": "ok",
+  "version": "0.3.4",
+  "uptime": 3600
+}
+```
+
 ### GET /agents
 
-Returns list of all agents.
+Returns list of all configured agents.
 
 ### PUT /agents
 
-Replaces the entire agent list with the provided array.
+Replaces the entire agent list.
 
-### GET /checks?since=<ms>&limit=<n>
+**Body:** Array of agent objects
 
-Returns health checks since the given timestamp (with pagination).
+### GET /checks?since=&lt;ms&gt;&limit=&lt;n&gt;
 
-### GET /stats?since=<ms>
+Returns health checks since the given timestamp (milliseconds since epoch).
+
+### GET /stats?since=&lt;ms&gt;
 
 Returns hourly statistics since the given timestamp.
 
-### GET /incident-events?since=<ms>
+### GET /incident-events?since=&lt;ms&gt;
 
 Returns incident events since the given timestamp.
+
+## Architecture
+
+```
+┌─────────────────┐         ┌──────────────────┐
+│   Pincer (GUI)  │         │   pincerd        │
+│                 │  sync   │                  │
+│  - Agent list   │───────▶│  - Collector     │
+│  - Analyzer     │         │  - No UI/LLM     │
+│  - Source of    │◀───────│  - SQLite + HTTP │
+│    truth        │  pull   │                  │
+└─────────────────┘         └──────────────────┘
+```
+
+The daemon runs the same health check pipeline as the desktop app but without any UI. It stores checks and stats in its own SQLite database and exposes an HTTP API for the Pincer app to sync data when it connects.
+
+## Development
+
+If you're working on the daemon source code, see [CONTRIBUTING.md](../CONTRIBUTING.md) for development setup. The daemon uses dependencies from the root `package.json`:
+
+```bash
+# Run daemon in development
+bun run daemon:start
+
+# Typecheck daemon code
+bun run daemon:typecheck
+
+# Build daemon binary
+bun run daemon:bundle
+```
