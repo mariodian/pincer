@@ -118,12 +118,14 @@ export const stats = sqliteTable(
 );
 
 // Raw health checks - 7 day retention only
+// NOTE: checked_at stores milliseconds since epoch as INTEGER (not timestamp_ms mode)
+// This ensures consistent handling between Drizzle and raw SQL queries
 export const checks = sqliteTable(
   "checks",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     agentId: integer("agent_id").notNull(),
-    checkedAt: integer("checked_at", { mode: "timestamp_ms" }).notNull(),
+    checkedAt: integer("checked_at").notNull(), // milliseconds since epoch
     status: text("status").notNull(), // "ok" | "offline" | "error" | "degraded"
     responseMs: real("response_ms"),
     httpStatus: integer("http_status"),

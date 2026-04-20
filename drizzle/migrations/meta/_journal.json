@@ -134,6 +134,13 @@
       "when": 1775931755042,
       "tag": "0018_add_daemon_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1776689050641,
+      "tag": "0019_stale_nova",
+      "breakpoints": true
     }
   ]
 }

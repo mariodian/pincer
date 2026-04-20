@@ -54,10 +54,23 @@ export class StatusSyncService {
 
   /**
    * Update the internal status map with new statuses.
+   * Accepts updates when:
+   * - No existing entry for this agent
+   * - Status has changed (e.g., offline -> ok) - ensures recovery is always reflected
+   * - Incoming timestamp is newer than cached (prevents stale data overwrites)
+   * This prevents stale daemon data from overwriting fresh local health checks
+   * while ensuring status changes are always propagated to the UI.
    */
   updateStatusMap(statuses: AgentStatusInfo[]): void {
     for (const status of statuses) {
-      this.agentStatusMap.set(status.id, status);
+      const existing = this.agentStatusMap.get(status.id);
+      if (
+        !existing ||
+        status.status !== existing.status ||
+        status.lastChecked > existing.lastChecked
+      ) {
+        this.agentStatusMap.set(status.id, status);
+      }
     }
   }
 

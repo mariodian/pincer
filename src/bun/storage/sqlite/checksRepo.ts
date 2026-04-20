@@ -5,6 +5,7 @@ import { checks } from "./schema";
 
 /**
  * Insert a single health check into the database.
+ * checkedAt is stored as milliseconds since epoch (INTEGER).
  */
 export function insertCheck(
   agentId: number,
@@ -15,7 +16,7 @@ export function insertCheck(
   errorMessage: string | null,
 ): Check {
   const { db } = getDatabase();
-  const checkedAt = new Date(); // Drizzle expects Date for timestamp_ms mode
+  const checkedAt = Date.now(); // Store as milliseconds timestamp
 
   const row = db
     .insert(checks)
@@ -37,6 +38,7 @@ export function insertCheck(
 /**
  * Get recent checks for an agent within a time range.
  * Returns checks sorted by checkedAt descending (most recent first).
+ * sinceMs and untilMs are milliseconds since epoch.
  */
 export function getRecentChecks(
   agentId: number,
@@ -170,11 +172,12 @@ export function getAgentLatestCheck(agentId: number): Check | null {
 
 /**
  * Convert a database row to a Check object.
+ * checkedAt is stored as INTEGER (milliseconds) and returned as number.
  */
 function rowToCheck(row: {
   id: number;
   agentId: number;
-  checkedAt: Date;
+  checkedAt: number;
   status: string;
   responseMs: number | null;
   httpStatus: number | null;
@@ -184,7 +187,7 @@ function rowToCheck(row: {
   return {
     id: row.id,
     agentId: row.agentId,
-    checkedAt: row.checkedAt.getTime(), // Convert Date to ms timestamp
+    checkedAt: row.checkedAt, // Already in milliseconds
     status: row.status as CheckStatus,
     responseMs: row.responseMs,
     httpStatus: row.httpStatus,

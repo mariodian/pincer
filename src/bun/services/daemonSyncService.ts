@@ -146,6 +146,7 @@ export async function sync(): Promise<DaemonSyncResult> {
     };
     if (data.checks.length > 0) {
       const { sqlite } = getDatabase();
+
       sqlite.exec("BEGIN IMMEDIATE");
       try {
         for (const check of data.checks) {
