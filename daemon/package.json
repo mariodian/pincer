@@ -6,7 +6,8 @@
   "scripts": {
     "start": "bun run index.ts",
     "db:generate": "drizzle-kit generate",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "bunx prettier --write '**/*.{ts,js}'"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.1"
