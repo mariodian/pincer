@@ -1,14 +1,14 @@
 import { serve, type Server } from "bun";
-
-type DaemonServer = Server<undefined>;
 import { sql } from "drizzle-orm";
-import { daemonConfig } from "../src/shared/appConfig";
+import { appConfig } from "../src/shared/appConfig";
 import type { Agent, Check, IncidentEvent } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents, stats } from "./schema";
 
-const VERSION = daemonConfig.version;
+type DaemonServer = Server<undefined>;
+
+const VERSION = appConfig.version;
 const startTime = Date.now();
 
 function checkAuth(req: Request): boolean {
@@ -146,7 +146,7 @@ async function handleRequest(req: Request): Promise<Response> {
       const rows = db
         .select()
         .from(checks)
-        .where(sql`${checks.checkedAt} >= ${new Date(since)}`)
+        .where(sql`${checks.checkedAt} >= ${since}`)
         .orderBy(checks.checkedAt)
         .limit(limit + 1)
         .all();
@@ -154,7 +154,7 @@ async function handleRequest(req: Request): Promise<Response> {
       const hasMore = rows.length > limit;
       const page = rows.slice(0, limit);
       const nextCursor = hasMore
-        ? page[page.length - 1].checkedAt.getTime()
+        ? page[page.length - 1].checkedAt
         : null;
 
       return jsonResponse({
@@ -188,7 +188,7 @@ async function handleRequest(req: Request): Promise<Response> {
       const rows = db
         .select()
         .from(incidentEvents)
-        .where(sql`${incidentEvents.eventAt} >= ${new Date(since)}`)
+        .where(sql`${incidentEvents.eventAt} >= ${since}`)
         .orderBy(incidentEvents.eventAt)
         .all();
 
