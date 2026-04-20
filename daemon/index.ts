@@ -2,6 +2,7 @@ import { daemonConfig } from "../src/shared/appConfig";
 import { logger } from "../src/shared/logger";
 import { config } from "./config";
 import { initializeDatabase } from "./db";
+import { reconstructState } from "./incidents";
 import { startPolling, stopPolling } from "./poll";
 import { startServer, stopServer } from "./server";
 
@@ -11,6 +12,10 @@ logger.info("daemon", `DB: ${config.dbPath}`);
 logger.info("daemon", `Polling interval: ${config.pollingIntervalMs}ms`);
 
 await initializeDatabase();
+
+// Reconstruct incident state from database before starting polling
+reconstructState();
+
 startPolling();
 startServer();
 

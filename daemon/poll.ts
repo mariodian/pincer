@@ -5,6 +5,7 @@ import { AGENT_TYPES, STATUS_PARSERS, getAgentType, type StatusParser, type Stat
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { agents, checks, stats } from "./schema";
+import { recordCheck as recordIncidentCheck } from "./incidents";
 
 const MAX_CONCURRENT_CHECKS = 10;
 
@@ -140,7 +141,7 @@ async function runPoll(): Promise<void> {
 
   const validResults = results.filter((r): r is NonNullable<typeof r> => r !== null);
 
-  // Insert checks
+  // Insert checks and detect incidents
   for (const result of validResults) {
     db.insert(checks).values({
       agentId: result.agentId,
@@ -151,6 +152,9 @@ async function runPoll(): Promise<void> {
       errorCode: result.errorCode,
       errorMessage: result.errorMessage,
     }).run();
+
+    // Detect incidents
+    recordIncidentCheck(result.agentId, result.status);
 
     // Upsert hourly stat
     const hourTimestamp = truncateToHour(Math.floor(Date.now() / 1000));
