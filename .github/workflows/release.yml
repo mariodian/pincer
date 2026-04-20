@@ -58,8 +58,8 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: bun install --cwd daemon
-      - run: bun run bundle --cwd daemon
+      - run: cd daemon && bun install
+      - run: cd daemon && bun run bundle
       - name: Package daemon bundle
         run: |
           mkdir -p artifacts
