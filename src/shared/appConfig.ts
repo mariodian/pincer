@@ -29,7 +29,10 @@ const appVersion = resolveVersion([
   join(process.cwd(), "package.json"),
 ]);
 
-const daemonVersion = resolveVersion([join(process.cwd(), "package.json")]);
+const daemonVersion = resolveVersion([
+  join(process.cwd(), "version.json"),
+  join(process.cwd(), "package.json"),
+]);
 
 export const appConfig = {
   name: "Pincer",

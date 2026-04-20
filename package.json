@@ -14,7 +14,9 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "db:generate": "bunx drizzle-kit generate",
     "db:push": "bunx drizzle-kit push",
-    "db:studio": "bunx drizzle-kit studio"
+    "db:studio": "bunx drizzle-kit studio",
+    "daemon:start": "bun run ./daemon/index.ts",
+    "daemon:bundle": "bash ./daemon/scripts/bundle.sh"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
