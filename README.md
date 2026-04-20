@@ -31,6 +31,7 @@ Pincer will appear in your system tray.
 - 📥 [Installation](#installation)
   - ✅ [Requirements](#requirements)
 - 🚀 [Usage](#usage)
+- 🔄 [Daemon](#daemon)
 - ⚠️ [Known Limitations](#known-limitations)
 - 🔧 [Troubleshooting](#troubleshooting)
 - 💬 [Contributing](#contributing)
@@ -72,6 +73,7 @@ Running multiple local AI agents means constantly switching between terminals an
 - **Flexible controls**: polling, retention, notifications, startup, and auto-update settings
 - **Local and cross-platform**: SQLite-backed, runs on macOS, Windows, and Linux
 - **Agent support**: [OpenClaw](https://github.com/openclaw/openclaw), [OpenCrabs](https://github.com/adolfousier/opencrabs), [Hermes](https://github.com/nousresearch/hermes-agent), [OpenCode](https://github.com/anomalyco/opencode), and custom HTTP health endpoints
+- **Background daemon (Linux-only for now)**: `pincerd` keeps collecting checks and sync data even when the desktop app is not running
 
 ## 📥 Installation
 
@@ -112,6 +114,16 @@ bun run build
 bun run build:canary
 bun run build:stable
 ```
+
+## 🔄 Daemon
+
+Pincer also includes a standalone daemon, `pincerd`, for always-on collection and sync when the desktop app is not running.
+
+> Current status: the daemon packaging and deployment path is Linux-only for now.
+
+If you are installing from GitHub Releases, download the Linux daemon bundle named `pincerd-vX.Y.Z-linux-x64.tar.gz`.
+
+See [daemon/README.md](./daemon/README.md) for daemon architecture, environment variables, packaging, and `systemd` deployment instructions.
 
 ## ⚠️ Known Limitations
 

@@ -10,6 +10,7 @@ Thanks for your interest in contributing to Pincer.
 - [Development](#development)
 - [Code Style](#code-style)
 - [Committing Your Work](#committing-your-work)
+- [Release Tagging](#release-tagging)
 - [Open a Pull Request](#open-a-pull-request)
 - [Review Process](#review-process)
 
@@ -47,11 +48,11 @@ bun run dev
 
 ### Commands
 
-| Command | Description |
-| ------- |-------------|
-| `bun run dev` | Full desktop dev flow |
-| `bun run dev:hmr` | Fast renderer iteration with HMR |
-| `bun run build` | Production build |
+| Command           | Description                          |
+| ----------------- | ------------------------------------ |
+| `bun run dev`     | Full desktop dev flow                |
+| `bun run dev:hmr` | Fast renderer iteration with HMR     |
+| `bun run build`   | Production build                     |
 | `bun run dev:web` | Vite dev server only (no Electrobun) |
 
 ### Development Notes
@@ -85,6 +86,32 @@ git commit -m "Your commit message"
 ```
 
 Keep commits focused and clear.
+
+## Release Tagging
+
+Release automation runs when a git tag matching `v*` is pushed.
+
+### Tag from `main`
+
+- Merge your feature branch into `main` first.
+- Create and push release tags from `main` commits.
+
+### Tag naming and build channel
+
+- `vX.Y.Z` uses stable builds.
+- `vX.Y.Z-suffix` (for example `v0.3.4-dev`, `v0.3.4-alpha.1`) uses canary builds and is marked as a prerelease.
+
+### Pre-push validations for version tags
+
+When pushing a `v*` tag, `.githooks/pre-push` validates:
+
+- `daemon/package.json` version matches the tag version without the `v` prefix.
+- `CHANGELOG.md` contains a matching release heading.
+
+Example: pushing `v0.3.4-dev` requires:
+
+- `daemon/package.json` version `0.3.4-dev`
+- a changelog heading `## [0.3.4-dev]` or `## [v0.3.4-dev]`
 
 ## Open a Pull Request
 
