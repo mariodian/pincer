@@ -30,7 +30,7 @@ function truncateToHour(timestampSecs: number): number {
  */
 export function upsertHourlyStat(
   agentId: number,
-  status: Status,
+  status: Status | "degraded",
   responseMs: number,
 ): void {
   const { db } = getDatabase();
