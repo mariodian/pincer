@@ -343,3 +343,12 @@ export function removeAgentState(agentId: number): void {
     logger.debug("incident", `[Agent ${agentId}] Removed from incident state`);
   }
 }
+
+/**
+ * Clear all incident state from memory.
+ * Call this when switching to daemon mode (daemon handles incident detection).
+ */
+export function clearState(): void {
+  agentStates.clear();
+  logger.debug("incident", "All incident state cleared");
+}

@@ -4,16 +4,22 @@ import type { AgentStatusInfo } from "../../shared/types";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { checkAllAgentsStatus, readAgents } from "./agentService";
+import { sync as daemonSync } from "./daemonSyncService";
 import { logger } from "./loggerService";
 import { getStatusSyncService } from "./statusSyncService";
 import {
   initIncidentService,
   reconstructState as reconstructIncidentState,
+  clearState as clearIncidentState,
 } from "./incidentService";
 import { startRetentionService } from "./retentionService";
+import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;
+
+// Daemon connection state
+let daemonConnected = false;
 
 const FIRST_POLL_MARKER = "__FIRST_POLL__";
 
@@ -67,6 +73,38 @@ export async function refreshAndPush(updateMenu = true) {
 
   sync.updateStatusMap(statuses);
   await sync.sync({ updateMenu });
+}
+
+/**
+ * Process synced data from daemon and detect status changes for notifications.
+ * Queries the latest checks from DB (synced from daemon) and compares to lastKnownStatuses.
+ */
+async function processSyncedData(): Promise<void> {
+  const agents = await readAgents();
+  const currentStatuses: AgentStatusInfo[] = [];
+
+  // Get latest check for each agent from DB (synced from daemon)
+  for (const agent of agents) {
+    const latestCheck = getAgentLatestCheck(agent.id);
+    if (latestCheck) {
+      // Map CheckStatus to Status (treat "degraded" as "error")
+      const status =
+        latestCheck.status === "degraded" ? "error" : latestCheck.status;
+      currentStatuses.push({
+        id: agent.id,
+        status,
+        lastChecked: latestCheck.checkedAt,
+        errorMessage: latestCheck.errorMessage ?? undefined,
+      });
+    }
+  }
+
+  await checkAndNotifyStatusChanges(currentStatuses);
+
+  // Update status sync service with current statuses
+  const sync = getStatusSyncService();
+  sync.updateStatusMap(currentStatuses);
+  await sync.sync({ updateMenu: true });
 }
 
 /**
@@ -329,13 +367,54 @@ async function startStatusUpdates() {
 
   // Recursive poll function to prevent overlapping polls
   const poll = async () => {
-    logger.debug("status", "Polling agents...");
+    logger.debug("status", "Starting poll cycle...");
     try {
-      await refreshAndPush();
+      // Try to sync from daemon first
+      const wasConnected = daemonConnected;
+      const syncResult = await daemonSync();
+
+      if (syncResult.checksImported >= 0) {
+        // Daemon sync succeeded
+        if (!wasConnected) {
+          // Transitioning from local mode to daemon mode
+          logger.info(
+            "status",
+            "Daemon connected - switching to synced data mode",
+          );
+          // Clear local incident service state (we're now using daemon's detection)
+          clearIncidentState();
+        }
+        daemonConnected = true;
+
+        // Process synced data for notifications
+        await processSyncedData();
+      } else {
+        // This shouldn't happen - daemonSync returns counts on success
+        throw new Error("Unexpected sync result");
+      }
     } catch (error) {
-      logger.error("status", "Failed to update agent statuses:", error);
+      // Daemon sync failed - fall back to local polling
+      const wasConnected = daemonConnected;
+      if (wasConnected) {
+        // Transitioning from daemon mode to local mode
+        logger.warn(
+          "status",
+          "Daemon sync failed - falling back to local polling",
+        );
+        daemonConnected = false;
+
+        // Initialize local incident service for fallback mode
+        initIncidentService();
+        await reconstructIncidentState();
+      }
+
+      // Perform local polling
+      await refreshAndPush();
     }
+
     // Schedule next poll after this one completes
+    const { pollingInterval } = getAdvancedSettings();
+    const interval = pollingInterval || 30000;
     statusUpdateInterval = setTimeout(poll, interval);
   };
 
@@ -350,14 +429,11 @@ export async function beginStatusUpdates() {
 
   statusUpdatesStarted = true;
 
-  // Initialize incident tracking service
-  initIncidentService();
-
   // Start retention cleanup service (runs startup cleanup + background job)
   startRetentionService();
 
-  // Reconstruct incident state from database before first poll
-  await reconstructIncidentState();
+  // Note: Incident service is initialized conditionally in the poll loop
+  // based on whether daemon is connected or not
 
   await startStatusUpdates();
 }
@@ -395,4 +471,11 @@ export function removeAgentStatusTracking(agentId: number): void {
   }
 
   logger.debug("status", `[Agent ${agentId}] Removed from status tracking`);
+}
+
+/**
+ * Check if daemon is currently connected (for external queries).
+ */
+export function isDaemonConnected(): boolean {
+  return daemonConnected;
 }

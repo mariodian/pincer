@@ -147,6 +147,28 @@ export function getTotalChecksCount(): number {
 }
 
 /**
+ * Get the latest check for a specific agent.
+ * Returns null if no checks exist for the agent.
+ */
+export function getAgentLatestCheck(agentId: number): Check | null {
+  const { db } = getDatabase();
+
+  const row = db
+    .select()
+    .from(checks)
+    .where(eq(checks.agentId, agentId))
+    .orderBy(desc(checks.checkedAt))
+    .limit(1)
+    .get();
+
+  if (!row) {
+    return null;
+  }
+
+  return rowToCheck(row);
+}
+
+/**
  * Convert a database row to a Check object.
  */
 function rowToCheck(row: {
