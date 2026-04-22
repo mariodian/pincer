@@ -1,7 +1,13 @@
-import { SqliteAgentStorage } from "./sqlite/sqlStorage";
 import { AgentStorage } from "./backend";
+import { readAgents, writeAgents, insertAgent } from "./sqlite/agentsRepo";
 
 export type { AgentStorage } from "./backend";
-export { SqliteAgentStorage } from "./sqlite/sqlStorage";
 
-export const agentStorage: AgentStorage = new SqliteAgentStorage();
+export const agentStorage: AgentStorage = {
+  readAgents: () => Promise.resolve(readAgents()),
+  writeAgents: (agents) => {
+    writeAgents(agents);
+    return Promise.resolve();
+  },
+  insertAgent: (agent) => Promise.resolve(insertAgent(agent)),
+};
