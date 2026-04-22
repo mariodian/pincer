@@ -45,7 +45,7 @@ function formatUptime(seconds: number): string {
  * Check if the daemon is properly configured and enabled.
  * Returns false if disabled, missing URL, or missing secret.
  */
-function isDaemonConfigured(): boolean {
+export function isDaemonConfigured(): boolean {
   const s = getDaemonSettings();
   return s.enabled && !!s.url && !!s.secret;
 }
@@ -129,6 +129,7 @@ export async function sync(): Promise<DaemonSyncResult> {
   // Import checks with pagination - serves as connectivity test too
   let cursor: number | null = lastSyncAt;
   let firstRequestFailed = false;
+  let firstError: Error | null = null;
   while (cursor !== null) {
     const url = `/checks?since=${cursor}&limit=1000`;
     try {
@@ -137,6 +138,7 @@ export async function sync(): Promise<DaemonSyncResult> {
         if (cursor === lastSyncAt) {
           // First request failed - daemon is unreachable
           logger.warn("daemon", `Daemon unreachable: HTTP ${response.status}`);
+          firstError = new Error(`HTTP ${response.status}`);
           firstRequestFailed = true;
         } else {
           // Subsequent page failed - log but continue with what we have
@@ -161,15 +163,16 @@ export async function sync(): Promise<DaemonSyncResult> {
       // Network error on first request means daemon is unreachable
       if (cursor === lastSyncAt) {
         logger.warn("daemon", "Daemon unreachable during sync:", error);
+        firstError = error instanceof Error ? error : new Error(String(error));
         firstRequestFailed = true;
       }
       break;
     }
   }
 
-  // If daemon was unreachable, return zeros to signal caller to fall back
+  // If daemon was unreachable, throw to signal caller to fall back
   if (firstRequestFailed) {
-    return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
+    throw firstError ?? new Error("Daemon unreachable");
   }
 
   // Import stats

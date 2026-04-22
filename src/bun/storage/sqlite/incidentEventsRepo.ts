@@ -40,8 +40,20 @@ export function insertEvent(
 }
 
 /**
+ * Get all incident IDs that have an "opened" event in the database.
+ */
+function getIncidentIdsWithOpenedEvent(): Set<string> {
+  const { sqlite } = getDatabase();
+  const rows = sqlite.prepare(
+    `SELECT DISTINCT incident_id FROM incident_events WHERE event_type = 'opened'`,
+  ).all() as Array<{ incident_id: string }>;
+  return new Set(rows.map((r) => r.incident_id));
+}
+
+/**
  * Insert a batch of incident events from daemon sync.
  * Uses INSERT OR IGNORE to skip duplicates.
+ * Filters out "recovered" events that don't have a matching "opened" event.
  * Returns the number of events inserted.
  */
 export function insertEventsBatch(events: IncidentEvent[]): number {
@@ -49,13 +61,28 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
 
   const { sqlite } = getDatabase();
 
+  // Collect incident IDs that have an "opened" event (in DB or in this batch)
+  const openedIds = getIncidentIdsWithOpenedEvent();
+  for (const event of events) {
+    if (event.eventType === "opened") {
+      openedIds.add(event.incidentId);
+    }
+  }
+
+  // Filter out orphan "recovered" events (no matching "opened" event)
+  const filtered = events.filter(
+    (e) => e.eventType !== "recovered" || openedIds.has(e.incidentId),
+  );
+
+  if (filtered.length === 0) return 0;
+
   const stmt = sqlite.prepare(
     `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
 
   let inserted = 0;
-  for (const event of events) {
+  for (const event of filtered) {
     const result = stmt.run(
       event.agentId,
       event.incidentId,

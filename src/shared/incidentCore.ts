@@ -12,6 +12,8 @@ export interface AgentIncidentState {
   recoveryCounter: number; // consecutive OK checks (starts at 0 after incident opens)
   openIncidentId: string | null;
   lastStatus: CheckStatus | null;
+  failureStartStatus: CheckStatus | null; // status before failure streak began (for "opened" events)
+  lastNonOkStatus: CheckStatus | null; // most recent non-OK status (for "recovered" events)
 }
 
 /**
@@ -94,6 +96,8 @@ export function createIncidentTracker(
         recoveryCounter: 0,
         openIncidentId: null,
         lastStatus: null,
+        failureStartStatus: null,
+        lastNonOkStatus: null,
       };
 
       // Check if there's an open incident for this agent
@@ -115,19 +119,32 @@ export function createIncidentTracker(
       if (recentChecks.length > 0) {
         // Count consecutive non-OK checks from the most recent check working backward
         let consecutiveNonOk = 0;
+        let lastNonOkStatus: CheckStatus | null = null;
+        let failureStartStatus: CheckStatus | null = null;
+
         for (const check of recentChecks) {
           if (check.status !== "ok") {
             consecutiveNonOk++;
+            lastNonOkStatus = check.status;
           } else {
-            break; // Stop counting when we hit an OK check
+            // Found the OK check that preceded the failure streak
+            failureStartStatus = check.status;
+            break;
           }
         }
+
         state.failureCounter = consecutiveNonOk;
         state.lastStatus = recentChecks[0].status;
+        state.lastNonOkStatus = lastNonOkStatus;
+
+        // If there's an open incident and we found the status before failures, use it
+        if (state.openIncidentId !== null && failureStartStatus !== null) {
+          state.failureStartStatus = failureStartStatus;
+        }
 
         deps.log(
           "debug",
-          `[Agent ${agentId}] Reconstructed failureCounter=${consecutiveNonOk}, lastStatus=${state.lastStatus}`,
+          `[Agent ${agentId}] Reconstructed failureCounter=${consecutiveNonOk}, lastStatus=${state.lastStatus}, lastNonOkStatus=${lastNonOkStatus}, failureStartStatus=${failureStartStatus}`,
         );
       }
 
@@ -146,7 +163,6 @@ export function createIncidentTracker(
   function handleOkCheck(
     agentId: number,
     state: AgentIncidentState,
-    previousStatus: CheckStatus | null,
   ): void {
     // Reset failure counter
     state.failureCounter = 0;
@@ -172,7 +188,7 @@ export function createIncidentTracker(
         agentId,
         incidentId,
         "recovered",
-        previousStatus,
+        state.lastNonOkStatus,
         "ok",
         `Recovered after ${state.recoveryCounter} consecutive OK checks`,
       );
@@ -182,6 +198,8 @@ export function createIncidentTracker(
       // Reset state
       state.openIncidentId = null;
       state.recoveryCounter = 0;
+      state.failureStartStatus = null;
+      state.lastNonOkStatus = null;
     }
   }
 
@@ -196,6 +214,14 @@ export function createIncidentTracker(
   ): void {
     // Reset recovery counter since we're not OK
     state.recoveryCounter = 0;
+
+    // Track the status that started the failure streak
+    if (state.failureCounter === 0) {
+      state.failureStartStatus = previousStatus;
+    }
+
+    // Track the most recent non-OK status
+    state.lastNonOkStatus = status;
 
     // Increment failure counter
     state.failureCounter++;
@@ -216,7 +242,7 @@ export function createIncidentTracker(
           agentId,
           incidentId,
           "opened",
-          previousStatus,
+          state.failureStartStatus,
           status,
           `Incident opened after ${state.failureCounter} consecutive non-OK checks`,
         );
@@ -272,6 +298,8 @@ export function createIncidentTracker(
         recoveryCounter: 0,
         openIncidentId: null,
         lastStatus: null,
+        failureStartStatus: null,
+        lastNonOkStatus: null,
       };
       agentStates.set(agentId, state);
     }
@@ -281,7 +309,7 @@ export function createIncidentTracker(
 
     // State machine logic
     if (status === "ok") {
-      handleOkCheck(agentId, state, previousStatus);
+      handleOkCheck(agentId, state);
     } else {
       handleNonOkCheck(agentId, status, state, previousStatus);
     }
