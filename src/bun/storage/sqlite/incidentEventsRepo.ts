@@ -40,6 +40,38 @@ export function insertEvent(
 }
 
 /**
+ * Insert a batch of incident events from daemon sync.
+ * Uses INSERT OR IGNORE to skip duplicates.
+ * Returns the number of events inserted.
+ */
+export function insertEventsBatch(events: IncidentEvent[]): number {
+  if (events.length === 0) return 0;
+
+  const { sqlite } = getDatabase();
+
+  const stmt = sqlite.prepare(
+    `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+
+  let inserted = 0;
+  for (const event of events) {
+    const result = stmt.run(
+      event.agentId,
+      event.incidentId,
+      event.eventAt,
+      event.eventType,
+      event.fromStatus,
+      event.toStatus,
+      event.reason,
+    );
+    inserted += result.changes ?? 0;
+  }
+
+  return inserted;
+}
+
+/**
  * Get all open incidents (incidents that have been opened but not recovered).
  * Uses SQL anti-join pattern to find incidents with 'opened' event
  * but no corresponding 'recovered' event.

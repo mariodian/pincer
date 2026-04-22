@@ -1,4 +1,4 @@
-import type { Status } from "../../../shared/types";
+import type { HourlyStat, Status } from "../../../shared/types";
 import { truncateToHour } from "../../../shared/time-utils";
 import { sql } from "drizzle-orm";
 import { getDatabase } from "./db";
@@ -57,6 +57,37 @@ export function upsertHourlyStat(
       },
     })
     .run();
+}
+
+/**
+ * Upsert a batch of hourly stats from daemon sync.
+ * Uses INSERT OR REPLACE to overwrite existing records.
+ * Returns the number of stats upserted.
+ */
+export function upsertStatsBatch(statsData: HourlyStat[]): number {
+  if (statsData.length === 0) return 0;
+
+  const { sqlite } = getDatabase();
+
+  const stmt = sqlite.prepare(
+    `INSERT OR REPLACE INTO stats (agent_id, hour_timestamp, total_checks, ok_count, offline_count, error_count, uptime_pct, avg_response_ms)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+
+  for (const stat of statsData) {
+    stmt.run(
+      stat.agentId,
+      stat.hourTimestamp,
+      stat.totalChecks,
+      stat.okCount,
+      stat.offlineCount,
+      stat.errorCount,
+      stat.uptimePct,
+      stat.avgResponseMs,
+    );
+  }
+
+  return statsData.length;
 }
 
 /**

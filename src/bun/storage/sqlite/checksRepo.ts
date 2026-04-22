@@ -37,6 +37,38 @@ export function insertCheck(
 }
 
 /**
+ * Insert a batch of checks from daemon sync.
+ * Uses INSERT OR IGNORE to skip duplicates.
+ * Returns the number of checks inserted.
+ */
+export function insertChecksBatch(checksData: Check[]): number {
+  if (checksData.length === 0) return 0;
+
+  const { sqlite } = getDatabase();
+
+  const stmt = sqlite.prepare(
+    `INSERT OR IGNORE INTO checks (agent_id, checked_at, status, response_ms, http_status, error_code, error_message)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+
+  let inserted = 0;
+  for (const check of checksData) {
+    const result = stmt.run(
+      check.agentId,
+      check.checkedAt,
+      check.status,
+      check.responseMs,
+      check.httpStatus,
+      check.errorCode,
+      check.errorMessage,
+    );
+    inserted += result.changes ?? 0;
+  }
+
+  return inserted;
+}
+
+/**
  * Get recent checks for an agent within a time range.
  * Returns checks sorted by checkedAt descending (most recent first).
  * sinceMs and untilMs are milliseconds since epoch.

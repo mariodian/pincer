@@ -5,10 +5,11 @@ import type {
   HourlyStat,
   IncidentEvent,
 } from "../../shared/types";
-import { runInTransaction } from "../../shared/db-core";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
-import { getDatabase } from "../storage/sqlite/db";
+import { insertChecksBatch } from "../storage/sqlite/checksRepo";
+import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
+import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
 import { readAgents } from "./agentService";
 import { logger } from "./loggerService";
 
@@ -152,26 +153,7 @@ export async function sync(): Promise<DaemonSyncResult> {
         nextCursor: number | null;
       };
       if (data.checks.length > 0) {
-        const { sqlite } = getDatabase();
-
-        runInTransaction(sqlite, () => {
-          for (const check of data.checks) {
-            sqlite.run(
-              `INSERT OR IGNORE INTO checks (agent_id, checked_at, status, response_ms, http_status, error_code, error_message)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                check.agentId,
-                check.checkedAt,
-                check.status,
-                check.responseMs,
-                check.httpStatus,
-                check.errorCode,
-                check.errorMessage,
-              ],
-            );
-          }
-          totalChecks += data.checks.length;
-        });
+        totalChecks += insertChecksBatch(data.checks);
       }
 
       cursor = data.nextCursor;
@@ -200,26 +182,7 @@ export async function sync(): Promise<DaemonSyncResult> {
     if (response.ok) {
       const statsData = (await response.json()) as HourlyStat[];
       if (statsData.length > 0) {
-        const { sqlite } = getDatabase();
-        runInTransaction(sqlite, () => {
-          for (const stat of statsData) {
-            sqlite.run(
-              `INSERT OR REPLACE INTO stats (agent_id, hour_timestamp, total_checks, ok_count, offline_count, error_count, uptime_pct, avg_response_ms)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                stat.agentId,
-                stat.hourTimestamp,
-                stat.totalChecks,
-                stat.okCount,
-                stat.offlineCount,
-                stat.errorCount,
-                stat.uptimePct,
-                stat.avgResponseMs,
-              ],
-            );
-          }
-          totalStats = statsData.length;
-        });
+        totalStats = upsertStatsBatch(statsData);
       }
     }
   } catch (error) {
@@ -236,25 +199,7 @@ export async function sync(): Promise<DaemonSyncResult> {
     if (response.ok) {
       const incidentsData = (await response.json()) as IncidentEvent[];
       if (incidentsData.length > 0) {
-        const { sqlite } = getDatabase();
-        runInTransaction(sqlite, () => {
-          for (const event of incidentsData) {
-            sqlite.run(
-              `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                event.agentId,
-                event.incidentId,
-                event.eventAt,
-                event.eventType,
-                event.fromStatus,
-                event.toStatus,
-                event.reason,
-              ],
-            );
-          }
-          totalIncidents = incidentsData.length;
-        });
+        totalIncidents = insertEventsBatch(incidentsData);
       }
     }
   } catch (error) {
