@@ -81,16 +81,16 @@ export async function initializeDatabase(): Promise<{
   return { db, sqlite };
 }
 
-function startPruningJob(db: ReturnType<typeof drizzle>): void {
+function startPruningJob(_db: ReturnType<typeof drizzle>): void {
   // Run pruning on startup, then every 24 hours
-  pruneOldStats(db);
+  pruneOldStats();
 
   setInterval(() => {
-    pruneOldStats(db);
+    pruneOldStats();
   }, ONE_DAY_MS);
 }
 
-async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
+async function pruneOldStats(): Promise<void> {
   try {
     // Import lazily to avoid circular dependency at module load time
     const { getSettings } = await import("./settingsRepo");
@@ -102,9 +102,14 @@ async function pruneOldStats(db: ReturnType<typeof drizzle>): Promise<void> {
     const cutoffTimestamp =
       Math.floor(Date.now() / 1000) - retentionDays * ONE_DAY_SEC;
 
-    db.run(`DELETE FROM stats WHERE hour_timestamp < ${cutoffTimestamp}`);
+    // Import deleteOldStats lazily to avoid circular dependency
+    const { deleteOldStats } = await import("./statsRepo");
+    const deletedCount = deleteOldStats(cutoffTimestamp);
 
-    logger.info("db", `Pruned stats older than ${retentionDays} days`);
+    logger.info(
+      "db",
+      `Pruned ${deletedCount} stats older than ${retentionDays} days`,
+    );
   } catch (error) {
     logger.warn("db", "Failed to prune old stats:", error);
   }

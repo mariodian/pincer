@@ -165,3 +165,19 @@ export function getStatsCount(): number {
 
   return row?.count ?? 0;
 }
+
+/**
+ * Delete stats older than the specified cutoff timestamp.
+ * Returns the number of deleted rows.
+ */
+export function deleteOldStats(cutoffTimestamp: number): number {
+  const { db } = getDatabase();
+
+  const result = db
+    .delete(stats)
+    .where(sql`${stats.hourTimestamp} < ${cutoffTimestamp}`)
+    .run();
+
+  // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
+  return result.changes ?? 0;
+}
