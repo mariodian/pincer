@@ -151,6 +151,32 @@ async function handleRequest(req: Request): Promise<Response> {
       return jsonResponse(rows.map(rowToIncidentEvent));
     }
 
+    // GET /open-incidents - return currently open incidents (no 'recovered' event)
+    if (method === "GET" && path === "/open-incidents") {
+      const { db } = getDatabase();
+
+      const openIncidents = db
+        .all<{
+          agentId: number;
+          incidentId: string;
+          openedAt: number;
+        }>(sql`
+          SELECT
+            e1.agent_id as agentId,
+            e1.incident_id as incidentId,
+            e1.event_at as openedAt
+          FROM incident_events e1
+          WHERE e1.event_type = 'opened'
+          AND NOT EXISTS (
+            SELECT 1 FROM incident_events e2
+            WHERE e2.incident_id = e1.incident_id
+            AND e2.event_type = 'recovered'
+          )
+        `);
+
+      return jsonResponse(openIncidents);
+    }
+
     return errorResponse("Not found", 404);
   } catch (error) {
     logger.error("server", "Request handler error", error);

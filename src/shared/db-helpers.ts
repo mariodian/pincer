@@ -45,6 +45,7 @@ export function rowToIncidentEvent(row: {
   fromStatus: string | null;
   toStatus: string | null;
   reason: string | null;
+  linkedIncidentId?: string | null;
 }): IncidentEvent {
   return {
     id: row.id,
@@ -55,5 +56,6 @@ export function rowToIncidentEvent(row: {
     fromStatus: row.fromStatus as IncidentEvent["fromStatus"],
     toStatus: row.toStatus as IncidentEvent["toStatus"],
     reason: row.reason,
+    linkedIncidentId: row.linkedIncidentId ?? null,
   };
 }

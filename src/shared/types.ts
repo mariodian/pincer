@@ -9,7 +9,7 @@ export type Status = "ok" | "error" | "offline";
 export type CheckStatus = "ok" | "offline" | "error" | "degraded";
 
 // Incident event types
-export type EventType = "opened" | "status_changed" | "recovered";
+export type EventType = "opened" | "status_changed" | "recovered" | "handoff";
 
 // Raw health check from the checks table
 export interface Check {
@@ -33,6 +33,7 @@ export interface IncidentEvent {
   fromStatus: CheckStatus | null;
   toStatus: CheckStatus | null;
   reason: string | null;
+  linkedIncidentId: string | null;
 }
 
 export interface Agent {
@@ -108,6 +109,7 @@ export interface DaemonSyncResult {
   checksImported: number;
   statsImported: number;
   incidentsImported: number;
+  openIncidents: Array<{ agentId: number; incidentId: string }>;
 }
 
 // Result from daemon connection test

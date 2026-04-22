@@ -1,0 +1,1 @@
+ALTER TABLE `incident_events` ADD `linked_incident_id` text;

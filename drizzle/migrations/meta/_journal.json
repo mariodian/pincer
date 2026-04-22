@@ -141,6 +141,13 @@
       "when": 1776689050641,
       "tag": "0019_stale_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1776855227572,
+      "tag": "0020_opposite_norrin_radd",
+      "breakpoints": true
     }
   ]
 }

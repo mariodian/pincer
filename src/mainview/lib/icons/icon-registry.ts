@@ -26,6 +26,7 @@ import {
   Activity,
   ArrowDown10Icon,
   ArrowDownZAIcon,
+  ArrowLeftRightIcon,
   ArrowRight,
   ArrowUp01Icon,
   ArrowUpAZIcon,
@@ -95,6 +96,9 @@ export const iconRegistry: Record<string, IconEntry> = {
   },
   arrowDownNumeric: {
     lucide: ArrowDown10Icon,
+  },
+  arrowLeftRight: {
+    lucide: ArrowLeftRightIcon,
   },
   arrowUpNumeric: {
     lucide: ArrowUp01Icon,

@@ -117,7 +117,12 @@ export async function pushAgentsToDaemon(): Promise<void> {
 
 export async function sync(): Promise<DaemonSyncResult> {
   if (!isDaemonConfigured()) {
-    return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
+    return {
+      checksImported: 0,
+      statsImported: 0,
+      incidentsImported: 0,
+      openIncidents: [],
+    };
   }
 
   const settings = getDaemonSettings();
@@ -125,6 +130,7 @@ export async function sync(): Promise<DaemonSyncResult> {
   let totalChecks = 0;
   let totalStats = 0;
   let totalIncidents = 0;
+  let openIncidents: Array<{ agentId: number; incidentId: string }> = [];
 
   // Import checks with pagination - serves as connectivity test too
   let cursor: number | null = lastSyncAt;
@@ -209,6 +215,23 @@ export async function sync(): Promise<DaemonSyncResult> {
     logger.warn("daemon", "Failed to fetch incident events:", error);
   }
 
+  // Fetch open incidents from daemon for linking
+  try {
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      "/open-incidents",
+    );
+    if (response.ok) {
+      openIncidents = (await response.json()) as Array<{
+        agentId: number;
+        incidentId: string;
+      }>;
+    }
+  } catch (error) {
+    logger.warn("daemon", "Failed to fetch open incidents:", error);
+  }
+
   // Update sync timestamp
   setMeta(DAEMON_SYNC_KEY, Date.now().toString());
 
@@ -224,5 +247,6 @@ export async function sync(): Promise<DaemonSyncResult> {
     checksImported: totalChecks,
     statsImported: totalStats,
     incidentsImported: totalIncidents,
+    openIncidents,
   };
 }

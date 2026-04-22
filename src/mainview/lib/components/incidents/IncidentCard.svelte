@@ -17,12 +17,19 @@
 
   interface Props {
     events: IncidentEvent[];
+    linkedIncidentIds?: string[];
     agentName: string;
     agentColor: string;
     class?: string;
   }
 
-  let { events, agentName, agentColor, class: className }: Props = $props();
+  let {
+    events,
+    linkedIncidentIds = [],
+    agentName,
+    agentColor,
+    class: className,
+  }: Props = $props();
 
   const ICON_SIZE = "size-6";
   const ICON_STATUS_SIZE = "size-4";
@@ -35,17 +42,29 @@
     danger: "text-red-500 dark:text-red-700",
   };
 
-  // Sort events by time (oldest first for display)
+  // Sort events by time (oldest first for display within card)
   const sortedEvents = $derived(
     [...events].sort((a, b) => a.eventAt - b.eventAt),
   );
 
+  // Deduplicate "opened" events: keep only the first one in merged incidents
+  const displayEvents = $derived.by(() => {
+    let seenOpened = false;
+    return sortedEvents.filter((e) => {
+      if (e.eventType === "opened") {
+        if (seenOpened) return false;
+        seenOpened = true;
+      }
+      return true;
+    });
+  });
+
   const openedEvent = $derived(
-    sortedEvents.find((e) => e.eventType === "opened"),
+    displayEvents.find((e) => e.eventType === "opened"),
   );
 
   const recoveredEvent = $derived(
-    sortedEvents.find((e) => e.eventType === "recovered"),
+    displayEvents.find((e) => e.eventType === "recovered"),
   );
 
   const isOpen = $derived(!recoveredEvent);
@@ -97,6 +116,9 @@
         {#if isOpen}
           <Badge variant="secondary">Open</Badge>
         {/if}
+        {#if linkedIncidentIds.length > 0}
+          <Badge variant="outline" class="text-xs">Linked</Badge>
+        {/if}
       </div>
     </Card.Title>
     <Card.Action class="text-muted-foreground text-xs">
@@ -107,8 +129,8 @@
   </Card.Header>
   <Card.Content>
     <div class="ml-2 space-y-2">
-      {#each sortedEvents as event, i}
-        <Timeline.Root withoutBorder={i === sortedEvents.length - 1}>
+      {#each displayEvents as event, i}
+        <Timeline.Root withoutBorder={i === displayEvents.length - 1}>
           <Timeline.Item>
             <Timeline.Icon class="bg-card ring-card">
               {#if event.eventType === "opened"}
@@ -122,6 +144,12 @@
                   name="checkCircle"
                   strokeWidth={ICON_STROKE}
                   class={cn(ICON_SIZE, "text-green-500")}
+                />
+              {:else if event.eventType === "handoff"}
+                <Icon
+                  name="arrowLeftRight"
+                  strokeWidth={ICON_STROKE}
+                  class={cn(ICON_SIZE, "text-amber-500")}
                 />
               {:else}
                 <Icon

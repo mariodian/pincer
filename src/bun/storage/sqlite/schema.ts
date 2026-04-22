@@ -150,6 +150,7 @@ export const incidentEvents = sqliteTable(
     fromStatus: text("from_status"),
     toStatus: text("to_status"),
     reason: text("reason"),
+    linkedIncidentId: text("linked_incident_id"),
   },
   (table) => [
     index("idx_incident_events_agent_incident").on(

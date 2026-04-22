@@ -86,6 +86,15 @@ const tracker = createIncidentTracker(
       `);
     },
 
+    getHandedOffIncidents(): Array<{
+      agentId: number;
+      incidentId: string;
+      linkedIncidentId: string | null;
+    }> {
+      // Daemon never creates handoff events, so this always returns empty
+      return [];
+    },
+
     getEnabledAgents(): Array<{ id: number }> {
       const { db } = getDatabase();
       return db
@@ -93,6 +102,18 @@ const tracker = createIncidentTracker(
         .from(agents)
         .where(sql`${agents.enabled} = 1`)
         .all();
+    },
+
+    hasIncidentRecovered(incidentId: string): boolean {
+      const { db } = getDatabase();
+      const result = db
+        .select({ count: sql<number>`count(*)` })
+        .from(incidentEvents)
+        .where(
+          sql`${incidentEvents.incidentId} = ${incidentId} AND ${incidentEvents.eventType} = 'recovered'`,
+        )
+        .get();
+      return (result?.count ?? 0) > 0;
     },
 
     log(level: "info" | "debug", message: string): void {

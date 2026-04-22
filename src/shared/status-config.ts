@@ -56,4 +56,8 @@ export const eventBadgeConfig: Record<EventType, EventBadgeConfig> = {
     label: "Recovered",
     tone: "success",
   },
+  handoff: {
+    label: "Handoff",
+    tone: "warning",
+  },
 };

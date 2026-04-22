@@ -41,8 +41,16 @@ export interface IncidentTrackerDeps {
     incidentId: string;
     openedAt: number;
   }>;
+  /** Get handed-off incidents: incidents with a 'handoff' event but no 'recovered' event */
+  getHandedOffIncidents: () => Array<{
+    agentId: number;
+    incidentId: string;
+    linkedIncidentId: string | null;
+  }>;
   /** Get all enabled agents (for state reconstruction) */
   getEnabledAgents: () => Array<{ id: number }>;
+  /** Check if an incident has a recovered event */
+  hasIncidentRecovered: (incidentId: string) => boolean;
   /** Logger function for incident-related logging */
   log: (level: "info" | "debug", message: string) => void;
 }
@@ -74,6 +82,7 @@ export function createIncidentTracker(
     deps.log("info", "Reconstructing incident state from database...");
 
     const openIncidents = deps.getOpenIncidents();
+    const handedOffIncidents = deps.getHandedOffIncidents();
     const agents = providedAgents ?? deps.getEnabledAgents();
 
     // Build map of open incidents by agent
@@ -85,6 +94,19 @@ export function createIncidentTracker(
       openIncidentsByAgent.set(incident.agentId, {
         incidentId: incident.incidentId,
         openedAt: incident.openedAt,
+      });
+    }
+
+    // Build map of handed-off incidents by agent
+    // These are still active — just tracked by the daemon
+    const handedOffByAgent = new Map<
+      number,
+      { incidentId: string; linkedIncidentId: string | null }
+    >();
+    for (const incident of handedOffIncidents) {
+      handedOffByAgent.set(incident.agentId, {
+        incidentId: incident.incidentId,
+        linkedIncidentId: incident.linkedIncidentId,
       });
     }
 
@@ -109,6 +131,37 @@ export function createIncidentTracker(
           "debug",
           `[Agent ${agentId}] Reconstructed open incident: ${openIncident.incidentId}`,
         );
+      } else {
+        // Check if there's a handed-off incident for this agent
+        // (incident was handed off to daemon but not yet recovered)
+        const handedOff = handedOffByAgent.get(agentId);
+        if (handedOff) {
+          // Check if the local incident itself has recovered
+          const localRecovered = deps.hasIncidentRecovered(
+            handedOff.incidentId,
+          );
+
+          // Check if the linked daemon incident has recovered
+          const daemonRecovered = handedOff.linkedIncidentId
+            ? deps.hasIncidentRecovered(handedOff.linkedIncidentId)
+            : false;
+
+          const isResolved = localRecovered || daemonRecovered;
+
+          if (!isResolved) {
+            state.openIncidentId = handedOff.incidentId;
+            state.recoveryCounter = 0;
+            deps.log(
+              "debug",
+              `[Agent ${agentId}] Reconstructed handed-off incident: ${handedOff.incidentId}${handedOff.linkedIncidentId ? ` (linked to ${handedOff.linkedIncidentId})` : ""}`,
+            );
+          } else {
+            deps.log(
+              "debug",
+              `[Agent ${agentId}] Handed-off incident ${handedOff.incidentId} already resolved`,
+            );
+          }
+        }
       }
 
       // Load recent checks to count consecutive non-OK checks
@@ -153,17 +206,14 @@ export function createIncidentTracker(
 
     deps.log(
       "info",
-      `State reconstruction complete: ${openIncidents.length} open incidents across ${agents.length} agents`,
+      `State reconstruction complete: ${openIncidents.length} open, ${handedOffIncidents.length} handed-off across ${agents.length} agents`,
     );
   }
 
   /**
    * Handle an OK check result.
    */
-  function handleOkCheck(
-    agentId: number,
-    state: AgentIncidentState,
-  ): void {
+  function handleOkCheck(agentId: number, state: AgentIncidentState): void {
     // Reset failure counter
     state.failureCounter = 0;
 

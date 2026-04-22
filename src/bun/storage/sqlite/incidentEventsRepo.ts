@@ -1,10 +1,12 @@
+import { desc, sql } from "drizzle-orm";
+import { rowToIncidentEvent } from "../../../shared/db-helpers";
 import type {
   CheckStatus,
   EventType,
   IncidentEvent,
 } from "../../../shared/types";
-import { rowToIncidentEvent } from "../../../shared/db-helpers";
-import { desc, sql } from "drizzle-orm";
+import { logger } from "../../services/loggerService";
+
 import { getDatabase } from "./db";
 import { incidentEvents } from "./schema";
 
@@ -18,9 +20,10 @@ export function insertEvent(
   fromStatus: CheckStatus | null,
   toStatus: CheckStatus | null,
   reason: string | null,
+  linkedIncidentId: string | null = null,
 ): IncidentEvent {
   const { db } = getDatabase();
-  const eventAt = new Date(); // Drizzle expects Date for timestamp_ms mode
+  const eventAt = new Date();
 
   const row = db
     .insert(incidentEvents)
@@ -32,6 +35,7 @@ export function insertEvent(
       fromStatus,
       toStatus,
       reason,
+      linkedIncidentId,
     })
     .returning()
     .get();
@@ -44,17 +48,39 @@ export function insertEvent(
  */
 function getIncidentIdsWithOpenedEvent(): Set<string> {
   const { sqlite } = getDatabase();
-  const rows = sqlite.prepare(
-    `SELECT DISTINCT incident_id FROM incident_events WHERE event_type = 'opened'`,
-  ).all() as Array<{ incident_id: string }>;
+  const rows = sqlite
+    .prepare(
+      `SELECT DISTINCT incident_id FROM incident_events WHERE event_type = 'opened'`,
+    )
+    .all() as Array<{ incident_id: string }>;
   return new Set(rows.map((r) => r.incident_id));
+}
+
+/**
+ * Get existing "opened" and "recovered" event pairs to prevent duplicates.
+ * These are "once per incident" events and should not be duplicated when syncing from daemon.
+ */
+function getExistingLifecycleEventIds(): Set<string> {
+  const { sqlite } = getDatabase();
+  const rows = sqlite
+    .prepare(
+      `SELECT DISTINCT incident_id, event_type FROM incident_events WHERE event_type IN ('opened', 'recovered')`,
+    )
+    .all() as Array<{ incident_id: string; event_type: string }>;
+  return new Set(rows.map((r) => `${r.incident_id}:${r.event_type}`));
 }
 
 /**
  * Insert a batch of incident events from daemon sync.
  * Uses INSERT OR IGNORE to skip duplicates.
- * Filters out "recovered" events that don't have a matching "opened" event.
+ * Filters out:
+ *   - "recovered" events that don't have a matching "opened" event
+ *   - Duplicate "opened" or "recovered" events for the same incident
  * Returns the number of events inserted.
+ *
+ * Also links daemon events to local incidents: if a local incident that
+ * hasn't been resolved exists for the same agent, the daemon event
+ * gets linked to it via linked_incident_id.
  */
 export function insertEventsBatch(events: IncidentEvent[]): number {
   if (events.length === 0) return 0;
@@ -69,20 +95,41 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
     }
   }
 
-  // Filter out orphan "recovered" events (no matching "opened" event)
-  const filtered = events.filter(
-    (e) => e.eventType !== "recovered" || openedIds.has(e.incidentId),
-  );
+  // Get existing "opened" and "recovered" events to prevent duplicates
+  const existingLifecycleEvents = getExistingLifecycleEventIds();
+
+  // Filter out:
+  // 1. Orphan "recovered" events (no matching "opened" event)
+  // 2. Duplicate "opened" or "recovered" events (lifecycle events happen once per incident)
+  const filtered = events.filter((e) => {
+    // Skip orphan recovered events
+    if (e.eventType === "recovered" && !openedIds.has(e.incidentId)) {
+      return false;
+    }
+    // Skip duplicate opened/recovered events (lifecycle events are unique per incident)
+    if (e.eventType === "opened" || e.eventType === "recovered") {
+      const key = `${e.incidentId}:${e.eventType}`;
+      if (existingLifecycleEvents.has(key)) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   if (filtered.length === 0) return 0;
 
   const stmt = sqlite.prepare(
-    `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason, linked_incident_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
   let inserted = 0;
   for (const event of filtered) {
+    const linkedId = findUnrecoveredLocalIncident(event.agentId);
+
+    // Don't link an incident to itself
+    const finalLinkedId = linkedId === event.incidentId ? null : linkedId;
+
     const result = stmt.run(
       event.agentId,
       event.incidentId,
@@ -91,6 +138,7 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
       event.fromStatus,
       event.toStatus,
       event.reason,
+      finalLinkedId ?? null,
     );
     inserted += result.changes ?? 0;
   }
@@ -99,9 +147,63 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
 }
 
 /**
- * Get all open incidents (incidents that have been opened but not recovered).
+ * Find an unrecovered local incident for the given agent.
+ * A local incident is one whose "opened" event has NO linked_incident_id.
+ * It's unrecovered if:
+ *   - The local incident itself has no 'recovered' event, AND
+ *   - No daemon incident linked to it has been recovered.
+ * Returns the incident ID or null.
+ */
+function findUnrecoveredLocalIncident(agentId: number): string | null {
+  const openIncidents = getOpenIncidents();
+  const handedOffIncidents = getHandedOffIncidents();
+  const { db } = getDatabase();
+
+  // Combine open and handed-off incidents - both could be unrecovered local incidents
+  const candidates = [...openIncidents, ...handedOffIncidents];
+
+  for (const incident of candidates) {
+    if (incident.agentId !== agentId) continue;
+
+    const events = getEventsForIncident(incident.incidentId);
+    const openedEvent = events.find((e) => e.eventType === "opened");
+
+    // Only local incidents have NO linked_incident_id
+    if (!openedEvent || openedEvent.linkedIncidentId) continue;
+
+    // Check 1: Does the local incident itself have a recovered event?
+    const localRecovered = events.some((e) => e.eventType === "recovered");
+    if (localRecovered) continue;
+
+    // Check 2: Does any daemon incident linked to this local incident have a recovered event?
+    // Query ALL incidents with this linked_incident_id (not just open ones)
+    const linkedDaemonIncidents = db.all<{ incidentId: string }>(sql`
+      SELECT DISTINCT incident_id as incidentId 
+      FROM incident_events 
+      WHERE agent_id = ${agentId} AND linked_incident_id = ${incident.incidentId}
+    `);
+
+    let daemonRecovered = false;
+    for (const daemon of linkedDaemonIncidents) {
+      const daemonEvents = getEventsForIncident(daemon.incidentId);
+      if (daemonEvents.some((e) => e.eventType === "recovered")) {
+        daemonRecovered = true;
+        break;
+      }
+    }
+
+    if (!daemonRecovered) {
+      return incident.incidentId;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get all open incidents (incidents that have been opened but not recovered or handed off).
  * Uses SQL anti-join pattern to find incidents with 'opened' event
- * but no corresponding 'recovered' event.
+ * but no corresponding 'recovered' or 'handoff' event.
  */
 export function getOpenIncidents(): Array<{
   agentId: number;
@@ -116,12 +218,49 @@ export function getOpenIncidents(): Array<{
     incidentId: string;
     openedAt: number;
   }>(sql`
-    SELECT 
+    SELECT
       e1.agent_id as agentId,
       e1.incident_id as incidentId,
       e1.event_at as openedAt
     FROM incident_events e1
     WHERE e1.event_type = 'opened'
+    AND NOT EXISTS (
+      SELECT 1 FROM incident_events e2
+      WHERE e2.incident_id = e1.incident_id
+      AND e2.event_type IN ('recovered', 'handoff')
+    )
+  `);
+
+  return rows.map((row) => ({
+    agentId: row.agentId,
+    incidentId: row.incidentId,
+    openedAt: row.openedAt,
+  }));
+}
+
+/**
+ * Get handed-off incidents: incidents with a 'handoff' event but no 'recovered' event.
+ * These are incidents that were handed off to the daemon and are still active remotely.
+ * Used during state reconstruction to prevent opening duplicate local incidents.
+ */
+export function getHandedOffIncidents(): Array<{
+  agentId: number;
+  incidentId: string;
+  linkedIncidentId: string | null;
+}> {
+  const { db } = getDatabase();
+
+  const rows = db.all<{
+    agentId: number;
+    incidentId: string;
+    linkedIncidentId: string | null;
+  }>(sql`
+    SELECT
+      e1.agent_id as agentId,
+      e1.incident_id as incidentId,
+      e1.linked_incident_id as linkedIncidentId
+    FROM incident_events e1
+    WHERE e1.event_type = 'handoff'
     AND NOT EXISTS (
       SELECT 1 FROM incident_events e2
       WHERE e2.incident_id = e1.incident_id
@@ -132,7 +271,7 @@ export function getOpenIncidents(): Array<{
   return rows.map((row) => ({
     agentId: row.agentId,
     incidentId: row.incidentId,
-    openedAt: row.openedAt,
+    linkedIncidentId: row.linkedIncidentId ?? null,
   }));
 }
 
@@ -245,6 +384,56 @@ export function countOldEvents(cutoffMs: number): number {
     .where(sql`${incidentEvents.eventAt} < ${cutoffMs}`)
     .get();
   return row?.count ?? 0;
+}
+
+/**
+ * For each local open incident, find the matching daemon open incident
+ * (by agentId), set linkedIncidentId on the handoff event, and close the local incident.
+ * Returns the number of incidents closed.
+ */
+export function linkAndCloseLocalIncidents(
+  daemonOpenIncidents: Array<{ agentId: number; incidentId: string }>,
+): number {
+  const localOpen = getOpenIncidents();
+
+  const daemonByAgent = new Map<number, string>();
+  for (const di of daemonOpenIncidents) {
+    daemonByAgent.set(di.agentId, di.incidentId);
+  }
+
+  let closed = 0;
+  for (const local of localOpen) {
+    const daemonIncidentId = daemonByAgent.get(local.agentId);
+
+    // Get the incident's last status from its most recent event
+    const events = getEventsForIncident(local.incidentId);
+    const lastEvent = events[events.length - 1];
+    const incidentStatus: CheckStatus = lastEvent?.toStatus ?? "offline";
+
+    // Create handoff event with linkedIncidentId directly on the handoff row
+    // This is where getHandedOffIncidents() reads it from
+    insertEvent(
+      local.agentId,
+      local.incidentId,
+      "handoff",
+      incidentStatus,
+      incidentStatus,
+      daemonIncidentId
+        ? "Handed off to daemon monitoring"
+        : "Switched to daemon monitoring",
+      daemonIncidentId ?? null,
+    );
+    closed++;
+  }
+
+  if (closed > 0) {
+    logger.info(
+      "incident",
+      `Linked and closed ${closed} local incident(s) - switching to daemon monitoring`,
+    );
+  }
+
+  return closed;
 }
 
 /**

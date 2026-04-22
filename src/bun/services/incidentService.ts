@@ -1,4 +1,5 @@
 import type { CheckStatus } from "../../shared/types";
+import { sql } from "drizzle-orm";
 import { logger } from "./loggerService";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import {
@@ -7,8 +8,11 @@ import {
 } from "../storage/sqlite/checksRepo";
 import {
   getOpenIncidents,
+  getHandedOffIncidents,
   insertEvent,
+  getEventsForIncident,
 } from "../storage/sqlite/incidentEventsRepo";
+import { getDatabase } from "../storage/sqlite/db";
 import { readAgents } from "./agentService";
 import {
   createIncidentTracker,
@@ -62,10 +66,45 @@ function createTracker() {
         return getOpenIncidents();
       },
 
+      getHandedOffIncidents(): Array<{
+        agentId: number;
+        incidentId: string;
+        linkedIncidentId: string | null;
+      }> {
+        return getHandedOffIncidents();
+      },
+
       getEnabledAgents(): Array<{ id: number }> {
         // This is async in the app, but sync in the tracker
         // We need to handle this specially - see reconstructState below
         return [];
+      },
+
+      hasIncidentRecovered(incidentId: string): boolean {
+        const events = getEventsForIncident(incidentId);
+        if (events.some((e) => e.eventType === "recovered")) {
+          return true;
+        }
+
+        // Also check if any daemon incidents linked to this local incident have recovered.
+        // When the daemon creates an incident for the same failure, it sets linked_incident_id
+        // to point back to the local incident. If that daemon incident recovered, the local
+        // incident should be considered resolved too.
+        const { db } = getDatabase();
+        const linkedIncidents = db.all<{ incidentId: string }>(sql`
+          SELECT DISTINCT incident_id as incidentId
+          FROM incident_events
+          WHERE linked_incident_id = ${incidentId}
+        `);
+
+        for (const linked of linkedIncidents) {
+          const linkedEvents = getEventsForIncident(linked.incidentId);
+          if (linkedEvents.some((e) => e.eventType === "recovered")) {
+            return true;
+          }
+        }
+
+        return false;
       },
 
       log(level: "info" | "debug", message: string): void {

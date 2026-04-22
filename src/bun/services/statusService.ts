@@ -4,18 +4,15 @@ import type { AgentStatusInfo } from "../../shared/types";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { checkAllAgentsStatus, readAgents } from "./agentService";
-import {
-  sync as daemonSync,
-  isDaemonConfigured,
-} from "./daemonSyncService";
+import { sync as daemonSync, isDaemonConfigured } from "./daemonSyncService";
 import { logger } from "./loggerService";
 import { getStatusSyncService } from "./statusSyncService";
 import {
   initIncidentService,
   reconstructState as reconstructIncidentState,
   clearState as clearIncidentState,
-  closeAllOpenIncidents,
 } from "./incidentService";
+import { linkAndCloseLocalIncidents } from "../storage/sqlite/incidentEventsRepo";
 import { startRetentionService } from "./retentionService";
 import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 
@@ -379,7 +376,7 @@ async function startStatusUpdates() {
       // Daemon is configured - try to sync from it
       try {
         const wasConnected = daemonConnected;
-        await daemonSync();
+        const result = await daemonSync();
 
         // Daemon sync succeeded (even with 0 checks - daemon may have no new data)
         if (!wasConnected) {
@@ -388,10 +385,9 @@ async function startStatusUpdates() {
             "status",
             "Daemon connected - switching to synced data mode",
           );
-          // Only close local incidents if we actually did local polling this session
-          // (incidentServiceInitialized means we were in local mode, not just starting up)
+          // Only link-and-close local incidents if we actually did local polling
           if (incidentServiceInitialized) {
-            closeAllOpenIncidents();
+            linkAndCloseLocalIncidents(result.openIncidents);
           }
           clearIncidentState();
           // Reset flag so we re-initialize if we switch back to local mode

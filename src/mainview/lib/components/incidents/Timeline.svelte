@@ -27,18 +27,83 @@
     class: className,
   }: Props = $props();
 
-  // Group events by incident
+  type IncidentGroup = {
+    id: string;
+    events: IncidentEvent[];
+    linkedIncidentIds: string[];
+  };
+
   const incidents = $derived.by(() => {
-    const grouped = new Map<string, IncidentEvent[]>();
+    // Group events by incidentId first
+    const byId = new Map<string, IncidentEvent[]>();
     for (const event of events) {
-      const existing = grouped.get(event.incidentId) || [];
+      const existing = byId.get(event.incidentId) || [];
       existing.push(event);
-      grouped.set(event.incidentId, existing);
+      byId.set(event.incidentId, existing);
     }
-    // Sort incidents by most recent event
-    return Array.from(grouped.entries()).sort((a, b) => {
-      const aMax = Math.max(...a[1].map((e) => e.eventAt));
-      const bMax = Math.max(...b[1].map((e) => e.eventAt));
+
+    // Build linkedTo map: incidentId -> linkedIncidentId (from "opened" events)
+    const linkedTo = new Map<string, string>();
+    for (const event of events) {
+      if (event.eventType === "opened" && event.linkedIncidentId) {
+        linkedTo.set(event.incidentId, event.linkedIncidentId);
+      }
+    }
+
+    // Resolve chains: find root incident for each incidentId
+    function findRoot(id: string): string {
+      const visited = new Set<string>();
+      let current = id;
+      while (linkedTo.has(current) && !visited.has(current)) {
+        visited.add(current);
+        current = linkedTo.get(current)!;
+      }
+      return current;
+    }
+
+    // Merge linked incidents into groups
+    const merged = new Map<string, IncidentGroup>();
+    const assigned = new Set<string>();
+
+    for (const incidentId of byId.keys()) {
+      if (assigned.has(incidentId)) continue;
+
+      const root = findRoot(incidentId);
+      const groupEvents: IncidentEvent[] = [];
+      const linkedIds: string[] = [];
+
+      // Walk the chain from root, following linkedTo in reverse
+      // Collect all incidentIds that resolve to this root
+      const chain = new Set<string>();
+      for (const id of byId.keys()) {
+        if (findRoot(id) === root) {
+          chain.add(id);
+        }
+      }
+
+      for (const id of chain) {
+        assigned.add(id);
+        const idEvents = byId.get(id) || [];
+        groupEvents.push(...idEvents);
+        if (id !== root) {
+          linkedIds.push(id);
+        }
+      }
+
+      // Sort events chronologically (oldest first within card)
+      groupEvents.sort((a, b) => a.eventAt - b.eventAt);
+
+      merged.set(root, {
+        id: root,
+        events: groupEvents,
+        linkedIncidentIds: linkedIds,
+      });
+    }
+
+    // Sort groups by most recent event
+    return Array.from(merged.values()).sort((a, b) => {
+      const aMax = Math.max(...a.events.map((e) => e.eventAt));
+      const bMax = Math.max(...b.events.map((e) => e.eventAt));
       return bMax - aMax;
     });
   });
@@ -53,14 +118,12 @@
 
   // Group incidents by day
   const incidentsByDay = $derived.by(() => {
-    const grouped = new Map<string, Array<[string, IncidentEvent[]]>>();
-    for (const [incidentId, incidentEvents] of incidents) {
-      const maxTime = Math.max(
-        ...incidentEvents.map((e: IncidentEvent) => e.eventAt),
-      );
+    const grouped = new Map<string, Array<IncidentGroup>>();
+    for (const group of incidents) {
+      const maxTime = Math.max(...group.events.map((e) => e.eventAt));
       const day = formatShortDate(maxTime);
       const existing = grouped.get(day) || [];
-      existing.push([incidentId, incidentEvents]);
+      existing.push(group);
       grouped.set(day, existing);
     }
     return grouped;
@@ -79,8 +142,8 @@
         const dayIncidents = incidentsByDay.get(dayStr);
         let maxTime = 0;
         if (dayIncidents) {
-          for (const [, incEvents] of dayIncidents) {
-            for (const evt of incEvents) {
+          for (const group of dayIncidents) {
+            for (const evt of group.events) {
               maxTime = Math.max(maxTime, evt.eventAt);
             }
           }
@@ -120,12 +183,13 @@
             >
               Events
             </h4>
-            {#each dayIncidents as [incidentId, incidentEvents] (incidentId)}
-              {@const firstEvent = incidentEvents[0]}
+            {#each dayIncidents as group (group.id)}
+              {@const firstEvent = group.events[0]}
               {@const agent = getAgent(firstEvent.agentId)}
               {#if agent}
                 <IncidentCard
-                  events={incidentEvents}
+                  events={group.events}
+                  linkedIncidentIds={group.linkedIncidentIds}
                   agentName={agent.name}
                   agentColor={agent.color}
                 />
