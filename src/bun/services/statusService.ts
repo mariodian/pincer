@@ -11,6 +11,7 @@ import {
   initIncidentService,
   reconstructState as reconstructIncidentState,
   clearState as clearIncidentState,
+  closeAllOpenIncidents,
 } from "./incidentService";
 import { startRetentionService } from "./retentionService";
 import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
@@ -381,7 +382,8 @@ async function startStatusUpdates() {
             "status",
             "Daemon connected - switching to synced data mode",
           );
-          // Clear local incident service state (we're now using daemon's detection)
+          // Close local open incidents and clear state (daemon handles incident detection)
+          closeAllOpenIncidents();
           clearIncidentState();
         }
         daemonConnected = true;

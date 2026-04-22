@@ -227,3 +227,32 @@ export function clearState(): void {
   tracker.clearState();
   logger.debug("incident", "All incident state cleared");
 }
+
+/**
+ * Close all locally-opened incidents by inserting 'recovered' events.
+ * Call this when switching to daemon mode to prevent orphaned incidents.
+ * Returns the number of incidents closed.
+ */
+export function closeAllOpenIncidents(): number {
+  const openIncidents = getOpenIncidents();
+
+  for (const incident of openIncidents) {
+    insertEvent(
+      incident.agentId,
+      incident.incidentId,
+      "recovered",
+      null,
+      "ok",
+      "Switched to daemon monitoring",
+    );
+  }
+
+  if (openIncidents.length > 0) {
+    logger.info(
+      "incident",
+      `Closed ${openIncidents.length} local open incidents - switching to daemon monitoring`,
+    );
+  }
+
+  return openIncidents.length;
+}

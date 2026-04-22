@@ -219,3 +219,19 @@ export function countOldEvents(cutoffMs: number): number {
     .get();
   return row?.count ?? 0;
 }
+
+/**
+ * Delete all events for a specific incident ID.
+ * Returns the number of deleted rows.
+ */
+export function deleteIncident(incidentId: string): number {
+  const { db } = getDatabase();
+
+  const result = db
+    .delete(incidentEvents)
+    .where(sql`${incidentEvents.incidentId} = ${incidentId}`)
+    .run();
+
+  // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
+  return result.changes ?? 0;
+}
