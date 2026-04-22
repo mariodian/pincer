@@ -106,43 +106,9 @@ export async function reconstructState(): Promise<void> {
   logger.info("incident", "Reconstructing incident state from database...");
 
   const agents = await readAgents();
-  const openIncidents = getOpenIncidents();
 
-  // Build map of open incidents by agent
-  const openIncidentsByAgent = new Map<
-    number,
-    { incidentId: string; openedAt: number }
-  >();
-  for (const incident of openIncidents) {
-    openIncidentsByAgent.set(incident.agentId, {
-      incidentId: incident.incidentId,
-      openedAt: incident.openedAt,
-    });
-  }
-
-  // For each agent, reconstruct state manually (app uses async readAgents)
-  for (const agent of agents) {
-    const agentId = agent.id;
-
-    // Check if there's an open incident for this agent
-    const openIncident = openIncidentsByAgent.get(agentId);
-    if (openIncident) {
-      // There was an open incident - the tracker will establish state on first poll
-      logger.debug(
-        "incident",
-        `[Agent ${agentId}] Found open incident: ${openIncident.incidentId}`,
-      );
-    }
-  }
-
-  // Use the tracker's reconstructState but with our own agent loading
-  // Since the tracker's getEnabledAgents doesn't work with async, we do manual setup
-  // and let the first few polls establish proper state
-
-  logger.info(
-    "incident",
-    `State reconstruction complete: ${openIncidents.length} open incidents across ${agents.length} agents`,
-  );
+  // Use the tracker's reconstructState with agents from async readAgents()
+  tracker.reconstructState(agents);
 }
 
 /**

@@ -66,12 +66,13 @@ export function createIncidentTracker(
 
   /**
    * Reconstruct incident state from database at startup.
+   * @param providedAgents Optional array of agents to use instead of deps.getEnabledAgents()
    */
-  function reconstructState(): void {
+  function reconstructState(providedAgents?: Array<{ id: number }>): void {
     deps.log("info", "Reconstructing incident state from database...");
 
     const openIncidents = deps.getOpenIncidents();
-    const agents = deps.getEnabledAgents();
+    const agents = providedAgents ?? deps.getEnabledAgents();
 
     // Build map of open incidents by agent
     const openIncidentsByAgent = new Map<
