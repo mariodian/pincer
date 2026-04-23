@@ -17,19 +17,12 @@
 
   interface Props {
     events: IncidentEvent[];
-    linkedIncidentIds?: string[];
     agentName: string;
     agentColor: string;
     class?: string;
   }
 
-  let {
-    events,
-    linkedIncidentIds = [],
-    agentName,
-    agentColor,
-    class: className,
-  }: Props = $props();
+  let { events, agentName, agentColor, class: className }: Props = $props();
 
   const ICON_SIZE = "size-6";
   const ICON_STATUS_SIZE = "size-4";
@@ -115,9 +108,6 @@
         <span class="font-medium">{agentName}</span>
         {#if isOpen}
           <Badge variant="secondary">Open</Badge>
-        {/if}
-        {#if linkedIncidentIds.length > 0}
-          <Badge variant="outline" class="text-xs">Linked</Badge>
         {/if}
       </div>
     </Card.Title>

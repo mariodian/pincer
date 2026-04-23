@@ -189,7 +189,6 @@
               {#if agent}
                 <IncidentCard
                   events={group.events}
-                  linkedIncidentIds={group.linkedIncidentIds}
                   agentName={agent.name}
                   agentColor={agent.color}
                 />
