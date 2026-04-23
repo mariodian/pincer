@@ -23,7 +23,7 @@
   const toneClasses: Record<BadgeTone, string> = {
     danger: "bg-red-500/20 text-red-500 dark:bg-red-700/20 dark:text-red-700",
     warning:
-      "bg-amber-500/20 text-amber-500 dark:bg-amber-700/20 dark:text-amber-600",
+      "bg-amber-600/20 text-amber-600 dark:bg-amber-700/20 dark:text-amber-600",
     success:
       "bg-green-600/20 text-green-600 dark:bg-green-700/20 dark:text-green-500",
     neutral: "bg-muted text-muted-foreground",
