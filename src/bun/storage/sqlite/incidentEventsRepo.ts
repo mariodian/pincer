@@ -118,6 +118,12 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
 
   if (filtered.length === 0) return 0;
 
+  // OPTIMIZATION: Find all unrecovered local incidents for unique agents in one batch query
+  // This avoids N+1 queries when processing each event
+  const uniqueAgentIds = [...new Set(filtered.map((e) => e.agentId))];
+  const unrecoveredIncidents =
+    findUnrecoveredLocalIncidentsBatch(uniqueAgentIds);
+
   const stmt = sqlite.prepare(
     `INSERT OR IGNORE INTO incident_events (agent_id, incident_id, event_at, event_type, from_status, to_status, reason, linked_incident_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -125,7 +131,7 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
 
   let inserted = 0;
   for (const event of filtered) {
-    const linkedId = findUnrecoveredLocalIncident(event.agentId);
+    const linkedId = unrecoveredIncidents.get(event.agentId) ?? null;
 
     // Don't link an incident to itself
     const finalLinkedId = linkedId === event.incidentId ? null : linkedId;
@@ -147,57 +153,88 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
 }
 
 /**
- * Find an unrecovered local incident for the given agent.
- * A local incident is one whose "opened" event has NO linked_incident_id.
- * It's unrecovered if:
- *   - The local incident itself has no 'recovered' event, AND
- *   - No daemon incident linked to it has been recovered.
- * Returns the incident ID or null.
+ * Find unrecovered local incidents for multiple agents using 2 simple queries.
+ * Returns a Map of agentId -> incidentId (or null) for agents.
+ *
+ * Only considers OPEN local incidents (not handed-off ones), since linking
+ * is only needed for events coming from the daemon when a local incident is open.
+ *
+ * Query 1: Get open local incidents for these agents (anti-join pattern)
+ * Query 2: Find which of those have a linked daemon incident that recovered
+ * JS filter: Remove recovered ones, pick first per agent
  */
-function findUnrecoveredLocalIncident(agentId: number): string | null {
-  const openIncidents = getOpenIncidents();
-  const handedOffIncidents = getHandedOffIncidents();
-  const { db } = getDatabase();
+function findUnrecoveredLocalIncidentsBatch(
+  agentIds: number[],
+): Map<number, string | null> {
+  const result = new Map<number, string | null>();
+  if (agentIds.length === 0) return result;
 
-  // Combine open and handed-off incidents - both could be unrecovered local incidents
-  const candidates = [...openIncidents, ...handedOffIncidents];
+  const { sqlite } = getDatabase();
+  const placeholders = agentIds.map(() => "?").join(",");
 
-  for (const incident of candidates) {
-    if (incident.agentId !== agentId) continue;
+  // Query 1: Get unrecovered local incidents for these agents
+  // Includes both open incidents and handed-off incidents (handoff doesn't prevent linking)
+  const openLocals = sqlite
+    .prepare(
+      `
+      SELECT e1.agent_id as agentId, e1.incident_id as incidentId
+      FROM incident_events e1
+      WHERE e1.agent_id IN (${placeholders})
+        AND e1.event_type = 'opened'
+        AND e1.linked_incident_id IS NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM incident_events e2
+          WHERE e2.incident_id = e1.incident_id
+          AND e2.event_type = 'recovered'
+        )
+    `,
+    )
+    .all(...agentIds) as Array<{ agentId: number; incidentId: string }>;
 
-    const events = getEventsForIncident(incident.incidentId);
-    const openedEvent = events.find((e) => e.eventType === "opened");
-
-    // Only local incidents have NO linked_incident_id
-    if (!openedEvent || openedEvent.linkedIncidentId) continue;
-
-    // Check 1: Does the local incident itself have a recovered event?
-    const localRecovered = events.some((e) => e.eventType === "recovered");
-    if (localRecovered) continue;
-
-    // Check 2: Does any daemon incident linked to this local incident have a recovered event?
-    // Query ALL incidents with this linked_incident_id (not just open ones)
-    const linkedDaemonIncidents = db.all<{ incidentId: string }>(sql`
-      SELECT DISTINCT incident_id as incidentId 
-      FROM incident_events 
-      WHERE agent_id = ${agentId} AND linked_incident_id = ${incident.incidentId}
-    `);
-
-    let daemonRecovered = false;
-    for (const daemon of linkedDaemonIncidents) {
-      const daemonEvents = getEventsForIncident(daemon.incidentId);
-      if (daemonEvents.some((e) => e.eventType === "recovered")) {
-        daemonRecovered = true;
-        break;
-      }
+  if (openLocals.length === 0) {
+    for (const agentId of agentIds) {
+      result.set(agentId, null);
     }
+    return result;
+  }
 
-    if (!daemonRecovered) {
-      return incident.incidentId;
+  // Query 2: Find local incidents that have recovered via linked daemon incident
+  // A local incident is recovered if a daemon incident linking to it has 'recovered'
+  // (daemon events have linked_incident_id pointing to the local incident they link to)
+  const localIncidentIds = openLocals.map((r) => r.incidentId);
+  const localIdPlaceholders = localIncidentIds.map(() => "?").join(",");
+
+  const daemonRecovered = sqlite
+    .prepare(
+      `
+      SELECT DISTINCT linked_incident_id as localIncidentId
+      FROM incident_events
+      WHERE event_type = 'recovered'
+      AND linked_incident_id IN (${localIdPlaceholders})
+    `,
+    )
+    .all(...localIncidentIds) as Array<{ localIncidentId: string }>;
+
+  const recoveredViaDaemon = new Set(
+    daemonRecovered.map((r) => r.localIncidentId),
+  );
+
+  // Local incident is unrecovered if: no 'recovered'/'handoff' event (Query 1 filter)
+  // AND no recovered daemon incident linked to it
+  const unrecovered = openLocals.filter(
+    (r) => !recoveredViaDaemon.has(r.incidentId),
+  );
+
+  for (const agentId of agentIds) {
+    result.set(agentId, null);
+  }
+  for (const r of unrecovered) {
+    if (!result.has(r.agentId) || result.get(r.agentId) === null) {
+      result.set(r.agentId, r.incidentId);
     }
   }
 
-  return null;
+  return result;
 }
 
 /**

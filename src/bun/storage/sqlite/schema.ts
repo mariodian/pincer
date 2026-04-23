@@ -158,5 +158,15 @@ export const incidentEvents = sqliteTable(
       table.incidentId,
     ),
     index("idx_incident_events_time").on(table.eventAt),
+    // For finding incidents by type (e.g., 'recovered')
+    index("idx_incident_events_incident_type").on(
+      table.incidentId,
+      table.eventType,
+    ),
+    // For finding linked incidents by type
+    index("idx_incident_events_linked_type").on(
+      table.linkedIncidentId,
+      table.eventType,
+    ),
   ],
 );

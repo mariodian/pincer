@@ -1,0 +1,2 @@
+CREATE INDEX `idx_incident_events_incident_type` ON `incident_events` (`incident_id`,`event_type`);--> statement-breakpoint
+CREATE INDEX `idx_incident_events_linked_type` ON `incident_events` (`linked_incident_id`,`event_type`);

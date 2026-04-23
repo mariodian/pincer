@@ -1,5 +1,4 @@
 import type { CheckStatus } from "../../shared/types";
-import { sql } from "drizzle-orm";
 import { logger } from "./loggerService";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import {
@@ -10,7 +9,6 @@ import {
   getOpenIncidents,
   getHandedOffIncidents,
   insertEvent,
-  getEventsForIncident,
 } from "../storage/sqlite/incidentEventsRepo";
 import { getDatabase } from "../storage/sqlite/db";
 import { readAgents } from "./agentService";
@@ -81,30 +79,30 @@ function createTracker() {
       },
 
       hasIncidentRecovered(incidentId: string): boolean {
-        const events = getEventsForIncident(incidentId);
-        if (events.some((e) => e.eventType === "recovered")) {
-          return true;
-        }
+        // Single optimized SQL query to check if incident has recovered
+        // Checks both: the incident itself, AND any linked daemon incidents
+        const { sqlite } = getDatabase();
+        const result = sqlite
+          .prepare(
+            `
+            SELECT EXISTS (
+              -- Check if the incident itself has a recovered event
+              SELECT 1 FROM incident_events
+              WHERE incident_id = ? AND event_type = 'recovered'
+              UNION
+              -- Check if any linked daemon incident has recovered
+              SELECT 1 FROM incident_events e1
+              WHERE e1.linked_incident_id = ?
+              AND EXISTS (
+                SELECT 1 FROM incident_events e2
+                WHERE e2.incident_id = e1.incident_id AND e2.event_type = 'recovered'
+              )
+            ) as hasRecovered
+          `,
+          )
+          .get(incidentId, incidentId) as { hasRecovered: number };
 
-        // Also check if any daemon incidents linked to this local incident have recovered.
-        // When the daemon creates an incident for the same failure, it sets linked_incident_id
-        // to point back to the local incident. If that daemon incident recovered, the local
-        // incident should be considered resolved too.
-        const { db } = getDatabase();
-        const linkedIncidents = db.all<{ incidentId: string }>(sql`
-          SELECT DISTINCT incident_id as incidentId
-          FROM incident_events
-          WHERE linked_incident_id = ${incidentId}
-        `);
-
-        for (const linked of linkedIncidents) {
-          const linkedEvents = getEventsForIncident(linked.incidentId);
-          if (linkedEvents.some((e) => e.eventType === "recovered")) {
-            return true;
-          }
-        }
-
-        return false;
+        return result.hasRecovered === 1;
       },
 
       log(level: "info" | "debug", message: string): void {
