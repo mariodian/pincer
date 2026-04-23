@@ -5,6 +5,7 @@ import {
   real,
   sqliteTable,
   text,
+  unique,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -135,6 +136,9 @@ export const checks = sqliteTable(
   (table) => [
     index("idx_checks_agent_time").on(table.agentId, table.checkedAt),
     index("idx_checks_time").on(table.checkedAt),
+    // Prevent duplicate checks from the same agent at the same timestamp
+    // This guards against HMR creating multiple polling loops
+    unique("uniq_checks_agent_time").on(table.agentId, table.checkedAt),
   ],
 );
 

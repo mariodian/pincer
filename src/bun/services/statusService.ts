@@ -19,6 +19,20 @@ import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;
 
+// Global flag to prevent duplicate polling across HMR reloads
+const globalForHMR = globalThis as typeof globalThis & {
+  __pincerStatusPollingActive?: boolean;
+};
+
+// On module load (including HMR), clear any stale polling state
+if (globalForHMR.__pincerStatusPollingActive) {
+  logger.warn(
+    "status",
+    "HMR detected - polling was already active, resetting state",
+  );
+}
+globalForHMR.__pincerStatusPollingActive = false;
+
 // Daemon connection state
 let daemonConnected = false;
 let incidentServiceInitialized = false;
@@ -453,7 +467,17 @@ export async function beginStatusUpdates() {
     return;
   }
 
+  // HMR protection: Check if another instance is already polling
+  if (globalForHMR.__pincerStatusPollingActive) {
+    logger.warn(
+      "status",
+      "Polling already active (HMR), skipping duplicate start",
+    );
+    return;
+  }
+
   statusUpdatesStarted = true;
+  globalForHMR.__pincerStatusPollingActive = true;
 
   // Start retention cleanup service (runs startup cleanup + background job)
   startRetentionService();
@@ -466,6 +490,7 @@ export async function beginStatusUpdates() {
 
 export async function restartStatusUpdates() {
   statusUpdatesStarted = true;
+  globalForHMR.__pincerStatusPollingActive = true;
   await startStatusUpdates();
 }
 
@@ -475,6 +500,7 @@ export function stopStatusUpdates(): void {
     statusUpdateInterval = null;
   }
   statusUpdatesStarted = false;
+  globalForHMR.__pincerStatusPollingActive = false;
   logger.info("status", "Status updates stopped");
 }
 
