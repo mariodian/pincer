@@ -7,6 +7,7 @@
   import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import { cn } from "$lib/utils";
@@ -17,6 +18,11 @@
   } from "$shared/time-range-helpers";
   import type { TimeRange } from "$shared/types";
   import { toast } from "svelte-sonner";
+
+  const REPORT_RANGE_OPTIONS = REPORT_RANGES.map((r) => ({
+    value: r,
+    label: RANGE_SHORT_LABELS[r],
+  }));
 
   type SortKey = "name" | "uptime" | "checks" | "incidents" | "avgResponse";
 
@@ -115,24 +121,11 @@
   >
     {#snippet actions()}
       <div class="flex items-center gap-2">
-        <div
-          class="flex items-center gap-1 rounded-lg border bg-background p-1"
-        >
-          {#each REPORT_RANGES as r}
-            <button
-              type="button"
-              class={[
-                "rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                range === r
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
-              ]}
-              onclick={() => (range = r)}
-            >
-              {RANGE_SHORT_LABELS[r]}
-            </button>
-          {/each}
-        </div>
+        <TimeRangePicker
+          value={range}
+          options={REPORT_RANGE_OPTIONS}
+          onchange={(r) => (range = r)}
+        />
       </div>
     {/snippet}
   </PageHeader>

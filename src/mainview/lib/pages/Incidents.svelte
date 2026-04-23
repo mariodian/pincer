@@ -7,6 +7,7 @@
   import { Icon } from "$lib/components/ui/icon";
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
+  import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import type { TimeRange } from "$shared/types";
@@ -78,23 +79,11 @@
     {currentPath}
   >
     {#snippet actions()}
-      <div class="flex items-center gap-1 rounded-lg border bg-background p-1">
-        {#each TIME_RANGES as tr}
-          <button
-            type="button"
-            disabled={timeRange === tr.value}
-            class={[
-              "rounded-md px-3 py-1 text-xs font-medium",
-              timeRange === tr.value
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted",
-            ]}
-            onclick={() => handleTimeRangeChange(tr.value)}
-          >
-            {tr.label}
-          </button>
-        {/each}
-      </div>
+      <TimeRangePicker
+        value={timeRange}
+        options={TIME_RANGES}
+        onchange={handleTimeRangeChange}
+      />
     {/snippet}
   </PageHeader>
 

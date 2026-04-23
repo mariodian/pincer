@@ -102,7 +102,7 @@
   class={cn(
     className,
     "gap-4",
-    isOpen ? "ring-destructive dark:ring-red-800 ring-2 " : "",
+    isOpen ? "border-destructive dark:border-red-800 border-2 " : "",
   )}
 >
   <Card.Header>

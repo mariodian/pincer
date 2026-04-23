@@ -3,7 +3,7 @@
 
   let {
     children,
-    animationDuration = 300,
+    animationDuration = 150,
   }: {
     children?: Snippet;
     animationDuration?: number;
