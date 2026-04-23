@@ -68,6 +68,7 @@
   );
 
   let allChecks = $derived(timeline ? timeline.recent7d.checks : []);
+  let checkBuckets = $derived(timeline?.recent7d.checkBuckets ?? undefined);
 </script>
 
 <div class="flex flex-col h-full">
@@ -132,6 +133,7 @@
       <Timeline
         events={allEvents}
         checks={allChecks}
+        {checkBuckets}
         agents={timeline.agents}
         range={timeRange}
       />

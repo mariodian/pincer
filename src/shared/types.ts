@@ -85,6 +85,18 @@ export interface NotificationSettings {
 
 export type TimeRange = "24h" | "7d" | "30d" | "90d";
 
+// Pre-aggregated check bucket for heatmap display
+// Reduces data transfer from ~118K raw checks to ~168 buckets for 7d view
+export interface CheckBucket {
+  bucketStart: number; // ms timestamp (hour or 10-min boundary)
+  agentId: number;
+  total: number;
+  okCount: number;
+  degradedCount: number;
+  failedCount: number;
+  avgResponseMs: number | null;
+}
+
 // Daemon sync settings
 export interface DaemonSettings {
   enabled: boolean;

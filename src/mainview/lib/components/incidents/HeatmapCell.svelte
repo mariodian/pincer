@@ -7,6 +7,13 @@
     startTime: Date;
     endTime: Date;
     checks: Check[];
+    // Aggregated counts when using pre-bucketed data (7d+ views)
+    aggregated?: {
+      total: number;
+      ok: number;
+      degraded: number;
+      failed: number;
+    };
   }
 
   interface Props {
@@ -73,8 +80,14 @@
     }
   }
 
-  // Get status counts
-  function getStatusCounts(checks: Check[]) {
+  // Get status counts - use aggregated data if available (for 7d+ views)
+  function getStatusCounts(
+    checks: Check[],
+    aggregated?: TimeSlot["aggregated"],
+  ) {
+    if (aggregated) {
+      return aggregated;
+    }
     return {
       total: checks.length,
       ok: checks.filter((c) => c.status === "ok").length,
@@ -85,11 +98,11 @@
     };
   }
 
-  const isEmpty = $derived(slot.checks.length === 0);
+  const isEmpty = $derived(slot.checks.length === 0 && !slot.aggregated);
   const intensity = $derived(calculateIntensity(slot.checks));
   const heatmapColor = $derived(getHeatmapVar(intensity, isEmpty));
   const timePeriod = $derived(formatTimePeriod(slot, range));
-  const counts = $derived(getStatusCounts(slot.checks));
+  const counts = $derived(getStatusCounts(slot.checks, slot.aggregated));
 </script>
 
 <Tooltip.Root disableHoverableContent>

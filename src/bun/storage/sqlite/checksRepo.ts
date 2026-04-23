@@ -1,4 +1,4 @@
-import type { Check, CheckStatus } from "../../../shared/types";
+import type { Check, CheckBucket, CheckStatus } from "../../../shared/types";
 import { rowToCheck } from "../../../shared/db-helpers";
 import { desc, eq, sql } from "drizzle-orm";
 import { getDatabase } from "./db";
@@ -201,4 +201,55 @@ export function getAgentLatestCheck(agentId: number): Check | null {
   }
 
   return rowToCheck(row);
+}
+
+/**
+ * Get checks aggregated into hourly buckets for heatmap display.
+ * Returns ~168 buckets for 7d view instead of ~118K raw checks.
+ * Dramatically reduces data transfer and client-side processing.
+ */
+export function getChecksAggregatedByHour(
+  sinceMs: number,
+  untilMs: number,
+): CheckBucket[] {
+  const { sqlite } = getDatabase();
+
+  // Aggregate checks into hourly buckets per agent
+  // Bucket calculation: (checked_at / 3600000) * 3600000 = hour boundary in ms
+  const rows = sqlite
+    .prepare(
+      `
+      SELECT 
+        (checked_at / 3600000) * 3600000 as bucket_start,
+        agent_id as agentId,
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) as ok_count,
+        SUM(CASE WHEN status IN ('degraded', 'offline') THEN 1 ELSE 0 END) as degraded_count,
+        SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as failed_count,
+        AVG(response_ms) as avg_response_ms
+      FROM checks
+      WHERE checked_at >= ? AND checked_at <= ?
+      GROUP BY agent_id, bucket_start
+      ORDER BY bucket_start DESC
+      `,
+    )
+    .all(sinceMs, untilMs) as Array<{
+    bucket_start: number;
+    agentId: number;
+    total: number;
+    ok_count: number;
+    degraded_count: number;
+    failed_count: number;
+    avg_response_ms: number | null;
+  }>;
+
+  return rows.map((row) => ({
+    bucketStart: row.bucket_start,
+    agentId: row.agentId,
+    total: row.total,
+    okCount: row.ok_count,
+    degradedCount: row.degraded_count,
+    failedCount: row.failed_count,
+    avgResponseMs: row.avg_response_ms,
+  }));
 }

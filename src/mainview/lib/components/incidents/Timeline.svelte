@@ -5,11 +5,17 @@
   import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
   import { cn } from "$lib/utils";
   import { formatShortDate } from "$lib/utils/datetime";
-  import type { Check, IncidentEvent, TimeRange } from "$shared/types";
+  import type {
+    Check,
+    CheckBucket,
+    IncidentEvent,
+    TimeRange,
+  } from "$shared/types";
 
   interface Props {
     events: IncidentEvent[];
     checks: Check[];
+    checkBuckets?: CheckBucket[];
     agents: Array<{
       id: number;
       name: string;
@@ -22,6 +28,7 @@
   let {
     events,
     checks,
+    checkBuckets,
     agents,
     range = "24h",
     class: className,
@@ -158,7 +165,7 @@
 <TooltipProvider delayDuration={0} skipDelayDuration={300}>
   <div class={cn("space-y-3 w-full min-w-0 max-w-full", className)}>
     <!-- Single heatmap for the entire period (24h or 7d) -->
-    <Heatmap {range} {checks} cellSize={4} />
+    <Heatmap {range} {checks} {checkBuckets} cellSize={4} />
 
     {#each allDays as day (day)}
       {@const dayIncidents = incidentsByDay.get(day)}

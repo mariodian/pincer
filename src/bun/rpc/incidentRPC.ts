@@ -1,8 +1,17 @@
 // Incident RPC - Shared RPC definition for incident timeline and events
-import type { Check, IncidentEvent, TimeRange } from "../../shared/types";
+import type {
+  Check,
+  CheckBucket,
+  IncidentEvent,
+  TimeRange,
+} from "../../shared/types";
 import type { AgentStatRow } from "../storage/sqlite/statsRepo";
 import { getAgentStats } from "../storage/sqlite/statsRepo";
-import { getRecentChecks, getAllChecks } from "../storage/sqlite/checksRepo";
+import {
+  getRecentChecks,
+  getAllChecks,
+  getChecksAggregatedByHour,
+} from "../storage/sqlite/checksRepo";
 import {
   getEventsForAgent,
   getEventsForTimeRange,
@@ -25,10 +34,11 @@ export interface IncidentTimeline {
     name: string;
     color: string;
   }>;
-  // Incidents with ANY activity in the last 7 days + their raw checks
+  // Incidents with ANY activity in the last 7 days + pre-aggregated check buckets for heatmap
   recent7d: {
     events: IncidentEvent[];
-    checks: Check[];
+    checks: Check[]; // Raw checks for 24h view (smaller dataset)
+    checkBuckets?: CheckBucket[]; // Aggregated buckets for 7d+ views
   };
   // Incidents with NO activity in the last 7 days + hourly stats for chart context
   older: {
@@ -107,14 +117,22 @@ export const incidentRequestHandlers = {
         sevenDaysAgo,
       );
 
-      // Query raw checks only for the last 7 days (retention period)
+      // Query checks for the last 7 days (retention period)
+      // Use aggregated buckets for 7d+ views to reduce data transfer (118K -> ~168 rows)
       let recentChecks: Check[] = [];
+      let checkBuckets: CheckBucket[] | undefined;
       const checkQueryStart = Math.max(fromMs, sevenDaysAgo);
       if (checkQueryStart <= toMs) {
-        if (agentId !== undefined) {
-          recentChecks = getRecentChecks(agentId, checkQueryStart, toMs);
+        if (range === "24h") {
+          // Small dataset: use raw checks for detailed tooltip display
+          if (agentId !== undefined) {
+            recentChecks = getRecentChecks(agentId, checkQueryStart, toMs);
+          } else {
+            recentChecks = getAllChecks(checkQueryStart, toMs);
+          }
         } else {
-          recentChecks = getAllChecks(checkQueryStart, toMs);
+          // Large dataset: use pre-aggregated buckets (7d, 30d, 90d views)
+          checkBuckets = getChecksAggregatedByHour(checkQueryStart, toMs);
         }
       }
 
@@ -146,6 +164,7 @@ export const incidentRequestHandlers = {
         recent7d: {
           events: recentEvents,
           checks: recentChecks,
+          checkBuckets,
         },
         older: {
           events: olderEvents,
@@ -153,9 +172,10 @@ export const incidentRequestHandlers = {
         },
       };
 
+      const checkCount = checkBuckets?.length ?? recentChecks.length;
       logger.debug(
         "incidentRPC",
-        `Returning timeline: ${recentEvents.length} recent events, ${olderEvents.length} older events, ${recentChecks.length} checks`,
+        `Returning timeline: ${recentEvents.length} recent events, ${olderEvents.length} older events, ${checkCount} checks/buckets`,
       );
 
       return result;
