@@ -60,15 +60,14 @@
     timeline !== null &&
       timeline.recent7d.events.length === 0 &&
       timeline.older.events.length === 0 &&
-      timeline.recent7d.checks.length === 0,
+      timeline.recent7d.checkBuckets.length === 0,
   );
 
   let allEvents = $derived(
     timeline ? [...timeline.recent7d.events, ...timeline.older.events] : [],
   );
 
-  let allChecks = $derived(timeline ? timeline.recent7d.checks : []);
-  let checkBuckets = $derived(timeline?.recent7d.checkBuckets ?? undefined);
+  let checkBuckets = $derived(timeline?.recent7d.checkBuckets ?? []);
 </script>
 
 <div class="flex flex-col h-full">
@@ -132,7 +131,6 @@
     {:else if timeline && !isEmpty}
       <Timeline
         events={allEvents}
-        checks={allChecks}
         {checkBuckets}
         agents={timeline.agents}
         range={timeRange}

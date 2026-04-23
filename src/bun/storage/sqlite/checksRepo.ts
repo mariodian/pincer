@@ -203,24 +203,26 @@ export function getAgentLatestCheck(agentId: number): Check | null {
   return rowToCheck(row);
 }
 
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const TEN_MINUTES_MS = 10 * 60 * 1000;
+
 /**
- * Get checks aggregated into hourly buckets for heatmap display.
- * Returns ~168 buckets for 7d view instead of ~118K raw checks.
- * Dramatically reduces data transfer and client-side processing.
+ * Get checks aggregated into time buckets for heatmap display.
+ * @param bucketMs - Bucket interval in milliseconds (e.g., ONE_HOUR_MS, TEN_MINUTES_MS)
+ * @returns Aggregated check buckets, one per agent per bucket_start
  */
-export function getChecksAggregatedByHour(
+function getChecksAggregated(
   sinceMs: number,
   untilMs: number,
+  bucketMs: number,
 ): CheckBucket[] {
   const { sqlite } = getDatabase();
 
-  // Aggregate checks into hourly buckets per agent
-  // Bucket calculation: (checked_at / 3600000) * 3600000 = hour boundary in ms
   const rows = sqlite
     .prepare(
       `
-      SELECT 
-        (checked_at / 3600000) * 3600000 as bucket_start,
+      SELECT
+        (checked_at / ?) * ? as bucket_start,
         agent_id as agentId,
         COUNT(*) as total,
         SUM(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) as ok_count,
@@ -233,7 +235,7 @@ export function getChecksAggregatedByHour(
       ORDER BY bucket_start DESC
       `,
     )
-    .all(sinceMs, untilMs) as Array<{
+    .all(bucketMs, bucketMs, sinceMs, untilMs) as Array<{
     bucket_start: number;
     agentId: number;
     total: number;
@@ -252,4 +254,27 @@ export function getChecksAggregatedByHour(
     failedCount: row.failed_count,
     avgResponseMs: row.avg_response_ms,
   }));
+}
+
+/**
+ * Get checks aggregated into hourly buckets for heatmap display.
+ * Returns ~168 buckets for 7d view instead of ~118K raw checks.
+ * Dramatically reduces data transfer and client-side processing.
+ */
+export function getChecksAggregatedByHour(
+  sinceMs: number,
+  untilMs: number,
+): CheckBucket[] {
+  return getChecksAggregated(sinceMs, untilMs, ONE_HOUR_MS);
+}
+
+/**
+ * Get checks aggregated into 10-minute buckets for heatmap display.
+ * Returns ~144 buckets for 24h view instead of ~2880 raw checks.
+ */
+export function getChecksAggregatedBy10Min(
+  sinceMs: number,
+  untilMs: number,
+): CheckBucket[] {
+  return getChecksAggregated(sinceMs, untilMs, TEN_MINUTES_MS);
 }

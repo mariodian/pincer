@@ -8,9 +8,10 @@ import type {
 import type { AgentStatRow } from "../storage/sqlite/statsRepo";
 import { getAgentStats } from "../storage/sqlite/statsRepo";
 import {
-  getRecentChecks,
   getAllChecks,
+  getChecksAggregatedBy10Min,
   getChecksAggregatedByHour,
+  getRecentChecks,
 } from "../storage/sqlite/checksRepo";
 import {
   getEventsForAgent,
@@ -37,8 +38,7 @@ export interface IncidentTimeline {
   // Incidents with ANY activity in the last 7 days + pre-aggregated check buckets for heatmap
   recent7d: {
     events: IncidentEvent[];
-    checks: Check[]; // Raw checks for 24h view (smaller dataset)
-    checkBuckets?: CheckBucket[]; // Aggregated buckets for 7d+ views
+    checkBuckets: CheckBucket[]; // Aggregated buckets for all views
   };
   // Incidents with NO activity in the last 7 days + hourly stats for chart context
   older: {
@@ -118,20 +118,14 @@ export const incidentRequestHandlers = {
       );
 
       // Query checks for the last 7 days (retention period)
-      // Use aggregated buckets for 7d+ views to reduce data transfer (118K -> ~168 rows)
-      let recentChecks: Check[] = [];
-      let checkBuckets: CheckBucket[] | undefined;
+      // Use aggregated buckets for all views to reduce data transfer
+      // 24h: ~144 rows (10-min buckets), 7d: ~168 rows (hourly buckets)
+      let checkBuckets: CheckBucket[] = [];
       const checkQueryStart = Math.max(fromMs, sevenDaysAgo);
       if (checkQueryStart <= toMs) {
         if (range === "24h") {
-          // Small dataset: use raw checks for detailed tooltip display
-          if (agentId !== undefined) {
-            recentChecks = getRecentChecks(agentId, checkQueryStart, toMs);
-          } else {
-            recentChecks = getAllChecks(checkQueryStart, toMs);
-          }
+          checkBuckets = getChecksAggregatedBy10Min(checkQueryStart, toMs);
         } else {
-          // Large dataset: use pre-aggregated buckets (7d, 30d, 90d views)
           checkBuckets = getChecksAggregatedByHour(checkQueryStart, toMs);
         }
       }
@@ -163,7 +157,6 @@ export const incidentRequestHandlers = {
         agents: agentsWithColors,
         recent7d: {
           events: recentEvents,
-          checks: recentChecks,
           checkBuckets,
         },
         older: {
@@ -172,7 +165,7 @@ export const incidentRequestHandlers = {
         },
       };
 
-      const checkCount = checkBuckets?.length ?? recentChecks.length;
+      const checkCount = checkBuckets?.length ?? 0;
       logger.debug(
         "incidentRPC",
         `Returning timeline: ${recentEvents.length} recent events, ${olderEvents.length} older events, ${checkCount} checks/buckets`,

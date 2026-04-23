@@ -1,14 +1,12 @@
 <script lang="ts">
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { cn } from "$lib/utils";
-  import type { Check, TimeRange } from "$shared/types";
+  import type { TimeRange } from "$shared/types";
 
   interface TimeSlot {
     startTime: Date;
     endTime: Date;
-    checks: Check[];
-    // Aggregated counts when using pre-bucketed data (7d+ views)
-    aggregated?: {
+    aggregated: {
       total: number;
       ok: number;
       degraded: number;
@@ -27,19 +25,12 @@
 
   const CELL_SIZE = $derived(`calc(var(--spacing) * ${cellSize})`);
 
-  // Calculate intensity from checks
-  function calculateIntensity(checks: Check[]): number {
-    if (checks.length === 0) return 0;
-    let failed = 0;
-    let degraded = 0;
-    for (const check of checks) {
-      if (check.status === "error") failed++;
-      // Note: offline is treated as degraded per project convention (see HEAT-07 pattern).
-      // This is intentional as offline indicates reduced monitoring capability.
-      else if (check.status === "degraded" || check.status === "offline")
-        degraded++;
-    }
-    return (failed + 0.5 * degraded) / checks.length;
+  // Calculate intensity from aggregated counts
+  function calculateIntensity(aggregated: TimeSlot["aggregated"]): number {
+    if (aggregated.total === 0) return 0;
+    const failed = aggregated.failed;
+    const degraded = aggregated.degraded;
+    return (failed + 0.5 * degraded) / aggregated.total;
   }
 
   // Map intensity to CSS variable
@@ -80,29 +71,11 @@
     }
   }
 
-  // Get status counts - use aggregated data if available (for 7d+ views)
-  function getStatusCounts(
-    checks: Check[],
-    aggregated?: TimeSlot["aggregated"],
-  ) {
-    if (aggregated) {
-      return aggregated;
-    }
-    return {
-      total: checks.length,
-      ok: checks.filter((c) => c.status === "ok").length,
-      degraded: checks.filter(
-        (c) => c.status === "degraded" || c.status === "offline",
-      ).length,
-      failed: checks.filter((c) => c.status === "error").length,
-    };
-  }
-
-  const isEmpty = $derived(slot.checks.length === 0 && !slot.aggregated);
-  const intensity = $derived(calculateIntensity(slot.checks));
+  const counts = $derived(slot.aggregated);
+  const isEmpty = $derived(counts.total === 0);
+  const intensity = $derived(calculateIntensity(counts));
   const heatmapColor = $derived(getHeatmapVar(intensity, isEmpty));
   const timePeriod = $derived(formatTimePeriod(slot, range));
-  const counts = $derived(getStatusCounts(slot.checks, slot.aggregated));
 </script>
 
 <Tooltip.Root disableHoverableContent>
