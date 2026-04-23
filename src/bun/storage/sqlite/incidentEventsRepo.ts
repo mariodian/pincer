@@ -1,4 +1,5 @@
 import { desc, sql } from "drizzle-orm";
+import { buildOpenIncidentsQuery, buildHandedOffIncidentsQuery } from "../../../shared/incident-queries";
 import { rowToIncidentEvent } from "../../../shared/db-helpers";
 import type {
   CheckStatus,
@@ -249,24 +250,12 @@ export function getOpenIncidents(): Array<{
 }> {
   const { db } = getDatabase();
 
-  // Use raw SQL for the anti-join pattern
+  // Use shared query for the anti-join pattern
   const rows = db.all<{
     agentId: number;
     incidentId: string;
     openedAt: number;
-  }>(sql`
-    SELECT
-      e1.agent_id as agentId,
-      e1.incident_id as incidentId,
-      e1.event_at as openedAt
-    FROM incident_events e1
-    WHERE e1.event_type = 'opened'
-    AND NOT EXISTS (
-      SELECT 1 FROM incident_events e2
-      WHERE e2.incident_id = e1.incident_id
-      AND e2.event_type IN ('recovered', 'handoff')
-    )
-  `);
+  }>(buildOpenIncidentsQuery());
 
   return rows.map((row) => ({
     agentId: row.agentId,
@@ -287,23 +276,12 @@ export function getHandedOffIncidents(): Array<{
 }> {
   const { db } = getDatabase();
 
+  // Use shared query for the anti-join pattern
   const rows = db.all<{
     agentId: number;
     incidentId: string;
     linkedIncidentId: string | null;
-  }>(sql`
-    SELECT
-      e1.agent_id as agentId,
-      e1.incident_id as incidentId,
-      e1.linked_incident_id as linkedIncidentId
-    FROM incident_events e1
-    WHERE e1.event_type = 'handoff'
-    AND NOT EXISTS (
-      SELECT 1 FROM incident_events e2
-      WHERE e2.incident_id = e1.incident_id
-      AND e2.event_type = 'recovered'
-    )
-  `);
+  }>(buildHandedOffIncidentsQuery());
 
   return rows.map((row) => ({
     agentId: row.agentId,

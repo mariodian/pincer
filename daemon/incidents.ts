@@ -6,6 +6,7 @@ import {
   DEFAULT_FAILURE_THRESHOLD,
   DEFAULT_RECOVERY_THRESHOLD,
 } from "../src/shared/incidentCore";
+import { buildOpenIncidentsQuery } from "../src/shared/incident-queries";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents } from "./schema";
 
@@ -67,23 +68,12 @@ const tracker = createIncidentTracker(
       openedAt: number;
     }> {
       const { db } = getDatabase();
+      // Use shared query to ensure consistency with app (excludes both 'recovered' and 'handoff')
       return db.all<{
         agentId: number;
         incidentId: string;
         openedAt: number;
-      }>(sql`
-        SELECT 
-          e1.agent_id as agentId,
-          e1.incident_id as incidentId,
-          e1.event_at as openedAt
-        FROM incident_events e1
-        WHERE e1.event_type = 'opened'
-        AND NOT EXISTS (
-          SELECT 1 FROM incident_events e2
-          WHERE e2.incident_id = e1.incident_id
-          AND e2.event_type = 'recovered'
-        )
-      `);
+      }>(buildOpenIncidentsQuery());
     },
 
     getHandedOffIncidents(): Array<{
