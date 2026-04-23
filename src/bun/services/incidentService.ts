@@ -230,7 +230,6 @@ export function removeAgentState(agentId: number): void {
  */
 export function clearState(): void {
   tracker.clearState();
-  logger.debug("incident", "All incident state cleared");
 }
 
 /**
