@@ -9,6 +9,7 @@ import {
   getOpenIncidents,
   getHandedOffIncidents,
   insertEvent,
+  linkAndCloseLocalIncidents,
 } from "../storage/sqlite/incidentEventsRepo";
 import { getDatabase } from "../storage/sqlite/db";
 import { readAgents } from "./agentService";
@@ -70,12 +71,6 @@ function createTracker() {
         linkedIncidentId: string | null;
       }> {
         return getHandedOffIncidents();
-      },
-
-      getEnabledAgents(): Array<{ id: number }> {
-        // This is async in the app, but sync in the tracker
-        // We need to handle this specially - see reconstructState below
-        return [];
       },
 
       hasIncidentRecovered(incidentId: string): boolean {
@@ -231,30 +226,15 @@ export function clearState(): void {
 }
 
 /**
- * Close all locally-opened incidents by inserting 'recovered' events.
- * Call this when switching to daemon mode to prevent orphaned incidents.
+ * Switch to daemon monitoring mode.
+ * Links local open incidents to daemon incidents (if provided),
+ * creates handoff events, and clears in-memory tracker state.
  * Returns the number of incidents closed.
  */
-export function closeAllOpenIncidents(): number {
-  const openIncidents = getOpenIncidents();
-
-  for (const incident of openIncidents) {
-    insertEvent(
-      incident.agentId,
-      incident.incidentId,
-      "recovered",
-      null,
-      "ok",
-      "Switched to daemon monitoring",
-    );
-  }
-
-  if (openIncidents.length > 0) {
-    logger.info(
-      "incident",
-      `Closed ${openIncidents.length} local open incidents - switching to daemon monitoring`,
-    );
-  }
-
-  return openIncidents.length;
+export function switchToDaemonMode(
+  daemonOpenIncidents?: Array<{ agentId: number; incidentId: string }>,
+): number {
+  const closed = linkAndCloseLocalIncidents(daemonOpenIncidents ?? []);
+  tracker.clearState();
+  return closed;
 }

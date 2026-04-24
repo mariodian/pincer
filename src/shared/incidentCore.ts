@@ -47,8 +47,6 @@ export interface IncidentTrackerDeps {
     incidentId: string;
     linkedIncidentId: string | null;
   }>;
-  /** Get all enabled agents (for state reconstruction) */
-  getEnabledAgents: () => Array<{ id: number }>;
   /** Check if an incident has a recovered event */
   hasIncidentRecovered: (incidentId: string) => boolean;
   /** Logger function for incident-related logging */
@@ -76,14 +74,13 @@ export function createIncidentTracker(
 
   /**
    * Reconstruct incident state from database at startup.
-   * @param providedAgents Optional array of agents to use instead of deps.getEnabledAgents()
+   * @param agents Array of agents to reconstruct state for
    */
-  function reconstructState(providedAgents?: Array<{ id: number }>): void {
+  function reconstructState(agents: Array<{ id: number }>): void {
     deps.log("info", "Reconstructing incident state from database...");
 
     const openIncidents = deps.getOpenIncidents();
     const handedOffIncidents = deps.getHandedOffIncidents();
-    const agents = providedAgents ?? deps.getEnabledAgents();
 
     // Build map of open incidents by agent
     const openIncidentsByAgent = new Map<

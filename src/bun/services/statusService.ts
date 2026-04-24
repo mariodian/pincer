@@ -10,9 +10,8 @@ import { getStatusSyncService } from "./statusSyncService";
 import {
   initIncidentService,
   reconstructState as reconstructIncidentState,
-  clearState as clearIncidentState,
+  switchToDaemonMode,
 } from "./incidentService";
-import { linkAndCloseLocalIncidents } from "../storage/sqlite/incidentEventsRepo";
 import { startRetentionService } from "./retentionService";
 import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 
@@ -401,9 +400,8 @@ async function startStatusUpdates() {
           );
           // Only link-and-close local incidents if we actually did local polling
           if (incidentServiceInitialized) {
-            linkAndCloseLocalIncidents(result.openIncidents);
+            switchToDaemonMode(result.openIncidents);
           }
-          clearIncidentState();
           // Reset flag so we re-initialize if we switch back to local mode
           incidentServiceInitialized = false;
         }

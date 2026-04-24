@@ -85,15 +85,6 @@ const tracker = createIncidentTracker(
       return [];
     },
 
-    getEnabledAgents(): Array<{ id: number }> {
-      const { db } = getDatabase();
-      return db
-        .select({ id: agents.id })
-        .from(agents)
-        .where(sql`${agents.enabled} = 1`)
-        .all();
-    },
-
     hasIncidentRecovered(incidentId: string): boolean {
       const { db } = getDatabase();
       const result = db
@@ -117,8 +108,17 @@ const tracker = createIncidentTracker(
   { failureThreshold, recoveryThreshold },
 );
 
-// Export the tracker methods
-export const reconstructState = tracker.reconstructState;
+/** Reconstruct incident state from database, fetching enabled agents first. */
+export function reconstructState(): void {
+  const { db } = getDatabase();
+  const enabledAgents = db
+    .select({ id: agents.id })
+    .from(agents)
+    .where(sql`${agents.enabled} = 1`)
+    .all();
+  tracker.reconstructState(enabledAgents);
+}
+
 export const recordCheck = tracker.recordCheck;
 export const getAgentState = tracker.getAgentState;
 export const hasOpenIncident = tracker.hasOpenIncident;

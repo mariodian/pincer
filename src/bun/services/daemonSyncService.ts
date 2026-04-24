@@ -1,5 +1,6 @@
 import type {
   Check,
+  DaemonSettings,
   DaemonSyncResult,
   DaemonTestResult,
   HourlyStat,
@@ -129,6 +130,145 @@ export async function pushAgentsToDaemon(): Promise<void> {
   }
 }
 
+/**
+ * Import checks from daemon with pagination.
+ * Returns the number of checks imported and whether the daemon was reachable.
+ */
+async function importChecks(
+  settings: DaemonSettings,
+  lastSyncAt: number,
+): Promise<{ imported: number; reachable: boolean }> {
+  let cursor: number | null = lastSyncAt;
+  let total = 0;
+
+  while (cursor !== null) {
+    try {
+      const response = await daemonFetch(
+        settings.url,
+        settings.secret,
+        `/checks?since=${cursor}&limit=1000`,
+      );
+      if (!response.ok) {
+        if (cursor === lastSyncAt) {
+          logger.warn("daemon", `Daemon unreachable: HTTP ${response.status}`);
+          return { imported: 0, reachable: false };
+        }
+        logger.warn(
+          "daemon",
+          `Failed to fetch checks page: HTTP ${response.status}`,
+        );
+        break;
+      }
+
+      const data = (await response.json()) as {
+        checks: Check[];
+        nextCursor: number | null;
+      };
+      if (data.checks.length > 0) {
+        total += insertChecksBatch(data.checks);
+      }
+      cursor = data.nextCursor;
+    } catch (error) {
+      if (cursor === lastSyncAt) {
+        logger.warn("daemon", "Daemon unreachable during sync:", error);
+        return { imported: 0, reachable: false };
+      }
+      logger.warn("daemon", "Failed to fetch checks page:", error);
+      break;
+    }
+  }
+
+  return { imported: total, reachable: true };
+}
+
+/**
+ * Import hourly stats from daemon.
+ * Returns the number of stats imported.
+ */
+async function importStats(
+  settings: DaemonSettings,
+  lastSyncAt: number,
+): Promise<number> {
+  try {
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      `/stats?since=${lastSyncAt}`,
+    );
+    if (!response.ok) {
+      logger.warn("daemon", `Failed to fetch stats: HTTP ${response.status}`);
+      return 0;
+    }
+    const statsData = (await response.json()) as HourlyStat[];
+    if (statsData.length > 0) {
+      return upsertStatsBatch(statsData);
+    }
+  } catch (error) {
+    logger.warn("daemon", "Failed to fetch stats:", error);
+  }
+  return 0;
+}
+
+/**
+ * Import incident events from daemon.
+ * Returns the number of events imported.
+ */
+async function importIncidentEvents(
+  settings: DaemonSettings,
+  lastSyncAt: number,
+): Promise<number> {
+  try {
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      `/incident-events?since=${lastSyncAt}`,
+    );
+    if (!response.ok) {
+      logger.warn(
+        "daemon",
+        `Failed to fetch incident events: HTTP ${response.status}`,
+      );
+      return 0;
+    }
+    const incidentsData = (await response.json()) as IncidentEvent[];
+    if (incidentsData.length > 0) {
+      return insertEventsBatch(incidentsData);
+    }
+  } catch (error) {
+    logger.warn("daemon", "Failed to fetch incident events:", error);
+  }
+  return 0;
+}
+
+/**
+ * Fetch open incidents from daemon for linking.
+ */
+async function fetchOpenIncidents(
+  settings: DaemonSettings,
+): Promise<Array<{ agentId: number; incidentId: string }>> {
+  try {
+    const response = await daemonFetch(
+      settings.url,
+      settings.secret,
+      "/open-incidents",
+    );
+    if (!response.ok) {
+      logger.warn(
+        "daemon",
+        `Failed to fetch open incidents: HTTP ${response.status}`,
+      );
+      return [];
+    }
+    return (await response.json()) as Array<{
+      agentId: number;
+      incidentId: string;
+    }>;
+  } catch (error) {
+    logger.warn("daemon", "Failed to fetch open incidents:", error);
+    return [];
+  }
+}
+
 export async function sync(): Promise<DaemonSyncResult> {
   if (!isDaemonConfigured()) {
     return {
@@ -141,126 +281,31 @@ export async function sync(): Promise<DaemonSyncResult> {
 
   const settings = getDaemonSettings();
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
-  let totalChecks = 0;
-  let totalStats = 0;
-  let totalIncidents = 0;
-  let openIncidents: Array<{ agentId: number; incidentId: string }> = [];
 
-  // Import checks with pagination - serves as connectivity test too
-  let cursor: number | null = lastSyncAt;
-  let firstRequestFailed = false;
-  let firstError: Error | null = null;
-  while (cursor !== null) {
-    const url = `/checks?since=${cursor}&limit=1000`;
-    try {
-      const response = await daemonFetch(settings.url, settings.secret, url);
-      if (!response.ok) {
-        if (cursor === lastSyncAt) {
-          // First request failed - daemon is unreachable
-          logger.warn("daemon", `Daemon unreachable: HTTP ${response.status}`);
-          firstError = new Error(`HTTP ${response.status}`);
-          firstRequestFailed = true;
-        } else {
-          // Subsequent page failed - log but continue with what we have
-          logger.warn(
-            "daemon",
-            `Failed to fetch checks: HTTP ${response.status}`,
-          );
-        }
-        break;
-      }
-
-      const data = (await response.json()) as {
-        checks: Check[];
-        nextCursor: number | null;
-      };
-      if (data.checks.length > 0) {
-        totalChecks += insertChecksBatch(data.checks);
-      }
-
-      cursor = data.nextCursor;
-    } catch (error) {
-      // Network error on first request means daemon is unreachable
-      if (cursor === lastSyncAt) {
-        logger.warn("daemon", "Daemon unreachable during sync:", error);
-        firstError = error instanceof Error ? error : new Error(String(error));
-        firstRequestFailed = true;
-      }
-      break;
-    }
+  const checks = await importChecks(settings, lastSyncAt);
+  if (!checks.reachable) {
+    throw new Error("Daemon unreachable");
   }
 
-  // If daemon was unreachable, throw to signal caller to fall back
-  if (firstRequestFailed) {
-    throw firstError ?? new Error("Daemon unreachable");
-  }
+  const [stats, incidents, openIncidents] = await Promise.all([
+    importStats(settings, lastSyncAt),
+    importIncidentEvents(settings, lastSyncAt),
+    fetchOpenIncidents(settings),
+  ]);
 
-  // Import stats
-  try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      `/stats?since=${lastSyncAt}`,
-    );
-    if (response.ok) {
-      const statsData = (await response.json()) as HourlyStat[];
-      if (statsData.length > 0) {
-        totalStats = upsertStatsBatch(statsData);
-      }
-    }
-  } catch (error) {
-    logger.warn("daemon", "Failed to fetch stats:", error);
-  }
-
-  // Import incident events
-  try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      `/incident-events?since=${lastSyncAt}`,
-    );
-    if (response.ok) {
-      const incidentsData = (await response.json()) as IncidentEvent[];
-      if (incidentsData.length > 0) {
-        totalIncidents = insertEventsBatch(incidentsData);
-      }
-    }
-  } catch (error) {
-    logger.warn("daemon", "Failed to fetch incident events:", error);
-  }
-
-  // Fetch open incidents from daemon for linking
-  try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      "/open-incidents",
-    );
-    if (response.ok) {
-      openIncidents = (await response.json()) as Array<{
-        agentId: number;
-        incidentId: string;
-      }>;
-    }
-  } catch (error) {
-    logger.warn("daemon", "Failed to fetch open incidents:", error);
-  }
-
-  // Update sync timestamp
   setMeta(DAEMON_SYNC_KEY, Date.now().toString());
 
   logger.info(
     "daemon",
-    `Daemon sync complete: ${totalChecks} checks, ${totalStats} stats, ${totalIncidents} incidents imported`,
+    `Daemon sync complete: ${checks.imported} checks, ${stats} stats, ${incidents} incidents imported`,
   );
 
-  // Push canonical agent list to daemon
   await pushAgentsToDaemon();
 
   return {
-    checksImported: totalChecks,
-    statsImported: totalStats,
-    incidentsImported: totalIncidents,
+    checksImported: checks.imported,
+    statsImported: stats,
+    incidentsImported: incidents,
     openIncidents,
   };
 }
