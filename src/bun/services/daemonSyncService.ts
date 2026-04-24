@@ -1,11 +1,5 @@
-import type {
-  Check,
-  DaemonSettings,
-  DaemonSyncResult,
-  DaemonTestResult,
-  HourlyStat,
-  IncidentEvent,
-} from "../../shared/types";
+import type { DaemonSyncResult, DaemonTestResult } from "../../shared/types";
+import { DaemonClient } from "./daemonClient";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertChecksBatch } from "../storage/sqlite/checksRepo";
@@ -15,37 +9,6 @@ import { readAgents } from "./agentService";
 import { logger } from "./loggerService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
-
-async function daemonFetch(
-  url: string,
-  secret: string,
-  path: string,
-  options?: RequestInit & { timeout?: number },
-): Promise<Response> {
-  const timeout = options?.timeout ?? 10000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(`${url}${path}`, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        ...options?.headers,
-        Authorization: `Bearer ${secret}`,
-        "Content-Type": "application/json",
-      },
-    });
-    return response;
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Daemon request timed out after ${timeout}ms`);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -71,13 +34,10 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
   }
 
   const settings = getDaemonSettings();
+  const client = new DaemonClient(settings.url, settings.secret);
 
   try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      "/health",
-    );
+    const response = await client.testConnection();
     if (!response.ok) {
       return { connected: false, error: `HTTP ${response.status}` };
     }
@@ -102,28 +62,11 @@ export async function pushAgentsToDaemon(): Promise<void> {
   }
 
   const settings = getDaemonSettings();
+  const client = new DaemonClient(settings.url, settings.secret);
 
   try {
     const agents = await readAgents();
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      "/agents",
-      {
-        method: "PUT",
-        body: JSON.stringify(agents),
-      },
-    );
-
-    if (!response.ok) {
-      logger.warn(
-        "daemon",
-        `Failed to push agents to daemon: HTTP ${response.status}`,
-      );
-      return;
-    }
-
-    const data = (await response.json()) as { updated: number };
+    const data = await client.pushAgents(agents);
     logger.info("daemon", `Pushed ${data.updated} agents to daemon`);
   } catch (error) {
     logger.warn("daemon", "Failed to push agents to daemon:", error);
@@ -135,7 +78,7 @@ export async function pushAgentsToDaemon(): Promise<void> {
  * Returns the number of checks imported and whether the daemon was reachable.
  */
 async function importChecks(
-  settings: DaemonSettings,
+  client: DaemonClient,
   lastSyncAt: number,
 ): Promise<{ imported: number; reachable: boolean }> {
   let cursor: number | null = lastSyncAt;
@@ -143,31 +86,11 @@ async function importChecks(
 
   while (cursor !== null) {
     try {
-      const response = await daemonFetch(
-        settings.url,
-        settings.secret,
-        `/checks?since=${cursor}&limit=1000`,
-      );
-      if (!response.ok) {
-        if (cursor === lastSyncAt) {
-          logger.warn("daemon", `Daemon unreachable: HTTP ${response.status}`);
-          return { imported: 0, reachable: false };
-        }
-        logger.warn(
-          "daemon",
-          `Failed to fetch checks page: HTTP ${response.status}`,
-        );
-        break;
+      const page = await client.fetchChecks(cursor);
+      if (page.data.length > 0) {
+        total += insertChecksBatch(page.data);
       }
-
-      const data = (await response.json()) as {
-        checks: Check[];
-        nextCursor: number | null;
-      };
-      if (data.checks.length > 0) {
-        total += insertChecksBatch(data.checks);
-      }
-      cursor = data.nextCursor;
+      cursor = page.nextCursor;
     } catch (error) {
       if (cursor === lastSyncAt) {
         logger.warn("daemon", "Daemon unreachable during sync:", error);
@@ -186,20 +109,11 @@ async function importChecks(
  * Returns the number of stats imported.
  */
 async function importStats(
-  settings: DaemonSettings,
+  client: DaemonClient,
   lastSyncAt: number,
 ): Promise<number> {
   try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      `/stats?since=${lastSyncAt}`,
-    );
-    if (!response.ok) {
-      logger.warn("daemon", `Failed to fetch stats: HTTP ${response.status}`);
-      return 0;
-    }
-    const statsData = (await response.json()) as HourlyStat[];
+    const statsData = await client.fetchStats(lastSyncAt);
     if (statsData.length > 0) {
       return upsertStatsBatch(statsData);
     }
@@ -214,23 +128,11 @@ async function importStats(
  * Returns the number of events imported.
  */
 async function importIncidentEvents(
-  settings: DaemonSettings,
+  client: DaemonClient,
   lastSyncAt: number,
 ): Promise<number> {
   try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      `/incident-events?since=${lastSyncAt}`,
-    );
-    if (!response.ok) {
-      logger.warn(
-        "daemon",
-        `Failed to fetch incident events: HTTP ${response.status}`,
-      );
-      return 0;
-    }
-    const incidentsData = (await response.json()) as IncidentEvent[];
+    const incidentsData = await client.fetchIncidentEvents(lastSyncAt);
     if (incidentsData.length > 0) {
       return insertEventsBatch(incidentsData);
     }
@@ -244,25 +146,10 @@ async function importIncidentEvents(
  * Fetch open incidents from daemon for linking.
  */
 async function fetchOpenIncidents(
-  settings: DaemonSettings,
+  client: DaemonClient,
 ): Promise<Array<{ agentId: number; incidentId: string }>> {
   try {
-    const response = await daemonFetch(
-      settings.url,
-      settings.secret,
-      "/open-incidents",
-    );
-    if (!response.ok) {
-      logger.warn(
-        "daemon",
-        `Failed to fetch open incidents: HTTP ${response.status}`,
-      );
-      return [];
-    }
-    return (await response.json()) as Array<{
-      agentId: number;
-      incidentId: string;
-    }>;
+    return await client.fetchOpenIncidents();
   } catch (error) {
     logger.warn("daemon", "Failed to fetch open incidents:", error);
     return [];
@@ -280,17 +167,18 @@ export async function sync(): Promise<DaemonSyncResult> {
   }
 
   const settings = getDaemonSettings();
+  const client = new DaemonClient(settings.url, settings.secret);
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
 
-  const checks = await importChecks(settings, lastSyncAt);
+  const checks = await importChecks(client, lastSyncAt);
   if (!checks.reachable) {
     throw new Error("Daemon unreachable");
   }
 
   const [stats, incidents, openIncidents] = await Promise.all([
-    importStats(settings, lastSyncAt),
-    importIncidentEvents(settings, lastSyncAt),
-    fetchOpenIncidents(settings),
+    importStats(client, lastSyncAt),
+    importIncidentEvents(client, lastSyncAt),
+    fetchOpenIncidents(client),
   ]);
 
   setMeta(DAEMON_SYNC_KEY, Date.now().toString());
