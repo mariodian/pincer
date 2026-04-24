@@ -149,9 +149,27 @@ export function buildAllSeriesGaps(
   return out;
 }
 
+/**
+ * Pads a numeric [min, max] extent by a ratio of the range, with a minimum
+ * fallback pad (used when range is zero or very small).
+ * Shared by computeYDomain and computeXDomain.
+ */
+function padNumericExtent(
+  min: number,
+  max: number,
+  ratio: number,
+  fallback: number,
+): [number, number] {
+  const range = max - min;
+  const pad = Math.max(range * ratio, fallback);
+  return [min - pad, max + pad];
+}
+
 export function computeYDomain(
   data: Record<string, unknown>[],
   series: ChartSeries[],
+  paddingRatio = 0.15,
+  fallback = 5,
 ): [number, number] {
   const values = data.flatMap((d) =>
     series
@@ -162,7 +180,7 @@ export function computeYDomain(
   const dataMin = values.length > 0 ? Math.min(...values) : 0;
   const dataMax = values.length > 0 ? Math.max(...values) : 100;
 
-  return [dataMin - 5, dataMax + 5];
+  return padNumericExtent(dataMin, dataMax, paddingRatio, fallback);
 }
 
 export function computeXDomain(
@@ -179,17 +197,17 @@ export function computeXDomain(
     return [new Date(now.getTime() - 86400000), now];
   }
 
-  const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const minMs = Math.min(...dates.map((d) => d.getTime()));
+  const maxMs = Math.max(...dates.map((d) => d.getTime()));
 
-  // Add padding on each side to prevent dots from being clipped at edges
-  const range = maxDate.getTime() - minDate.getTime();
-  const padding = range * paddingRatio || 3600000; // paddingRatio or 1 hour default
+  const [paddedMin, paddedMax] = padNumericExtent(
+    minMs,
+    maxMs,
+    paddingRatio,
+    3600000, // 1 hour fallback when all points share the same timestamp
+  );
 
-  return [
-    new Date(minDate.getTime() - padding),
-    new Date(maxDate.getTime() + padding),
-  ];
+  return [new Date(paddedMin), new Date(paddedMax)];
 }
 
 export function toFiniteNumberOrZero(value: unknown): number {
