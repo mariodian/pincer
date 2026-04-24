@@ -25,18 +25,18 @@ Pincer will appear in your system tray.
 
 ## 📋 Table of Contents
 
-- ⚡ [Quick Start](#quick-start)
-- 🤔 [Why Pincer?](#why-pincer)
-- ✨ [Features](#features)
-- 📥 [Installation](#installation)
-  - ✅ [Requirements](#requirements)
-- 🚀 [Usage](#usage)
-- 🔄 [Daemon](#daemon)
-- ⚠️ [Known Limitations](#known-limitations)
-- 🔧 [Troubleshooting](#troubleshooting)
-- 💬 [Contributing](#contributing)
-- 📜 [License](#license)
-- 📌 [Credits](#credits)
+- ⚡ [Quick Start](#-quick-start)
+- 🤔 [Why Pincer?](#-why-pincer)
+- ✨ [Features](#-features)
+- 📥 [Installation](#-installation)
+  - ✅ [Requirements](#-requirements)
+- 🚀 [Usage](#-usage)
+- 🔄 [Daemon](#-daemon)
+- ⚠️ [Known Limitations](#%EF%B8%8F-known-limitations)
+- 🔧 [Troubleshooting](#-troubleshooting)
+- 💬 [Contributing](#-contributing)
+- 📜 [License](#-license)
+- 📌 [Credits](#-credits)
 
 ## 🤔 Why Pincer?
 
