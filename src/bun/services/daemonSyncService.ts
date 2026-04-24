@@ -74,6 +74,25 @@ export async function pushAgentsToDaemon(): Promise<void> {
 }
 
 /**
+ * Generic daemon fetch + processor with error handling.
+ * Returns the processor result, or 0 on error.
+ */
+async function importFromDaemon<T>(
+  client: DaemonClient,
+  fetcher: (client: DaemonClient) => Promise<T[]>,
+  processor: (data: T[]) => number,
+  label: string,
+): Promise<number> {
+  try {
+    const data = await fetcher(client);
+    return data.length > 0 ? processor(data) : 0;
+  } catch (error) {
+    logger.warn("daemon", `Failed to fetch ${label}:`, error);
+    return 0;
+  }
+}
+
+/**
  * Import checks from daemon with pagination.
  * Returns the number of checks imported and whether the daemon was reachable.
  */
@@ -112,15 +131,12 @@ async function importStats(
   client: DaemonClient,
   lastSyncAt: number,
 ): Promise<number> {
-  try {
-    const statsData = await client.fetchStats(lastSyncAt);
-    if (statsData.length > 0) {
-      return upsertStatsBatch(statsData);
-    }
-  } catch (error) {
-    logger.warn("daemon", "Failed to fetch stats:", error);
-  }
-  return 0;
+  return importFromDaemon(
+    client,
+    (c) => c.fetchStats(lastSyncAt),
+    upsertStatsBatch,
+    "stats",
+  );
 }
 
 /**
@@ -131,15 +147,12 @@ async function importIncidentEvents(
   client: DaemonClient,
   lastSyncAt: number,
 ): Promise<number> {
-  try {
-    const incidentsData = await client.fetchIncidentEvents(lastSyncAt);
-    if (incidentsData.length > 0) {
-      return insertEventsBatch(incidentsData);
-    }
-  } catch (error) {
-    logger.warn("daemon", "Failed to fetch incident events:", error);
-  }
-  return 0;
+  return importFromDaemon(
+    client,
+    (c) => c.fetchIncidentEvents(lastSyncAt),
+    insertEventsBatch,
+    "incident events",
+  );
 }
 
 /**
