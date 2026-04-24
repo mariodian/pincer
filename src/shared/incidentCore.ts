@@ -408,6 +408,21 @@ export function createIncidentTracker(
     deps.log("debug", "All incident state cleared");
   }
 
+  /**
+   * Update thresholds without losing in-memory state.
+   */
+  function updateThresholds(
+    newFailureThreshold: number,
+    newRecoveryThreshold: number,
+  ): void {
+    config.failureThreshold = newFailureThreshold;
+    config.recoveryThreshold = newRecoveryThreshold;
+    deps.log(
+      "info",
+      `Thresholds updated: failure=${newFailureThreshold}, recovery=${newRecoveryThreshold}`,
+    );
+  }
+
   return {
     reconstructState,
     recordCheck,
@@ -416,5 +431,6 @@ export function createIncidentTracker(
     getOpenIncidentId,
     removeAgentState,
     clearState,
+    updateThresholds,
   };
 }

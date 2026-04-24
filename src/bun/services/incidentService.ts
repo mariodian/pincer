@@ -205,8 +205,8 @@ export function updateThresholds(
   failureThreshold = newFailureThreshold;
   recoveryThreshold = newRecoveryThreshold;
 
-  // Recreate tracker with new thresholds
-  tracker = createTracker();
+  // Update thresholds in-place without losing in-memory state
+  tracker.updateThresholds(newFailureThreshold, newRecoveryThreshold);
 
   logger.info(
     "incident",
