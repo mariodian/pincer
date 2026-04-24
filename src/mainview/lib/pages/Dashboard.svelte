@@ -203,9 +203,6 @@
         class={[
           "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
           "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
-          /* @TODO: remove when this is fixed in layerchart */
-          "[&_.lc-tooltip-container]:bg-background/85!",
-          "dark:[&_.lc-tooltip-container]:bg-background/95!",
         ]}
       >
         <MetricChart

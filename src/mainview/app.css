@@ -51,6 +51,11 @@
   --heatmap-4: var(--color-red-500);
   --heatmap-5: var(--color-red-700);
   --heatmap-empty: var(--muted);
+
+  /* Surface colors */
+  --color-surface-100: var(--background);
+  --color-surface-300: var(--popover);
+  --color-surface-content: var(--popover-foreground);
 }
 
 .dark {
@@ -101,6 +106,11 @@
   --heatmap-4: var(--color-red-600);
   --heatmap-5: var(--color-red-800);
   --heatmap-empty: var(--muted);
+
+  /* Surface colors */
+  --color-surface-100: var(--background);
+  --color-surface-300: var(--popover);
+  --color-surface-content: var(--popover-foreground);
 }
 
 @theme inline {
