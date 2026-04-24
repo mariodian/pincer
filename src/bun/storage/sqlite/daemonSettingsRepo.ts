@@ -2,6 +2,7 @@ import { getDatabase } from "./db";
 import { settingsDaemon } from "./schema";
 import { logger } from "../../services/loggerService";
 import type { DaemonSettings } from "../../../shared/types";
+import { setMeta } from "./appMetaRepo";
 
 export function getDaemonSettings(): DaemonSettings {
   const { db } = getDatabase();
@@ -29,4 +30,21 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
       .join(", ");
     logger.debug("daemon", `Daemon settings updated: ${changes}`);
   }
+}
+
+export function updateDaemonSettingsWithLifecycle(
+  partial: Partial<DaemonSettings>,
+): void {
+  if (partial.enabled === true) {
+    const current = getDaemonSettings();
+    if (!current.enabled) {
+      // Reset sync timestamp to prevent syncing duplicate data from the offline period
+      setMeta("daemon_last_sync", Date.now().toString());
+      logger.debug(
+        "daemon",
+        "Daemon enabled - reset sync timestamp to prevent duplicate data",
+      );
+    }
+  }
+  updateDaemonSettings(partial);
 }

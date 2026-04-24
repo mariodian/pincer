@@ -4,12 +4,11 @@ import type {
   DaemonTestResult,
 } from "../../shared/types";
 import { withErrorLogging, withErrorResult } from "./rpcHelpers";
-import { logger } from "../services/loggerService";
 import {
   getDaemonSettings as getDaemonSettingsFromDb,
-  updateDaemonSettings as updateDaemonSettingsToDb,
+  updateDaemonSettingsWithLifecycle as updateDaemonSettingsWithLifecycleToDb,
 } from "../storage/sqlite/daemonSettingsRepo";
-import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
+import { getMeta } from "../storage/sqlite/appMetaRepo";
 import { sync, testDaemonConnection } from "../services/daemonSyncService";
 
 export type DaemonSyncRPCType = {
@@ -41,20 +40,7 @@ export const daemonRequestHandlers = {
 
   updateDaemonSettings: (partial: Partial<DaemonSettings>) =>
     withErrorLogging("daemonRPC", async () => {
-      // Check if daemon is being enabled (transition from disabled to enabled)
-      if (partial.enabled === true) {
-        const currentSettings = getDaemonSettingsFromDb();
-        if (!currentSettings.enabled) {
-          // Daemon was disabled, now being enabled - reset sync timestamp
-          // to prevent syncing duplicate data from the offline period
-          setMeta("daemon_last_sync", Date.now().toString());
-          logger.debug(
-            "daemonRPC",
-            "Daemon enabled - reset sync timestamp to prevent duplicate data",
-          );
-        }
-      }
-      updateDaemonSettingsToDb(partial);
+      updateDaemonSettingsWithLifecycleToDb(partial);
     }),
 
   syncDaemon: () =>
