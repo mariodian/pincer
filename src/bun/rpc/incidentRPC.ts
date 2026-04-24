@@ -18,6 +18,7 @@ import {
   getEventsForTimeRange,
 } from "../storage/sqlite/incidentEventsRepo";
 import { readAgents } from "../services/agentService";
+import { withErrorLogging } from "./rpcHelpers";
 import { logger } from "../services/loggerService";
 import { getRangeTimestamps } from "../utils/time-range";
 import { getAgentColor } from "../../shared/agent-helpers";
@@ -72,14 +73,14 @@ export type IncidentRPCType = {
 };
 
 export const incidentRequestHandlers = {
-  getIncidentTimeline: async ({
+  getIncidentTimeline: ({
     agentId,
     range,
   }: {
     agentId?: number;
     range: TimeRange;
-  }): Promise<IncidentTimeline> => {
-    try {
+  }): Promise<IncidentTimeline> =>
+    withErrorLogging("incidentRPC", async () => {
       const { from, to } = getRangeTimestamps(range);
       const agents = await readAgents();
 
@@ -172,13 +173,9 @@ export const incidentRequestHandlers = {
       );
 
       return result;
-    } catch (error) {
-      logger.error("incidentRPC", "Failed to get incident timeline:", error);
-      throw error;
-    }
-  },
+    }),
 
-  getIncidentEvents: async ({
+  getIncidentEvents: ({
     agentId,
     from,
     to,
@@ -186,35 +183,27 @@ export const incidentRequestHandlers = {
     agentId?: number;
     from: number;
     to: number;
-  }): Promise<IncidentEvent[]> => {
-    try {
+  }): Promise<IncidentEvent[]> =>
+    withErrorLogging("incidentRPC", async () => {
       if (agentId !== undefined) {
         return getEventsForAgent(agentId, from, to);
       } else {
         return getEventsForTimeRange(from, to);
       }
-    } catch (error) {
-      logger.error("incidentRPC", "Failed to get incident events:", error);
-      throw error;
-    }
-  },
+    }),
 
-  getChecks: async ({
+  getChecks: ({
     agentId,
     since,
   }: {
     agentId?: number;
     since: number;
-  }): Promise<Check[]> => {
-    try {
+  }): Promise<Check[]> =>
+    withErrorLogging("incidentRPC", async () => {
       if (agentId !== undefined) {
         return getRecentChecks(agentId, since);
       } else {
         return getAllChecks(since);
       }
-    } catch (error) {
-      logger.error("incidentRPC", "Failed to get checks:", error);
-      throw error;
-    }
-  },
+    }),
 };

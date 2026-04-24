@@ -3,6 +3,7 @@ import type {
   DaemonSyncResult,
   DaemonTestResult,
 } from "../../shared/types";
+import { withErrorLogging, withErrorResult } from "./rpcHelpers";
 import { logger } from "../services/loggerService";
 import {
   getDaemonSettings as getDaemonSettingsFromDb,
@@ -35,17 +36,11 @@ export type DaemonSyncRPCType = {
 };
 
 export const daemonRequestHandlers = {
-  getDaemonSettings: async () => {
-    try {
-      return getDaemonSettingsFromDb();
-    } catch (error) {
-      logger.error("daemonRPC", "Failed to get daemon settings:", error);
-      throw error;
-    }
-  },
+  getDaemonSettings: () =>
+    withErrorLogging("daemonRPC", async () => getDaemonSettingsFromDb()),
 
-  updateDaemonSettings: async (partial: Partial<DaemonSettings>) => {
-    try {
+  updateDaemonSettings: (partial: Partial<DaemonSettings>) =>
+    withErrorLogging("daemonRPC", async () => {
       // Check if daemon is being enabled (transition from disabled to enabled)
       if (partial.enabled === true) {
         const currentSettings = getDaemonSettingsFromDb();
@@ -60,37 +55,29 @@ export const daemonRequestHandlers = {
         }
       }
       updateDaemonSettingsToDb(partial);
-    } catch (error) {
-      logger.error("daemonRPC", "Failed to update daemon settings:", error);
-      throw error;
-    }
-  },
+    }),
 
-  syncDaemon: async () => {
-    try {
-      return await sync();
-    } catch (error) {
-      logger.error("daemonRPC", "Daemon sync failed:", error);
-      return { checksImported: 0, statsImported: 0, incidentsImported: 0 };
-    }
-  },
+  syncDaemon: () =>
+    withErrorResult("daemonRPC", () => sync(), {
+      checksImported: 0,
+      statsImported: 0,
+      incidentsImported: 0,
+      openIncidents: [],
+    }),
 
-  testDaemonConnection: async () => {
-    try {
-      return await testDaemonConnection();
-    } catch (error) {
-      logger.error("daemonRPC", "Daemon connection test failed:", error);
-      return { connected: false, error: String(error) };
-    }
-  },
+  testDaemonConnection: () =>
+    withErrorResult("daemonRPC", () => testDaemonConnection(), {
+      connected: false,
+      error: "Connection test failed",
+    }),
 
-  getLastDaemonSync: async () => {
-    try {
-      const value = getMeta("daemon_last_sync");
-      return value ? parseInt(value, 10) : null;
-    } catch (error) {
-      logger.error("daemonRPC", "Failed to get last daemon sync:", error);
-      return null;
-    }
-  },
+  getLastDaemonSync: () =>
+    withErrorResult(
+      "daemonRPC",
+      async () => {
+        const value = getMeta("daemon_last_sync");
+        return value ? parseInt(value, 10) : null;
+      },
+      null,
+    ),
 };
