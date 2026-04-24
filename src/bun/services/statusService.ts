@@ -35,8 +35,79 @@ globalForHMR.__pincerStatusPollingActive = false;
 // Daemon connection state
 let daemonConnected = false;
 let incidentServiceInitialized = false;
+let lastOpenIncidents: Array<{ agentId: number; incidentId: string }> = [];
 
 const FIRST_POLL_MARKER = "__FIRST_POLL__";
+
+/**
+ * PollMode interface for strategy pattern.
+ * Separates daemon vs local polling logic into swappable strategies.
+ */
+interface PollMode {
+  name: "daemon" | "local";
+  execute(): Promise<{ success: boolean; fallbackTo?: "local" }>;
+  onEnter(
+    reason:
+      | "initial"
+      | "daemon-connected"
+      | "daemon-disconnected"
+      | "daemon-disabled",
+  ): void;
+}
+
+/**
+ * DaemonMode: syncs from daemon and processes synced data.
+ * Falls back to local mode if sync fails.
+ */
+const daemonMode: PollMode = {
+  name: "daemon",
+  async execute() {
+    const result = await daemonSync();
+
+    if (result.success) {
+      lastOpenIncidents = result.openIncidents;
+      await processSyncedData();
+      return { success: true };
+    }
+
+    return { success: false, fallbackTo: "local" };
+  },
+  onEnter(reason) {
+    if (reason === "daemon-connected") {
+      logger.info("status", "Daemon connected - switching to synced data mode");
+      if (incidentServiceInitialized) {
+        switchToDaemonMode(lastOpenIncidents);
+      }
+      incidentServiceInitialized = false;
+    }
+  },
+};
+
+/**
+ * LocalMode: initializes incident service and polls locally.
+ */
+const localMode: PollMode = {
+  name: "local",
+  async execute() {
+    if (!incidentServiceInitialized) {
+      initIncidentService();
+      await reconstructIncidentState();
+      incidentServiceInitialized = true;
+    }
+    await refreshAndPush();
+    return { success: true };
+  },
+  onEnter(reason) {
+    if (reason === "daemon-disconnected") {
+      logger.warn(
+        "status",
+        "Daemon sync failed - falling back to local polling",
+      );
+    } else if (reason === "daemon-disabled") {
+      logger.info("status", "Daemon disabled - switching to local polling");
+    }
+  },
+};
 
 /**
  * agentBaseline tracks each agent's status at the PREVIOUS poll.
@@ -384,69 +455,27 @@ async function startStatusUpdates() {
   const poll = async () => {
     logger.debug("status", "Starting poll cycle...");
 
-    // Check if daemon is configured
     if (isDaemonConfigured()) {
-      // Daemon is configured - try to sync from it
-      const wasConnected = daemonConnected;
-      const result = await daemonSync();
+      const result = await daemonMode.execute();
 
       if (result.success) {
-        // Daemon sync succeeded (even with 0 checks - daemon may have no new data)
-        if (!wasConnected) {
-          // Transitioning from local mode to daemon mode
-          logger.info(
-            "status",
-            "Daemon connected - switching to synced data mode",
-          );
-          // Only link-and-close local incidents if we actually did local polling
-          if (incidentServiceInitialized) {
-            switchToDaemonMode(result.openIncidents);
-          }
-          // Reset flag so we re-initialize if we switch back to local mode
-          incidentServiceInitialized = false;
+        if (!daemonConnected) {
+          daemonMode.onEnter("daemon-connected");
         }
         daemonConnected = true;
-
-        // Process synced data for notifications
-        await processSyncedData();
       } else {
-        // Daemon sync failed - fall back to local polling
-        if (wasConnected) {
-          // Transitioning from daemon mode to local mode
-          logger.warn(
-            "status",
-            "Daemon sync failed - falling back to local polling",
-          );
-          daemonConnected = false;
+        if (daemonConnected) {
+          localMode.onEnter("daemon-disconnected");
         }
-
-        // Initialize incident service if not already initialized (first poll or after daemon disconnect)
-        if (!incidentServiceInitialized) {
-          initIncidentService();
-          await reconstructIncidentState();
-          incidentServiceInitialized = true;
-        }
-
-        // Perform local polling
-        await refreshAndPush();
+        daemonConnected = false;
+        await localMode.execute();
       }
     } else {
-      // Daemon not configured - use local polling
       if (daemonConnected) {
-        // Transitioning from daemon mode to local mode
-        logger.info("status", "Daemon disabled - switching to local polling");
-        daemonConnected = false;
+        localMode.onEnter("daemon-disabled");
       }
-
-      // Initialize incident service on first poll (or after transitioning from daemon mode)
-      if (!incidentServiceInitialized) {
-        initIncidentService();
-        await reconstructIncidentState();
-        incidentServiceInitialized = true;
-      }
-
-      // Perform local polling
-      await refreshAndPush();
+      daemonConnected = false;
+      await localMode.execute();
     }
 
     // Schedule next poll after this one completes
