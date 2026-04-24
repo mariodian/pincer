@@ -19,17 +19,31 @@ async function daemonFetch(
   url: string,
   secret: string,
   path: string,
-  options?: RequestInit,
+  options?: RequestInit & { timeout?: number },
 ): Promise<Response> {
-  const response = await fetch(`${url}${path}`, {
-    ...options,
-    headers: {
-      ...options?.headers,
-      Authorization: `Bearer ${secret}`,
-      "Content-Type": "application/json",
-    },
-  });
-  return response;
+  const timeout = options?.timeout ?? 10000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(`${url}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...options?.headers,
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Daemon request timed out after ${timeout}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function formatUptime(seconds: number): string {

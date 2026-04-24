@@ -54,5 +54,3 @@ export function buildHandedOffIncidentsQuery(): SQL {
     )
   `;
 }
-
-
