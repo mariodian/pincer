@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Circle } from "layerchart";
   import {
     buildLinePointProps,
     getSeriesOpacity,
     type ChartSeries,
   } from "$lib/utils/chart.js";
+  import { Circle } from "layerchart";
 
   interface Props {
     series: ChartSeries;
@@ -41,7 +41,7 @@
     r={pointProps.r}
     fill={series.color}
     stroke={pointProps.stroke}
-    stroke-width={pointProps.strokeWidth}
+    strokeWidth={pointProps.strokeWidth}
     opacity={getSeriesOpacity(highlightKey, series.key)}
   />
 {/each}

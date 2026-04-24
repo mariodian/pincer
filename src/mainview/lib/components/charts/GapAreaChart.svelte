@@ -122,7 +122,7 @@
   brush
   props={{
     highlight: {
-      points: buildLineHighlightPointProps(strokeWidth, "var(--background)"),
+      points: buildLineHighlightPointProps(strokeWidth, "var(--card)"),
     },
     area: {
       line: {

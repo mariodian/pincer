@@ -16,8 +16,8 @@
     LineChart,
     Path,
   } from "layerchart";
-  import SeriesDot from "./SeriesDot.svelte";
   import LineSpline from "./LineSpline.svelte";
+  import SeriesDot from "./SeriesDot.svelte";
 
   const DEFAULT_PADDING = 24;
 
@@ -145,7 +145,7 @@
   brush
   props={{
     highlight: {
-      points: buildLineHighlightPointProps(strokeWidth, "var(--background)"),
+      points: buildLineHighlightPointProps(strokeWidth, "var(--card)"),
     },
     spline: {
       strokeWidth,
