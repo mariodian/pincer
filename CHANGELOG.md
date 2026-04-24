@@ -5,6 +5,27 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.4] - 2026-04-24
+
+### Added
+
+- Added linked incident support so related incidents can be connected in incident events.
+- Added shared logging and database utilities used across desktop and daemon runtimes.
+- Added daemon lifecycle handling improvements for enabling/disabling daemon mode and syncing state transitions.
+
+### Changed
+
+- Updated daemon synchronization architecture with a dedicated daemon client, polling-mode strategy, and more resilient import flow.
+- Updated incident timeline processing to use pre-aggregated buckets and optimized reconstruction for better performance at 24h/7d scales.
+- Updated LayerChart integration and dashboard styling with refined tooltip, surface-color, and chart domain behavior.
+- Updated release and daemon tooling to package daemon artifacts from the root workflow and keep version resolution centralized.
+
+### Fixed
+
+- Fixed daemon sync reliability around connectivity timeouts, disconnect handling, and sync-state recovery.
+- Fixed incident lifecycle edge cases when switching polling modes and when reconstructing open incidents.
+- Fixed in-memory threshold and status-state handling to preserve runtime consistency during configuration updates.
+
 ## [v0.3.4-dev.1] - 2026-04-21
 
 ### Added
