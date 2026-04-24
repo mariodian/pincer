@@ -118,6 +118,8 @@ export interface HourlyStat {
 
 // Results from daemon sync operation
 export interface DaemonSyncResult {
+  success: boolean;
+  error?: string;
   checksImported: number;
   statsImported: number;
   incidentsImported: number;

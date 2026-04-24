@@ -172,6 +172,7 @@ async function fetchOpenIncidents(
 export async function sync(): Promise<DaemonSyncResult> {
   if (!isDaemonConfigured()) {
     return {
+      success: true,
       checksImported: 0,
       statsImported: 0,
       incidentsImported: 0,
@@ -185,7 +186,14 @@ export async function sync(): Promise<DaemonSyncResult> {
 
   const checks = await importChecks(client, lastSyncAt);
   if (!checks.reachable) {
-    throw new Error("Daemon unreachable");
+    return {
+      success: false,
+      error: "Daemon unreachable",
+      checksImported: 0,
+      statsImported: 0,
+      incidentsImported: 0,
+      openIncidents: [],
+    };
   }
 
   const [stats, incidents, openIncidents] = await Promise.all([
@@ -204,6 +212,7 @@ export async function sync(): Promise<DaemonSyncResult> {
   await pushAgentsToDaemon();
 
   return {
+    success: true,
     checksImported: checks.imported,
     statsImported: stats,
     incidentsImported: incidents,

@@ -387,10 +387,10 @@ async function startStatusUpdates() {
     // Check if daemon is configured
     if (isDaemonConfigured()) {
       // Daemon is configured - try to sync from it
-      try {
-        const wasConnected = daemonConnected;
-        const result = await daemonSync();
+      const wasConnected = daemonConnected;
+      const result = await daemonSync();
 
+      if (result.success) {
         // Daemon sync succeeded (even with 0 checks - daemon may have no new data)
         if (!wasConnected) {
           // Transitioning from local mode to daemon mode
@@ -409,9 +409,8 @@ async function startStatusUpdates() {
 
         // Process synced data for notifications
         await processSyncedData();
-      } catch (error) {
+      } else {
         // Daemon sync failed - fall back to local polling
-        const wasConnected = daemonConnected;
         if (wasConnected) {
           // Transitioning from daemon mode to local mode
           logger.warn(

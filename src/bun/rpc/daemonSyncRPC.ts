@@ -59,6 +59,8 @@ export const daemonRequestHandlers = {
 
   syncDaemon: () =>
     withErrorResult("daemonRPC", () => sync(), {
+      success: false,
+      error: "Sync failed",
       checksImported: 0,
       statsImported: 0,
       incidentsImported: 0,
