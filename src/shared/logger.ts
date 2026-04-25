@@ -11,7 +11,15 @@ import {
 } from "node:fs";
 import { dirname } from "node:path";
 
-type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = "debug" | "info" | "warn" | "error";
+
+/**
+ * Get the default log level for a given channel.
+ * dev: debug, canary/stable: info
+ */
+export function getDefaultLogLevel(channel: string): LogLevel {
+  return channel === "dev" ? "debug" : "info";
+}
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -135,16 +143,9 @@ function log(
  * Call this once at application startup.
  */
 export function initLogger(userConfig: LoggerConfig): void {
-  // Check for LOG_LEVEL env var override
-  const envLevel = process.env.LOG_LEVEL as LogLevel | undefined;
-  const effectiveLevel =
-    envLevel && envLevel in LOG_LEVELS
-      ? envLevel
-      : (userConfig.minLevel ?? "info");
-
   config = {
     ...userConfig,
-    minLevel: effectiveLevel,
+    minLevel: userConfig.minLevel ?? "info",
   };
 
   // Ensure log directory exists if file logging is enabled

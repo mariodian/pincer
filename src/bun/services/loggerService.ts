@@ -10,8 +10,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { getMainWindow } from "../rpc/windowRegistry";
-
-type LogLevel = "debug" | "info" | "warn" | "error";
+import { type LogLevel, getDefaultLogLevel } from "../../shared/logger";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -152,25 +151,25 @@ export async function initLogger(): Promise<void> {
   channel = await Updater.localInfo.channel();
 
   // Read env var overrides
-  const envLevel = process.env.LOG_LEVEL as LogLevel | undefined;
+  const envLevel = process.env.LOG_LEVEL?.toLowerCase() as
+    | LogLevel
+    | undefined;
   const envFileLogging = process.env.LOG_TO_FILE;
 
-  // Determine minimum log level
+  // Determine minimum log level (dev=debug, canary/stable=info)
   if (envLevel && envLevel in LOG_LEVELS) {
     minLevel = envLevel;
-  } else if (channel === "dev") {
-    minLevel = "debug";
   } else {
-    minLevel = "debug"; // file gets everything in stable/canary
+    minLevel = getDefaultLogLevel(channel ?? "stable");
   }
 
-  // Determine file logging
+  // Determine file logging: dev/canary default on, stable default off
   if (envFileLogging === "true") {
     fileLoggingEnabled = true;
   } else if (envFileLogging === "false") {
     fileLoggingEnabled = false;
-  } else if (channel !== "dev") {
-    fileLoggingEnabled = true; // stable/canary default: on
+  } else if (channel === "dev" || channel === "canary") {
+    fileLoggingEnabled = true;
   }
 
   // Set up log file path

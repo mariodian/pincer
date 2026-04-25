@@ -1,7 +1,7 @@
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
 import { appConfig, daemonConfig } from "../src/shared/appConfig";
-import { initLogger } from "../src/shared/logger";
+import { initLogger, type LogLevel, getDefaultLogLevel } from "../src/shared/logger";
 
 function parseBooleanEnv(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -83,7 +83,6 @@ const daemonChannel = channelResolution.channel;
 const channelDataDir = join(appDataDir, daemonChannel);
 const defaultLogFilePath =
   process.env.LOG_FILE_PATH || join(channelDataDir, "logs", "daemon.log");
-const isDevelopment = process.env.NODE_ENV !== "production";
 const fileLoggingOverride = parseBooleanEnv(process.env.DAEMON_FILE_LOGGING);
 
 if (
@@ -96,10 +95,13 @@ if (
   );
 }
 
-const daemonLogLevel =
-  (process.env.DAEMON_LOG_LEVEL as "debug" | "info" | "warn" | "error") ||
-  (process.env.LOG_LEVEL as "debug" | "info" | "warn" | "error") ||
-  "info";
+const daemonLogLevel: LogLevel =
+  (process.env.DAEMON_LOG_LEVEL?.toLowerCase() as LogLevel | undefined) ||
+  (process.env.LOG_LEVEL?.toLowerCase() as LogLevel | undefined) ||
+  getDefaultLogLevel(daemonChannel);
+
+// File logging: dev/canary default on, stable default off
+const defaultFileLogging = daemonChannel === "dev" || daemonChannel === "canary";
 
 export const config = {
   channel: daemonChannel,
@@ -109,7 +111,7 @@ export const config = {
   dbPath: process.env.DB_PATH || join(channelDataDir, "daemon.db"),
   pollingIntervalMs: parseInt(process.env.POLLING_INTERVAL_MS || "15000", 10),
   logFilePath: defaultLogFilePath,
-  fileLoggingEnabled: fileLoggingOverride ?? isDevelopment,
+  fileLoggingEnabled: fileLoggingOverride ?? defaultFileLogging,
   logLevel: daemonLogLevel,
 };
 
