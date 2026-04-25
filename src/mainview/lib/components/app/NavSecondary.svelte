@@ -52,13 +52,8 @@
     items: { title: string; url: string; icon: IconName }[];
   } & WithoutChildren<ComponentProps<typeof Sidebar.Group>> = $props();
 
-  // Disable sidebar trigger when window is too small
-  window.addEventListener("resize", () => {
-    if (sidebar.isMobile) {
-      shouldDisableSidebarTrigger = true;
-    } else {
-      shouldDisableSidebarTrigger = false;
-    }
+  $effect(() => {
+    shouldDisableSidebarTrigger = sidebar.isMobile;
   });
 </script>
 
