@@ -493,8 +493,10 @@ export async function beginStatusUpdates() {
     return;
   }
 
-  // HMR protection: Check if another instance is already polling
-  if (globalForHMR.__pincerStatusPollingActive) {
+  // HMR protection: only skip if there's actually an active polling interval
+  // The flag alone is insufficient — HMR may have cleared the old interval
+  // while the flag remains true from a previous module instance
+  if (globalForHMR.__pincerStatusPollingActive && statusUpdateInterval) {
     logger.warn(
       "status",
       "Polling already active (HMR), skipping duplicate start",
