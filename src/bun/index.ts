@@ -60,6 +60,32 @@ function validateWindowBounds(bounds: WindowBounds): WindowBounds | null {
   return null;
 }
 
+/**
+ * Calculate centered window bounds on the primary display.
+ * Returns coordinates and dimensions for centering the main window.
+ */
+function centerOnPrimaryDisplay(): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const primaryDisplay = Screen.getPrimaryDisplay();
+  const width = MAIN_WINDOW.width;
+  const height = MAIN_WINDOW.height;
+
+  return {
+    x: Math.round(
+      primaryDisplay.bounds.x + (primaryDisplay.bounds.width - width) / 2,
+    ),
+    y: Math.round(
+      primaryDisplay.bounds.y + (primaryDisplay.bounds.height - height) / 2,
+    ),
+    width,
+    height,
+  };
+}
+
 declare global {
   interface Window {
     platform: string;
@@ -153,31 +179,20 @@ export async function createMainWindow(): Promise<BrowserWindow> {
       );
     } else {
       // Bounds are off-screen, reset to center
-      const primaryDisplay = Screen.getPrimaryDisplay();
-      windowWidth = MAIN_WINDOW.width;
-      windowHeight = MAIN_WINDOW.height;
-      windowX = Math.round(
-        primaryDisplay.bounds.x +
-          (primaryDisplay.bounds.width - windowWidth) / 2,
-      );
-      windowY = Math.round(
-        primaryDisplay.bounds.y +
-          (primaryDisplay.bounds.height - windowHeight) / 2,
-      );
+      const centered = centerOnPrimaryDisplay();
+      windowX = centered.x;
+      windowY = centered.y;
+      windowWidth = centered.width;
+      windowHeight = centered.height;
       logger.debug("app", "Window bounds off-screen, resetting to center");
     }
   } else {
     // No saved bounds, center on primary display
-    const primaryDisplay = Screen.getPrimaryDisplay();
-    windowWidth = MAIN_WINDOW.width;
-    windowHeight = MAIN_WINDOW.height;
-    windowX = Math.round(
-      primaryDisplay.bounds.x + (primaryDisplay.bounds.width - windowWidth) / 2,
-    );
-    windowY = Math.round(
-      primaryDisplay.bounds.y +
-        (primaryDisplay.bounds.height - windowHeight) / 2,
-    );
+    const centered = centerOnPrimaryDisplay();
+    windowX = centered.x;
+    windowY = centered.y;
+    windowWidth = centered.width;
+    windowHeight = centered.height;
   }
 
   const mainWindow = new BrowserWindow({
