@@ -98,6 +98,9 @@ jobs:
 
           cp "$notes_file" /tmp/release_notes.md
 
+          # Remove the leading # vX.X.X heading — GitHub renders its own title
+          sed -i '1{/^# v[0-9]/d}' /tmp/release_notes.md
+
           prev_version=$(awk -v v="$version" '
             BEGIN { found=0 }
             {
