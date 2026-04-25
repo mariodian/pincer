@@ -26,40 +26,14 @@ jobs:
         run: |
           version="${{ steps.release.outputs.version }}"
           pattern="stable-macos-arm64-Pincer.dmg"
-          max_attempts=6
-          wait_seconds=10
 
-          for attempt in $(seq 1 $max_attempts); do
-            echo "Attempt $attempt/$max_attempts: downloading $pattern..."
-            rm -rf /tmp/assets && mkdir -p /tmp/assets
-
-            if gh release download "$version" \
-                --repo "${{ github.repository }}" \
-                --pattern "$pattern" \
-                --dir /tmp/assets 2>/tmp/gh_err; then
-              break
-            fi
-
-            if [ $attempt -eq $max_attempts ]; then
-              echo "Failed to download release asset after $max_attempts attempts:" >&2
-              cat /tmp/gh_err >&2
-              exit 1
-            fi
-
-            sleep $((wait_seconds * attempt))
-          done
+          gh release download "$version" \
+            --repo "${{ github.repository }}" \
+            --pattern "$pattern" \
+            --dir /tmp/assets
 
           file="/tmp/assets/$pattern"
-          if [ ! -f "$file" ]; then
-            echo "Download succeeded but file not found: $file" >&2
-            exit 1
-          fi
-
           sha256=$(sha256sum "$file" | awk '{print $1}')
-          if [ "${#sha256}" -ne 64 ]; then
-            echo "Invalid SHA256 length (${#sha256} chars): $sha256" >&2
-            exit 1
-          fi
 
           echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
 
@@ -71,43 +45,44 @@ jobs:
           version_bare="${{ steps.release.outputs.version_bare }}"
           sha256="${{ steps.sha.outputs.sha256 }}"
 
+          # Clone the tap repo
           git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/mariodian/homebrew-tap.git" /tmp/tap
           cd /tmp/tap
 
           mkdir -p Casks
 
-          cat > Casks/pincer.rb << CASK_EOF
-cask "pincer" do
-  version "${version_bare}"
-  sha256 "${sha256}"
+          # Write the updated cask formula
+          cat > Casks/pincer.rb << 'CASK_EOF'
+          cask "pincer" do
+            version "VERSION_PLACEHOLDER"
+            sha256 "SHA256_PLACEHOLDER"
 
-  url "https://github.com/mariodian/pincer/releases/download/v#{version}/stable-macos-arm64-Pincer.dmg"
-  name "Pincer"
-  desc "Desktop monitoring for local AI agents"
-  homepage "https://github.com/mariodian/pincer"
+            url "https://github.com/mariodian/pincer/releases/download/v#{version}/stable-macos-arm64-Pincer.dmg"
+            name "Pincer"
+            desc "Desktop monitoring for local AI agents"
+            homepage "https://github.com/mariodian/pincer"
 
-  auto_updates true
-  depends_on arch: :arm64
+            depends_on arch: :arm64
 
-  app "Pincer.app"
+            app "Pincer.app"
 
-  uninstall quit: "com.mariodian.pincer"
+            uninstall quit: "com.mariodian.pincer"
 
-  zap trash: [
-    "~/Library/Application Support/com.mariodian.pincer",
-    "~/Library/Caches/com.mariodian.pincer",
-  ]
-end
-CASK_EOF
+            zap trash: [
+              "~/Library/Application Support/com.mariodian.pincer",
+              "~/Library/Caches/com.mariodian.pincer",
+            ]
+          end
+          CASK_EOF
 
+
+          # Replace placeholders with actual values
+          sed -i "s/VERSION_PLACEHOLDER/$version_bare/" Casks/pincer.rb
+          sed -i "s/SHA256_PLACEHOLDER/$sha256/" Casks/pincer.rb
+
+          # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/pincer.rb
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit. Tap is already up to date."
-            exit 0
-          fi
-
           git commit -m "Update pincer to $version"
           git push
