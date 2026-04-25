@@ -209,8 +209,6 @@ export async function sync(): Promise<DaemonSyncResult> {
     `Daemon sync complete: ${checks.imported} checks, ${stats} stats, ${incidents} incidents imported`,
   );
 
-  await pushAgentsToDaemon();
-
   return {
     success: true,
     checksImported: checks.imported,

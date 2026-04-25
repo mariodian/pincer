@@ -4,7 +4,11 @@ import type { AgentStatusInfo } from "../../shared/types";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { checkAllAgentsStatus, readAgents } from "./agentService";
-import { sync as daemonSync, isDaemonConfigured } from "./daemonSyncService";
+import {
+  sync as daemonSync,
+  isDaemonConfigured,
+  pushAgentsToDaemon,
+} from "./daemonSyncService";
 import { logger } from "./loggerService";
 import { getStatusSyncService } from "./statusSyncService";
 import {
@@ -36,6 +40,7 @@ globalForHMR.__pincerStatusPollingActive = false;
 let daemonConnected = false;
 let incidentServiceInitialized = false;
 let lastOpenIncidents: Array<{ agentId: number; incidentId: string }> = [];
+let agentsPushedOnStartup = false;
 
 const FIRST_POLL_MARKER = "__FIRST_POLL__";
 
@@ -75,6 +80,12 @@ const daemonMode: PollMode = {
   onEnter(reason) {
     if (reason === "daemon-connected") {
       logger.info("status", "Daemon connected - switching to synced data mode");
+      // Push agents to daemon on reconnect (skip if already pushed on startup)
+      if (!agentsPushedOnStartup) {
+        agentsPushedOnStartup = true;
+      } else {
+        void pushAgentsToDaemon();
+      }
       if (incidentServiceInitialized) {
         switchToDaemonMode(lastOpenIncidents);
       }

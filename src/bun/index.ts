@@ -15,6 +15,7 @@ import {
 } from "./rpc/systemRPC";
 import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
+import { pushAgentsToDaemon } from "./services/daemonSyncService";
 import { initLogger, logger } from "./services/loggerService";
 import {
   beginStatusUpdates,
@@ -258,6 +259,9 @@ logger.info("app", "Logger initialized");
 // Initialize database before any other operations
 await initDatabase();
 logger.info("app", "Database initialized");
+
+// Push agents to daemon on app startup (only needed once, not every poll)
+void pushAgentsToDaemon();
 
 // Apply autostart setting on startup
 void applyAutostartSetting(getSettings().launchAtLogin);
