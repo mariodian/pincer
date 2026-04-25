@@ -1,12 +1,12 @@
-import { logger } from "../src/shared/logger";
-import type { Agent, CheckStatus } from "../src/shared/types";
 import { sql } from "drizzle-orm";
+import { executeHealthCheck } from "../src/shared/agentHealthCheck";
+import { logger } from "../src/shared/logger";
 import { truncateToHour } from "../src/shared/time-utils";
+import type { Agent, CheckStatus } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
-import { agents, checks, stats } from "./schema";
 import { recordCheck as recordIncidentCheck } from "./incidents";
-import { executeHealthCheck } from "../src/shared/agentHealthCheck";
+import { agents, checks, stats } from "./schema";
 
 const MAX_CONCURRENT_CHECKS = 10;
 
@@ -97,7 +97,7 @@ async function runPoll(): Promise<void> {
       .run();
   }
 
-  logger.info("poll", `Poll complete: ${validResults.length} checks recorded`);
+  logger.debug("poll", `Poll complete: ${validResults.length} checks recorded`);
 }
 
 let pollInterval: Timer | null = null;
