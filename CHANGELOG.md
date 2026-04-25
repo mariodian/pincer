@@ -5,6 +5,30 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.5] - 2026-04-25
+
+### Added
+
+- Added Homebrew installation detection and displayed Homebrew-specific update instructions in Settings > About.
+
+### Changed
+
+- Consolidated platform-specific tray logic into the tray manager for cleaner cross-platform behavior.
+- Extracted `centerOnPrimaryDisplay` helper to simplify window positioning code.
+- Extracted notification message builder to streamline notification formatting.
+- Set log level dynamically from the app channel instead of a fixed default.
+- Wrapped RPC handlers with `withErrorLogging` for consistent error logging across endpoints.
+- Enhanced HMR protection in status polling by checking the active interval before restarting.
+- Optimized daemon synchronization by pushing agent configurations on app startup and reconnect.
+- Refactored update check logic into a dedicated `checkAndCacheUpdate` helper.
+- Updated Prettier to 3.8.3.
+
+### Fixed
+
+- Corrected log level for poll completion messages to reduce noisy debug output.
+- Added a warning when polling starts with no enabled agents to surface configuration issues earlier.
+- Fixed README table of contents link formatting.
+
 ## [v0.3.4] - 2026-04-24
 
 ### Added
