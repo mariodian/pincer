@@ -23,7 +23,6 @@ import { getAdvancedSettings } from "./storage/sqlite/advancedSettingsRepo";
 import { getSettings } from "./storage/sqlite/settingsRepo";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
-import { isBSD, isLinux, isMacOS, isWindows } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import type { PopoverWindowConfig } from "./utils/windowConfig";
 import { POPOVER_CONFIGS, readWindowConfig } from "./utils/windowConfig";
@@ -31,20 +30,36 @@ import { POPOVER_CONFIGS, readWindowConfig } from "./utils/windowConfig";
 // Re-export for backward compat with setRefreshCallback in this file
 export { refreshAndPush };
 
-const platformIsMacOS = isMacOS();
-const platformIsWindows = isWindows();
-const platformIsLinux = isLinux();
-const platformIsBSD = isBSD();
+/**
+ * Platform-specific configuration for tray and popover behavior.
+ * BSD (freebsd/openbsd) falls through to Linux config via the ?? fallback below.
+ */
+const PLATFORM_CONFIG = {
+  darwin: {
+    popoverConfig: POPOVER_CONFIGS.macos,
+    iconPath: TRAY_ICON_PATH,
+    iconSize: TRAY_ICON_SIZE,
+    forceNativeMenu: false,
+  },
+  win32: {
+    popoverConfig: POPOVER_CONFIGS.windows,
+    iconPath: TRAY_ICON_PATH,
+    iconSize: TRAY_ICON_SIZE_WINDOWS,
+    forceNativeMenu: false,
+  },
+  linux: {
+    popoverConfig: POPOVER_CONFIGS.linux,
+    iconPath: TRAY_ICON_LINUX_PATH,
+    iconSize: TRAY_ICON_SIZE,
+    forceNativeMenu: true,
+  },
+} as const;
+
+const platformConfig = PLATFORM_CONFIG[process.platform as keyof typeof PLATFORM_CONFIG] ?? PLATFORM_CONFIG.linux;
 
 /** Get platform-specific popover window configuration */
 function getPopoverWindowConfig(): PopoverWindowConfig {
-  if (platformIsMacOS) {
-    return POPOVER_CONFIGS.macos;
-  }
-  if (platformIsWindows) {
-    return POPOVER_CONFIGS.windows;
-  }
-  return POPOVER_CONFIGS.linux;
+  return platformConfig.popoverConfig;
 }
 
 /** Check if native menu should be used based on advanced settings.
@@ -52,10 +67,7 @@ function getPopoverWindowConfig(): PopoverWindowConfig {
  *  (tray icon click events are not supported).
  */
 function useNativeMenu(): boolean {
-  // Force native menu on Linux - tray click events don't work with libayatana-appindicator
-  if (platformIsLinux) {
-    return true;
-  }
+  if (platformConfig.forceNativeMenu) return true;
   return getAdvancedSettings().useNativeTray;
 }
 
@@ -91,9 +103,8 @@ const NAV_MENU_ITEMS = [
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
-const iconSize = platformIsWindows ? TRAY_ICON_SIZE_WINDOWS : TRAY_ICON_SIZE;
-const iconPath =
-  platformIsLinux || platformIsBSD ? TRAY_ICON_LINUX_PATH : TRAY_ICON_PATH;
+const iconSize = platformConfig.iconSize;
+const iconPath = platformConfig.iconPath;
 
 // Cache the useNativeTray setting at startup - changes require restart
 let useNativeTrayCached: boolean | null = null;
@@ -107,7 +118,7 @@ export async function initializeTray() {
 
   logger.info(
     "tray",
-    `Tray initializing with useNativeTray=${useNativeTrayCached}${platformIsLinux ? " (forced on Linux)" : ""}`,
+    `Tray initializing with useNativeTray=${useNativeTrayCached}${platformConfig.forceNativeMenu ? " (forced on Linux)" : ""}`,
   );
 
   // Create tray icon
