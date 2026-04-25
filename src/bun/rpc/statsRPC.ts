@@ -8,7 +8,7 @@ import type {
   TimeSeriesPoint,
 } from "../../shared/rpc";
 import { readAgents } from "../services/agentService";
-import { logger } from "../services/loggerService";
+import { withErrorLogging } from "./rpcHelpers";
 import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { getRangeTimestamps } from "../utils/time-range";
 
@@ -29,12 +29,12 @@ export type StatsRPCType = {
 };
 
 export const statsRequestHandlers = {
-  getDashboardStats: async ({
+  getDashboardStats: ({
     range,
   }: {
     range: TimeRange;
-  }): Promise<DashboardStats> => {
-    try {
+  }): Promise<DashboardStats> =>
+    withErrorLogging("statsRPC", async () => {
       const { from, to } = getRangeTimestamps(range);
       const agents = await readAgents();
       const rawStats = getAllAgentStats(from, to);
@@ -96,9 +96,5 @@ export const statsRequestHandlers = {
         timeSeries,
         kpis,
       };
-    } catch (error) {
-      logger.error("statsRPC", "Failed to get dashboard stats:", error);
-      throw error;
-    }
-  },
+    }),
 };

@@ -2,6 +2,7 @@
 import { BrowserView, Utils } from "electrobun/bun";
 import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
 import type { Platform } from "../../shared/types";
+import { withErrorResult } from "./rpcHelpers";
 import { logger } from "../services/loggerService";
 import {
   setMacOSWindowAppearance,
@@ -74,93 +75,73 @@ export const systemRequestHandlers = {
     const os = getPlatform();
     return { os };
   },
-  setWindowAppearance: async ({
-    appearance,
-  }: {
-    appearance: WindowAppearance;
-  }) => {
-    try {
-      const success = setMacOSWindowAppearance(appearance);
-      if (!success) {
-        logger.warn("systemRPC", "setMacOSWindowAppearance returned false");
-      }
-      return { success };
-    } catch (error) {
-      logger.error(
-        "systemRPC",
-        "Failed to set window appearance:",
-        error instanceof Error ? error.message : String(error),
-      );
-      return { success: false };
-    }
-  },
-  notifyRendererReady: async ({ view }: { view: RendererView }) => {
-    try {
-      // Consume pending route before firing the callback so the response
-      // reaches the renderer before any side-effects happen.
-      const initialRoute = getPendingRoute();
-      clearPendingRoute();
+  setWindowAppearance: ({ appearance }: { appearance: WindowAppearance }) =>
+    withErrorResult(
+      "systemRPC",
+      async () => {
+        const success = setMacOSWindowAppearance(appearance);
+        if (!success) {
+          logger.warn("systemRPC", "setMacOSWindowAppearance returned false");
+        }
+        return { success };
+      },
+      { success: false },
+    ),
+  notifyRendererReady: ({ view }: { view: RendererView }) =>
+    withErrorResult(
+      "systemRPC",
+      async () => {
+        // Consume pending route before firing the callback so the response
+        // reaches the renderer before any side-effects happen.
+        const initialRoute = getPendingRoute();
+        clearPendingRoute();
 
-      if (onRendererReady) {
-        await onRendererReady({ view });
-      }
+        if (onRendererReady) {
+          await onRendererReady({ view });
+        }
 
-      return { ok: true, initialRoute };
-    } catch (error) {
-      logger.error(
-        "systemRPC",
-        "Failed to notify renderer ready:",
-        error instanceof Error ? error.message : String(error),
-      );
-      return { ok: false, initialRoute: null };
-    }
-  },
-  openExternalUrl: async ({ url }: { url: string }) => {
-    try {
-      const parsedUrl = new URL(url);
-      if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-        logger.warn(
-          "systemRPC",
-          `Blocked external URL with protocol: ${parsedUrl.protocol}`,
-        );
-        return { success: false };
-      }
+        return { ok: true, initialRoute };
+      },
+      { ok: false, initialRoute: null },
+    ),
+  openExternalUrl: ({ url }: { url: string }) =>
+    withErrorResult(
+      "systemRPC",
+      async () => {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+          logger.warn(
+            "systemRPC",
+            `Blocked external URL with protocol: ${parsedUrl.protocol}`,
+          );
+          return { success: false };
+        }
 
-      const success = Utils.openExternal(url);
-      if (!success) {
-        logger.warn("systemRPC", `Failed to open external URL: ${url}`);
-      }
+        const success = Utils.openExternal(url);
+        if (!success) {
+          logger.warn("systemRPC", `Failed to open external URL: ${url}`);
+        }
 
-      return { success };
-    } catch (error) {
-      logger.error(
-        "systemRPC",
-        "Failed to open external URL:",
-        error instanceof Error ? error.message : String(error),
-      );
-      return { success: false };
-    }
-  },
+        return { success };
+      },
+      { success: false },
+    ),
   getDownloadsPath: async () => {
     return { path: Utils.paths.downloads };
   },
-  openFolder: async ({ path: folderPath }: { path: string }) => {
-    try {
-      // Use file:// URL to open folder in Finder/Explorer
-      const success = Utils.openExternal(`file://${folderPath}`);
-      if (!success) {
-        logger.warn("systemRPC", `Failed to open folder: ${folderPath}`);
-      }
-      return { success };
-    } catch (error) {
-      logger.error(
-        "systemRPC",
-        "Failed to open folder:",
-        error instanceof Error ? error.message : String(error),
-      );
-      return { success: false };
-    }
-  },
+  openFolder: ({ path: folderPath }: { path: string }) =>
+    withErrorResult(
+      "systemRPC",
+      async () => {
+        // Use file:// URL to open folder in Finder/Explorer
+        const success = Utils.openExternal(`file://${folderPath}`);
+        if (!success) {
+          logger.warn("systemRPC", `Failed to open folder: ${folderPath}`);
+        }
+        return { success };
+      },
+      { success: false },
+    ),
 };
 
 export const systemRPC = BrowserView.defineRPC<SystemRPCType>({

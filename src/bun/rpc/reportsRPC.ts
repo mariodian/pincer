@@ -6,7 +6,7 @@ import type {
   UptimeReport,
 } from "../../shared/reportTypes";
 import { readAgents } from "../services/agentService";
-import { logger } from "../services/loggerService";
+import { withErrorLogging } from "./rpcHelpers";
 import { generateUptimeReportHTML } from "../services/reportHtmlService";
 import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { getRangeTimestamps } from "../utils/time-range";
@@ -32,12 +32,8 @@ export type ReportsRPCType = {
 };
 
 export const reportsRequestHandlers = {
-  getUptimeReport: async ({
-    range,
-  }: {
-    range: TimeRange;
-  }): Promise<UptimeReport> => {
-    try {
+  getUptimeReport: ({ range }: { range: TimeRange }): Promise<UptimeReport> =>
+    withErrorLogging("reportsRPC", async () => {
       const { from, to } = getRangeTimestamps(range);
       const agents = await readAgents();
       const rawStats = getAllAgentStats(from, to);
@@ -123,23 +119,11 @@ export const reportsRequestHandlers = {
         overallUptimePct,
         totalIncidents,
       };
-    } catch (error) {
-      logger.error("reportsRPC", "Failed to get uptime report:", error);
-      throw error;
-    }
-  },
+    }),
 
-  exportHtmlReport: async ({
-    range,
-  }: {
-    range: TimeRange;
-  }): Promise<string> => {
-    try {
+  exportHtmlReport: ({ range }: { range: TimeRange }): Promise<string> =>
+    withErrorLogging("reportsRPC", async () => {
       const report = await reportsRequestHandlers.getUptimeReport({ range });
       return generateUptimeReportHTML(report);
-    } catch (error) {
-      logger.error("reportsRPC", "Failed to export HTML report:", error);
-      throw error;
-    }
-  },
+    }),
 };

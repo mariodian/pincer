@@ -1,4 +1,5 @@
 // Settings RPC - Shared RPC definition for settings management
+import { withErrorLogging } from "./rpcHelpers";
 import { Utils } from "electrobun/bun";
 import type {
   AdvancedSettings,
@@ -65,14 +66,8 @@ export type SettingsRPCType = {
 };
 
 export const settingsRequestHandlers = {
-  getSettings: async () => {
-    try {
-      return getSettingsFromDb();
-    } catch (error) {
-      logger.error("settingsRPC", "Failed to get settings:", error);
-      throw error;
-    }
-  },
+  getSettings: () =>
+    withErrorLogging("settingsRPC", async () => getSettingsFromDb()),
   updateSettings: async (partial: Partial<Settings>) => {
     try {
       updateSettingsToDb(partial);
@@ -99,14 +94,8 @@ export const settingsRequestHandlers = {
       throw error;
     }
   },
-  getAdvancedSettings: async () => {
-    try {
-      return getAdvancedSettingsFromDb();
-    } catch (error) {
-      logger.error("settingsRPC", "Failed to get advanced settings:", error);
-      throw error;
-    }
-  },
+  getAdvancedSettings: () =>
+    withErrorLogging("settingsRPC", async () => getAdvancedSettingsFromDb()),
   updateAdvancedSettings: async (partial: Partial<AdvancedSettings>) => {
     try {
       updateAdvancedSettingsToDb(partial);
@@ -119,18 +108,11 @@ export const settingsRequestHandlers = {
       throw error;
     }
   },
-  getNotificationSettings: async () => {
-    try {
-      return getNotificationSettingsFromDb();
-    } catch (error) {
-      logger.error(
-        "settingsRPC",
-        "Failed to get notification settings:",
-        error,
-      );
-      throw error;
-    }
-  },
+  getNotificationSettings: () =>
+    withErrorLogging("settingsRPC", async () =>
+      getNotificationSettingsFromDb(),
+    ),
+
   updateNotificationSettings: async (
     partial: Partial<NotificationSettings>,
   ) => {

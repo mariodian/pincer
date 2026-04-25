@@ -1,5 +1,7 @@
 // Agent RPC - Shared RPC definition for agent management
 import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
+import { withErrorLogging } from "./rpcHelpers";
+import { logger } from "../services/loggerService";
 import { AgentStatusInfo } from "../../shared/types";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 import {
@@ -17,7 +19,7 @@ import {
   getStatusSyncService,
   removeAgentStatus,
 } from "../services/statusSyncService";
-import { logger } from "../services/loggerService";
+
 import { removeAgentState } from "../services/incidentService";
 import { removeAgentStatusTracking } from "../services/statusService";
 
@@ -82,26 +84,15 @@ export function setAgentMutationCallback(cb: AgentMutationCallback) {
 }
 
 export const agentRequestHandlers = {
-  getAgents: async () => {
-    try {
-      return await readAgents();
-    } catch (error) {
-      logger.error("agentRPC", "Failed to get agents:", error);
-      throw error;
-    }
-  },
-  getAgentTypes: async () => {
-    try {
+  getAgents: () => withErrorLogging("agentRPC", () => readAgents()),
+  getAgentTypes: () =>
+    withErrorLogging("agentRPC", async () => {
       const types = getAgentTypeList();
       return types.map((t) => ({
         ...t,
         statusShapeOptions: t.id === "custom" ? [...STATUS_SHAPE_OPTIONS] : [],
       }));
-    } catch (error) {
-      logger.error("agentRPC", "Failed to get agent types:", error);
-      throw error;
-    }
-  },
+    }),
   addAgent: async ({
     type,
     name,
@@ -179,20 +170,8 @@ export const agentRequestHandlers = {
       throw error;
     }
   },
-  checkAllAgentsStatus: async () => {
-    try {
-      return await checkAllAgentsStatus();
-    } catch (error) {
-      logger.error("agentRPC", "Failed to check all agents status:", error);
-      throw error;
-    }
-  },
-  checkOneAgentStatus: async (id: number) => {
-    try {
-      return await checkOneAgentStatus(id);
-    } catch (error) {
-      logger.error("agentRPC", "Failed to check agent status:", error);
-      throw error;
-    }
-  },
+  checkAllAgentsStatus: () =>
+    withErrorLogging("agentRPC", () => checkAllAgentsStatus()),
+  checkOneAgentStatus: (id: number) =>
+    withErrorLogging("agentRPC", () => checkOneAgentStatus(id)),
 };

@@ -1,5 +1,6 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
+import { withErrorLogging } from "./rpcHelpers";
 import { readAgents } from "../services/agentService";
 import { getSettings } from "../storage/sqlite/settingsRepo";
 import { showMainWindow } from "../utils/navigation";
@@ -29,26 +30,10 @@ async function getAgentsWithStatus() {
 export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
   handlers: {
     requests: {
-      getAgents: async () => {
-        try {
-          return await getAgentsWithStatus();
-        } catch (error) {
-          logger.error("trayPopoverRPC", "Failed to get agents:", error);
-          throw error;
-        }
-      },
-      checkAllAgentsStatus: async () => {
-        try {
-          return await getAgentsWithStatus();
-        } catch (error) {
-          logger.error(
-            "trayPopoverRPC",
-            "Failed to check all agents status:",
-            error,
-          );
-          throw error;
-        }
-      },
+      getAgents: () =>
+        withErrorLogging("trayPopoverRPC", () => getAgentsWithStatus()),
+      checkAllAgentsStatus: () =>
+        withErrorLogging("trayPopoverRPC", () => getAgentsWithStatus()),
       openMainWindow: async ({ page }) => {
         try {
           await showMainWindow(page);
@@ -78,14 +63,8 @@ export const trayPopoverRPC = BrowserView.defineRPC<TrayPopoverRPCType>({
           throw error;
         }
       },
-      getSettings: async () => {
-        try {
-          return getSettings();
-        } catch (error) {
-          logger.error("trayPopoverRPC", "Failed to get settings:", error);
-          throw error;
-        }
-      },
+      getSettings: () =>
+        withErrorLogging("trayPopoverRPC", async () => getSettings()),
     },
     messages: {},
   },
