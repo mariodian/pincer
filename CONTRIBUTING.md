@@ -53,6 +53,8 @@ bun run dev
 | `bun run dev`              | Full desktop dev flow            |
 | `bun run dev:hmr`          | Fast renderer iteration with HMR |
 | `bun run build`            | Production build                 |
+| `bun run typecheck:backend` | Fast TS check (backend + shared) |
+| `bun run typecheck`         | Full check including Svelte      |
 | `bun run daemon:start`     | Run daemon in development        |
 | `bun run daemon:bundle`    | Build daemon binary              |
 
@@ -88,11 +90,17 @@ Pincer uses strict TypeScript and Svelte 5. Before submitting, run:
 # Format all code (app + daemon)
 bun run format
 
-# Typecheck main app
+# Fast TS check (backend + shared)
+bun run typecheck:backend
+
+# Full check including Svelte components (run if you touched .svelte files)
 bun run typecheck
 
 # Typecheck daemon (if you modified daemon code)
 bun run daemon:typecheck
+
+# Typecheck tests (if you modified test files)
+bun run test:typecheck
 ```
 
 See [AGENTS.md](./AGENTS.md) for full coding standards.

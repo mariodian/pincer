@@ -8,16 +8,17 @@ Do not use Electron APIs or patterns. Electrobun uses Bun as the main process ru
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `bun run dev` | Dev server (builds native dylib + Vite + Electrobun) |
-| `bun run dev:hmr` | HMR for renderer iteration (Vite on :5173 + desktop runtime) |
-| `bun run build` | Production build (format + typecheck + native libs + Vite + Electrobun) |
-| `bun run build:native-libs` | Compile macOS dylib — run if app crashes on startup |
-| `bun run format` | Prettier on `src/**/*.{ts,svelte,js,css,html}` |
-| `bun run typecheck` | `svelte-check` for type validation |
-| `bun run db:generate` | Generate Drizzle migration after schema changes |
-| `bun run db:push` | Push schema changes directly to dev DB |
+| Command                     | Purpose                                                                 |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `bun run dev`               | Dev server (builds native dylib + Vite + Electrobun)                    |
+| `bun run dev:hmr`           | HMR for renderer iteration (Vite on :5173 + desktop runtime)            |
+| `bun run build`             | Production build (format + typecheck + native libs + Vite + Electrobun) |
+| `bun run build:native-libs` | Compile macOS dylib — run if app crashes on startup                     |
+| `bun run format`            | Prettier on `src/**/*.{ts,svelte,js,css,html}`                          |
+| `bun run typecheck`         | Full typecheck including Svelte components                              |
+| `bun run typecheck:backend` | Fast TS check (`src/bun/`, `src/shared/`)                               |
+| `bun run db:generate`       | Generate Drizzle migration after schema changes                         |
+| `bun run db:push`           | Push schema changes directly to dev DB                                  |
 
 No test runner is configured. `bun test` can be used if tests are added.
 
@@ -38,6 +39,7 @@ RPC via Electrobun's `BrowserView.defineRPC<T>()`. Shared types in `src/shared/`
 ### Service Layer
 
 `src/bun/services/` — business logic between RPC handlers and storage:
+
 - `agentService.ts` — health check polling with configurable interval (default 15s)
 - `statusService.ts` — centralized status polling, notification batching
 - `statusSyncService.ts` — broadcasts status to all windows
@@ -49,6 +51,7 @@ RPC via Electrobun's `BrowserView.defineRPC<T>()`. Shared types in `src/shared/`
 SQLite via Drizzle ORM. Schema: `src/bun/storage/sqlite/schema.ts`. Repository pattern in `src/bun/storage/sqlite/` — one repo file per table (`checksRepo.ts`, `statsRepo.ts`, `incidentEventsRepo.ts`, `settingsRepo.ts`).
 
 **Migration rules:**
+
 - NEVER manually create migration files or edit `_journal.json`
 - Run `bun run db:generate` after schema changes
 - For data migrations: edit the generated `.sql` to add INSERT/UPDATE between CREATE/DROP with `WHERE EXISTS` guards
@@ -65,13 +68,13 @@ Objective-C++ source in `native/macos/` (`window-effects.mm`, `system.mm`). Buil
 
 Configured in `vite.config.js` and `tsconfig.json`:
 
-| Alias | Resolves to |
-|-------|-------------|
-| `$bun` | `src/bun/` |
-| `$lib` | `src/mainview/lib/` |
-| `$shared` | `src/shared/` |
-| `$assets` | `src/mainview/assets/` |
-| `$resources` | `src/resources/` |
+| Alias        | Resolves to            |
+| ------------ | ---------------------- |
+| `$bun`       | `src/bun/`             |
+| `$lib`       | `src/mainview/lib/`    |
+| `$shared`    | `src/shared/`          |
+| `$assets`    | `src/mainview/assets/` |
+| `$resources` | `src/resources/`       |
 
 ## Conventions
 
