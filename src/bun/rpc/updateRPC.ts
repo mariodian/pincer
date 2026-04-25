@@ -69,6 +69,30 @@ export function clearUpdateCache(): void {
   cachedUpdateCheck = null;
 }
 
+/**
+ * Perform the actual update check, cache the result, and update the timestamp.
+ * Returns the check result for further processing by callers.
+ */
+async function checkAndCacheUpdate(): Promise<{
+  updateAvailable: boolean;
+  version?: string;
+  hash?: string;
+}> {
+  const result = await Updater.checkForUpdate();
+
+  // Update the last check timestamp in app state
+  setLastUpdateCheckToDb(Date.now());
+
+  // Cache the result
+  cachedUpdateCheck = {
+    updateAvailable: result.updateAvailable,
+    version: result.version,
+    hash: result.hash,
+  };
+
+  return result;
+}
+
 export const updateRequestHandlers = {
   getUpdateInfo: async (): Promise<UpdateInfoResponse> => {
     try {
@@ -99,17 +123,7 @@ export const updateRequestHandlers = {
 
   checkForUpdate: async (): Promise<UpdateCheckResponse> => {
     try {
-      const result = await Updater.checkForUpdate();
-
-      // Update the last check timestamp in app state
-      setLastUpdateCheckToDb(Date.now());
-
-      // Cache the result
-      cachedUpdateCheck = {
-        updateAvailable: result.updateAvailable,
-        version: result.version,
-        hash: result.hash,
-      };
+      const result = await checkAndCacheUpdate();
 
       if (result.updateAvailable) {
         return {
@@ -193,17 +207,7 @@ export async function performAutoUpdateCheck(): Promise<void> {
     }
 
     logger.info("update", "Performing automatic update check...");
-    const result = await Updater.checkForUpdate();
-
-    // Update the last check timestamp in app state
-    setLastUpdateCheckToDb(now);
-
-    // Cache the result for UI display
-    cachedUpdateCheck = {
-      updateAvailable: result.updateAvailable,
-      version: result.version,
-      hash: result.hash,
-    };
+    const result = await checkAndCacheUpdate();
 
     if (result.updateAvailable) {
       logger.info(
