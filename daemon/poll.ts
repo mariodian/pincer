@@ -105,6 +105,20 @@ let pollInterval: Timer | null = null;
 export function startPolling(): void {
   if (pollInterval) clearInterval(pollInterval);
 
+  const { db } = getDatabase();
+  const result = db
+    .select({ count: sql<number>`count(*)` })
+    .from(agents)
+    .where(sql`${agents.enabled} = 1`)
+    .get();
+
+  if (result?.count === 0) {
+    logger.warn(
+      "poll",
+      "No enabled agents found. Polling started but no checks will run until agents are enabled.",
+    );
+  }
+
   logger.info("poll", `Starting polling every ${config.pollingIntervalMs}ms`);
 
   // Run immediately, then on interval
