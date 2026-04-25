@@ -2,6 +2,7 @@
 import { Utils } from "electrobun/bun";
 import type { AgentStatusInfo } from "../../shared/types";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
+import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { checkAllAgentsStatus, readAgents } from "./agentService";
 import {
@@ -9,15 +10,14 @@ import {
   isDaemonConfigured,
   pushAgentsToDaemon,
 } from "./daemonSyncService";
-import { logger } from "./loggerService";
-import { getStatusSyncService } from "./statusSyncService";
 import {
   initIncidentService,
   reconstructState as reconstructIncidentState,
   switchToDaemonMode,
 } from "./incidentService";
+import { logger } from "./loggerService";
 import { startRetentionService } from "./retentionService";
-import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
+import { getStatusSyncService } from "./statusSyncService";
 
 let statusUpdateInterval: NodeJS.Timeout | null = null;
 let statusUpdatesStarted = false;
@@ -366,6 +366,36 @@ async function checkAndNotifyStatusChanges(
 }
 
 /**
+ * Build notification title and body for a group of status changes.
+ */
+function buildNotificationMessage(
+  status: string,
+  changes: StatusChangeBatch[],
+): { title: string; body: string } {
+  const count = changes.length;
+  const isSingle = count === 1;
+  const statusWord = status.charAt(0).toUpperCase() + status.slice(1);
+
+  if (isSingle) {
+    return {
+      title: `Agent ${statusWord}`,
+      body:
+        status !== "error"
+          ? `${changes[0].agentName} is now ${status}`
+          : `${changes[0].agentName} encountered error`,
+    };
+  }
+
+  return {
+    title: `Agents ${statusWord}`,
+    body:
+      status !== "error"
+        ? `${count} agents are now ${status}`
+        : `${count} agents encountered error`,
+  };
+}
+
+/**
  * batchAndSendNotifications - Group changes by status and send notifications
  *
  * Groups changes by their final status (ok/offline/error) and sends
@@ -405,39 +435,8 @@ function batchAndSendNotifications(
   for (const [status, groupChanges] of grouped) {
     if (groupChanges.length === 0) continue;
 
-    const count = groupChanges.length;
-    let title = "";
-    let body = "";
-
-    switch (status) {
-      case "ok":
-        if (count === 1) {
-          title = "Agent Online";
-          body = groupChanges[0].agentName + " is now online";
-        } else {
-          title = "Agents Online";
-          body = count + " agents are now online";
-        }
-        break;
-      case "offline":
-        if (count === 1) {
-          title = "Agent Offline";
-          body = groupChanges[0].agentName + " is now offline";
-        } else {
-          title = "Agents Offline";
-          body = count + " agents are now offline";
-        }
-        break;
-      case "error":
-        if (count === 1) {
-          title = "Agent Error";
-          body = groupChanges[0].agentName + " encountered an error";
-        } else {
-          title = "Agent Errors";
-          body = count + " agents encountered errors";
-        }
-        break;
-    }
+    const { title, body } = buildNotificationMessage(status, groupChanges);
+    if (!title) continue;
 
     try {
       Utils.showNotification({
