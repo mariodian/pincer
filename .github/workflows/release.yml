@@ -84,56 +84,25 @@ jobs:
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Extract changelog for this version
-        id: changelog
+      - name: Validate and load user release notes
+        id: notes
         run: |
           version="${{ steps.version.outputs.version }}"
-          normalized_version="${version#v}"
+          notes_file="release-notes/${version}.md"
 
-          body=$(awk -v v="$version" -v nv="$normalized_version" '
-            BEGIN {
-              target1 = "## [" v "]"
-              target2 = "## [" nv "]"
-              target3 = "## [v" nv "]"
-            }
-            {
-              line = $0
-              sub(/^[[:space:]]+/, "", line)
-            }
-            index(line, target1) == 1 || index(line, target2) == 1 || index(line, target3) == 1 {
-              found = 1
-              next
-            }
-            found && line ~ /^## \[/ { exit }
-            found { print }
-          ' CHANGELOG.md)
-
-          if [ -z "$body" ]; then
-            echo "Changelog entry not found for $version" >&2
-            echo "Expected one of these headings at column 1:" >&2
-            echo "  - ## [$version]" >&2
-            echo "  - ## [$normalized_version]" >&2
-            echo "  - ## [v$normalized_version]" >&2
-            echo "Available changelog headings:" >&2
-            grep '^## \[' CHANGELOG.md >&2 || true
+          if [ ! -f "$notes_file" ]; then
+            echo "Missing user-facing release notes: $notes_file" >&2
+            echo "Create release-notes/${version}.md before tagging a release." >&2
             exit 1
           fi
 
-          echo "$body" > /tmp/release_notes.md
+          cp "$notes_file" /tmp/release_notes.md
 
-          prev_version=$(awk -v v="$version" -v nv="$normalized_version" '
-            BEGIN {
-              target1 = "## [" v "]"
-              target2 = "## [" nv "]"
-              target3 = "## [v" nv "]"
-            }
+          prev_version=$(awk -v v="$version" '
+            BEGIN { found=0 }
             {
               line = $0
               sub(/^[[:space:]]+/, "", line)
-            }
-            index(line, target1) == 1 || index(line, target2) == 1 || index(line, target3) == 1 {
-              found = 1
-              next
             }
             found && line ~ /^## \[/ {
               sub(/^## \[/, "", line)
@@ -141,6 +110,7 @@ jobs:
               print line
               exit
             }
+            index(line, "## [" v "]") == 1 { found=1 }
           ' CHANGELOG.md)
 
           if [ -n "$prev_version" ]; then

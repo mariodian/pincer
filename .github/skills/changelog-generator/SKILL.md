@@ -1,26 +1,45 @@
 ---
 name: changelog-generator
-description: Generate a CHANGELOG.md entry following the Keep a Changelog format.
+description: >
+  For each release, generate a technical CHANGELOG.md entry,
+  a public release note file, and an updated release index —
+  all three committed together before the release tag is pushed.
 ---
 
-Rules:
+## Prerequisites
 
-- **Before writing any entry, check the git log since the last version tag**: run `git log <last-tag>..HEAD --oneline` (or `git log $(git describe --tags --abbrev=0)..HEAD --oneline`) to get all commits since the last release, then summarize them into human-readable entries
-- Use these change categories (omit empty ones): Added, Changed, Deprecated, Removed, Fixed, Security
-- Format version headers as: ## [vVERSION] - YYYY-MM-DD (ISO 8601 date)
-- Preserve the exact version string already used by the repo or tag, including prerelease suffixes such as `-dev`, `-alpha.1`, or `-beta`; do not normalize them to a stable version
-- In this repository, changelog headings should match the pushed release tag exactly when a release entry is being prepared
-- List the latest version first (reverse chronological order)
-- Keep an ## [Unreleased] section at the top but only when there are unreleased changes to document
-- Write entries for humans, not machines: no commit hashes, no jargon, and no raw git log dumps
-- Each entry is a single concise bullet starting with a past-tense verb
-- Bold key points only when it improves readability
-- Mark yanked releases as: ## [vVERSION] - DATE [YANKED]
-- Note adherence to Semantic Versioning in the file header
+Before writing anything, collect every commit since the last tag:
 
-Header template:
-
+```bash
+git log $(git describe --tags --abbrev=0)..HEAD --oneline
 ```
+
+Synthesize those commits into human-readable entries. Never paste raw
+commit hashes, subjects, or git log output into any output file.
+
+Get the new version from package.json and use it verbatim, including any prerelease suffix (`-dev`, `-alpha.1`, `-beta`, `-rc.2`).
+
+---
+
+## Outputs (all three are required per release)
+
+| File                        | Audience                    | Purpose                                 |
+| --------------------------- | --------------------------- | --------------------------------------- |
+| `CHANGELOG.md`              | Contributors / maintainers  | Technical history, SemVer-indexed       |
+| `release-notes/vVERSION.md` | End users / GitHub Releases | Benefit-driven release body             |
+| `RELEASE_NOTES.md`          | End users                   | Root index linking to per-version files |
+
+All three files must be committed together **before** the release tag is pushed.
+If `release-notes/vVERSION.md` is missing for a tagged release, treat that
+as an incomplete release-preparation state.
+
+---
+
+## CHANGELOG.md
+
+### Header (include once, at the top of the file)
+
+```markdown
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -28,3 +47,121 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ```
+
+### Version entry format
+
+```markdown
+## [Unreleased] ← keep only when unreleased changes exist
+
+## [vVERSION] - YYYY-MM-DD ← newest first; ISO 8601 date
+
+### Added
+
+- Past-tense bullet. Bold **key terms** only when it aids readability.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+```
+
+### Rules
+
+- Use the **exact version string from the repo tag**, including any
+  prerelease suffix (`-dev`, `-alpha.1`, `-beta`, `-rc.2`). Do not normalize.
+- Omit any category section that has no entries.
+- List versions in **reverse chronological order** (newest first).
+- Keep an `## [Unreleased]` section at the top **only** when there are
+  unreleased changes to document.
+- Technical detail is encouraged for contributor clarity, but keep each
+  bullet concise — one verb-led sentence per change.
+- Mark yanked releases: `## [vVERSION] - DATE [YANKED]`
+
+---
+
+## release-notes/vVERSION.md
+
+### Structure
+
+```markdown
+# vVERSION
+
+One or two sentences: what is new and why it matters to the user.
+
+## Highlights
+
+- Benefit-driven bullet (e.g., "Pincer now stays active after system wake")
+
+## Fixes
+
+- Plain-English description of resolved problems
+
+## Notes ← optional
+
+Use for install changes, platform caveats, migration steps,
+or prerelease/dev-build warnings.
+```
+
+### Rules
+
+- **Users first.** No class names, function names, file paths, package
+  identifiers, or implementation jargon — unless they are part of the
+  public product surface.
+- Omit empty sections entirely.
+- For prerelease builds (`-dev`, `-alpha`, `-beta`, `-rc`), add a clear
+  "This is a preview/dev build" callout in `## Notes`.
+- If the release is mostly internal changes, say so plainly and keep the
+  file brief rather than inventing user value.
+- This file is used directly as the GitHub Release body — write accordingly.
+
+---
+
+## RELEASE_NOTES.md
+
+### Header (include once)
+
+```markdown
+# Release Notes
+
+Public release history for Pincer.
+For full technical details, see [CHANGELOG.md](./CHANGELOG.md).
+```
+
+### Table format (newest row first)
+
+```markdown
+| Version                                 | Date       | Summary                      |
+| --------------------------------------- | ---------- | ---------------------------- |
+| [vVERSION](./release-notes/vVERSION.md) | YYYY-MM-DD | One-line user-impact summary |
+```
+
+### Rules
+
+- This file is an **index only** — do not duplicate release note content here.
+- **Prepend** a new row to the top of the table for each stable release.
+- **Do not add prerelease versions** (`-dev`, `-alpha`, `-beta`, `-rc`) to
+  the table. Their files exist in `release-notes/` but are not part of the
+  stable release history.
+- Keep the summary under 60 characters and describe user impact, not
+  implementation.
+- If a release is yanked, append ` [YANKED]` to the version link text in
+  the table.
+
+---
+
+## Quick decision checklist
+
+Before committing, verify:
+
+- [ ] `git log` was run; no raw hashes appear in any output file
+- [ ] Version string matches the repo tag exactly (including prerelease suffix)
+- [ ] `CHANGELOG.md` entry uses only non-empty Keep-a-Changelog categories
+- [ ] `release-notes/vVERSION.md` contains no code identifiers or jargon
+- [ ] Prerelease builds are labeled as preview/dev in `## Notes`
+- [ ] `RELEASE_NOTES.md` table row added only for stable releases
+- [ ] All three files are staged in the same commit, before the tag is pushed
