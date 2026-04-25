@@ -9,6 +9,7 @@ import {
   setLastUpdateCheck as setLastUpdateCheckToDb,
 } from "../storage/sqlite/appStateRepo";
 import { ONE_DAY_MS } from "../utils/constants";
+import { isBrewInstall } from "../utils/platform";
 
 import { logger } from "../services/loggerService";
 
@@ -49,6 +50,7 @@ export interface UpdateInfoResponse {
   updateAvailable: boolean;
   newVersion?: string;
   newHash?: string;
+  isBrewInstall: boolean;
 }
 
 export interface UpdateCheckResponse {
@@ -114,6 +116,7 @@ export const updateRequestHandlers = {
         updateAvailable,
         newVersion: cachedUpdateCheck?.version,
         newHash: cachedUpdateCheck?.hash,
+        isBrewInstall: isBrewInstall(),
       };
     } catch (error) {
       logger.error("updateRPC", "Failed to get update info:", error);

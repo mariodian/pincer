@@ -1,5 +1,6 @@
-import type { Platform } from "../../shared/types";
 import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import type { Platform } from "../../shared/types";
 
 export function isMacOS(): boolean {
   return process.platform === "darwin";
@@ -71,4 +72,21 @@ export function getMacOSVersion(): number {
  */
 export function supportsSMAppService(): boolean {
   return getMacOSVersion() >= 13;
+}
+
+/**
+ * Detect whether Pincer was installed via Homebrew Cask.
+ * Checks the Caskroom directory on both Apple Silicon and Intel Macs.
+ * Always returns false on non-macOS platforms.
+ */
+export function isBrewInstall(): boolean {
+  if (!isMacOS()) {
+    return false;
+  }
+
+  let brewPaths = [
+    "/opt/homebrew/Caskroom/pincer", // Apple Silicon
+    "/usr/local/Caskroom/pincer", // Intel
+  ];
+  return brewPaths.some((path) => existsSync(path));
 }

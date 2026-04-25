@@ -18,6 +18,7 @@
     updateAvailable: boolean;
     newVersion?: string;
     newHash?: string;
+    isBrewInstall: boolean;
   }
 
   interface UpdateCheckResult {
@@ -28,7 +29,7 @@
   }
 
   const RELEASE_NOTES_URL =
-    "https://github.com/mariodian/pincer/blob/main/CHANGELOG.md";
+    "https://github.com/mariodian/pincer/blob/main/RELEASE_NOTES.md";
 
   let loading = $state(true);
   let checking = $state(false);
@@ -36,6 +37,7 @@
   let updateInfo = $state<UpdateInfo | null>(null);
   let checkResult = $state<UpdateCheckResult | null>(null);
   let error = $state<string | null>(null);
+  let copied = $state(false);
 
   async function loadUpdateInfo() {
     try {
@@ -134,6 +136,18 @@
     return "Just now";
   }
 
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      copied = true;
+      setTimeout(() => {
+        copied = false;
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  }
+
   function getChannelColor(channel: string): string {
     switch (channel.toLowerCase()) {
       case "stable":
@@ -230,40 +244,70 @@
         {/if}
 
         {#if updateInfo.updateAvailable && updateInfo.newVersion}
-          <div
+          <Alert.Root
             class={cn(
               "p-4 rounded-lg border",
               "border-green-300/50 bg-green-300/30",
               "dark:border-green-900/70 dark:bg-green-900/50",
-              "text-green-950/80 dark:text-green-100/80",
             )}
           >
-            <div class="flex items-center gap-2 mb-2">
-              <Icon
-                size={20}
-                name="checkCircle"
-                class="text-green-950/80 dark:text-green-100/80"
-              />
-              <span class="font-medium">Update Available</span>
-            </div>
-            <p class="text-sm text-green-950/60 dark:text-green-100/60 mb-3">
-              Version {updateInfo.newVersion} is ready to download and install.
-            </p>
-            <Button
-              tabindex={0}
-              onclick={handleDownloadAndApply}
-              disabled={downloading}
-              class="gap-2"
-            >
-              {#if downloading}
-                <Spinner />
-                Downloading...
+            <Icon name="checkCircle" />
+            <Alert.Title>Update Available</Alert.Title>
+            <Alert.Description>
+              <p class="text-sm text-green-950/60 dark:text-green-100/60 mb-3">
+                Version {updateInfo.newVersion} is ready to install.
+              </p>
+              {#if updateInfo.isBrewInstall}
+                <div class="space-y-2 text-green-950/80 dark:text-green-100/80">
+                  <p class="text-sm">
+                    This app was installed via Homebrew. Use the following
+                    command to update:
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <code
+                      class={cn(
+                        "px-2 py-1 rounded",
+                        "text-sm font-mono",
+                        "bg-green-950/10 dark:bg-green-100/10",
+                      )}
+                    >
+                      brew upgrade pincer
+                    </code>
+                    <Button
+                      tabindex={0}
+                      variant="default"
+                      size="xs"
+                      onclick={() => copyToClipboard("brew upgrade pincer")}
+                      class="gap-1 h-7.5 px-2"
+                    >
+                      {#if copied}
+                        <Icon name="tick" size={14} />
+                        Copied!
+                      {:else}
+                        <Icon name="copy" size={14} />
+                        Copy
+                      {/if}
+                    </Button>
+                  </div>
+                </div>
               {:else}
-                <Icon name="download" />
-                Download & Install
+                <Button
+                  tabindex={0}
+                  onclick={handleDownloadAndApply}
+                  disabled={downloading}
+                  class="gap-2"
+                >
+                  {#if downloading}
+                    <Spinner />
+                    Downloading...
+                  {:else}
+                    <Icon name="download" />
+                    Download & Install
+                  {/if}
+                </Button>
               {/if}
-            </Button>
-          </div>
+            </Alert.Description>
+          </Alert.Root>
         {/if}
 
         <!-- Error Message -->

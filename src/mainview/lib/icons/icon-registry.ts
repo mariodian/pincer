@@ -37,6 +37,7 @@ import {
   CircleAlert,
   CircleCheck,
   Cog,
+  Copy,
   Download,
   LayoutDashboard,
   Loader,
@@ -120,6 +121,9 @@ export const iconRegistry: Record<string, IconEntry> = {
   checkCircle: {
     lucide: CircleCheck,
     hugeicons: CheckmarkCircle02Icon,
+  },
+  copy: {
+    lucide: Copy,
   },
   delete: {
     lucide: TrashIcon,
