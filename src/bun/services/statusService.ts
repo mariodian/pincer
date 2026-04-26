@@ -8,8 +8,7 @@ import { checkAllAgentsStatus, readAgents } from "./agentService";
 import {
   sync as daemonSync,
   isDaemonConfigured,
-  pushAgentsToDaemon,
-  pullAgentsFromDaemon,
+  syncAgents,
 } from "./daemonSyncService";
 import {
   initIncidentService,
@@ -41,7 +40,6 @@ globalForHMR.__pincerStatusPollingActive = false;
 let daemonConnected = false;
 let incidentServiceInitialized = false;
 let lastOpenIncidents: Array<{ agentId: number; incidentId: string }> = [];
-let agentsPushedOnStartup = false;
 
 const FIRST_POLL_MARKER = "__FIRST_POLL__";
 
@@ -81,14 +79,7 @@ const daemonMode: PollMode = {
   onEnter(reason) {
     if (reason === "daemon-connected") {
       logger.info("status", "Daemon connected - switching to synced data mode");
-      // Pull agents from daemon if local list is empty, then push to ensure sync
-      void pullAgentsFromDaemon();
-      // Push agents to daemon on reconnect (skip if already pushed on startup)
-      if (!agentsPushedOnStartup) {
-        agentsPushedOnStartup = true;
-      } else {
-        void pushAgentsToDaemon();
-      }
+      void syncAgents();
       if (incidentServiceInitialized) {
         switchToDaemonMode(lastOpenIncidents);
       }

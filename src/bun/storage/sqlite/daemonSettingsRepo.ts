@@ -1,8 +1,8 @@
+import type { DaemonSettings } from "../../../shared/types";
+import { logger } from "../../services/loggerService";
+import { setMeta } from "./appMetaRepo";
 import { getDatabase } from "./db";
 import { settingsDaemon } from "./schema";
-import { logger } from "../../services/loggerService";
-import type { DaemonSettings } from "../../../shared/types";
-import { setMeta } from "./appMetaRepo";
 
 export function getDaemonSettings(): DaemonSettings {
   const { db } = getDatabase();
@@ -23,8 +23,9 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
   if (partial.enabled !== undefined) set.enabled = partial.enabled;
   if (partial.url !== undefined) set.url = partial.url;
   if (partial.secret !== undefined) set.secret = partial.secret;
-  if (partial.namespaceKey !== undefined)
+  if (partial.namespaceKey !== undefined) {
     set.namespaceKey = partial.namespaceKey;
+  }
 
   if (Object.keys(set).length > 0) {
     db.update(settingsDaemon).set(set).run();

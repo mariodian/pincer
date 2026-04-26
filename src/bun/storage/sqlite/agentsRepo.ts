@@ -1,5 +1,5 @@
-import type { Agent } from "../../../shared/types";
 import { eq } from "drizzle-orm";
+import type { Agent } from "../../../shared/types";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents, stats } from "./schema";
 
@@ -81,6 +81,9 @@ export function writeAgents(agentList: Agent[]): void {
 
     for (const agent of agentList) {
       if (agent.id > 0) {
+        // Agent has a known ID (pulled from daemon or pushed back).
+        // Upsert with that ID so the daemon-side agent_id stays consistent
+        // across pull→push cycles and doesn't cause duplicates.
         const exists = tx
           .select()
           .from(agents)
@@ -119,7 +122,9 @@ export function writeAgents(agentList: Agent[]): void {
 
         newIds.add(agent.id);
       } else {
-        const result = tx.insert(agents)
+        // Agent has no known ID — let SQLite auto-increment assign one.
+        const result = tx
+          .insert(agents)
           .values({
             type: agent.type,
             name: agent.name,
@@ -136,6 +141,9 @@ export function writeAgents(agentList: Agent[]): void {
       }
     }
 
+    // Remove any local agents not present in the incoming list.
+    // This is a full replacement — intended for daemon pull syncs
+    // where the daemon is the source of truth.
     const existingAgents = tx.select().from(agents).all();
     for (const existing of existingAgents) {
       if (!newIds.has(existing.id)) {
