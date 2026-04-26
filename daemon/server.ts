@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm";
 import { daemonConfig } from "../src/shared/appConfig";
 import { rowToCheck, rowToIncidentEvent } from "../src/shared/db-helpers";
 import { logger } from "../src/shared/logger";
-import type { Agent } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents, stats } from "./schema";
@@ -17,6 +16,10 @@ function checkAuth(req: Request): boolean {
   const auth = req.headers.get("authorization");
   if (!auth || !auth.startsWith("Bearer ")) return false;
   return auth.slice(7) === config.secret;
+}
+
+function getNamespaceId(req: Request): string | null {
+  return req.headers.get("x-namespace-id");
 }
 
 function jsonResponse(data: unknown, status = 200): Response {
@@ -51,37 +54,66 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // GET /agents
     if (method === "GET" && path === "/agents") {
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
       const { db } = getDatabase();
-      const rows = db.select().from(agents).all();
+      const rows = db.select().from(agents).where(sql`${agents.namespaceId} = ${namespaceId}`).all();
       return jsonResponse(rows);
     }
 
     // PUT /agents
     if (method === "PUT" && path === "/agents") {
-      const body = (await req.json()) as Agent[];
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
+      const body = (await req.json()) as Array<{
+        id: number;
+        type: string;
+        name: string;
+        url: string;
+        port: number;
+        enabled: boolean;
+        healthEndpoint: string | null;
+        statusShape: string | null;
+        agentHash: string | null;
+      }>;
       if (!Array.isArray(body)) {
         return errorResponse("Expected array of agents");
       }
 
-      const { db, sqlite } = getDatabase();
+      const { sqlite } = getDatabase();
       sqlite.run("BEGIN IMMEDIATE");
       try {
-        sqlite.run("DELETE FROM agents");
         for (const agent of body) {
-          db.insert(agents)
-            .values({
-              id: agent.id,
-              type: agent.type,
-              name: agent.name,
-              url: agent.url,
-              port: agent.port,
-              enabled: agent.enabled ?? true,
-              healthEndpoint: agent.healthEndpoint ?? null,
-              statusShape: agent.statusShape ?? null,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            })
-            .run();
+          sqlite.run(
+            `INSERT INTO agents (namespace_id, agent_id, agent_hash, type, name, url, port, enabled, health_endpoint, status_shape, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(namespace_id, agent_id) DO UPDATE SET
+               agent_hash = excluded.agent_hash,
+               type = excluded.type,
+               name = excluded.name,
+               url = excluded.url,
+               port = excluded.port,
+               enabled = excluded.enabled,
+               health_endpoint = excluded.health_endpoint,
+               status_shape = excluded.status_shape,
+               updated_at = excluded.updated_at`,
+            [
+              namespaceId,
+              agent.id,
+              agent.agentHash ?? null,
+              agent.type,
+              agent.name,
+              agent.url,
+              agent.port,
+              agent.enabled ? 1 : 0,
+              agent.healthEndpoint ?? null,
+              agent.statusShape ?? null,
+              Date.now(),
+              Date.now(),
+            ],
+          );
         }
         sqlite.run("COMMIT");
       } catch (err) {
@@ -94,6 +126,9 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // GET /checks?since=<ms>&limit=<n>
     if (method === "GET" && path === "/checks") {
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
       const { db } = getDatabase();
       const since = parseInt(url.searchParams.get("since") || "0", 10);
       const limit = Math.min(
@@ -104,7 +139,7 @@ async function handleRequest(req: Request): Promise<Response> {
       const rows = db
         .select()
         .from(checks)
-        .where(sql`${checks.checkedAt} >= ${since}`)
+        .where(sql`${checks.namespaceId} = ${namespaceId} AND ${checks.checkedAt} >= ${since}`)
         .orderBy(checks.checkedAt)
         .limit(limit + 1)
         .all();
@@ -121,15 +156,17 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // GET /stats?since=<ms>
     if (method === "GET" && path === "/stats") {
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
       const { db } = getDatabase();
       const since = parseInt(url.searchParams.get("since") || "0", 10);
-      // Convert ms to seconds for hourTimestamp comparison
       const sinceSecs = Math.floor(since / 1000);
 
       const rows = db
         .select()
         .from(stats)
-        .where(sql`${stats.hourTimestamp} >= ${sinceSecs}`)
+        .where(sql`${stats.namespaceId} = ${namespaceId} AND ${stats.hourTimestamp} >= ${sinceSecs}`)
         .orderBy(stats.hourTimestamp)
         .all();
 
@@ -138,13 +175,16 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // GET /incident-events?since=<ms>
     if (method === "GET" && path === "/incident-events") {
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
       const { db } = getDatabase();
       const since = parseInt(url.searchParams.get("since") || "0", 10);
 
       const rows = db
         .select()
         .from(incidentEvents)
-        .where(sql`${incidentEvents.eventAt} >= ${since}`)
+        .where(sql`${incidentEvents.namespaceId} = ${namespaceId} AND ${incidentEvents.eventAt} >= ${since}`)
         .orderBy(incidentEvents.eventAt)
         .all();
 
@@ -153,6 +193,9 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // GET /open-incidents - return currently open incidents (no 'recovered' event)
     if (method === "GET" && path === "/open-incidents") {
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
       const { db } = getDatabase();
 
       const openIncidents = db
@@ -166,7 +209,8 @@ async function handleRequest(req: Request): Promise<Response> {
             e1.incident_id as incidentId,
             e1.event_at as openedAt
           FROM incident_events e1
-          WHERE e1.event_type = 'opened'
+          WHERE e1.namespace_id = ${namespaceId}
+          AND e1.event_type = 'opened'
           AND NOT EXISTS (
             SELECT 1 FROM incident_events e2
             WHERE e2.incident_id = e1.incident_id

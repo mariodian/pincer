@@ -12,6 +12,7 @@ export function getDaemonSettings(): DaemonSettings {
     enabled: row?.enabled ?? false,
     url: row?.url ?? "",
     secret: row?.secret ?? "",
+    namespaceKey: row?.namespaceKey ?? "",
   };
 }
 
@@ -22,6 +23,7 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
   if (partial.enabled !== undefined) set.enabled = partial.enabled;
   if (partial.url !== undefined) set.url = partial.url;
   if (partial.secret !== undefined) set.secret = partial.secret;
+  if (partial.namespaceKey !== undefined) set.namespaceKey = partial.namespaceKey;
 
   if (Object.keys(set).length > 0) {
     db.update(settingsDaemon).set(set).run();
@@ -34,17 +36,21 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
 
 export function updateDaemonSettingsWithLifecycle(
   partial: Partial<DaemonSettings>,
-): void {
-  if (partial.enabled === true) {
-    const current = getDaemonSettings();
-    if (!current.enabled) {
-      // Reset sync timestamp to prevent syncing duplicate data from the offline period
-      setMeta("daemon_last_sync", Date.now().toString());
-      logger.debug(
-        "daemon",
-        "Daemon enabled - reset sync timestamp to prevent duplicate data",
-      );
-    }
+): { settingsChanged: boolean } {
+  const current = getDaemonSettings();
+
+  if (partial.enabled === true && !current.enabled) {
+    // Reset sync timestamp to prevent syncing duplicate data from the offline period
+    setMeta("daemon_last_sync", Date.now().toString());
+    logger.debug(
+      "daemon",
+      "Daemon enabled - reset sync timestamp to prevent duplicate data",
+    );
   }
+
   updateDaemonSettings(partial);
+
+  // Return whether connection details changed (caller should push agents)
+  const settingsChanged = partial.url !== undefined || partial.secret !== undefined;
+  return { settingsChanged };
 }

@@ -102,6 +102,7 @@ export interface DaemonSettings {
   enabled: boolean;
   url: string;
   secret: string;
+  namespaceKey: string;
 }
 
 // Hourly statistics from daemon

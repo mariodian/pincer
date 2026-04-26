@@ -1,5 +1,4 @@
 import type {
-  Agent,
   Check,
   HourlyStat,
   IncidentEvent,
@@ -10,14 +9,30 @@ export interface DaemonPageResult<T> {
   nextCursor: number | null;
 }
 
+export interface AgentPushPayload {
+  id: number;
+  type: string;
+  name: string;
+  url: string;
+  port: number;
+  enabled: boolean;
+  healthEndpoint: string | null;
+  statusShape: string | null;
+  agentHash: string | null;
+}
+
 export class DaemonClient {
   private readonly baseUrl: string;
   private readonly secret: string;
+  private readonly namespaceId: string;
+  private readonly machineId: string;
   private readonly timeout: number;
 
-  constructor(baseUrl: string, secret: string, timeout = 10000) {
+  constructor(baseUrl: string, secret: string, namespaceId: string, machineId: string, timeout = 10000) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.secret = secret;
+    this.namespaceId = namespaceId;
+    this.machineId = machineId;
     this.timeout = timeout;
   }
 
@@ -56,10 +71,10 @@ export class DaemonClient {
     >;
   }
 
-  async pushAgents(agents: Agent[]): Promise<{ updated: number }> {
+  async pushAgents(payload: AgentPushPayload[]): Promise<{ updated: number }> {
     const res = await this.request("/agents", {
       method: "PUT",
-      body: JSON.stringify(agents),
+      body: JSON.stringify(payload),
     });
     return res.json() as Promise<{ updated: number }>;
   }
@@ -78,6 +93,8 @@ export class DaemonClient {
         headers: {
           ...options?.headers,
           Authorization: `Bearer ${this.secret}`,
+          "X-Namespace-ID": this.namespaceId,
+          "X-Machine-ID": this.machineId,
           "Content-Type": "application/json",
         },
       });

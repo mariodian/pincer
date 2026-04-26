@@ -29,6 +29,7 @@ export interface IncidentTrackerDeps {
     fromStatus: CheckStatus | null,
     toStatus: CheckStatus | null,
     reason: string | null,
+    namespaceId?: string,
   ) => void;
   /** Get the last N checks for an agent (most recent first) */
   getAgentLastNChecks: (
@@ -210,7 +211,7 @@ export function createIncidentTracker(
   /**
    * Handle an OK check result.
    */
-  function handleOkCheck(agentId: number, state: AgentIncidentState): void {
+  function handleOkCheck(agentId: number, state: AgentIncidentState, namespaceId?: string): void {
     // Reset failure counter
     state.failureCounter = 0;
 
@@ -238,6 +239,7 @@ export function createIncidentTracker(
         state.lastNonOkStatus,
         "ok",
         `Recovered after ${state.recoveryCounter} consecutive OK checks`,
+        namespaceId,
       );
 
       deps.log("info", `[Agent ${agentId}] Incident ${incidentId} recovered`);
@@ -258,6 +260,7 @@ export function createIncidentTracker(
     status: CheckStatus,
     state: AgentIncidentState,
     previousStatus: CheckStatus | null,
+    namespaceId?: string,
   ): void {
     // Reset recovery counter since we're not OK
     state.recoveryCounter = 0;
@@ -292,6 +295,7 @@ export function createIncidentTracker(
           state.failureStartStatus,
           status,
           `Incident opened after ${state.failureCounter} consecutive non-OK checks`,
+          namespaceId,
         );
 
         deps.log(
@@ -315,6 +319,7 @@ export function createIncidentTracker(
           previousStatus,
           status,
           `Status changed from ${previousStatus} to ${status}`,
+          namespaceId,
         );
 
         deps.log(
