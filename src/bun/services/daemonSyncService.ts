@@ -1,5 +1,6 @@
-import type { DaemonSyncResult, DaemonTestResult } from "../../shared/types";
-import { DaemonClient } from "./daemonClient";
+import { createHash } from "node:crypto";
+import type { Agent, DaemonSyncResult, DaemonTestResult } from "../../shared/types";
+import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertChecksBatch } from "../storage/sqlite/checksRepo";
@@ -7,6 +8,7 @@ import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
 import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
 import { readAgents } from "./agentService";
 import { logger } from "./loggerService";
+import { getMachineId } from "./machineIdService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
 
@@ -17,6 +19,18 @@ function formatUptime(seconds: number): string {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h`;
   return `${minutes}m`;
+}
+
+async function getNamespaceId(): Promise<string> {
+  const settings = getDaemonSettings();
+  return settings.namespaceKey || (await getMachineId());
+}
+
+export function computeAgentHash(agent: Agent): string {
+  return createHash("sha256")
+    .update(`${agent.type}:${agent.url}:${agent.port}`)
+    .digest("hex")
+    .substring(0, 16);
 }
 
 /**
@@ -34,7 +48,9 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
   }
 
   const settings = getDaemonSettings();
-  const client = new DaemonClient(settings.url, settings.secret);
+  const namespaceId = await getNamespaceId();
+  const machineId = await getMachineId();
+  const client = new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
 
   try {
     const response = await client.testConnection();
@@ -62,11 +78,24 @@ export async function pushAgentsToDaemon(): Promise<void> {
   }
 
   const settings = getDaemonSettings();
-  const client = new DaemonClient(settings.url, settings.secret);
+  const namespaceId = await getNamespaceId();
+  const machineId = await getMachineId();
+  const client = new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
 
   try {
     const agents = await readAgents();
-    const data = await client.pushAgents(agents);
+    const payload: AgentPushPayload[] = agents.map(a => ({
+      id: a.id,
+      type: a.type,
+      name: a.name,
+      url: a.url,
+      port: a.port,
+      enabled: a.enabled ?? true,
+      healthEndpoint: a.healthEndpoint ?? null,
+      statusShape: a.statusShape ?? null,
+      agentHash: computeAgentHash(a),
+    }));
+    const data = await client.pushAgents(payload);
     logger.info("daemon", `Pushed ${data.updated} agents to daemon`);
   } catch (error) {
     logger.warn("daemon", "Failed to push agents to daemon:", error);
@@ -181,7 +210,9 @@ export async function sync(): Promise<DaemonSyncResult> {
   }
 
   const settings = getDaemonSettings();
-  const client = new DaemonClient(settings.url, settings.secret);
+  const namespaceId = await getNamespaceId();
+  const machineId = await getMachineId();
+  const client = new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
 
   const checks = await importChecks(client, lastSyncAt);

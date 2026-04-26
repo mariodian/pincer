@@ -80,6 +80,7 @@ export const settingsDaemon = sqliteTable("settings_daemon", {
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
   url: text("url").notNull().default(""),
   secret: text("secret").notNull().default(""),
+  namespaceKey: text("namespace_key").notNull().default(""),
 });
 
 // Key-value store for ephemeral application state (window position, UI state, etc.)

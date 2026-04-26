@@ -5,11 +5,15 @@ import {
   real,
   sqliteTable,
   text,
+  unique,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const agents = sqliteTable("agents", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  namespaceId: text("namespace_id").notNull(),
+  agentId: integer("agent_id").notNull(),
+  agentHash: text("agent_hash"),
   type: text("type").notNull(),
   name: text("name").notNull(),
   url: text("url").notNull(),
@@ -23,12 +27,15 @@ export const agents = sqliteTable("agents", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
     sql`(unixepoch())`,
   ),
-});
+}, (table) => [
+  unique().on(table.namespaceId, table.agentId),
+]);
 
 export const checks = sqliteTable(
   "checks",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    namespaceId: text("namespace_id").notNull(),
     agentId: integer("agent_id").notNull(),
     checkedAt: integer("checked_at", { mode: "timestamp_ms" }).notNull(),
     status: text("status").notNull(),
@@ -38,7 +45,7 @@ export const checks = sqliteTable(
     errorMessage: text("error_message"),
   },
   (table) => [
-    index("idx_checks_agent_time").on(table.agentId, table.checkedAt),
+    index("idx_checks_ns_agent_time").on(table.namespaceId, table.agentId, table.checkedAt),
     index("idx_checks_time").on(table.checkedAt),
   ],
 );
@@ -46,6 +53,7 @@ export const checks = sqliteTable(
 export const stats = sqliteTable(
   "stats",
   {
+    namespaceId: text("namespace_id").notNull(),
     agentId: integer("agent_id").notNull(),
     hourTimestamp: integer("hour_timestamp").notNull(),
     totalChecks: integer("total_checks").notNull(),
@@ -56,7 +64,8 @@ export const stats = sqliteTable(
     avgResponseMs: real("avg_response_ms").notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.agentId, table.hourTimestamp] }),
+    primaryKey({ columns: [table.namespaceId, table.agentId, table.hourTimestamp] }),
+    index("idx_stats_ns_agent").on(table.namespaceId, table.agentId),
     index("idx_stats_hour").on(table.hourTimestamp),
   ],
 );
@@ -65,8 +74,10 @@ export const incidentEvents = sqliteTable(
   "incident_events",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    namespaceId: text("namespace_id").notNull(),
     agentId: integer("agent_id").notNull(),
     incidentId: text("incident_id").notNull(),
+    linkedIncidentId: text("linked_incident_id"),
     eventAt: integer("event_at", { mode: "timestamp_ms" }).notNull(),
     eventType: text("event_type").notNull(),
     fromStatus: text("from_status"),
@@ -74,6 +85,7 @@ export const incidentEvents = sqliteTable(
     reason: text("reason"),
   },
   (table) => [
+    index("idx_incident_events_ns_agent").on(table.namespaceId, table.agentId),
     index("idx_incident_events_agent_incident").on(
       table.agentId,
       table.incidentId,

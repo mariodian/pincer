@@ -30,10 +30,12 @@ const tracker = createIncidentTracker(
       fromStatus: CheckStatus | null,
       toStatus: CheckStatus | null,
       reason: string | null,
+      namespaceId?: string,
     ): void {
       const { db } = getDatabase();
       db.insert(incidentEvents)
         .values({
+          namespaceId: namespaceId || "default",
           agentId,
           incidentId,
           eventType,

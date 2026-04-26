@@ -1,0 +1,1 @@
+ALTER TABLE `settings_daemon` ADD `namespace_key` text DEFAULT '' NOT NULL;

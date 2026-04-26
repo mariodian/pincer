@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { executeHealthCheck } from "../src/shared/agentHealthCheck";
 import { logger } from "../src/shared/logger";
 import { truncateToHour } from "../src/shared/time-utils";
-import type { Agent, CheckStatus } from "../src/shared/types";
+import type { CheckStatus } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { recordCheck as recordIncidentCheck } from "./incidents";
@@ -10,18 +10,32 @@ import { agents, checks, stats } from "./schema";
 
 const MAX_CONCURRENT_CHECKS = 10;
 
+interface AgentRow {
+  id: number;
+  namespaceId: string;
+  agentId: number;
+  type: string;
+  name: string;
+  url: string;
+  port: number;
+  enabled: boolean;
+  healthEndpoint: string | null;
+  statusShape: string | null;
+}
+
 async function runPoll(): Promise<void> {
   const { db } = getDatabase();
   const allAgents = db
     .select()
     .from(agents)
     .where(sql`${agents.enabled} = 1`)
-    .all();
+    .all() as AgentRow[];
 
   if (allAgents.length === 0) return;
 
   // Process agents with concurrency limit
   const results: ({
+    namespaceId: string;
     agentId: number;
     status: CheckStatus;
     responseMs: number;
@@ -35,7 +49,27 @@ async function runPoll(): Promise<void> {
     const batchResults = await Promise.all(
       batch.map(async (agent) => {
         try {
-          return await executeHealthCheck(agent as Agent);
+          // Create a compatible Agent object for executeHealthCheck
+          const agentForCheck = {
+            id: agent.id,
+            type: agent.type,
+            name: agent.name,
+            url: agent.url,
+            port: agent.port,
+            enabled: agent.enabled,
+            healthEndpoint: agent.healthEndpoint,
+            statusShape: agent.statusShape,
+          };
+          const result = await executeHealthCheck(agentForCheck as any);
+          return {
+            namespaceId: agent.namespaceId,
+            agentId: agent.id,
+            status: result.status,
+            responseMs: result.responseMs,
+            httpStatus: result.httpStatus,
+            errorCode: result.errorCode,
+            errorMessage: result.errorMessage,
+          };
         } catch (error) {
           logger.error("poll", `Check failed for agent ${agent.id}`, error);
           return null;
@@ -53,6 +87,7 @@ async function runPoll(): Promise<void> {
   for (const result of validResults) {
     db.insert(checks)
       .values({
+        namespaceId: result.namespaceId,
         agentId: result.agentId,
         checkedAt: new Date(),
         status: result.status,
@@ -63,8 +98,8 @@ async function runPoll(): Promise<void> {
       })
       .run();
 
-    // Detect incidents
-    recordIncidentCheck(result.agentId, result.status);
+    // Detect incidents - pass namespaceId for proper scoping
+    recordIncidentCheck(result.agentId, result.status, result.namespaceId);
 
     // Upsert hourly stat
     const hourTimestamp = truncateToHour(Math.floor(Date.now() / 1000));
@@ -74,6 +109,7 @@ async function runPoll(): Promise<void> {
 
     db.insert(stats)
       .values({
+        namespaceId: result.namespaceId,
         agentId: result.agentId,
         hourTimestamp,
         totalChecks: 1,
@@ -84,7 +120,7 @@ async function runPoll(): Promise<void> {
         avgResponseMs: result.responseMs,
       })
       .onConflictDoUpdate({
-        target: [stats.agentId, stats.hourTimestamp],
+        target: [stats.namespaceId, stats.agentId, stats.hourTimestamp],
         set: {
           totalChecks: sql`${stats.totalChecks} + 1`,
           okCount: sql`${stats.okCount} + ${isOk}`,
