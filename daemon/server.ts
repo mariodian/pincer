@@ -59,7 +59,19 @@ async function handleRequest(req: Request): Promise<Response> {
 
       const { db } = getDatabase();
       const rows = db.select().from(agents).where(sql`${agents.namespaceId} = ${namespaceId}`).all();
-      return jsonResponse(rows);
+      return jsonResponse(
+        rows.map((r) => ({
+          id: r.agentId,
+          type: r.type,
+          name: r.name,
+          url: r.url,
+          port: r.port,
+          enabled: r.enabled,
+          healthEndpoint: r.healthEndpoint,
+          statusShape: r.statusShape,
+          agentHash: r.agentHash,
+        })),
+      );
     }
 
     // PUT /agents

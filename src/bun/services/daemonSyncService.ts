@@ -16,6 +16,16 @@ import { getMachineId } from "./machineIdService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
 
+// Prevent duplicate pushes/pulls during startup sync.
+// Reset by resetAgentSyncGuard() when agents are mutated (see agentService.syncAgentsToDaemon).
+let agentsPushedOnce = false;
+let agentsPulledOnce = false;
+
+export function resetAgentSyncGuard(): void {
+  agentsPushedOnce = false;
+  agentsPulledOnce = false;
+}
+
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
@@ -46,20 +56,21 @@ export function isDaemonConfigured(): boolean {
   return s.enabled && !!s.url && !!s.secret;
 }
 
+async function createDaemonClient(): Promise<DaemonClient> {
+  const settings = getDaemonSettings();
+  const [namespaceId, machineId] = await Promise.all([
+    getNamespaceId(),
+    getMachineId(),
+  ]);
+  return new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
+}
+
 export async function testDaemonConnection(): Promise<DaemonTestResult> {
   if (!isDaemonConfigured()) {
     return { connected: false, error: "Daemon not configured" };
   }
 
-  const settings = getDaemonSettings();
-  const namespaceId = await getNamespaceId();
-  const machineId = await getMachineId();
-  const client = new DaemonClient(
-    settings.url,
-    settings.secret,
-    namespaceId,
-    machineId,
-  );
+  const client = await createDaemonClient();
 
   try {
     const response = await client.testConnection();
@@ -82,9 +93,16 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
 }
 
 export async function pushAgentsToDaemon(): Promise<void> {
+  // Guard: skip if already pushed this lifecycle (reset by resetAgentSyncGuard on mutation)
+  if (agentsPushedOnce) {
+    return;
+  }
+
   if (!isDaemonConfigured()) {
     return;
   }
+
+  agentsPushedOnce = true;
 
   const agents = await readAgents();
   if (agents.length === 0) {
@@ -92,15 +110,7 @@ export async function pushAgentsToDaemon(): Promise<void> {
     return;
   }
 
-  const settings = getDaemonSettings();
-  const namespaceId = await getNamespaceId();
-  const machineId = await getMachineId();
-  const client = new DaemonClient(
-    settings.url,
-    settings.secret,
-    namespaceId,
-    machineId,
-  );
+  const client = await createDaemonClient();
 
   try {
     const payload: AgentPushPayload[] = agents.map((a) => ({
@@ -217,25 +227,41 @@ async function fetchOpenIncidents(
   }
 }
 
-export async function pullAgentsFromDaemon(): Promise<number> {
+/**
+ * Unify agent sync direction: push if local agents exist, pull from daemon if not.
+ */
+export async function syncAgents(): Promise<number> {
   if (!isDaemonConfigured()) {
     return 0;
   }
 
   const agents = await readAgents();
   if (agents.length > 0) {
+    await pushAgentsToDaemon();
     return 0;
   }
 
-  const settings = getDaemonSettings();
-  const namespaceId = await getNamespaceId();
-  const machineId = await getMachineId();
-  const client = new DaemonClient(
-    settings.url,
-    settings.secret,
-    namespaceId,
-    machineId,
-  );
+  return pullAgentsFromDaemon();
+}
+
+export async function pullAgentsFromDaemon(): Promise<number> {
+  // Guard: skip if already pulled this lifecycle (reset by resetAgentSyncGuard)
+  if (agentsPulledOnce) {
+    return 0;
+  }
+
+  if (!isDaemonConfigured()) {
+    return 0;
+  }
+
+  agentsPulledOnce = true;
+
+  const agents = await readAgents();
+  if (agents.length > 0) {
+    return 0;
+  }
+
+  const client = await createDaemonClient();
 
   try {
     const fetchedAgents = await client.fetchAgents();
@@ -265,7 +291,8 @@ export async function pullAgentsFromDaemon(): Promise<number> {
 }
 
 export async function sync(): Promise<DaemonSyncResult> {
-  const agentsImported = await pullAgentsFromDaemon();
+  resetAgentSyncGuard();
+  const agentsImported = await syncAgents();
 
   if (!isDaemonConfigured()) {
     return {
@@ -278,15 +305,7 @@ export async function sync(): Promise<DaemonSyncResult> {
     };
   }
 
-  const settings = getDaemonSettings();
-  const namespaceId = await getNamespaceId();
-  const machineId = await getMachineId();
-  const client = new DaemonClient(
-    settings.url,
-    settings.secret,
-    namespaceId,
-    machineId,
-  );
+  const client = await createDaemonClient();
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
 
   const checks = await importChecks(client, lastSyncAt);

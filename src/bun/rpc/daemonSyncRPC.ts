@@ -12,7 +12,7 @@ import { getMeta } from "../storage/sqlite/appMetaRepo";
 import {
   sync,
   testDaemonConnection,
-  pushAgentsToDaemon,
+  syncAgents,
 } from "../services/daemonSyncService";
 import { logger } from "../services/loggerService";
 
@@ -47,13 +47,13 @@ export const daemonRequestHandlers = {
     withErrorLogging("daemonRPC", async () => {
       const { settingsChanged } =
         updateDaemonSettingsWithLifecycleToDb(partial);
-      // Push agents when connection details change (new daemon or reconnected)
+      // Sync agents when connection details change (new daemon or reconnected)
       if (settingsChanged) {
         logger.debug(
           "daemonRPC",
-          "Connection settings changed - pushing agents to daemon",
+          "Connection settings changed - syncing agents",
         );
-        await pushAgentsToDaemon();
+        await syncAgents();
       }
     }),
 
@@ -61,8 +61,6 @@ export const daemonRequestHandlers = {
     withErrorResult(
       "daemonRPC",
       async () => {
-        // Push agents first to ensure daemon has latest agent list before syncing
-        await pushAgentsToDaemon();
         return sync();
       },
       {
