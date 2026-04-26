@@ -76,23 +76,45 @@ export function writeAgents(agentList: Agent[]): void {
 
     for (const agent of agentList) {
       if (agent.id > 0) {
-        tx.update(agents)
-          .set({
-            type: agent.type,
-            name: agent.name,
-            url: agent.url,
-            port: agent.port,
-            enabled: agent.enabled ?? true,
-            healthEndpoint: agent.healthEndpoint ?? null,
-            statusShape: agent.statusShape ?? null,
-            updatedAt: now,
-          })
+        const exists = tx
+          .select()
+          .from(agents)
           .where(eq(agents.id, agent.id))
-          .run();
+          .get();
+
+        if (exists) {
+          tx.update(agents)
+            .set({
+              type: agent.type,
+              name: agent.name,
+              url: agent.url,
+              port: agent.port,
+              enabled: agent.enabled ?? true,
+              healthEndpoint: agent.healthEndpoint ?? null,
+              statusShape: agent.statusShape ?? null,
+              updatedAt: now,
+            })
+            .where(eq(agents.id, agent.id))
+            .run();
+        } else {
+          tx.insert(agents)
+            .values({
+              id: agent.id,
+              type: agent.type,
+              name: agent.name,
+              url: agent.url,
+              port: agent.port,
+              enabled: agent.enabled ?? true,
+              healthEndpoint: agent.healthEndpoint ?? null,
+              statusShape: agent.statusShape ?? null,
+              updatedAt: now,
+            })
+            .run();
+        }
 
         newIds.add(agent.id);
       } else {
-        tx.insert(agents)
+        const result = tx.insert(agents)
           .values({
             type: agent.type,
             name: agent.name,
@@ -103,7 +125,9 @@ export function writeAgents(agentList: Agent[]): void {
             statusShape: agent.statusShape ?? null,
             updatedAt: now,
           })
-          .run();
+          .returning()
+          .get();
+        newIds.add(result.id);
       }
     }
 

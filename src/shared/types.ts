@@ -124,6 +124,7 @@ export interface DaemonSyncResult {
   checksImported: number;
   statsImported: number;
   incidentsImported: number;
+  agentsImported: number;
   openIncidents: Array<{ agentId: number; incidentId: string }>;
 }
 
