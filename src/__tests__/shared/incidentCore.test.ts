@@ -392,5 +392,106 @@ describe("incidentCore", () => {
         expect(state?.openIncidentId).not.toBeNull();
       });
     });
+
+    describe("namespaceId support", () => {
+      it("should include namespaceId in incident events when provided", () => {
+        const deps = createMockIncidentDeps();
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 2,
+          recoveryThreshold: 2,
+        });
+
+        // Mock calling recordCheck with namespace context (simulating daemon poll behavior)
+        // The insertEvent mock now captures namespaceId
+        deps.insertEvent(
+          1,
+          "inc-123",
+          "opened",
+          null,
+          "offline",
+          "Test",
+          "ns-abc-123",
+        );
+
+        expect(deps._events.length).toBe(1);
+        expect(deps._events[0].namespaceId).toBe("ns-abc-123");
+        expect(deps._events[0].eventType).toBe("opened");
+      });
+
+      it("should propagate namespaceId through opened event", () => {
+        const deps = createMockIncidentDeps();
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 2,
+          recoveryThreshold: 2,
+        });
+
+        deps.insertEvent(
+          1,
+          "inc-1",
+          "opened",
+          "ok",
+          "offline",
+          "Incident opened",
+          "namespace-1",
+        );
+
+        expect(deps._events[0].namespaceId).toBe("namespace-1");
+        expect(deps._events[0].agentId).toBe(1);
+      });
+
+      it("should propagate namespaceId through recovered event", () => {
+        const deps = createMockIncidentDeps();
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 2,
+          recoveryThreshold: 2,
+        });
+
+        deps.insertEvent(
+          1,
+          "inc-1",
+          "recovered",
+          "offline",
+          "ok",
+          "Recovered after 2 checks",
+          "namespace-2",
+        );
+
+        expect(deps._events[0].namespaceId).toBe("namespace-2");
+        expect(deps._events[0].eventType).toBe("recovered");
+      });
+
+      it("should propagate namespaceId through status_changed event", () => {
+        const deps = createMockIncidentDeps();
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 2,
+          recoveryThreshold: 2,
+        });
+
+        deps.insertEvent(
+          1,
+          "inc-1",
+          "status_changed",
+          "offline",
+          "error",
+          "Status changed",
+          "namespace-3",
+        );
+
+        expect(deps._events[0].namespaceId).toBe("namespace-3");
+        expect(deps._events[0].eventType).toBe("status_changed");
+      });
+
+      it("should handle undefined namespaceId gracefully", () => {
+        const deps = createMockIncidentDeps();
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 2,
+          recoveryThreshold: 2,
+        });
+
+        deps.insertEvent(1, "inc-1", "opened", null, "offline", "Test");
+
+        expect(deps._events[0].namespaceId).toBeUndefined();
+      });
+    });
   });
 });

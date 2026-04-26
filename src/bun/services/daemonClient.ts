@@ -1,8 +1,4 @@
-import type {
-  Check,
-  HourlyStat,
-  IncidentEvent,
-} from "../../shared/types";
+import type { Check, HourlyStat, IncidentEvent } from "../../shared/types";
 
 export interface DaemonPageResult<T> {
   data: T[];
@@ -28,7 +24,13 @@ export class DaemonClient {
   private readonly machineId: string;
   private readonly timeout: number;
 
-  constructor(baseUrl: string, secret: string, namespaceId: string, machineId: string, timeout = 10000) {
+  constructor(
+    baseUrl: string,
+    secret: string,
+    namespaceId: string,
+    machineId: string,
+    timeout = 10000,
+  ) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.secret = secret;
     this.namespaceId = namespaceId;
