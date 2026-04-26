@@ -73,6 +73,11 @@ export class DaemonClient {
     >;
   }
 
+  async fetchAgents(): Promise<AgentPushPayload[]> {
+    const res = await this.request("/agents");
+    return res.json() as Promise<AgentPushPayload[]>;
+  }
+
   async pushAgents(payload: AgentPushPayload[]): Promise<{ updated: number }> {
     const res = await this.request("/agents", {
       method: "PUT",

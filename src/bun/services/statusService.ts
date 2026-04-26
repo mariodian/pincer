@@ -9,6 +9,7 @@ import {
   sync as daemonSync,
   isDaemonConfigured,
   pushAgentsToDaemon,
+  pullAgentsFromDaemon,
 } from "./daemonSyncService";
 import {
   initIncidentService,
@@ -80,6 +81,8 @@ const daemonMode: PollMode = {
   onEnter(reason) {
     if (reason === "daemon-connected") {
       logger.info("status", "Daemon connected - switching to synced data mode");
+      // Pull agents from daemon if local list is empty, then push to ensure sync
+      void pullAgentsFromDaemon();
       // Push agents to daemon on reconnect (skip if already pushed on startup)
       if (!agentsPushedOnStartup) {
         agentsPushedOnStartup = true;

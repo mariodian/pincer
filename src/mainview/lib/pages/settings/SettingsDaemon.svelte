@@ -118,7 +118,7 @@
       const result = await rpc.request.syncDaemon({});
       lastSync = Date.now();
       toast.success(
-        `Synced: ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents`,
+        `Synced: ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents${result.agentsImported ? `, ${result.agentsImported} agents` : ""}`,
       );
     } catch {
       toast.error("Sync failed");

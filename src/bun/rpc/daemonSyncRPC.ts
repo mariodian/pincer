@@ -71,6 +71,7 @@ export const daemonRequestHandlers = {
         checksImported: 0,
         statsImported: 0,
         incidentsImported: 0,
+        agentsImported: 0,
         openIncidents: [],
       },
     ),

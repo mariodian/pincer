@@ -10,7 +10,7 @@ import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertChecksBatch } from "../storage/sqlite/checksRepo";
 import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
 import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
-import { readAgents } from "./agentService";
+import { readAgents, writeAgents } from "./agentService";
 import { logger } from "./loggerService";
 import { getMachineId } from "./machineIdService";
 
@@ -86,6 +86,12 @@ export async function pushAgentsToDaemon(): Promise<void> {
     return;
   }
 
+  const agents = await readAgents();
+  if (agents.length === 0) {
+    logger.debug("daemon", "No local agents to push to daemon");
+    return;
+  }
+
   const settings = getDaemonSettings();
   const namespaceId = await getNamespaceId();
   const machineId = await getMachineId();
@@ -97,7 +103,6 @@ export async function pushAgentsToDaemon(): Promise<void> {
   );
 
   try {
-    const agents = await readAgents();
     const payload: AgentPushPayload[] = agents.map((a) => ({
       id: a.id,
       type: a.type,
@@ -212,13 +217,63 @@ async function fetchOpenIncidents(
   }
 }
 
+export async function pullAgentsFromDaemon(): Promise<number> {
+  if (!isDaemonConfigured()) {
+    return 0;
+  }
+
+  const agents = await readAgents();
+  if (agents.length > 0) {
+    return 0;
+  }
+
+  const settings = getDaemonSettings();
+  const namespaceId = await getNamespaceId();
+  const machineId = await getMachineId();
+  const client = new DaemonClient(
+    settings.url,
+    settings.secret,
+    namespaceId,
+    machineId,
+  );
+
+  try {
+    const fetchedAgents = await client.fetchAgents();
+    if (fetchedAgents.length === 0) {
+      return 0;
+    }
+
+    await writeAgents(
+      fetchedAgents.map((a) => ({
+        id: a.id,
+        type: a.type,
+        name: a.name,
+        url: a.url,
+        port: a.port,
+        enabled: a.enabled,
+        healthEndpoint: a.healthEndpoint ?? undefined,
+        statusShape: a.statusShape ?? undefined,
+      })),
+    );
+
+    logger.info("daemon", `Pulled ${fetchedAgents.length} agents from daemon`);
+    return fetchedAgents.length;
+  } catch (error) {
+    logger.warn("daemon", "Failed to pull agents from daemon:", error);
+    return 0;
+  }
+}
+
 export async function sync(): Promise<DaemonSyncResult> {
+  const agentsImported = await pullAgentsFromDaemon();
+
   if (!isDaemonConfigured()) {
     return {
       success: true,
       checksImported: 0,
       statsImported: 0,
       incidentsImported: 0,
+      agentsImported,
       openIncidents: [],
     };
   }
@@ -242,6 +297,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       checksImported: 0,
       statsImported: 0,
       incidentsImported: 0,
+      agentsImported,
       openIncidents: [],
     };
   }
@@ -264,6 +320,7 @@ export async function sync(): Promise<DaemonSyncResult> {
     checksImported: checks.imported,
     statsImported: stats,
     incidentsImported: incidents,
+    agentsImported,
     openIncidents,
   };
 }

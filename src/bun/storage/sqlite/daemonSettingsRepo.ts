@@ -51,8 +51,11 @@ export function updateDaemonSettingsWithLifecycle(
 
   updateDaemonSettings(partial);
 
-  // Return whether connection details changed (caller should push agents)
+  // Push agents only when connection is fully configured (both url and secret set)
+  const updated = getDaemonSettings();
   const settingsChanged =
-    partial.url !== undefined || partial.secret !== undefined;
+    (partial.url !== undefined || partial.secret !== undefined) &&
+    updated.url !== "" &&
+    updated.secret !== "";
   return { settingsChanged };
 }
