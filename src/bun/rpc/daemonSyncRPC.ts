@@ -12,7 +12,6 @@ import { getMeta } from "../storage/sqlite/appMetaRepo";
 import {
   sync,
   testDaemonConnection,
-  syncAgents,
 } from "../services/daemonSyncService";
 import { logger } from "../services/loggerService";
 
@@ -51,9 +50,9 @@ export const daemonRequestHandlers = {
       if (settingsChanged) {
         logger.debug(
           "daemonRPC",
-          "Connection settings changed - syncing agents",
+          "Connection settings changed - syncing agents and data",
         );
-        await syncAgents();
+        await sync();
       }
     }),
 

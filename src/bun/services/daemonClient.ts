@@ -44,9 +44,12 @@ export class DaemonClient {
 
   async fetchChecks(
     since: number,
+    cursor = 0,
     limit = 1000,
   ): Promise<DaemonPageResult<Check>> {
-    const res = await this.request(`/checks?since=${since}&limit=${limit}`);
+    const res = await this.request(
+      `/checks?since=${since}&cursor=${cursor}&limit=${limit}`,
+    );
     const body = (await res.json()) as {
       checks: Check[];
       nextCursor: number | null;
