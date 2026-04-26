@@ -211,7 +211,11 @@ export function createIncidentTracker(
   /**
    * Handle an OK check result.
    */
-  function handleOkCheck(agentId: number, state: AgentIncidentState, namespaceId?: string): void {
+  function handleOkCheck(
+    agentId: number,
+    state: AgentIncidentState,
+    namespaceId?: string,
+  ): void {
     // Reset failure counter
     state.failureCounter = 0;
 

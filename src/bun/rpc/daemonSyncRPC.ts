@@ -9,7 +9,11 @@ import {
   updateDaemonSettingsWithLifecycle as updateDaemonSettingsWithLifecycleToDb,
 } from "../storage/sqlite/daemonSettingsRepo";
 import { getMeta } from "../storage/sqlite/appMetaRepo";
-import { sync, testDaemonConnection, pushAgentsToDaemon } from "../services/daemonSyncService";
+import {
+  sync,
+  testDaemonConnection,
+  pushAgentsToDaemon,
+} from "../services/daemonSyncService";
 import { logger } from "../services/loggerService";
 
 export type DaemonSyncRPCType = {
@@ -41,27 +45,35 @@ export const daemonRequestHandlers = {
 
   updateDaemonSettings: (partial: Partial<DaemonSettings>) =>
     withErrorLogging("daemonRPC", async () => {
-      const { settingsChanged } = updateDaemonSettingsWithLifecycleToDb(partial);
+      const { settingsChanged } =
+        updateDaemonSettingsWithLifecycleToDb(partial);
       // Push agents when connection details change (new daemon or reconnected)
       if (settingsChanged) {
-        logger.debug("daemonRPC", "Connection settings changed - pushing agents to daemon");
+        logger.debug(
+          "daemonRPC",
+          "Connection settings changed - pushing agents to daemon",
+        );
         await pushAgentsToDaemon();
       }
     }),
 
   syncDaemon: () =>
-    withErrorResult("daemonRPC", async () => {
-      // Push agents first to ensure daemon has latest agent list before syncing
-      await pushAgentsToDaemon();
-      return sync();
-    }, {
-      success: false,
-      error: "Sync failed",
-      checksImported: 0,
-      statsImported: 0,
-      incidentsImported: 0,
-      openIncidents: [],
-    }),
+    withErrorResult(
+      "daemonRPC",
+      async () => {
+        // Push agents first to ensure daemon has latest agent list before syncing
+        await pushAgentsToDaemon();
+        return sync();
+      },
+      {
+        success: false,
+        error: "Sync failed",
+        checksImported: 0,
+        statsImported: 0,
+        incidentsImported: 0,
+        openIncidents: [],
+      },
+    ),
 
   testDaemonConnection: () =>
     withErrorResult("daemonRPC", () => testDaemonConnection(), {

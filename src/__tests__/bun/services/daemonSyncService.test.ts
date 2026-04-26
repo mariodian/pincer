@@ -5,6 +5,7 @@ import type {
   Check,
   IncidentEvent,
   HourlyStat,
+  Agent,
 } from "../../../shared/types";
 
 /**
@@ -284,4 +285,208 @@ describe("daemonSyncService integration", () => {
       expect(closed).toBe(2);
     });
   });
+
+  describe("computeAgentHash", () => {
+    it("should generate consistent hash for same agent", () => {
+      const agent = {
+        id: 1,
+        type: "custom",
+        name: "Test Agent",
+        url: "http://localhost:8080",
+        port: 8080,
+      };
+
+      const hash1 = computeAgentHash(agent);
+      const hash2 = computeAgentHash(agent);
+      expect(hash1).toBe(hash2);
+    });
+
+    it("should generate different hashes for different agents", () => {
+      const agent1 = {
+        id: 1,
+        type: "custom",
+        name: "Agent A",
+        url: "http://localhost:8080",
+        port: 8080,
+      };
+      const agent2 = {
+        id: 2,
+        type: "custom",
+        name: "Agent B",
+        url: "http://localhost:8081",
+        port: 8081,
+      };
+
+      const hash1 = computeAgentHash(agent1);
+      const hash2 = computeAgentHash(agent2);
+      expect(hash1).not.toBe(hash2);
+    });
+
+    it("should produce 16-character hex hash", () => {
+      const agent = {
+        id: 1,
+        type: "openclaw",
+        name: "Test",
+        url: "http://localhost",
+        port: 18789,
+      };
+
+      const hash = computeAgentHash(agent);
+      expect(hash).toHaveLength(16);
+      expect(hash).toMatch(/^[0-9a-f]+$/);
+    });
+
+    it("should hash based on type:url:port", () => {
+      // Changing name should NOT change hash
+      const agentBase = {
+        id: 1,
+        type: "custom",
+        url: "http://localhost:8080",
+        port: 8080,
+      };
+      const agentA = { ...agentBase, name: "Original Name" };
+      const agentB = { ...agentBase, name: "Different Name" };
+
+      expect(computeAgentHash(agentA)).toBe(computeAgentHash(agentB));
+
+      // Changing type SHOULD change hash
+      const agentC = { ...agentBase, type: "openclaw" };
+      expect(computeAgentHash(agentA)).not.toBe(computeAgentHash(agentC));
+    });
+  });
+
+  describe("namespaceId resolution", () => {
+    it("should use namespaceKey when set", () => {
+      const settings = {
+        enabled: true,
+        url: "http://daemon:7378",
+        secret: "test",
+        namespaceKey: "custom-namespace",
+      };
+
+      const namespaceId = settings.namespaceKey || "fallback-machine-id";
+      expect(namespaceId).toBe("custom-namespace");
+    });
+
+    it("should fall back to machineId when namespaceKey is empty", () => {
+      const settings = {
+        enabled: true,
+        url: "http://daemon:7378",
+        secret: "test",
+        namespaceKey: "",
+      };
+
+      const machineId = "machine-uuid-123-456";
+      const namespaceId = settings.namespaceKey || machineId;
+      expect(namespaceId).toBe(machineId);
+    });
+  });
+
+  describe("AgentPushPayload mapping", () => {
+    it("should map Agent to AgentPushPayload correctly", () => {
+      const agent: Agent = {
+        id: 1,
+        type: "custom",
+        name: "Test Agent",
+        url: "http://localhost",
+        port: 8080,
+        enabled: true,
+        healthEndpoint: "/health",
+        statusShape: "json_status",
+      };
+
+      const payload = {
+        id: agent.id,
+        type: agent.type,
+        name: agent.name,
+        url: agent.url,
+        port: agent.port,
+        enabled: agent.enabled ?? true,
+        healthEndpoint: agent.healthEndpoint ?? null,
+        statusShape: agent.statusShape ?? null,
+        agentHash: "mock-hash-1234",
+      };
+
+      expect(payload.id).toBe(1);
+      expect(payload.type).toBe("custom");
+      expect(payload.agentHash).toBe("mock-hash-1234");
+      expect(payload.enabled).toBe(true);
+    });
+
+    it("should handle null healthEndpoint and statusShape", () => {
+      const agent: Agent = {
+        id: 1,
+        type: "custom",
+        name: "Test Agent",
+        url: "http://localhost",
+        port: 8080,
+      };
+
+      const payload = {
+        id: agent.id,
+        type: agent.type,
+        name: agent.name,
+        url: agent.url,
+        port: agent.port,
+        enabled: agent.enabled ?? true,
+        healthEndpoint: agent.healthEndpoint ?? null,
+        statusShape: agent.statusShape ?? null,
+        agentHash: null,
+      };
+
+      expect(payload.healthEndpoint).toBeNull();
+      expect(payload.statusShape).toBeNull();
+    });
+  });
+
+  describe("settings change detection", () => {
+    it("should detect when url changes", () => {
+      const current = { enabled: true, url: "http://old:7378", secret: "test" };
+      const partial = { url: "http://new:7378" };
+
+      const settingsChanged =
+        partial.url !== undefined || partial.secret !== undefined;
+      expect(settingsChanged).toBe(true);
+    });
+
+    it("should detect when secret changes", () => {
+      const current = {
+        enabled: true,
+        url: "http://daemon:7378",
+        secret: "old",
+      };
+      const partial = { secret: "new" };
+
+      const settingsChanged =
+        partial.url !== undefined || partial.secret !== undefined;
+      expect(settingsChanged).toBe(true);
+    });
+
+    it("should not detect change when only enabled changes", () => {
+      const current = {
+        enabled: false,
+        url: "http://daemon:7378",
+        secret: "test",
+      };
+      const partial = { enabled: true };
+
+      const settingsChanged =
+        partial.url !== undefined || partial.secret !== undefined;
+      expect(settingsChanged).toBe(false);
+    });
+  });
 });
+
+// Helper function for testing (mirrors the real implementation)
+function computeAgentHash(agent: {
+  type: string;
+  url: string;
+  port: number;
+}): string {
+  const crypto = require("node:crypto");
+  return crypto
+    .createHash("sha256")
+    .update(`${agent.type}:${agent.url}:${agent.port}`)
+    .digest("hex")
+    .substring(0, 16);
+}

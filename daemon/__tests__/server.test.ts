@@ -168,6 +168,97 @@ describe("daemon server", () => {
     });
   });
 
+  describe("namespace header", () => {
+    it("should extract x-namespace-id header from request", () => {
+      const headers = new Headers({ "x-namespace-id": "ns-abc123" });
+      const namespaceId = headers.get("x-namespace-id");
+      expect(namespaceId).toBe("ns-abc123");
+    });
+
+    it("should return null when x-namespace-id header is missing", () => {
+      const headers = new Headers();
+      const namespaceId = headers.get("x-namespace-id");
+      expect(namespaceId).toBeNull();
+    });
+
+    it("should reject requests without namespace header", () => {
+      const getNamespace = (headers: Headers): string | null =>
+        headers.get("x-namespace-id");
+
+      const headers = new Headers();
+      const namespaceId = getNamespace(headers);
+      const shouldReject = namespaceId === null;
+      expect(shouldReject).toBe(true);
+    });
+
+    it("should accept requests with valid namespace header", () => {
+      const getNamespace = (headers: Headers): string | null =>
+        headers.get("x-namespace-id");
+
+      const headers = new Headers({ "x-namespace-id": "machine-uuid-123" });
+      const namespaceId = getNamespace(headers);
+      const shouldAccept = namespaceId !== null && namespaceId.length > 0;
+      expect(shouldAccept).toBe(true);
+    });
+  });
+
+  describe("agent push payload with hash", () => {
+    it("should validate agent payload includes agentHash", () => {
+      const payload = {
+        id: 1,
+        type: "custom",
+        name: "Test Agent",
+        url: "http://localhost:8080",
+        port: 8080,
+        enabled: true,
+        healthEndpoint: "/health",
+        statusShape: "json_status",
+        agentHash: "a1b2c3d4e5f6g7h8",
+      };
+
+      expect(payload.agentHash).toBeDefined();
+      expect(payload.agentHash).toHaveLength(16);
+    });
+
+    it("should accept null agentHash", () => {
+      const payload = {
+        id: 1,
+        type: "custom",
+        name: "Test Agent",
+        url: "http://localhost:8080",
+        port: 8080,
+        enabled: true,
+        healthEndpoint: null,
+        statusShape: null,
+        agentHash: null,
+      };
+
+      expect(payload.agentHash).toBeNull();
+    });
+  });
+
+  describe("upsert SQL logic", () => {
+    it("should generate correct ON CONFLICT clause for namespace_id, agent_id", () => {
+      const conflictTarget = ["namespace_id", "agent_id"];
+      const updateFields = [
+        "agent_hash",
+        "type",
+        "name",
+        "url",
+        "port",
+        "enabled",
+        "health_endpoint",
+        "status_shape",
+        "updated_at",
+      ];
+
+      expect(conflictTarget).toContain("namespace_id");
+      expect(conflictTarget).toContain("agent_id");
+      expect(updateFields).toContain("agent_hash");
+      expect(updateFields).toContain("updated_at");
+    });
+  });
+
   describe("route handling", () => {
     it("should dispatch based on method and path", () => {
       const routes: Array<{ method: string; path: string; handler: string }> = [

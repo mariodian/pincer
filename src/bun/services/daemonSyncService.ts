@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
-import type { Agent, DaemonSyncResult, DaemonTestResult } from "../../shared/types";
+import type {
+  Agent,
+  DaemonSyncResult,
+  DaemonTestResult,
+} from "../../shared/types";
 import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
@@ -50,7 +54,12 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
   const settings = getDaemonSettings();
   const namespaceId = await getNamespaceId();
   const machineId = await getMachineId();
-  const client = new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
+  const client = new DaemonClient(
+    settings.url,
+    settings.secret,
+    namespaceId,
+    machineId,
+  );
 
   try {
     const response = await client.testConnection();
@@ -80,11 +89,16 @@ export async function pushAgentsToDaemon(): Promise<void> {
   const settings = getDaemonSettings();
   const namespaceId = await getNamespaceId();
   const machineId = await getMachineId();
-  const client = new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
+  const client = new DaemonClient(
+    settings.url,
+    settings.secret,
+    namespaceId,
+    machineId,
+  );
 
   try {
     const agents = await readAgents();
-    const payload: AgentPushPayload[] = agents.map(a => ({
+    const payload: AgentPushPayload[] = agents.map((a) => ({
       id: a.id,
       type: a.type,
       name: a.name,
@@ -212,7 +226,12 @@ export async function sync(): Promise<DaemonSyncResult> {
   const settings = getDaemonSettings();
   const namespaceId = await getNamespaceId();
   const machineId = await getMachineId();
-  const client = new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
+  const client = new DaemonClient(
+    settings.url,
+    settings.secret,
+    namespaceId,
+    machineId,
+  );
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
 
   const checks = await importChecks(client, lastSyncAt);

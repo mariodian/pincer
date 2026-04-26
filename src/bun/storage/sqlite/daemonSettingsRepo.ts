@@ -23,7 +23,8 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
   if (partial.enabled !== undefined) set.enabled = partial.enabled;
   if (partial.url !== undefined) set.url = partial.url;
   if (partial.secret !== undefined) set.secret = partial.secret;
-  if (partial.namespaceKey !== undefined) set.namespaceKey = partial.namespaceKey;
+  if (partial.namespaceKey !== undefined)
+    set.namespaceKey = partial.namespaceKey;
 
   if (Object.keys(set).length > 0) {
     db.update(settingsDaemon).set(set).run();
@@ -51,6 +52,7 @@ export function updateDaemonSettingsWithLifecycle(
   updateDaemonSettings(partial);
 
   // Return whether connection details changed (caller should push agents)
-  const settingsChanged = partial.url !== undefined || partial.secret !== undefined;
+  const settingsChanged =
+    partial.url !== undefined || partial.secret !== undefined;
   return { settingsChanged };
 }

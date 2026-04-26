@@ -86,6 +86,7 @@ export interface MockIncidentTrackerDeps extends IncidentTrackerDeps {
     fromStatus: CheckStatus | null;
     toStatus: CheckStatus | null;
     reason: string | null;
+    namespaceId?: string;
   }>;
   _checks: Map<number, Array<{ status: CheckStatus; checkedAt: number }>>;
 }
@@ -100,6 +101,7 @@ export function createMockIncidentDeps(
     fromStatus: CheckStatus | null;
     toStatus: CheckStatus | null;
     reason: string | null;
+    namespaceId?: string;
   }> = [];
 
   const checks = new Map<
@@ -115,6 +117,7 @@ export function createMockIncidentDeps(
       fromStatus,
       toStatus,
       reason,
+      namespaceId,
     ) => {
       events.push({
         agentId,
@@ -123,6 +126,7 @@ export function createMockIncidentDeps(
         fromStatus,
         toStatus,
         reason,
+        namespaceId,
       });
     },
     getAgentLastNChecks: (agentId, n) => {
