@@ -63,40 +63,69 @@ describe("daemon server", () => {
   });
 
   describe("checks pagination", () => {
-    it("should calculate pagination cursor", () => {
+    it("should calculate ID-based pagination cursor", () => {
       const limit = 100;
-      const rows: Array<{ checkedAt: number }> = Array.from({ length: limit + 1 }, (_, i) => ({
-        checkedAt: (i + 1) * 1000,
-      }));
+      const rows: Array<{ id: number; checkedAt: number }> = Array.from(
+        { length: limit + 1 },
+        (_, i) => ({ id: i + 1, checkedAt: (i + 1) * 1000 }),
+      );
 
       const hasMore = rows.length > limit;
       const page = rows.slice(0, limit);
-      const nextCursor = hasMore ? page[page.length - 1].checkedAt : null;
+      const nextCursor = hasMore ? page[page.length - 1].id : null;
 
       expect(hasMore).toBe(true);
       expect(page.length).toBe(limit);
-      expect(nextCursor).toBe(limit * 1000);
+      expect(nextCursor).toBe(limit);
     });
 
     it("should return null cursor when no more data", () => {
       const limit = 100;
-      const rows: Array<{ checkedAt: number }> = Array.from({ length: 50 }, (_, i) => ({
-        checkedAt: (i + 1) * 1000,
-      }));
+      const rows: Array<{ id: number; checkedAt: number }> = Array.from(
+        { length: 50 },
+        (_, i) => ({ id: i + 1, checkedAt: (i + 1) * 1000 }),
+      );
 
       const hasMore = rows.length > limit;
-      const nextCursor = hasMore ? rows[rows.length - 1].checkedAt : null;
+      const nextCursor = hasMore ? rows[rows.length - 1].id : null;
 
       expect(hasMore).toBe(false);
       expect(nextCursor).toBeNull();
     });
 
-    it("should parse since and limit query params", () => {
-      const url = new URL("http://localhost:7378/checks?since=1000&limit=500");
+    it("should paginate correctly when rows share timestamps", () => {
+      const limit = 3;
+      const rows: Array<{ id: number; checkedAt: number }> = [
+        { id: 1, checkedAt: 1000 },
+        { id: 2, checkedAt: 1000 },
+        { id: 3, checkedAt: 1000 },
+        { id: 4, checkedAt: 1000 },
+        { id: 5, checkedAt: 1000 },
+      ];
+
+      const page1 = rows.slice(0, limit);
+      const cursor1 = page1[page1.length - 1].id;
+      expect(cursor1).toBe(3);
+
+      const page2 = rows.filter((r) => r.id > cursor1).slice(0, limit);
+      const cursor2 = page2.length > limit ? page2[page2.length - 1].id : null;
+      expect(page2.length).toBe(2);
+      expect(cursor2).toBeNull();
+    });
+
+    it("should parse since, cursor, and limit query params", () => {
+      const url = new URL(
+        "http://localhost:7378/checks?since=1000&cursor=500&limit=500",
+      );
       const since = parseInt(url.searchParams.get("since") || "0", 10);
-      const limit = Math.min(parseInt(url.searchParams.get("limit") || "1000", 10), 5000);
+      const cursor = parseInt(url.searchParams.get("cursor") || "0", 10);
+      const limit = Math.min(
+        parseInt(url.searchParams.get("limit") || "1000", 10),
+        5000,
+      );
 
       expect(since).toBe(1000);
+      expect(cursor).toBe(500);
       expect(limit).toBe(500);
     });
   });

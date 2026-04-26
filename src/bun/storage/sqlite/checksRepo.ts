@@ -3,6 +3,7 @@ import { rowToCheck } from "../../../shared/db-helpers";
 import { desc, eq, sql } from "drizzle-orm";
 import { getDatabase } from "./db";
 import { checks } from "./schema";
+import { runInTransaction } from "../../../shared/db-core";
 
 /**
  * Insert a single health check into the database.
@@ -39,6 +40,7 @@ export function insertCheck(
 /**
  * Insert a batch of checks from daemon sync.
  * Uses INSERT OR IGNORE to skip duplicates.
+ * Wrapped in a transaction for atomicity and performance.
  * Returns the number of checks inserted.
  */
 export function insertChecksBatch(checksData: Check[]): number {
@@ -51,21 +53,22 @@ export function insertChecksBatch(checksData: Check[]): number {
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
 
-  let inserted = 0;
-  for (const check of checksData) {
-    const result = stmt.run(
-      check.agentId,
-      check.checkedAt,
-      check.status,
-      check.responseMs,
-      check.httpStatus,
-      check.errorCode,
-      check.errorMessage,
-    );
-    inserted += result.changes ?? 0;
-  }
-
-  return inserted;
+  return runInTransaction(sqlite, () => {
+    let inserted = 0;
+    for (const check of checksData) {
+      const result = stmt.run(
+        check.agentId,
+        check.checkedAt,
+        check.status,
+        check.responseMs,
+        check.httpStatus,
+        check.errorCode,
+        check.errorMessage,
+      );
+      inserted += result.changes ?? 0;
+    }
+    return inserted;
+  });
 }
 
 /**

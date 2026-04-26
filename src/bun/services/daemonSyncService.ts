@@ -152,24 +152,27 @@ async function importFromDaemon<T>(
 
 /**
  * Import checks from daemon with pagination.
+ * Uses ID-based cursor to avoid infinite loops when multiple checks share timestamps.
  * Returns the number of checks imported and whether the daemon was reachable.
  */
 async function importChecks(
   client: DaemonClient,
   lastSyncAt: number,
 ): Promise<{ imported: number; reachable: boolean }> {
-  let cursor: number | null = lastSyncAt;
+  const since = lastSyncAt;
+  let cursor = 0;
   let total = 0;
 
-  while (cursor !== null) {
+  while (true) {
     try {
-      const page = await client.fetchChecks(cursor);
+      const page = await client.fetchChecks(since, cursor);
       if (page.data.length > 0) {
         total += insertChecksBatch(page.data);
       }
+      if (page.nextCursor === null) break;
       cursor = page.nextCursor;
     } catch (error) {
-      if (cursor === lastSyncAt) {
+      if (cursor === 0) {
         logger.warn("daemon", "Daemon unreachable during sync:", error);
         return { imported: 0, reachable: false };
       }
@@ -306,7 +309,9 @@ export async function sync(): Promise<DaemonSyncResult> {
   }
 
   const client = await createDaemonClient();
-  const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
+  // When agents were just pulled from daemon, sync from the beginning
+  // to capture all historical checks/incidents with their original timestamps
+  const lastSyncAt = agentsImported > 0 ? 0 : parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
 
   const checks = await importChecks(client, lastSyncAt);
   if (!checks.reachable) {

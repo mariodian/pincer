@@ -15,7 +15,7 @@ import {
 } from "./rpc/systemRPC";
 import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
-import { syncAgents } from "./services/daemonSyncService";
+import { sync } from "./services/daemonSyncService";
 import { initLogger, logger } from "./services/loggerService";
 import {
   beginStatusUpdates,
@@ -275,8 +275,8 @@ logger.info("app", "Logger initialized");
 await initDatabase();
 logger.info("app", "Database initialized");
 
-// Sync agents with daemon on app startup (push if local agents exist, pull if not)
-void syncAgents();
+// Sync agents and data with daemon on app startup (push if local agents exist, pull if not)
+void sync();
 
 // Apply autostart setting on startup
 void applyAutostartSetting(getSettings().launchAtLogin);

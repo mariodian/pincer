@@ -136,13 +136,14 @@ async function handleRequest(req: Request): Promise<Response> {
       return jsonResponse({ updated: body.length });
     }
 
-    // GET /checks?since=<ms>&limit=<n>
+    // GET /checks?since=<ms>&cursor=<id>&limit=<n>
     if (method === "GET" && path === "/checks") {
       const namespaceId = getNamespaceId(req);
       if (!namespaceId) return errorResponse("Missing namespace", 400);
 
       const { db } = getDatabase();
       const since = parseInt(url.searchParams.get("since") || "0", 10);
+      const cursor = parseInt(url.searchParams.get("cursor") || "0", 10);
       const limit = Math.min(
         parseInt(url.searchParams.get("limit") || "1000", 10),
         5000,
@@ -151,14 +152,18 @@ async function handleRequest(req: Request): Promise<Response> {
       const rows = db
         .select()
         .from(checks)
-        .where(sql`${checks.namespaceId} = ${namespaceId} AND ${checks.checkedAt} >= ${since}`)
-        .orderBy(checks.checkedAt)
+        .where(
+          sql`${checks.namespaceId} = ${namespaceId}
+            AND (${cursor} = 0 OR ${checks.id} > ${cursor})
+            AND (${since} = 0 OR ${checks.checkedAt} >= ${since})`,
+        )
+        .orderBy(checks.id)
         .limit(limit + 1)
         .all();
 
       const hasMore = rows.length > limit;
       const page = rows.slice(0, limit);
-      const nextCursor = hasMore ? page[page.length - 1].checkedAt : null;
+      const nextCursor = hasMore ? page[page.length - 1].id : null;
 
       return jsonResponse({
         checks: page.map(rowToCheck),
