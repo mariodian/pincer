@@ -4,27 +4,17 @@ import type {
   DaemonSyncResult,
   DaemonTestResult,
 } from "../../shared/types";
-import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
-import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertChecksBatch } from "../storage/sqlite/checksRepo";
+import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
 import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
 import { readAgents, writeAgents } from "./agentService";
+import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { logger } from "./loggerService";
 import { getMachineId } from "./machineIdService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
-
-// Prevent duplicate pushes/pulls during startup sync.
-// Reset by resetAgentSyncGuard() when agents are mutated (see agentService.syncAgentsToDaemon).
-let agentsPushedOnce = false;
-let agentsPulledOnce = false;
-
-export function resetAgentSyncGuard(): void {
-  agentsPushedOnce = false;
-  agentsPulledOnce = false;
-}
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -62,7 +52,12 @@ async function createDaemonClient(): Promise<DaemonClient> {
     getNamespaceId(),
     getMachineId(),
   ]);
-  return new DaemonClient(settings.url, settings.secret, namespaceId, machineId);
+  return new DaemonClient(
+    settings.url,
+    settings.secret,
+    namespaceId,
+    machineId,
+  );
 }
 
 export async function testDaemonConnection(): Promise<DaemonTestResult> {
@@ -93,16 +88,9 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
 }
 
 export async function pushAgentsToDaemon(): Promise<void> {
-  // Guard: skip if already pushed this lifecycle (reset by resetAgentSyncGuard on mutation)
-  if (agentsPushedOnce) {
-    return;
-  }
-
   if (!isDaemonConfigured()) {
     return;
   }
-
-  agentsPushedOnce = true;
 
   const agents = await readAgents();
   if (agents.length === 0) {
@@ -248,16 +236,9 @@ export async function syncAgents(): Promise<number> {
 }
 
 export async function pullAgentsFromDaemon(): Promise<number> {
-  // Guard: skip if already pulled this lifecycle (reset by resetAgentSyncGuard)
-  if (agentsPulledOnce) {
-    return 0;
-  }
-
   if (!isDaemonConfigured()) {
     return 0;
   }
-
-  agentsPulledOnce = true;
 
   const agents = await readAgents();
   if (agents.length > 0) {
@@ -293,25 +274,24 @@ export async function pullAgentsFromDaemon(): Promise<number> {
   }
 }
 
-export async function sync(): Promise<DaemonSyncResult> {
-  resetAgentSyncGuard();
-  const agentsImported = await syncAgents();
-
+/**
+ * Sync checks, stats, and incidents from daemon without touching agents.
+ * Used by the poll loop to continuously sync data while daemon is connected.
+ */
+export async function syncDataOnly(): Promise<DaemonSyncResult> {
   if (!isDaemonConfigured()) {
     return {
       success: true,
       checksImported: 0,
       statsImported: 0,
       incidentsImported: 0,
-      agentsImported,
+      agentsImported: 0,
       openIncidents: [],
     };
   }
 
   const client = await createDaemonClient();
-  // When agents were just pulled from daemon, sync from the beginning
-  // to capture all historical checks/incidents with their original timestamps
-  const lastSyncAt = agentsImported > 0 ? 0 : parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
+  const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
 
   const checks = await importChecks(client, lastSyncAt);
   if (!checks.reachable) {
@@ -321,7 +301,7 @@ export async function sync(): Promise<DaemonSyncResult> {
       checksImported: 0,
       statsImported: 0,
       incidentsImported: 0,
-      agentsImported,
+      agentsImported: 0,
       openIncidents: [],
     };
   }
@@ -344,7 +324,19 @@ export async function sync(): Promise<DaemonSyncResult> {
     checksImported: checks.imported,
     statsImported: stats,
     incidentsImported: incidents,
-    agentsImported,
+    agentsImported: 0,
     openIncidents,
   };
+}
+
+export async function sync(): Promise<DaemonSyncResult> {
+  const agentsImported = await syncAgents();
+
+  if (agentsImported > 0) {
+    // Agents were pulled from daemon, sync from the beginning
+    // to capture all historical checks/incidents with their original timestamps
+    setMeta(DAEMON_SYNC_KEY, "0");
+  }
+
+  return syncDataOnly();
 }

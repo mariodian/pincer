@@ -17,7 +17,7 @@ import { initializeDatabase } from "../storage/sqlite/db";
 import { logger } from "./loggerService";
 import { getAgentType } from "../agentTypes";
 import { recordCheck } from "./incidentService";
-import { pushAgentsToDaemon, resetAgentSyncGuard } from "./daemonSyncService";
+import { pushAgentsToDaemon } from "./daemonSyncService";
 import {
   resolveHealthConfig,
   executeHealthCheck,
@@ -54,7 +54,6 @@ export async function writeAgents(agents: Agent[]): Promise<void> {
  * Non-blocking - runs in background with error handling.
  */
 function syncAgentsToDaemon(): void {
-  resetAgentSyncGuard();
   pushAgentsToDaemon().catch((err) =>
     logger.warn("agent", "Failed to push agent to daemon:", err),
   );

@@ -3,17 +3,14 @@ import type {
   DaemonSyncResult,
   DaemonTestResult,
 } from "../../shared/types";
-import { withErrorLogging, withErrorResult } from "./rpcHelpers";
+import { sync, testDaemonConnection } from "../services/daemonSyncService";
+import { logger } from "../services/loggerService";
+import { getMeta } from "../storage/sqlite/appMetaRepo";
 import {
   getDaemonSettings as getDaemonSettingsFromDb,
   updateDaemonSettingsWithLifecycle as updateDaemonSettingsWithLifecycleToDb,
 } from "../storage/sqlite/daemonSettingsRepo";
-import { getMeta } from "../storage/sqlite/appMetaRepo";
-import {
-  sync,
-  testDaemonConnection,
-} from "../services/daemonSyncService";
-import { logger } from "../services/loggerService";
+import { withErrorLogging, withErrorResult } from "./rpcHelpers";
 
 export type DaemonSyncRPCType = {
   bun: {

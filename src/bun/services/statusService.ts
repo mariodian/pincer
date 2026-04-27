@@ -6,7 +6,7 @@ import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { checkAllAgentsStatus, readAgents } from "./agentService";
 import {
-  sync as daemonSync,
+  syncDataOnly,
   isDaemonConfigured,
   syncAgents,
 } from "./daemonSyncService";
@@ -66,7 +66,7 @@ interface PollMode {
 const daemonMode: PollMode = {
   name: "daemon",
   async execute() {
-    const result = await daemonSync();
+    const result = await syncDataOnly();
 
     if (result.success) {
       lastOpenIncidents = result.openIncidents;
@@ -481,6 +481,8 @@ async function startStatusUpdates() {
       daemonConnected = false;
       await localMode.execute();
     }
+
+    logger.debug("status", "Poll cycle complete");
 
     // Schedule next poll after this one completes
     const { pollingInterval } = getAdvancedSettings();

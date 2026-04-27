@@ -38,10 +38,12 @@ export function updateDaemonSettings(partial: Partial<DaemonSettings>): void {
 
 export function updateDaemonSettingsWithLifecycle(
   partial: Partial<DaemonSettings>,
-): { settingsChanged: boolean } {
+): { settingsChanged: boolean; daemonJustEnabled: boolean } {
   const current = getDaemonSettings();
+  const daemonJustEnabled =
+    partial.enabled === true && !current.enabled;
 
-  if (partial.enabled === true && !current.enabled) {
+  if (daemonJustEnabled) {
     // Reset sync timestamp to prevent syncing duplicate data from the offline period
     setMeta("daemon_last_sync", Date.now().toString());
     logger.debug(
@@ -52,11 +54,11 @@ export function updateDaemonSettingsWithLifecycle(
 
   updateDaemonSettings(partial);
 
-  // Push agents only when connection is fully configured (both url and secret set)
+  // Push agents when connection details change (new daemon or reconnected)
   const updated = getDaemonSettings();
   const settingsChanged =
     (partial.url !== undefined || partial.secret !== undefined) &&
     updated.url !== "" &&
     updated.secret !== "";
-  return { settingsChanged };
+  return { settingsChanged, daemonJustEnabled };
 }
