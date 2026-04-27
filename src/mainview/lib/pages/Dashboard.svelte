@@ -285,6 +285,24 @@
           {timeRange}
         />
       </div>
+    {:else if stats && stats.agents.length > 0}
+      <Empty.Root class="border border-dashed">
+        <Empty.Header>
+          <Empty.Media variant="icon">
+            <Icon name="agents" class="text-muted-foreground" />
+          </Empty.Media>
+          <Empty.Title>All agents disabled</Empty.Title>
+          <Empty.Description>
+            All your agents are currently disabled. Enable an agent to start
+            collecting stats.
+          </Empty.Description>
+        </Empty.Header>
+        <Empty.Content>
+          <div class="flex gap-2">
+            <Button onclick={() => push("/agents")}>Manage Agents</Button>
+          </div>
+        </Empty.Content>
+      </Empty.Root>
     {:else}
       <Empty.Root class="border border-dashed">
         <Empty.Header>
