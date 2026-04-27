@@ -117,13 +117,30 @@ bun run build:stable
 
 ## 🔄 Daemon
 
-Pincer also includes a standalone daemon, `pincerd`, for always-on collection and sync when the desktop app is not running.
+Pincer includes a standalone daemon, `pincerd`, for always-on collection and sync when the desktop app is not running.
 
-> Current status: the daemon packaging and deployment path is Linux-only for now.
+> **Platform:** Linux x86_64 only. Requires `curl`, `tar`, `sudo`.
 
-If you are installing from GitHub Releases, download the Linux daemon bundle named `pincerd-vX.Y.Z-linux-x64.tar.gz`.
+### Quick Install
 
-See [daemon/README.md](./daemon/README.md) for daemon architecture, environment variables, packaging, and `systemd` deployment instructions.
+```bash
+# Install only
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
+
+# Install with systemd service (recommended)
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=your-secret-here
+```
+
+### Script Options
+
+| Flag | Description |
+|------|-------------|
+| `--systemd` | Install and enable systemd service |
+| `--secret=<token>` | Set DAEMON_SECRET (Bearer token for API auth) |
+| `--port=<number>` | Set DAEMON_PORT (default: 7378) |
+| `--user=<username>` | User to run daemon as (default: current user) |
+
+See [daemon/README.md](./daemon/README.md) for full architecture, configuration, and deployment instructions.
 
 ## ⚠️ Known Limitations
 
