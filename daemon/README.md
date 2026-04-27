@@ -11,7 +11,9 @@ A lightweight, always-on Bun HTTP server that runs the same collection pipeline 
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
 
 # Install with systemd service (recommended for production)
-curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=your-secret-here
+# Note: DON'T forget to set your own secret here!
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
+--systemd --secret=your-secret-here
 
 # Start manually
 export DAEMON_SECRET=your-secret-here
@@ -29,29 +31,31 @@ The install script handles downloading, extracting, and optionally setting up sy
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
 
 # Install with systemd service
-curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=your-secret-here
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
+--systemd --secret=your-secret-here
 
 # Install with custom port and user
-curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=my-secret --port=8080 --user=pincer
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
+--systemd --secret=my-secret --port=8080 --user=pincer
 ```
 
 **Script options:**
 
-| Flag | Description |
-|------|-------------|
-| `--systemd` | Install and enable systemd service |
-| `--secret=<token>` | Set DAEMON_SECRET (Bearer token for API auth) |
-| `--port=<number>` | Set DAEMON_PORT (default: 7378) |
+| Flag                | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `--systemd`         | Install and enable systemd service            |
+| `--secret=<token>`  | Set DAEMON_SECRET (Bearer token for API auth) |
+| `--port=<number>`   | Set DAEMON_PORT (default: 7378)               |
 | `--user=<username>` | User to run daemon as (default: current user) |
-| `--help, -h` | Show help message |
+| `--help, -h`        | Show help message                             |
 
 **Environment variables** (alternative to flags):
 
-| Variable | Description |
-|----------|-------------|
+| Variable        | Description        |
+| --------------- | ------------------ |
 | `DAEMON_SECRET` | Same as `--secret` |
-| `DAEMON_PORT` | Same as `--port` |
-| `PINCERD_USER` | Same as `--user` |
+| `DAEMON_PORT`   | Same as `--port`   |
+| `PINCERD_USER`  | Same as `--user`   |
 
 **Requirements:** Linux x86_64, `curl`, `tar`, `sudo`.
 
@@ -87,18 +91,19 @@ sudo cp -R daemon/dist/pincerd /opt/
 
 The daemon is configured via environment variables:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DAEMON_SECRET` | _required_ | Bearer token for API authentication |
-| `DAEMON_PORT` | `7378` | HTTP server port |
-| `DAEMON_CHANNEL` | auto-detected | Storage channel (`stable`, `dev`, `canary`) |
-| `DB_PATH` | `<app-data>/<channel>/daemon.db` | SQLite database path |
-| `POLLING_INTERVAL_MS` | `15000` | Health check interval |
-| `DAEMON_LOG_LEVEL` | `info` | Log level (`debug`, `info`, `warn`, `error`) |
-| `DAEMON_FILE_LOGGING` | `false` (prod), `true` (dev) | Enable file logging |
-| `LOG_FILE_PATH` | `<app-data>/<channel>/logs/daemon.log` | Log file path |
+| Variable              | Default                                | Description                                  |
+| --------------------- | -------------------------------------- | -------------------------------------------- |
+| `DAEMON_SECRET`       | _required_                             | Bearer token for API authentication          |
+| `DAEMON_PORT`         | `7378`                                 | HTTP server port                             |
+| `DAEMON_CHANNEL`      | auto-detected                          | Storage channel (`stable`, `dev`, `canary`)  |
+| `DB_PATH`             | `<app-data>/<channel>/daemon.db`       | SQLite database path                         |
+| `POLLING_INTERVAL_MS` | `15000`                                | Health check interval                        |
+| `DAEMON_LOG_LEVEL`    | `info`                                 | Log level (`debug`, `info`, `warn`, `error`) |
+| `DAEMON_FILE_LOGGING` | `false` (prod), `true` (dev)           | Enable file logging                          |
+| `LOG_FILE_PATH`       | `<app-data>/<channel>/logs/daemon.log` | Log file path                                |
 
 Channel is resolved in this order:
+
 1. `DAEMON_CHANNEL` environment variable
 2. Version suffix (e.g., `0.3.4-dev` → `canary`)
 3. Auto-detection from runtime context
@@ -107,6 +112,7 @@ Channel is resolved in this order:
 ### Logging Presets
 
 **Production (minimal logging):**
+
 ```bash
 export NODE_ENV=production
 export DAEMON_LOG_LEVEL=warn
@@ -114,6 +120,7 @@ export DAEMON_FILE_LOGGING=false
 ```
 
 **Production with file logging:**
+
 ```bash
 export NODE_ENV=production
 export DAEMON_LOG_LEVEL=info
@@ -147,6 +154,7 @@ WantedBy=multi-user.target
 ```
 
 Enable and start:
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable pincerd
@@ -171,6 +179,7 @@ All endpoints require Bearer token authentication: `Authorization: Bearer <DAEMO
 Returns daemon status and uptime.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
