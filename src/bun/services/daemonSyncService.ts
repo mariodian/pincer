@@ -120,6 +120,28 @@ export async function pushAgentsToDaemon(): Promise<void> {
   }
 }
 
+export async function deleteAgentFromDaemon(agentId: number): Promise<void> {
+  if (!isDaemonConfigured()) {
+    return;
+  }
+
+  const client = await createDaemonClient();
+
+  try {
+    const result = await client.deleteAgent(agentId);
+    logger.info(
+      "daemon",
+      `Deleted agent ${agentId} from daemon: ${result.deleted}`,
+    );
+  } catch (error) {
+    logger.warn(
+      "daemon",
+      `Failed to delete agent ${agentId} from daemon:`,
+      error,
+    );
+  }
+}
+
 /**
  * Generic daemon fetch + processor with error handling.
  * Returns the processor result, or 0 on error.

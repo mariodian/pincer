@@ -141,6 +141,45 @@ async function handleRequest(req: Request): Promise<Response> {
       return jsonResponse({ updated: body.length });
     }
 
+    // DELETE /agents/:agentId
+    if (method === "DELETE" && path.startsWith("/agents/")) {
+      const namespaceId = getNamespaceId(req);
+      if (!namespaceId) return errorResponse("Missing namespace", 400);
+
+      const agentId = parseInt(path.slice("/agents/".length), 10);
+      if (Number.isNaN(agentId)) {
+        return errorResponse("Invalid agent ID", 400);
+      }
+
+      const { sqlite } = getDatabase();
+      sqlite.run("BEGIN IMMEDIATE");
+      try {
+        // Delete agent-related data first
+        sqlite.run(
+          "DELETE FROM checks WHERE namespace_id = ? AND agent_id = ?",
+          [namespaceId, agentId],
+        );
+        sqlite.run(
+          "DELETE FROM stats WHERE namespace_id = ? AND agent_id = ?",
+          [namespaceId, agentId],
+        );
+        sqlite.run(
+          "DELETE FROM incident_events WHERE namespace_id = ? AND agent_id = ?",
+          [namespaceId, agentId],
+        );
+        const result = sqlite.run(
+          "DELETE FROM agents WHERE namespace_id = ? AND agent_id = ?",
+          [namespaceId, agentId],
+        );
+        sqlite.run("COMMIT");
+
+        return jsonResponse({ deleted: result.changes > 0 });
+      } catch (err) {
+        sqlite.run("ROLLBACK");
+        throw err;
+      }
+    }
+
     // GET /checks?since=<ms>&cursor=<id>&limit=<n>
     if (method === "GET" && path === "/checks") {
       const namespaceId = getNamespaceId(req);

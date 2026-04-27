@@ -89,6 +89,13 @@ export class DaemonClient {
     return res.json() as Promise<{ updated: number }>;
   }
 
+  async deleteAgent(agentId: number): Promise<{ deleted: boolean }> {
+    const res = await this.request(`/agents/${agentId}`, {
+      method: "DELETE",
+    });
+    return res.json() as Promise<{ deleted: boolean }>;
+  }
+
   private async request(
     path: string,
     options?: RequestInit,

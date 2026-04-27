@@ -19,7 +19,7 @@ import {
   type Settings,
 } from "../storage/sqlite/settingsRepo";
 import { upsertHourlyStat } from "../storage/sqlite/statsRepo";
-import { pushAgentsToDaemon } from "./daemonSyncService";
+import { deleteAgentFromDaemon, pushAgentsToDaemon } from "./daemonSyncService";
 import { recordCheck } from "./incidentService";
 import { logger } from "./loggerService";
 
@@ -102,6 +102,11 @@ export async function deleteAgent(id: number): Promise<boolean> {
   if (filteredAgents.length === initialLength) {
     return false;
   }
+
+  // Delete from daemon first (non-blocking)
+  deleteAgentFromDaemon(id).catch((err) =>
+    logger.warn("agent", "Failed to delete agent from daemon:", err),
+  );
 
   await writeAgents(filteredAgents);
   logger.info("agent", `Agent deleted: id=${id}`);
