@@ -315,6 +315,7 @@ describe("daemon server", () => {
         { method: "GET", path: "/health", handler: "health" },
         { method: "GET", path: "/agents", handler: "getAgents" },
         { method: "PUT", path: "/agents", handler: "putAgents" },
+        { method: "DELETE", path: "/agents/:id", handler: "deleteAgent" },
         { method: "GET", path: "/checks", handler: "getChecks" },
         { method: "GET", path: "/stats", handler: "getStats" },
         {
@@ -326,7 +327,7 @@ describe("daemon server", () => {
       ];
 
       for (const route of routes) {
-        expect(route.method).toMatch(/GET|PUT/);
+        expect(route.method).toMatch(/GET|PUT|DELETE/);
         expect(route.path.startsWith("/")).toBe(true);
       }
     });

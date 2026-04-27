@@ -64,7 +64,7 @@ async function runPoll(): Promise<void> {
           const result = await executeHealthCheck(agentForCheck as any);
           return {
             namespaceId: agent.namespaceId,
-            agentId: agent.id,
+            agentId: agent.agentId,
             status: result.status,
             responseMs: result.responseMs,
             httpStatus: result.httpStatus,
@@ -72,7 +72,11 @@ async function runPoll(): Promise<void> {
             errorMessage: result.errorMessage,
           };
         } catch (error) {
-          logger.error("poll", `Check failed for agent ${agent.id}`, error);
+          logger.error(
+            "poll",
+            `Check failed for agent ${agent.agentId}`,
+            error,
+          );
           return null;
         }
       }),
