@@ -7,21 +7,55 @@ A lightweight, always-on Bun HTTP server that runs the same collection pipeline 
 ## Quick Start
 
 ```bash
-# Download and extract the latest release
-curl -L -o /tmp/pincerd.tar.gz \
-  "https://github.com/mariodian/pincer/releases/latest/download/pincerd-linux-x64.tar.gz"
-sudo tar -xzf /tmp/pincerd.tar.gz -C /opt
+# One-line install (Linux x86_64 only)
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
 
-# Set your secret and start
+# Install with systemd service (recommended for production)
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=your-secret-here
+
+# Start manually
 export DAEMON_SECRET=your-secret-here
 /opt/pincerd/pincerd
 ```
 
 ## Installation
 
-The daemon bundle contains a standalone binary, database migrations, and version metadata. Install it to `/opt/pincerd` (or any location you prefer).
+### Option A: One-Line Installer (Recommended)
 
-### Option A: Download from GitHub Releases (Recommended)
+The install script handles downloading, extracting, and optionally setting up systemd:
+
+```bash
+# Install only
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
+
+# Install with systemd service
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=your-secret-here
+
+# Install with custom port and user
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- --systemd --secret=my-secret --port=8080 --user=pincer
+```
+
+**Script options:**
+
+| Flag | Description |
+|------|-------------|
+| `--systemd` | Install and enable systemd service |
+| `--secret=<token>` | Set DAEMON_SECRET (Bearer token for API auth) |
+| `--port=<number>` | Set DAEMON_PORT (default: 7378) |
+| `--user=<username>` | User to run daemon as (default: current user) |
+| `--help, -h` | Show help message |
+
+**Environment variables** (alternative to flags):
+
+| Variable | Description |
+|----------|-------------|
+| `DAEMON_SECRET` | Same as `--secret` |
+| `DAEMON_PORT` | Same as `--port` |
+| `PINCERD_USER` | Same as `--user` |
+
+**Requirements:** Linux x86_64, `curl`, `tar`, `sudo`.
+
+### Option B: Download from GitHub Releases
 
 ```bash
 VERSION="v0.3.4"  # Change to desired version
