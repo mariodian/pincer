@@ -55,7 +55,9 @@ const PLATFORM_CONFIG = {
   },
 } as const;
 
-const platformConfig = PLATFORM_CONFIG[process.platform as keyof typeof PLATFORM_CONFIG] ?? PLATFORM_CONFIG.linux;
+const platformConfig =
+  PLATFORM_CONFIG[process.platform as keyof typeof PLATFORM_CONFIG] ??
+  PLATFORM_CONFIG.linux;
 
 /** Get platform-specific popover window configuration */
 function getPopoverWindowConfig(): PopoverWindowConfig {

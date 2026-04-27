@@ -151,9 +151,7 @@ export async function initLogger(): Promise<void> {
   channel = await Updater.localInfo.channel();
 
   // Read env var overrides
-  const envLevel = process.env.LOG_LEVEL?.toLowerCase() as
-    | LogLevel
-    | undefined;
+  const envLevel = process.env.LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
   const envFileLogging = process.env.LOG_TO_FILE;
 
   // Determine minimum log level (dev=debug, canary/stable=info)
