@@ -25,3 +25,9 @@ libMacOS.dylib
 # Mempalace state
 entities.json
 mempalace.yaml
+
+# VSCode settings (except for the ones we want to keep)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
