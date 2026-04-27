@@ -371,7 +371,7 @@ export function createIncidentTracker(
     if (status === "ok") {
       handleOkCheck(agentId, state, namespaceId);
     } else {
-      handleNonOkCheck(agentId, status, state, previousStatus);
+      handleNonOkCheck(agentId, status, state, previousStatus, namespaceId);
     }
   }
 
