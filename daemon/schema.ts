@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -7,29 +8,30 @@ import {
   text,
   unique,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
-export const agents = sqliteTable("agents", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  namespaceId: text("namespace_id").notNull(),
-  agentId: integer("agent_id").notNull(),
-  agentHash: text("agent_hash"),
-  type: text("type").notNull(),
-  name: text("name").notNull(),
-  url: text("url").notNull(),
-  port: integer("port").notNull(),
-  enabled: integer("enabled", { mode: "boolean" }).default(true),
-  healthEndpoint: text("health_endpoint"),
-  statusShape: text("status_shape"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
-    sql`(unixepoch())`,
-  ),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
-    sql`(unixepoch())`,
-  ),
-}, (table) => [
-  unique().on(table.namespaceId, table.agentId),
-]);
+export const agents = sqliteTable(
+  "agents",
+  {
+    id: integer("id").primaryKey(),
+    namespaceId: text("namespace_id").notNull(),
+    agentId: integer("agent_id").notNull(),
+    agentHash: text("agent_hash"),
+    type: text("type").notNull(),
+    name: text("name").notNull(),
+    url: text("url").notNull(),
+    port: integer("port").notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).default(true),
+    healthEndpoint: text("health_endpoint"),
+    statusShape: text("status_shape"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).default(
+      sql`(unixepoch())`,
+    ),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).default(
+      sql`(unixepoch())`,
+    ),
+  },
+  (table) => [unique().on(table.namespaceId, table.agentId)],
+);
 
 export const checks = sqliteTable(
   "checks",
@@ -45,7 +47,11 @@ export const checks = sqliteTable(
     errorMessage: text("error_message"),
   },
   (table) => [
-    index("idx_checks_ns_agent_time").on(table.namespaceId, table.agentId, table.checkedAt),
+    index("idx_checks_ns_agent_time").on(
+      table.namespaceId,
+      table.agentId,
+      table.checkedAt,
+    ),
     index("idx_checks_time").on(table.checkedAt),
   ],
 );
@@ -64,7 +70,9 @@ export const stats = sqliteTable(
     avgResponseMs: real("avg_response_ms").notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.namespaceId, table.agentId, table.hourTimestamp] }),
+    primaryKey({
+      columns: [table.namespaceId, table.agentId, table.hourTimestamp],
+    }),
     index("idx_stats_ns_agent").on(table.namespaceId, table.agentId),
     index("idx_stats_hour").on(table.hourTimestamp),
   ],

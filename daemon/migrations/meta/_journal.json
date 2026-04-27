@@ -15,6 +15,13 @@
       "when": 1777184929881,
       "tag": "0001_youthful_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1777296282320,
+      "tag": "0002_green_nuke",
+      "breakpoints": true
     }
   ]
 }
