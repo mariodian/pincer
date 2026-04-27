@@ -1,7 +1,7 @@
 import type { Agent } from "../../../shared/types";
 import { eq } from "drizzle-orm";
 import { getDatabase } from "./db";
-import { agents } from "./schema";
+import { agents, checks, incidentEvents, stats } from "./schema";
 
 function rowToAgent(row: typeof agents.$inferSelect): Agent {
   return {
@@ -64,7 +64,12 @@ export function updateAgent(id: number, updates: Partial<Agent>): void {
 
 export function deleteAgent(id: number): void {
   const { db } = getDatabase();
-  db.delete(agents).where(eq(agents.id, id)).run();
+  db.transaction((tx) => {
+    tx.delete(checks).where(eq(checks.agentId, id)).run();
+    tx.delete(stats).where(eq(stats.agentId, id)).run();
+    tx.delete(incidentEvents).where(eq(incidentEvents.agentId, id)).run();
+    tx.delete(agents).where(eq(agents.id, id)).run();
+  });
 }
 
 export function writeAgents(agentList: Agent[]): void {
@@ -110,6 +115,11 @@ export function writeAgents(agentList: Agent[]): void {
     const existingAgents = tx.select().from(agents).all();
     for (const existing of existingAgents) {
       if (!newIds.has(existing.id)) {
+        tx.delete(checks).where(eq(checks.agentId, existing.id)).run();
+        tx.delete(stats).where(eq(stats.agentId, existing.id)).run();
+        tx.delete(incidentEvents)
+          .where(eq(incidentEvents.agentId, existing.id))
+          .run();
         tx.delete(agents).where(eq(agents.id, existing.id)).run();
       }
     }
