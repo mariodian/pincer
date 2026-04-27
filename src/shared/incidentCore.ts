@@ -345,7 +345,7 @@ export function createIncidentTracker(
   /**
    * Record a health check result for an agent and update incident state.
    */
-  function recordCheck(agentId: number, status: CheckStatus): void {
+  function recordCheck(agentId: number, status: CheckStatus, namespaceId?: string): void {
     // Get or create the agent's state
     let state = agentStates.get(agentId);
     if (!state) {
@@ -365,7 +365,7 @@ export function createIncidentTracker(
 
     // State machine logic
     if (status === "ok") {
-      handleOkCheck(agentId, state);
+      handleOkCheck(agentId, state, namespaceId);
     } else {
       handleNonOkCheck(agentId, status, state, previousStatus);
     }
