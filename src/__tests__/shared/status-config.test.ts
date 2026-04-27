@@ -1,9 +1,10 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import {
-  statusIcons,
-  statusTones,
-  statusLabels,
   eventBadgeConfig,
+  statusIcons,
+  statusLabels,
+  statusTones,
 } from "../../shared/status-config";
 import type { CheckStatus, EventType } from "../../shared/types";
 

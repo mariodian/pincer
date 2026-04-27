@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import type { Agent, IncidentEvent } from "../../src/shared/types";
 
 /**
@@ -141,8 +142,28 @@ describe("daemon server", () => {
   describe("incident events endpoint", () => {
     it("should filter events by since timestamp", () => {
       const events: IncidentEvent[] = [
-        { id: 1, agentId: 1, incidentId: "inc-1", eventAt: 500, eventType: "opened", fromStatus: null, toStatus: "offline", reason: null, linkedIncidentId: null },
-        { id: 2, agentId: 1, incidentId: "inc-1", eventAt: 1500, eventType: "recovered", fromStatus: "offline", toStatus: "ok", reason: null, linkedIncidentId: null },
+        {
+          id: 1,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: 500,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 2,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: 1500,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
       ];
 
       const since = 1000;
@@ -296,7 +317,11 @@ describe("daemon server", () => {
         { method: "PUT", path: "/agents", handler: "putAgents" },
         { method: "GET", path: "/checks", handler: "getChecks" },
         { method: "GET", path: "/stats", handler: "getStats" },
-        { method: "GET", path: "/incident-events", handler: "getIncidentEvents" },
+        {
+          method: "GET",
+          path: "/incident-events",
+          handler: "getIncidentEvents",
+        },
         { method: "GET", path: "/open-incidents", handler: "getOpenIncidents" },
       ];
 

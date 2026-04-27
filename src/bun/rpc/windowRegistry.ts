@@ -1,5 +1,6 @@
 // Window registry - stores references to BrowserWindows for cross-module access
 import type { BrowserWindow } from "electrobun/bun";
+
 import { logger } from "../services/loggerService";
 
 let mainWindowRef: BrowserWindow | null = null;

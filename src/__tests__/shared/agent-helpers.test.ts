@@ -1,14 +1,15 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import {
-  getAgentColor,
-  normalizeUrl,
-  isPrivateOrInternalNetwork,
-  getStatusPriority,
-  mergeAgentsWithStatuses,
-  sortAgentsByStatus,
-  shouldTriggerHealthCheck,
   createAgentSyncSignature,
+  getAgentColor,
+  getStatusPriority,
   HEALTH_AFFECTING_FIELDS,
+  isPrivateOrInternalNetwork,
+  mergeAgentsWithStatuses,
+  normalizeUrl,
+  shouldTriggerHealthCheck,
+  sortAgentsByStatus,
 } from "../../shared/agent-helpers";
 import type {
   Agent,

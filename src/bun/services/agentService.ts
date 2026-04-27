@@ -1,27 +1,27 @@
 // Agents Service - Handles agent CRUD and health checking
-import { agentStorage } from "../storage";
+import { isPrivateOrInternalNetwork } from "../../shared/agent-helpers";
+import {
+  executeHealthCheck,
+  resolveHealthConfig,
+} from "../../shared/agentHealthCheck";
 import type {
   Agent,
   AgentStatus,
   AgentStatusInfo,
   CheckStatus,
 } from "../../shared/types";
-import { isPrivateOrInternalNetwork } from "../../shared/agent-helpers";
+import { getAgentType } from "../agentTypes";
+import { agentStorage } from "../storage";
+import { initializeDatabase } from "../storage/sqlite/db";
 import {
   getSettings as getSettingsFromDb,
   updateSettings as updateSettingsToDb,
   type Settings,
 } from "../storage/sqlite/settingsRepo";
 import { upsertHourlyStat } from "../storage/sqlite/statsRepo";
-import { initializeDatabase } from "../storage/sqlite/db";
-import { logger } from "./loggerService";
-import { getAgentType } from "../agentTypes";
-import { recordCheck } from "./incidentService";
 import { pushAgentsToDaemon } from "./daemonSyncService";
-import {
-  resolveHealthConfig,
-  executeHealthCheck,
-} from "../../shared/agentHealthCheck";
+import { recordCheck } from "./incidentService";
+import { logger } from "./loggerService";
 
 export type { Settings } from "../storage/sqlite/settingsRepo";
 export type { Agent, AgentStatus, AgentStatusInfo } from "../../shared/types";

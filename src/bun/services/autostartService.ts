@@ -6,10 +6,12 @@
  * - Windows: Registry-based autostart
  * - Linux: .desktop entry in autostart directory
  */
-import { $ } from "bun";
-import { Updater, Utils } from "electrobun/bun";
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { $ } from "bun";
+import { Updater, Utils } from "electrobun/bun";
+
 import { isBSD, isLinux, isMacOS, isWindows } from "../utils/platform";
 import { logger } from "./loggerService";
 import {

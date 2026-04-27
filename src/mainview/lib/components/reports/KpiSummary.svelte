@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { format } from "@layerstack/utils";
+  import { formatDate } from "$shared/date-helpers";
+  import type { UptimeReport } from "$shared/reportTypes";
+
   import { KpiCard } from "$lib/components/ui/kpi-card";
   import { NOT_AVAILABLE } from "$lib/constants";
   import { cn } from "$lib/utils";
   import { formatUptime, getUptimeColor } from "$lib/utils/metrics-data";
-  import { formatDate } from "$shared/date-helpers";
-  import type { UptimeReport } from "$shared/reportTypes";
-  import { format } from "@layerstack/utils";
 
   interface Props {
     data: UptimeReport | null;

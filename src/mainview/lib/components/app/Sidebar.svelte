@@ -1,6 +1,7 @@
 <script lang="ts">
   import logo from "$assets/logo.webp";
   import { APP_NAME } from "$bun/config";
+
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   import packageJson from "../../../../../package.json";
   import NavMain from "./NavMain.svelte";
@@ -27,7 +28,7 @@
       <Sidebar.MenuItem>
         <div
           class={[
-            "flex w-full items-center gap-2 px-1 mt-2 h-10",
+            "mt-2 flex h-10 w-full items-center gap-2 px-1",
             "text-sm",
             "overflow-hidden outline-hidden",
             "group-data-[collapsible=icon]:p-1",
@@ -35,7 +36,7 @@
         >
           <div
             class={[
-              "flex items-center mr-1",
+              "mr-1 flex items-center",
               "transition-[width,height,margin]",
               "text-sidebar-primary-foreground",
               "aspect-square rounded-lg",
@@ -49,20 +50,20 @@
                 "transition-[width,height,padding]",
                 "duration-200",
                 "group-data-[collapsible=icon]:size-6!",
-                "w-full h-full",
+                "h-full w-full",
               ]}
             />
           </div>
           <div
             class={[
-              "flex flex-col gap-0.2 leading-none",
-              "duration-200 transition-opacity",
+              "gap-0.2 flex flex-col leading-none",
+              "transition-opacity duration-200",
               "group-data-[collapsible=icon]:opacity-0!",
             ]}
           >
-            <span class="font-bold text-base">{APP_NAME}</span>
+            <span class="text-base font-bold">{APP_NAME}</span>
             <span
-              class="text-xs text-sidebar-foreground/50 dark:text-sidebar-foreground/50"
+              class="text-sidebar-foreground/50 dark:text-sidebar-foreground/50 text-xs"
               >v{appVersion}</span
             >
           </div>

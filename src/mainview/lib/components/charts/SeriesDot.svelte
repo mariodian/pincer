@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { Circle } from "layerchart";
+
   import {
     buildLinePointProps,
     getSeriesOpacity,
     type ChartSeries,
   } from "$lib/utils/chart.js";
-  import { Circle } from "layerchart";
 
   interface Props {
     series: ChartSeries;

@@ -4,9 +4,9 @@
 import {
   appendFileSync,
   existsSync,
+  mkdirSync,
   renameSync,
   statSync,
-  mkdirSync,
   unlinkSync,
 } from "node:fs";
 import { dirname } from "node:path";

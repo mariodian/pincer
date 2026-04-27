@@ -1,12 +1,13 @@
 // Incident RPC - Shared RPC definition for incident timeline and events
+import { getAgentColor } from "../../shared/agent-helpers";
 import type {
   Check,
   CheckBucket,
   IncidentEvent,
   TimeRange,
 } from "../../shared/types";
-import type { AgentStatRow } from "../storage/sqlite/statsRepo";
-import { getAgentStats } from "../storage/sqlite/statsRepo";
+import { readAgents } from "../services/agentService";
+import { logger } from "../services/loggerService";
 import {
   getAllChecks,
   getChecksAggregatedBy10Min,
@@ -17,16 +18,14 @@ import {
   getEventsForAgent,
   getEventsForTimeRange,
 } from "../storage/sqlite/incidentEventsRepo";
-import { readAgents } from "../services/agentService";
-import { withErrorLogging } from "./rpcHelpers";
-import { logger } from "../services/loggerService";
-import { getRangeTimestamps } from "../utils/time-range";
-import { getAgentColor } from "../../shared/agent-helpers";
+import { getAgentStats, type AgentStatRow } from "../storage/sqlite/statsRepo";
+import { ONE_SECOND_MS, SEVEN_DAYS_MS } from "../utils/constants";
 import {
   groupEventsByIncident,
   splitIncidentsByActivity,
 } from "../utils/incident-grouping";
-import { SEVEN_DAYS_MS, ONE_SECOND_MS } from "../utils/constants";
+import { getRangeTimestamps } from "../utils/time-range";
+import { withErrorLogging } from "./rpcHelpers";
 
 export interface IncidentTimeline {
   agentId?: number;

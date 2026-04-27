@@ -1,5 +1,7 @@
 // Update RPC - Shared RPC definition for update management
 import { Updater } from "electrobun/bun";
+
+import { logger } from "../services/loggerService";
 import {
   getAdvancedSettings as getAdvancedSettingsFromDb,
   updateAdvancedSettings as updateAdvancedSettingsToDb,
@@ -10,8 +12,6 @@ import {
 } from "../storage/sqlite/appStateRepo";
 import { ONE_DAY_MS } from "../utils/constants";
 import { isBrewInstall } from "../utils/platform";
-
-import { logger } from "../services/loggerService";
 
 export type UpdateRPCType = {
   bun: {

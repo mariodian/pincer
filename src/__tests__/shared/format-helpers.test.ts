@@ -1,8 +1,9 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import {
-  formatUptime,
   formatMs,
   formatNumber,
+  formatUptime,
 } from "../../shared/format-helpers";
 
 describe("format-helpers", () => {

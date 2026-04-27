@@ -1,4 +1,12 @@
 <script lang="ts">
+  import { push } from "@bmlt-enabled/svelte-spa-router";
+  import type {
+    AgentWithColor,
+    DashboardStats,
+    TimeSeriesPoint,
+  } from "$shared/rpc";
+  import type { Settings, TimeRange } from "$shared/types";
+
   import { StatusPieChart } from "$lib/components/dashboard";
   import KpiSummary from "$lib/components/dashboard/KpiSummary.svelte";
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
@@ -21,13 +29,6 @@
     formatUptime,
     pivotTimeSeries,
   } from "$lib/utils/metrics-data";
-  import type {
-    AgentWithColor,
-    DashboardStats,
-    TimeSeriesPoint,
-  } from "$shared/rpc";
-  import type { Settings, TimeRange } from "$shared/types";
-  import { push } from "@bmlt-enabled/svelte-spa-router";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -142,7 +143,7 @@
   }
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex h-full flex-col">
   <PageHeader
     title="Dashboard"
     description="Monitor agent health and performance"
@@ -166,7 +167,7 @@
         description={error ?? undefined}
       >
         {#snippet icon()}
-          <Icon name="alertCircle" class="size-5 text-destructive" />
+          <Icon name="alertCircle" class="text-destructive size-5" />
         {/snippet}
         {#snippet cta()}
           <Button
@@ -180,13 +181,13 @@
         {/snippet}
       </ErrorState>
     {:else if loading}
-      <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
+      <div class={["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"]}>
         <Skeleton class="h-25 w-full rounded-lg" />
         <Skeleton class="h-25 w-full rounded-lg" />
         <Skeleton class="h-25 w-full rounded-lg" />
         <Skeleton class="h-25 w-full rounded-lg" />
       </div>
-      <div class="grid gap-4 lg:gap-6 mt-8 lg:mt-12">
+      <div class="mt-8 grid gap-4 lg:mt-12 lg:gap-6">
         <Skeleton class="h-75 w-full rounded-lg" />
         <Skeleton class="h-75 w-full rounded-lg" />
         <Skeleton class="h-75 w-full rounded-lg" />
@@ -195,14 +196,14 @@
     {:else if stats && chartAgents.length > 0}
       <!-- KPI Row -->
       <KpiSummary
-        class={cn(["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"])}
+        class={cn(["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"])}
         data={stats.kpis}
       />
 
       <div
         class={[
-          "grid gap-4 lg:gap-6 mt-8 lg:mt-12",
-          "grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4",
+          "mt-8 grid gap-4 lg:mt-12 lg:gap-6",
+          "3xl:grid-cols-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3",
         ]}
       >
         <MetricChart

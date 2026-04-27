@@ -1,14 +1,15 @@
 // Status Service - Centralized status polling for agent monitoring
 import { Utils } from "electrobun/bun";
+
 import type { AgentStatusInfo } from "../../shared/types";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
 import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { checkAllAgentsStatus, readAgents } from "./agentService";
 import {
-  syncDataOnly,
   isDaemonConfigured,
   syncAgents,
+  syncDataOnly,
 } from "./daemonSyncService";
 import {
   initIncidentService,

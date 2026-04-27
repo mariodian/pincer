@@ -1,5 +1,4 @@
 // Stats RPC - Shared RPC definition for dashboard statistics
-import type { TimeRange } from "../../shared/types";
 import { getAgentColor } from "../../shared/agent-helpers";
 import type {
   AgentWithColor,
@@ -7,10 +6,11 @@ import type {
   DashboardStats,
   TimeSeriesPoint,
 } from "../../shared/rpc";
+import type { TimeRange } from "../../shared/types";
 import { readAgents } from "../services/agentService";
-import { withErrorLogging } from "./rpcHelpers";
 import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { getRangeTimestamps } from "../utils/time-range";
+import { withErrorLogging } from "./rpcHelpers";
 
 export type StatsRPCType = {
   bun: {

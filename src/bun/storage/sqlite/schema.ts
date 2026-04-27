@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   integer,
@@ -7,7 +8,6 @@ import {
   text,
   unique,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
 
 export const agents = sqliteTable("agents", {
   id: integer("id").primaryKey({ autoIncrement: true }),

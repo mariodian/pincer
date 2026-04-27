@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge/";
-  import { cn } from "$lib/utils";
   import { eventBadgeConfig } from "$shared/status-config";
   import type { EventType } from "$shared/types";
+
+  import { Badge } from "$lib/components/ui/badge/";
+  import { cn } from "$lib/utils";
 
   interface Props {
     eventType: EventType;

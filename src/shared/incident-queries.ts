@@ -1,5 +1,4 @@
-import { sql } from "drizzle-orm";
-import type { SQL } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 
 /**
  * Build the SQL query for getting open incidents.

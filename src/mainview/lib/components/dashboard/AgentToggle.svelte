@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { cn } from "$lib/utils.js";
   import type { AgentWithColor } from "$shared/rpc";
+
+  import { cn } from "$lib/utils.js";
   import Button from "../ui/button/button.svelte";
 
   interface Props {
@@ -46,14 +47,14 @@
     <Button
       class={cn(
         "gap-2",
-        isActive(agent.id) ? "" : "line-through border-transparent! opacity-50",
+        isActive(agent.id) ? "" : "border-transparent! line-through opacity-50",
       )}
       variant="outline"
       size={BUTTON_SIZE}
       onclick={() => onToggle(agent.id)}
     >
       <span
-        class="size-2 rounded-full shrink-0"
+        class="size-2 shrink-0 rounded-full"
         style="background-color: {agent.color};"
       ></span>
       {agent.name}

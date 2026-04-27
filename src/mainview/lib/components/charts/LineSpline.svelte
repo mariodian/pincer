@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { Spline } from "layerchart";
   import { curveCatmullRom } from "d3-shape";
+  import { Spline } from "layerchart";
+
   import { getSeriesOpacity, type ChartSeries } from "$lib/utils/chart.js";
 
   interface Props {

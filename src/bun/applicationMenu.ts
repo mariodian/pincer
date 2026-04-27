@@ -1,6 +1,7 @@
 import { ApplicationMenu, BrowserWindow } from "electrobun/bun";
-import { showMainWindow } from "./utils/navigation";
+
 import { logger } from "./services/loggerService";
+import { showMainWindow } from "./utils/navigation";
 
 function requestSaveAgentForm(mainWindow: BrowserWindow): void {
   const rpc = mainWindow.webview.rpc as {

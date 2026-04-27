@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { NotificationSettings } from "$shared/types";
+
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -6,7 +8,6 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
-  import type { NotificationSettings } from "$shared/types";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -111,7 +112,7 @@
 </script>
 
 {#if loading}
-  <div class="space-y-6 max-w-lg">
+  <div class="max-w-lg space-y-6">
     <div class="space-y-2">
       <Skeleton class="h-4 w-32" />
       <Skeleton class="h-9 w-full" />
@@ -133,12 +134,12 @@
     </div>
   </div>
 {:else}
-  <div class="space-y-6 max-w-lg">
-    <h3 class="font-medium mb-2">General</h3>
+  <div class="max-w-lg space-y-6">
+    <h3 class="mb-2 font-medium">General</h3>
     <Card.Root>
       <Card.Content>
         <SwitchCard
-          class="border-none bg-transparent! shadow-none p-0"
+          class="border-none bg-transparent! p-0 shadow-none"
           id="notifications-enabled"
           title="Enable notifications"
           description="Receive native system notifications when your monitored agents change status. The system will ask for permission the first time you enable this."
@@ -149,11 +150,11 @@
     </Card.Root>
 
     {#if notificationsEnabled}
-      <h3 class="font-medium mb-2">Notification Triggers</h3>
+      <h3 class="mb-2 font-medium">Notification Triggers</h3>
       <Card.Root>
         <Card.Content>
           <SwitchCard
-            class="border-none bg-transparent! shadow-none p-0"
+            class="border-none bg-transparent! p-0 shadow-none"
             id="notify-on-status-change"
             title="Status changes"
             description="Get notified when any of your agents changes status, whether it goes online, offline, or encounters an error. Useful for staying informed about your infrastructure health."
@@ -167,7 +168,7 @@
         <Card.Content>
           <SwitchCard
             disabled={notifyOnStatusChange}
-            class="border-none bg-transparent! shadow-none p-0"
+            class="border-none bg-transparent! p-0 shadow-none"
             id="notify-on-error"
             title="Error alerts"
             description={notifyOnStatusChange
@@ -192,7 +193,7 @@
               onkeydown={handleThresholdKeydown}
               class="w-20"
             />
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
               Polling rounds before a status change is confirmed. When any agent
               in a group (e.g., all going "online") reaches this threshold, all
               agents in that group notify together. Batches notifications for
@@ -202,11 +203,11 @@
         </Card.Content>
       </Card.Root>
 
-      <h3 class="font-medium mb-2">Sound</h3>
+      <h3 class="mb-2 font-medium">Sound</h3>
       <Card.Root>
         <Card.Content>
           <SwitchCard
-            class="border-none bg-transparent! shadow-none p-0"
+            class="border-none bg-transparent! p-0 shadow-none"
             id="silent-notifications"
             title="Silent notifications"
             description="Show notifications without playing a sound. Useful in quiet environments or when you don't want to disturb others with notification sounds."

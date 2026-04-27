@@ -1,4 +1,5 @@
 import { Updater } from "electrobun/bun";
+
 import { logger } from "../services/loggerService";
 
 const DEV_SERVER_PORT = 5173;

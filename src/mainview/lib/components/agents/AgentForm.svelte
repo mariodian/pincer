@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { normalizeUrl } from "$shared/agent-helpers";
+  import type { Agent } from "$shared/types";
+  import { onMount } from "svelte";
+  import { toast } from "svelte-sonner";
+
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
@@ -14,10 +19,6 @@
     onAgentFormSave,
     whenReady,
   } from "$lib/services/mainRPC";
-  import { normalizeUrl } from "$shared/agent-helpers";
-  import type { Agent } from "$shared/types";
-  import { onMount } from "svelte";
-  import { toast } from "svelte-sonner";
   import Icon from "../ui/icon/icon.svelte";
   import Separator from "../ui/separator/separator.svelte";
 
@@ -301,7 +302,7 @@
 
 <svelte:window onkeydown={handleEscKey} />
 
-<div class="flex flex-col h-full max-w-lg">
+<div class="flex h-full max-w-lg flex-col">
   <PageHeader
     title={isEdit ? "Edit Agent" : "Add Agent"}
     description={isEdit
@@ -316,7 +317,7 @@
   <PageBody>
     {#if loadError}
       <Alert.Root variant="destructive">
-        <Icon name="alertCircle" class="size-4 text-destructive" />
+        <Icon name="alertCircle" class="text-destructive size-4" />
         <Alert.Title>Error</Alert.Title>
         <Alert.Description>
           <p>{loadError}</p>
@@ -347,7 +348,7 @@
       <form bind:this={formElement} onsubmit={handleSubmit}>
         {#if errors.form}
           <Alert.Root variant="destructive">
-            <Icon name="alertCircle" class="size-4 text-destructive" />
+            <Icon name="alertCircle" class="text-destructive size-4" />
             <Alert.Title>Error</Alert.Title>
             <Alert.Description>
               <p>{errors.form}</p>
@@ -359,7 +360,7 @@
             <div class="space-y-2">
               <Label
                 for="type-select"
-                class="text-sm font-medium cursor-pointer"
+                class="cursor-pointer text-sm font-medium"
               >
                 Agent Type
               </Label>
@@ -386,7 +387,7 @@
                 </Select.Content>
               </Select.Root>
               {#if errors.type}
-                <p class="text-xs text-destructive">{errors.type}</p>
+                <p class="text-destructive text-xs">{errors.type}</p>
               {/if}
             </div>
 
@@ -403,11 +404,11 @@
                   aria-invalid={!!errors.healthEndpoint}
                 />
                 {#if errors.healthEndpoint}
-                  <p class="text-xs text-destructive">
+                  <p class="text-destructive text-xs">
                     {errors.healthEndpoint}
                   </p>
                 {/if}
-                <p class="text-xs text-muted-foreground">
+                <p class="text-muted-foreground text-xs">
                   Path checked for agent health (e.g. /health, /status)
                 </p>
               </div>
@@ -419,13 +420,13 @@
                 <select
                   id="statusShape"
                   bind:value={statusShape}
-                  class="flex h-9 w-full rounded-md border border-input bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-3 outline-none"
+                  class="border-input focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full rounded-md border bg-transparent px-2.5 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-3"
                 >
                   {#each agentTypes.find((t) => t.id === "custom")?.statusShapeOptions ?? [] as option (option.value)}
                     <option value={option.value}>{option.label}</option>
                   {/each}
                 </select>
-                <p class="text-xs text-muted-foreground">
+                <p class="text-muted-foreground text-xs">
                   How to interpret the health endpoint response
                 </p>
               </div>
@@ -441,7 +442,7 @@
                 aria-invalid={!!errors.name}
               />
               {#if errors.name}
-                <p class="text-xs text-destructive">{errors.name}</p>
+                <p class="text-destructive text-xs">{errors.name}</p>
               {/if}
             </div>
 
@@ -459,11 +460,11 @@
                 spellcheck="false"
               />
               {#if errors.url}
-                <p class="text-xs text-destructive">{errors.url}</p>
+                <p class="text-destructive text-xs">{errors.url}</p>
               {/if}
             </div>
 
-            <div class="space-y-2 w-28">
+            <div class="w-28 space-y-2">
               <Label for="port" class="text-sm font-medium">Port</Label>
               <Input
                 id="port"
@@ -475,14 +476,14 @@
                 aria-invalid={!!errors.port}
               />
               {#if errors.port}
-                <p class="text-xs text-destructive">{errors.port}</p>
+                <p class="text-destructive text-xs">{errors.port}</p>
               {/if}
             </div>
           </Card.Content>
 
           <Separator class="mt-6" />
 
-          <Card.Content class="p-0 space-y-0">
+          <Card.Content class="space-y-0 p-0">
             <SwitchCard
               id="monitor-agent"
               title="Monitor Agent"
@@ -490,7 +491,7 @@
           monitoring without losing configuration."
               bind:checked={enabled}
               variant="blue"
-              class="border-none shadow-none rounded-none m-0 px-6"
+              class="m-0 rounded-none border-none px-6 shadow-none"
             />
           </Card.Content>
 

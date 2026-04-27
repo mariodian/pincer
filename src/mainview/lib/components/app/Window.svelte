@@ -1,14 +1,14 @@
 <script lang="ts">
+  import type { Platform } from "$shared/types";
+  import { userPrefersMode } from "mode-watcher";
+  import { onMount, type Snippet } from "svelte";
+
   import {
     getMainRPC,
     initMainRPC,
     pendingNavigationRoute,
     rpcReady,
   } from "$lib/services/mainRPC";
-  import type { Platform } from "$shared/types";
-  import { userPrefersMode } from "mode-watcher";
-  import type { Snippet } from "svelte";
-  import { onMount } from "svelte";
 
   type Align = "left" | "center" | "right";
   type ResolvedTheme = "light" | "dark";

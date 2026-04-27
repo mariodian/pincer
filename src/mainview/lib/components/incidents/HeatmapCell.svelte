@@ -1,7 +1,8 @@
 <script lang="ts">
+  import type { TimeRange } from "$shared/types";
+
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { cn } from "$lib/utils";
-  import type { TimeRange } from "$shared/types";
 
   interface TimeSlot {
     startTime: Date;
@@ -99,15 +100,15 @@
           {counts.total} checks
         </p>
         <p>
-          <span class="font-medium w-20">Ok:</span>
+          <span class="w-20 font-medium">Ok:</span>
           {counts.ok}
         </p>
         <p>
-          <span class="font-medium w-20">Degraded:</span>
+          <span class="w-20 font-medium">Degraded:</span>
           {counts.degraded}
         </p>
         <p>
-          <span class="font-medium w-20">Failed:</span>
+          <span class="w-20 font-medium">Failed:</span>
           {counts.failed}
         </p>
       {:else}

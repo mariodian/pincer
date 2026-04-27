@@ -1,11 +1,12 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import type {
+  Agent,
+  Check,
   DaemonSyncResult,
   DaemonTestResult,
-  Check,
-  IncidentEvent,
   HourlyStat,
-  Agent,
+  IncidentEvent,
 } from "../../../shared/types";
 
 /**

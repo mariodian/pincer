@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
+
 import type { Platform } from "../../shared/types";
 
 export function isMacOS(): boolean {

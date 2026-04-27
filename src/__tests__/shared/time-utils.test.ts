@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import { truncateToHour } from "../../shared/time-utils";
 
 describe("time-utils", () => {

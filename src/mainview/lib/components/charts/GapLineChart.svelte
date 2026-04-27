@@ -1,4 +1,12 @@
 <script lang="ts">
+  import { curveCatmullRom } from "d3-shape";
+  import {
+    defaultChartPadding,
+    LinearGradient,
+    LineChart,
+    Path,
+  } from "layerchart";
+
   import {
     buildAllSeriesGaps,
     buildGapPath,
@@ -9,13 +17,6 @@
     getIsolatedPointIndices,
     type ChartSeries,
   } from "$lib/utils/chart.js";
-  import { curveCatmullRom } from "d3-shape";
-  import {
-    defaultChartPadding,
-    LinearGradient,
-    LineChart,
-    Path,
-  } from "layerchart";
   import LineSpline from "./LineSpline.svelte";
   import SeriesDot from "./SeriesDot.svelte";
 

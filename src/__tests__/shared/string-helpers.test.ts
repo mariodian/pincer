@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import { stringToOklch } from "../../shared/string-helpers";
 
 describe("string-helpers", () => {

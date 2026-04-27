@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
+
+import { logger } from "../../services/loggerService";
 import { getDatabase } from "./db";
 import { appState } from "./schema";
-import { logger } from "../../services/loggerService";
 
 export interface WindowBounds {
   x: number;

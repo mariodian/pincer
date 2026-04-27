@@ -1,6 +1,7 @@
-import type { HourlyStat, Status } from "../../../shared/types";
-import { truncateToHour } from "../../../shared/time-utils";
 import { sql } from "drizzle-orm";
+
+import { truncateToHour } from "../../../shared/time-utils";
+import type { HourlyStat, Status } from "../../../shared/types";
 import { getDatabase } from "./db";
 import { stats } from "./schema";
 

@@ -1,6 +1,6 @@
 // Settings RPC - Shared RPC definition for settings management
-import { withErrorLogging } from "./rpcHelpers";
 import { Utils } from "electrobun/bun";
+
 import type {
   AdvancedSettings,
   NotificationSettings,
@@ -24,6 +24,7 @@ import {
   getSettings as getSettingsFromDb,
   updateSettings as updateSettingsToDb,
 } from "../storage/sqlite/settingsRepo";
+import { withErrorLogging } from "./rpcHelpers";
 
 export type SettingsRPCType = {
   bun: {

@@ -1,10 +1,11 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import {
   createIncidentTracker,
   DEFAULT_FAILURE_THRESHOLD,
   DEFAULT_RECOVERY_THRESHOLD,
+  type IncidentTrackerDeps,
 } from "../../../shared/incidentCore";
-import type { IncidentTrackerDeps } from "../../../shared/incidentCore";
 import type { CheckStatus } from "../../../shared/types";
 
 /**

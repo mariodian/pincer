@@ -1,8 +1,8 @@
 // System RPC - Shared RPC definition for system info
 import { BrowserView, Utils } from "electrobun/bun";
+
 import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
 import type { Platform } from "../../shared/types";
-import { withErrorResult } from "./rpcHelpers";
 import { logger } from "../services/loggerService";
 import {
   setMacOSWindowAppearance,
@@ -10,6 +10,7 @@ import {
 } from "../utils/macOSWindowEffects";
 import { clearPendingRoute, getPendingRoute } from "../utils/navigation";
 import { getPlatform } from "../utils/platform";
+import { withErrorResult } from "./rpcHelpers";
 
 type RendererView = "main";
 type RendererReadyCallback = (params: {

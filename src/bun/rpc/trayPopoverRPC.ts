@@ -1,11 +1,12 @@
 // Tray Popover RPC - Handlers for tray popover IPC
 import { BrowserView, Utils } from "electrobun/bun";
-import { withErrorLogging } from "./rpcHelpers";
+
+import type { TrayPopoverRPCType } from "../../shared/rpc";
 import { readAgents } from "../services/agentService";
+import { logger } from "../services/loggerService";
 import { getSettings } from "../storage/sqlite/settingsRepo";
 import { showMainWindow } from "../utils/navigation";
-import type { TrayPopoverRPCType } from "../../shared/rpc";
-import { logger } from "../services/loggerService";
+import { withErrorLogging } from "./rpcHelpers";
 
 type RefreshCallback = () => void;
 let onRefreshRequested: RefreshCallback | null = null;

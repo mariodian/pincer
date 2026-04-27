@@ -1,4 +1,9 @@
 <script lang="ts">
+  import { sortAgentsByStatus } from "$shared/agent-helpers";
+  import { RPC_MAX_REQUEST_TIME, type TrayPopoverRPCType } from "$shared/rpc";
+  import type { AgentStatus, Status } from "$shared/types";
+  import { Electroview } from "electrobun/view";
+
   import Button from "$lib/components/tray/Button.svelte";
   import { Icon } from "$lib/components/ui/icon";
   import {
@@ -7,11 +12,7 @@
     triggerSyncCallbacks,
   } from "$lib/services/mainRPC";
   import { readCachedAgents, syncAgentsToCache } from "$lib/utils/storage";
-  import { sortAgentsByStatus } from "$shared/agent-helpers";
-  import type { TrayPopoverRPCType } from "$shared/rpc";
-  import { RPC_MAX_REQUEST_TIME } from "$shared/rpc";
-  import type { AgentStatus, Status } from "$shared/types";
-  import { Electroview } from "electrobun/view";
+
   import "./tray-popover.css";
 
   const rpc = Electroview.defineRPC<TrayPopoverRPCType>({
@@ -222,24 +223,24 @@
   }
 </script>
 
-<div class={["popover py-2 pl-3", "flex flex-col h-screen"]}>
+<div class={["popover py-2 pl-3", "flex h-screen flex-col"]}>
   <div
     class={[
       "header",
       showHeaderShadow ? "shadow-bottom" : "",
-      "flex justify-between items-center",
-      "pb-2 mr-3 px-1",
+      "flex items-center justify-between",
+      "mr-3 px-1 pb-2",
       "border-b border-black/10 dark:border-white/10",
     ]}
   >
-    <span class="flex-2 font-semibold text-sm text-black/80 dark:text-white"
+    <span class="flex-2 text-sm font-semibold text-black/80 dark:text-white"
       >Pincer</span
     >
 
     {#if isRefreshing}
       <span
         class={[
-          "flex-1 animate-pulse text-[11px] mr-2",
+          "mr-2 flex-1 animate-pulse text-[11px]",
           "text-black/50 dark:text-white/60",
         ]}>Updating…</span
       >
@@ -255,17 +256,17 @@
   <div
     bind:this={scrollContainer}
     onscroll={updateScrollShadows}
-    class={["flex flex-col gap-2 py-2 pl-2 pr-5", "flex-1", "overflow-y-auto"]}
+    class={["flex flex-col gap-2 py-2 pr-5 pl-2", "flex-1", "overflow-y-auto"]}
   >
     {#if !hasCompletedInitialLoad}
       <div
-        class={["p-5 text-sm text-center", "text-black/60 dark:text-white/60"]}
+        class={["p-5 text-center text-sm", "text-black/60 dark:text-white/60"]}
       >
         Loading…
       </div>
     {:else if agents.length === 0}
       <div
-        class={["p-5 text-sm text-center", "text-black/60 dark:text-white/60"]}
+        class={["p-5 text-center text-sm", "text-black/60 dark:text-white/60"]}
       >
         No agents configured
       </div>
@@ -288,16 +289,16 @@
         >
           <span
             class={[
-              "shrink-0 ml-1",
-              "w-2.5 h-2.5 rounded-full",
+              "ml-1 shrink-0",
+              "h-2.5 w-2.5 rounded-full",
               getStatusClass(agent.status),
             ]}
           ></span>
-          <div class={["flex flex-col ml-1", "min-w-0"]}>
+          <div class={["ml-1 flex flex-col", "min-w-0"]}>
             <span
               class={[
                 "agent-name",
-                "font-medium text-[13px] text-ellipsis text-nowrap overflow-hidden",
+                "overflow-hidden text-[13px] font-medium text-nowrap text-ellipsis",
                 "text-black/80 dark:text-white",
               ]}>{agent.name}</span
             >
@@ -319,12 +320,12 @@
       "footer",
       showFooterShadow ? "shadow-top" : "",
       "relative z-10",
-      "flex gap-2 pt-2 mr-3 px-1",
+      "mr-3 flex gap-2 px-1 pt-2",
       "border-t border-black/10 dark:border-white/10",
     ]}
   >
     <Button onclick={handleDashboard} size="xs">Dashboard</Button>
-    <Button onclick={handleSettings} size="xs" class="flex-0 mr-2">
+    <Button onclick={handleSettings} size="xs" class="mr-2 flex-0">
       <Icon name="settings" />
     </Button>
     <Button

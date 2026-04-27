@@ -1,10 +1,4 @@
 <script lang="ts">
-  import {
-    type ChartSeries,
-    computeGradientStops,
-    getSeriesFiniteValue,
-    sanitizeSeriesData,
-  } from "$lib/utils/chart.js";
   import { scaleBand } from "d3-scale";
   import {
     BarChart,
@@ -12,6 +6,13 @@
     defaultChartPadding,
     LinearGradient,
   } from "layerchart";
+
+  import {
+    computeGradientStops,
+    getSeriesFiniteValue,
+    sanitizeSeriesData,
+    type ChartSeries,
+  } from "$lib/utils/chart.js";
 
   const DEFAULT_PADDING = 24;
 

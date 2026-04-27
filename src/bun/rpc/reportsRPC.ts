@@ -1,15 +1,15 @@
 // Reports RPC - Per-agent uptime report generation
-import type { TimeRange } from "../../shared/types";
 import { getAgentColor } from "../../shared/agent-helpers";
 import type {
   AgentUptimeSummary,
   UptimeReport,
 } from "../../shared/reportTypes";
+import type { TimeRange } from "../../shared/types";
 import { readAgents } from "../services/agentService";
-import { withErrorLogging } from "./rpcHelpers";
 import { generateUptimeReportHTML } from "../services/reportHtmlService";
 import { getAllAgentStats } from "../storage/sqlite/statsRepo";
 import { getRangeTimestamps } from "../utils/time-range";
+import { withErrorLogging } from "./rpcHelpers";
 
 export type ReportsRPCType = {
   bun: {

@@ -1,10 +1,10 @@
 import type { TimeRange } from "../../shared/types";
 import {
+  NINETY_DAYS_SEC,
   ONE_DAY_SEC,
+  ONE_SECOND_MS,
   SEVEN_DAYS_SEC,
   THIRTY_DAYS_SEC,
-  NINETY_DAYS_SEC,
-  ONE_SECOND_MS,
 } from "./constants";
 
 const RANGE_SECONDS: Record<TimeRange, number> = {

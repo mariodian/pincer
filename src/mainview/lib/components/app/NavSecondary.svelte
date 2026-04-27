@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { link } from "@bmlt-enabled/svelte-spa-router";
+  import { resetMode, setMode, userPrefersMode } from "mode-watcher";
+  import type { ComponentProps } from "svelte";
+
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Icon } from "$lib/components/ui/icon/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar";
@@ -7,9 +11,6 @@
   import { currentRoute } from "$lib/services/navigationStore";
   import { cn, type WithoutChildren } from "$lib/utils";
   import { isActiveUrl } from "$lib/utils/url.js";
-  import { link } from "@bmlt-enabled/svelte-spa-router";
-  import { resetMode, setMode, userPrefersMode } from "mode-watcher";
-  import type { ComponentProps } from "svelte";
 
   const sidebar = useSidebar();
   let shouldFlex = $state(false);
@@ -81,7 +82,7 @@
             <Sidebar.MenuItem class="flex items-center gap-2">
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger
-                  class="flex-1 group-sidebar-expanded/settings:flex-1"
+                  class="group-sidebar-expanded/settings:flex-1 flex-1"
                 >
                   <Sidebar.MenuButton
                     class={cn([
@@ -144,7 +145,7 @@
                 class={cn([
                   "transition-all duration-150",
                   shouldFlex
-                    ? "max-w-0 opacity-0 pointer-events-none overflow-hidden"
+                    ? "pointer-events-none max-w-0 overflow-hidden opacity-0"
                     : "max-w-10 opacity-100",
                 ])}
               >
@@ -160,8 +161,8 @@
             class={cn([
               "transition-all duration-150",
               shouldFlex
-                ? "max-h-10 opacity-100 mb-1"
-                : "max-h-0 opacity-0 mt-0 pointer-events-none overflow-hidden",
+                ? "mb-1 max-h-10 opacity-100"
+                : "pointer-events-none mt-0 max-h-0 overflow-hidden opacity-0",
             ])}
           >
             <Sidebar.MenuItem>

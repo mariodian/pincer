@@ -1,10 +1,10 @@
-import { logger } from "./loggerService";
 import { countOldChecks, deleteOldChecks } from "../storage/sqlite/checksRepo";
 import {
   countOldEvents,
   deleteOldEvents,
 } from "../storage/sqlite/incidentEventsRepo";
-import { SEVEN_DAYS_MS, ONE_HOUR_MS } from "../utils/constants";
+import { ONE_HOUR_MS, SEVEN_DAYS_MS } from "../utils/constants";
+import { logger } from "./loggerService";
 
 // Retention configuration for raw checks (7 days - hardcoded minimum)
 const CHECK_RETENTION_DAYS = 7;

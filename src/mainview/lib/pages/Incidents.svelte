@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { IncidentTimeline } from "$bun/rpc/incidentRPC";
+  import type { TimeRange } from "$shared/types";
+
   import { Timeline } from "$lib/components/incidents";
   import { Button } from "$lib/components/ui/button";
   import * as Empty from "$lib/components/ui/empty";
@@ -10,7 +12,6 @@
   import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
-  import type { TimeRange } from "$shared/types";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -71,7 +72,7 @@
   let checkBuckets = $derived(timeline?.recent7d.checkBuckets ?? []);
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex h-full flex-col">
   <PageHeader
     title="Incidents"
     description="Incident timeline and raw check history"
@@ -95,7 +96,7 @@
         description={error ?? undefined}
       >
         {#snippet icon()}
-          <Icon name="alertCircle" class="size-5 text-destructive" />
+          <Icon name="alertCircle" class="text-destructive size-5" />
         {/snippet}
         {#snippet cta()}
           <Button
@@ -110,10 +111,10 @@
       </ErrorState>
     {:else if loading}
       <div class="space-y-4">
-        <Skeleton class="h-29 w-120 mb-6 rounded-lg" />
-        <Skeleton class="h-8 w-full mb-6 rounded-lg" />
+        <Skeleton class="mb-6 h-29 w-120 rounded-lg" />
+        <Skeleton class="mb-6 h-8 w-full rounded-lg" />
         <Skeleton class="h-3 w-20 rounded-lg" />
-        <Skeleton class="h-40 w-full mb-6 rounded-lg" />
+        <Skeleton class="mb-6 h-40 w-full rounded-lg" />
         <Skeleton class="h-3 w-12 rounded-lg" />
         <Skeleton class="h-44 w-full rounded-lg" />
       </div>

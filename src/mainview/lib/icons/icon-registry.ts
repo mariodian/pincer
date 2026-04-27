@@ -1,7 +1,3 @@
-import type { IconSvgElement } from "@hugeicons/svelte";
-import type { Component } from "svelte";
-import type { SVGAttributes } from "svelte/elements";
-
 import {
   Add01Icon,
   AlertCircleIcon,
@@ -21,7 +17,7 @@ import {
   SunIcon,
   Tick01Icon,
 } from "@hugeicons/core-free-icons";
-
+import type { IconSvgElement } from "@hugeicons/svelte";
 import {
   Activity,
   ArrowDown10Icon,
@@ -53,6 +49,8 @@ import {
   TriangleAlert,
   WifiOff,
 } from "@lucide/svelte";
+import type { Component } from "svelte";
+import type { SVGAttributes } from "svelte/elements";
 
 interface LucideIconProps extends SVGAttributes<SVGSVGElement> {
   size?: string | number;

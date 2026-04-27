@@ -1,41 +1,40 @@
 import Electrobun, { BrowserWindow, Screen, Utils } from "electrobun/bun";
-import { setupMainWindowMenu } from "./applicationMenu";
-import { agentRequestHandlers } from "./rpc/agentRPC";
-import { incidentRequestHandlers } from "./rpc/incidentRPC";
-import { daemonRequestHandlers } from "./rpc/daemonSyncRPC";
-import { reportsRequestHandlers } from "./rpc/reportsRPC";
 
-import { performAutoUpdateCheck, updateRequestHandlers } from "./rpc/updateRPC";
+import { setupMainWindowMenu } from "./applicationMenu";
+import { APP_NAME, MAIN_WINDOW } from "./config";
+import { agentRequestHandlers } from "./rpc/agentRPC";
+import { daemonRequestHandlers } from "./rpc/daemonSyncRPC";
+import { incidentRequestHandlers } from "./rpc/incidentRPC";
+import { reportsRequestHandlers } from "./rpc/reportsRPC";
 import { settingsRequestHandlers } from "./rpc/settingsRPC";
 import { statsRequestHandlers } from "./rpc/statsRPC";
 import {
   setRendererReadyCallback,
-  systemRPC,
   systemRequestHandlers,
+  systemRPC,
 } from "./rpc/systemRPC";
+import { performAutoUpdateCheck, updateRequestHandlers } from "./rpc/updateRPC";
 import { getMainWindow, setMainWindow } from "./rpc/windowRegistry";
 import { initDatabase } from "./services/agentService";
+import { applyAutostartSetting } from "./services/autostartService";
 import { sync } from "./services/daemonSyncService";
 import { initLogger, logger } from "./services/loggerService";
+import { stopRetentionService } from "./services/retentionService";
 import {
   beginStatusUpdates,
   stopStatusUpdates,
 } from "./services/statusService";
-import { stopRetentionService } from "./services/retentionService";
-import { getSettings } from "./storage/sqlite/settingsRepo";
 import {
   getWindowBounds,
   setWindowBounds,
   type WindowBounds,
 } from "./storage/sqlite/appStateRepo";
+import { getSettings } from "./storage/sqlite/settingsRepo";
 import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
 import { readWindowConfig } from "./utils/windowConfig";
-
-import { APP_NAME, MAIN_WINDOW } from "./config";
-import { applyAutostartSetting } from "./services/autostartService";
 
 /**
  * Check if saved window bounds are within a visible display.

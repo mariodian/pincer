@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { link, push } from "@bmlt-enabled/svelte-spa-router";
+
   import { Button } from "$lib/components/ui/button/index.js";
   import { Icon } from "$lib/components/ui/icon/index.js";
   import { useSidebar } from "$lib/components/ui/sidebar";
@@ -6,7 +8,6 @@
   import type { IconName } from "$lib/icons/icon-registry.js";
   import { currentRoute } from "$lib/services/navigationStore";
   import { isActiveUrl } from "$lib/utils/url.js";
-  import { link, push } from "@bmlt-enabled/svelte-spa-router";
 
   let { items }: { items: { title: string; url: string; icon: IconName }[] } =
     $props();

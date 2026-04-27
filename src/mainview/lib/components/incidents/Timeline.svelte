@@ -1,11 +1,12 @@
 <script lang="ts">
+  import type { CheckBucket, IncidentEvent, TimeRange } from "$shared/types";
+
   import { Heatmap, IncidentCard } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
   import { Icon } from "$lib/components/ui/icon";
   import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
   import { cn } from "$lib/utils";
   import { formatShortDate } from "$lib/utils/datetime";
-  import type { CheckBucket, IncidentEvent, TimeRange } from "$shared/types";
 
   interface Props {
     events: IncidentEvent[];
@@ -156,7 +157,7 @@
 </script>
 
 <TooltipProvider delayDuration={0} skipDelayDuration={300}>
-  <div class={cn("space-y-3 w-full min-w-0 max-w-full", className)}>
+  <div class={cn("w-full max-w-full min-w-0 space-y-3", className)}>
     <!-- Single heatmap for the entire period (24h or 7d) -->
     <Heatmap {range} {checkBuckets} cellSize={4} />
 
@@ -166,7 +167,7 @@
         <!-- Day header -->
         <div
           class={cn(
-            "sticky top-0 -mx-2 px-2 z-10 mb-4 py-2",
+            "sticky top-0 z-10 -mx-2 mb-4 px-2 py-2",
             "flex items-center gap-4",
             "bg-content-background border-content-background",
           )}
@@ -179,7 +180,7 @@
         {#if dayIncidents && dayIncidents.length > 0}
           <div class="space-y-4">
             <h4
-              class="mb-3 text-xs font-medium uppercase text-muted-foreground"
+              class="text-muted-foreground mb-3 text-xs font-medium uppercase"
             >
               Events
             </h4>
@@ -193,7 +194,7 @@
                   agentColor={agent.color}
                 />
               {:else}
-                <div class="text-xs text-muted-foreground">
+                <div class="text-muted-foreground text-xs">
                   Unknown agent (ID: {firstEvent.agentId})
                 </div>
               {/if}

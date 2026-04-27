@@ -1,5 +1,5 @@
-import { platform } from "node:os";
 import { execSync } from "node:child_process";
+import { platform } from "node:os";
 
 export async function getMachineId(): Promise<string> {
   const p = platform();

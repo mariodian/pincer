@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { push } from "@bmlt-enabled/svelte-spa-router";
+
   import AgentForm from "$lib/components/agents/AgentForm.svelte";
   import AgentList from "$lib/components/agents/AgentList.svelte";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
-  import { push } from "@bmlt-enabled/svelte-spa-router";
 
   let currentPath = $derived($currentRoute);
 

@@ -1,9 +1,10 @@
-import type { Check, CheckBucket, CheckStatus } from "../../../shared/types";
-import { rowToCheck } from "../../../shared/db-helpers";
 import { desc, eq, sql } from "drizzle-orm";
+
+import { runInTransaction } from "../../../shared/db-core";
+import { rowToCheck } from "../../../shared/db-helpers";
+import type { Check, CheckBucket, CheckStatus } from "../../../shared/types";
 import { getDatabase } from "./db";
 import { checks } from "./schema";
-import { runInTransaction } from "../../../shared/db-core";
 
 /**
  * Insert a single health check into the database.

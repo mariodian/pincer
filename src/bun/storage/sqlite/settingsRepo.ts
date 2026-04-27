@@ -1,6 +1,6 @@
+import { logger } from "../../services/loggerService";
 import { getDatabase } from "./db";
 import { settingsGeneral } from "./schema";
-import { logger } from "../../services/loggerService";
 
 export interface Settings {
   retentionDays: number;

@@ -1,16 +1,18 @@
 // Logger Service - Channel-aware logging with file output and renderer push
-import { Updater, Utils } from "electrobun/bun";
 import {
   appendFileSync,
   existsSync,
+  mkdirSync,
   renameSync,
   statSync,
-  mkdirSync,
   unlinkSync,
 } from "node:fs";
 import { join } from "node:path";
+
+import { Updater, Utils } from "electrobun/bun";
+
+import { getDefaultLogLevel, type LogLevel } from "../../shared/logger";
 import { getMainWindow } from "../rpc/windowRegistry";
-import { type LogLevel, getDefaultLogLevel } from "../../shared/logger";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,

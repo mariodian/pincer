@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { cn } from "$lib/utils";
-  import { formatDateTime } from "$lib/utils/datetime";
   import {
     statusLabels,
     statusTones,
     type StatusTone,
   } from "$shared/status-config";
   import type { Check } from "$shared/types";
+
+  import { cn } from "$lib/utils";
+  import { formatDateTime } from "$lib/utils/datetime";
 
   interface Props {
     check: Check;

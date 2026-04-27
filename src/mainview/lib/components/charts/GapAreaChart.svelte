@@ -1,4 +1,13 @@
 <script lang="ts">
+  import { curveCatmullRom } from "d3-shape";
+  import {
+    Area,
+    AreaChart,
+    defaultChartPadding,
+    LinearGradient,
+    Path,
+  } from "layerchart";
+
   import {
     buildAllSeriesGaps,
     buildGapPath,
@@ -10,14 +19,6 @@
     getSeriesOpacity,
     type ChartSeries,
   } from "$lib/utils/chart.js";
-  import { curveCatmullRom } from "d3-shape";
-  import {
-    Area,
-    AreaChart,
-    defaultChartPadding,
-    LinearGradient,
-    Path,
-  } from "layerchart";
   import SeriesDot from "./SeriesDot.svelte";
 
   const DEFAULT_PADDING = 40;

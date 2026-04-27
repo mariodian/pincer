@@ -1,7 +1,12 @@
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
+
 import { appConfig, daemonConfig } from "../src/shared/appConfig";
-import { initLogger, type LogLevel, getDefaultLogLevel } from "../src/shared/logger";
+import {
+  getDefaultLogLevel,
+  initLogger,
+  type LogLevel,
+} from "../src/shared/logger";
 
 function parseBooleanEnv(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
@@ -101,7 +106,8 @@ const daemonLogLevel: LogLevel =
   getDefaultLogLevel(daemonChannel);
 
 // File logging: dev/canary default on, stable default off
-const defaultFileLogging = daemonChannel === "dev" || daemonChannel === "canary";
+const defaultFileLogging =
+  daemonChannel === "dev" || daemonChannel === "canary";
 
 export const config = {
   channel: daemonChannel,

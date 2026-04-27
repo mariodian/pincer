@@ -1,7 +1,5 @@
 // Agent RPC - Shared RPC definition for agent management
 import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
-import { withErrorLogging } from "./rpcHelpers";
-import { logger } from "../services/loggerService";
 import { AgentStatusInfo } from "../../shared/types";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 import {
@@ -15,13 +13,14 @@ import {
   readAgents,
   updateAgent,
 } from "../services/agentService";
+import { removeAgentState } from "../services/incidentService";
+import { logger } from "../services/loggerService";
+import { removeAgentStatusTracking } from "../services/statusService";
 import {
   getStatusSyncService,
   removeAgentStatus,
 } from "../services/statusSyncService";
-
-import { removeAgentState } from "../services/incidentService";
-import { removeAgentStatusTracking } from "../services/statusService";
+import { withErrorLogging } from "./rpcHelpers";
 
 type AgentMutationCallback = () => void;
 let onAgentMutation: AgentMutationCallback | null = null;

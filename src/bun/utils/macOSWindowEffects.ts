@@ -1,8 +1,10 @@
 // macOS Window Effects - Native macOS visual effects via FFI
-import { dlopen, FFIType, type Pointer } from "bun:ffi";
-import { BrowserWindow } from "electrobun/bun";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+
+import { dlopen, FFIType, type Pointer } from "bun:ffi";
+import { BrowserWindow } from "electrobun/bun";
+
 import { logger } from "../services/loggerService";
 import type { WindowConfig, WindowName } from "./windowConfig";
 

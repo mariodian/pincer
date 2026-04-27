@@ -1,4 +1,6 @@
 <script lang="ts">
+  import icon from "$resources/icon.png";
+
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
@@ -8,7 +10,6 @@
   import { Spinner } from "$lib/components/ui/spinner";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { cn } from "$lib/utils";
-  import icon from "$resources/icon.png";
 
   interface UpdateInfo {
     version: string;
@@ -165,7 +166,7 @@
 </script>
 
 {#if loading}
-  <div class="space-y-6 max-w-lg">
+  <div class="max-w-lg space-y-6">
     <div class="space-y-2">
       <Skeleton class="h-8 w-48" />
       <Skeleton class="h-4 w-64" />
@@ -177,16 +178,16 @@
     </div>
   </div>
 {:else if updateInfo}
-  <div class="space-y-6 max-w-lg">
+  <div class="max-w-lg space-y-6">
     <Card.Root>
       <Card.Header>
-        <Card.Title class="flex items-center justify-center flex-col">
+        <Card.Title class="flex flex-col items-center justify-center">
           <img src={icon} alt="Pincer Icon" class="h-24 w-24 drop-shadow-sm" />
-          <div class="flex items-center gap-3 mt-4">
+          <div class="mt-4 flex items-center gap-3">
             <h2 class="text-xl font-semibold">Pincer</h2>
 
             <span
-              class="px-2 py-0.5 text-xs font-medium rounded-full {getChannelColor(
+              class="rounded-full px-2 py-0.5 text-xs font-medium {getChannelColor(
                 updateInfo.channel,
               )}"
             >
@@ -196,7 +197,7 @@
           <p>A fast multi-platform agent monitoring utility</p>
         </Card.Title>
         <Card.Description class="text-center">
-          <p class="text-sm text-muted-foreground">
+          <p class="text-muted-foreground text-sm">
             Version {updateInfo.version} ({updateInfo.hash.slice(0, 8)})
           </p>
         </Card.Description>
@@ -205,7 +206,7 @@
         <div class="flex items-center justify-between">
           <div class="space-y-1">
             <Label class="text-base">Updates</Label>
-            <p class="text-xs text-muted-foreground">
+            <p class="text-muted-foreground text-xs">
               Last checked: {formatLastCheck(updateInfo.lastCheckTimestamp)}
             </p>
           </div>
@@ -246,7 +247,7 @@
         {#if updateInfo.updateAvailable && updateInfo.newVersion}
           <Alert.Root
             class={cn(
-              "p-4 rounded-lg border",
+              "rounded-lg border p-4",
               "border-green-300/50 bg-green-300/30",
               "dark:border-green-900/70 dark:bg-green-900/50",
             )}
@@ -254,7 +255,7 @@
             <Icon name="checkCircle" />
             <Alert.Title>Update Available</Alert.Title>
             <Alert.Description>
-              <p class="text-sm text-green-950/60 dark:text-green-100/60 mb-3">
+              <p class="mb-3 text-sm text-green-950/60 dark:text-green-100/60">
                 Version {updateInfo.newVersion} is ready to install.
               </p>
               {#if updateInfo.isBrewInstall}
@@ -266,8 +267,8 @@
                   <div class="flex items-center gap-2">
                     <code
                       class={cn(
-                        "px-2 py-1 rounded",
-                        "text-sm font-mono",
+                        "rounded px-2 py-1",
+                        "font-mono text-sm",
                         "bg-green-950/10 dark:bg-green-100/10",
                       )}
                     >
@@ -278,7 +279,7 @@
                       variant="default"
                       size="xs"
                       onclick={() => copyToClipboard("brew upgrade pincer")}
-                      class="gap-1 h-7.5 px-2"
+                      class="h-7.5 gap-1 px-2"
                     >
                       {#if copied}
                         <Icon name="tick" size={14} />

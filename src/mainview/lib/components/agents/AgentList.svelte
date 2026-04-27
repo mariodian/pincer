@@ -1,4 +1,11 @@
 <script lang="ts">
+  import {
+    createAgentSyncSignature,
+    sortAgentsByStatus,
+  } from "$shared/agent-helpers";
+  import type { AgentStatus, Status } from "$shared/types";
+  import { onMount } from "svelte";
+
   import { Badge } from "$lib/components/ui/badge/";
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Empty from "$lib/components/ui/empty/index.js";
@@ -9,12 +16,6 @@
   import { getMainRPC, offAgentSync, onAgentSync } from "$lib/services/mainRPC";
   import { cn } from "$lib/utils";
   import { readCachedAgents, removeCachedAgent } from "$lib/utils/storage";
-  import {
-    createAgentSyncSignature,
-    sortAgentsByStatus,
-  } from "$shared/agent-helpers";
-  import type { AgentStatus, Status } from "$shared/types";
-  import { onMount } from "svelte";
 
   interface Props {
     onNavigate: (path: string) => void;
@@ -120,7 +121,7 @@
   }
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex h-full flex-col">
   <PageHeader
     title="Agents"
     description="Manage your monitored services"
@@ -143,7 +144,7 @@
         {#each [1, 2, 3] as _}
           <div
             class={cn(
-              "flex items-center gap-3 mt-0.5 p-4 min-h-18",
+              "mt-0.5 flex min-h-18 items-center gap-3 p-4",
               "bg-card rounded-md",
               "border-none ring-1 ring-black/4 dark:ring-0",
               "shadow-xs shadow-black/6",
@@ -165,14 +166,14 @@
       </div>
     {:else if agents.length > 0}
       <div
-        class="grid grid-cols-1 xl:grid-cols-2 gap-3 -mx-0.5 overflow-x-hidden"
+        class="-mx-0.5 grid grid-cols-1 gap-3 overflow-x-hidden xl:grid-cols-2"
       >
         {#each agents as agent (agent.id)}
-          <div class="p-0.5 overflow-x-hidden">
+          <div class="overflow-x-hidden p-0.5">
             <div
               class={cn(
                 "relative w-full",
-                "duration-300 transition-all",
+                "transition-all duration-300",
                 confirmDeleteId === agent.id ? "-left-full -ml-2" : "left-0",
               )}
             >
@@ -195,7 +196,7 @@
                 >
                   <span
                     class={[
-                      "shrink-0 size-3 rounded-full transition-all",
+                      "size-3 shrink-0 rounded-full transition-all",
                       getStatusClass(agent.status),
                     ]}
                     title={getStatusLabel(agent.status)}
@@ -218,7 +219,7 @@
 
                   <Item.Actions>
                     <div
-                      class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <Button
                         variant="ghost"
@@ -248,7 +249,7 @@
               <!-- Delete Confirmation -->
               <div
                 class={cn(
-                  "absolute left-full top-0 w-full ml-2",
+                  "absolute top-0 left-full ml-2 w-full",
                   "rounded-md shadow-xs shadow-black/6",
                   "dark:shadow-xs dark:shadow-black/20",
                 )}

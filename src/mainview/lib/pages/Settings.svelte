@@ -62,7 +62,7 @@
   });
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex h-full flex-col">
   <PageHeader
     title="Settings"
     description="Configure your application preferences"
@@ -70,20 +70,20 @@
     {currentPath}
   >
     {#snippet actions()}
-      <div class="h-5 flex items-center">
+      <div class="flex h-5 items-center">
         {#if saveStatus === "saving"}
-          <span class="text-sm text-muted-foreground animate-pulse">
+          <span class="text-muted-foreground animate-pulse text-sm">
             Saving...
           </span>
         {:else if saveStatus === "saved"}
           <span
-            class="text-sm text-green-600 dark:text-green-400 transition-opacity duration-300"
+            class="text-sm text-green-600 transition-opacity duration-300 dark:text-green-400"
             class:opacity-0={fadeOut}
           >
             Saved ✓
           </span>
         {:else if saveStatus === "error"}
-          <span class="text-sm text-destructive">Failed to save</span>
+          <span class="text-destructive text-sm">Failed to save</span>
         {/if}
       </div>
     {/snippet}
@@ -94,8 +94,8 @@
       <Tabs.List
         class={[
           "mb-6",
-          "shadow-2xs shadow-white/50 inset-shadow-xs inset-shadow-black/4",
-          "dark:shadow-xs dark:shadow-black/25 dark:inset-shadow-2xs dark:inset-shadow-white/4",
+          "shadow-2xs inset-shadow-xs shadow-white/50 inset-shadow-black/4",
+          "dark:shadow-xs dark:inset-shadow-2xs dark:shadow-black/25 dark:inset-shadow-white/4",
         ]}
       >
         <Tabs.Trigger value="general">General</Tabs.Trigger>

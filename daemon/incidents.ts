@@ -1,12 +1,13 @@
 import { eq, sql } from "drizzle-orm";
-import { logger } from "../src/shared/logger";
-import type { CheckStatus } from "../src/shared/types";
+
+import { buildOpenIncidentsQuery } from "../src/shared/incident-queries";
 import {
   createIncidentTracker,
   DEFAULT_FAILURE_THRESHOLD,
   DEFAULT_RECOVERY_THRESHOLD,
 } from "../src/shared/incidentCore";
-import { buildOpenIncidentsQuery } from "../src/shared/incident-queries";
+import { logger } from "../src/shared/logger";
+import type { CheckStatus } from "../src/shared/types";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents } from "./schema";
 

@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { cn } from "$lib/utils";
-  import { ONE_HOUR_MS, ONE_DAY_MS, SEVEN_DAYS_MS } from "$lib/constants";
   import type { CheckBucket, TimeRange } from "$shared/types";
+
+  import { ONE_DAY_MS, ONE_HOUR_MS, SEVEN_DAYS_MS } from "$lib/constants";
+  import { cn } from "$lib/utils";
   import HeatmapCell from "./HeatmapCell.svelte";
 
   // Time constants
@@ -210,9 +211,9 @@
   );
 </script>
 
-<div class="overflow-x-auto w-full min-w-0 max-w-full">
+<div class="w-full max-w-full min-w-0 overflow-x-auto">
   <div
-    class={cn("grid gap-1 mb-3", className)}
+    class={cn("mb-3 grid gap-1", className)}
     style={`grid-template-columns: repeat(${columns}, minmax(0, ${CELL_SIZE})); width: max-content;`}
   >
     {#each timeBuckets as slot (slot.startTime.getTime())}

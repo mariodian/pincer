@@ -345,7 +345,11 @@ export function createIncidentTracker(
   /**
    * Record a health check result for an agent and update incident state.
    */
-  function recordCheck(agentId: number, status: CheckStatus, namespaceId?: string): void {
+  function recordCheck(
+    agentId: number,
+    status: CheckStatus,
+    namespaceId?: string,
+  ): void {
     // Get or create the agent's state
     let state = agentStates.get(agentId);
     if (!state) {

@@ -1,4 +1,5 @@
 import type { BrowserWindow } from "electrobun/bun";
+
 import type { AgentStatus } from "../../shared/types";
 import { logger } from "../services/loggerService";
 

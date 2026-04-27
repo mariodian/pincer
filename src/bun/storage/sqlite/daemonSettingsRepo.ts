@@ -40,8 +40,7 @@ export function updateDaemonSettingsWithLifecycle(
   partial: Partial<DaemonSettings>,
 ): { settingsChanged: boolean; daemonJustEnabled: boolean } {
   const current = getDaemonSettings();
-  const daemonJustEnabled =
-    partial.enabled === true && !current.enabled;
+  const daemonJustEnabled = partial.enabled === true && !current.enabled;
 
   if (daemonJustEnabled) {
     // Reset sync timestamp to prevent syncing duplicate data from the offline period

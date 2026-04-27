@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 // Note: daemon/config.ts runs on import and uses process.env/process.exit.
 // Testing it requires careful isolation. These tests verify the pure helper
@@ -31,8 +31,22 @@ describe("daemon config helpers", () => {
       const invalidValues = ["maybe", "", "2", "TRUEE"];
       for (const val of invalidValues) {
         const normalized = val?.trim().toLowerCase();
-        const isValid = ["1", "true", "yes", "on", "0", "false", "no", "off"].includes(normalized ?? "");
-        if (!val || !["1", "true", "yes", "on", "0", "false", "no", "off"].includes(normalized ?? "")) {
+        const isValid = [
+          "1",
+          "true",
+          "yes",
+          "on",
+          "0",
+          "false",
+          "no",
+          "off",
+        ].includes(normalized ?? "");
+        if (
+          !val ||
+          !["1", "true", "yes", "on", "0", "false", "no", "off"].includes(
+            normalized ?? "",
+          )
+        ) {
           expect(isValid).toBe(false);
         }
       }
@@ -128,7 +142,12 @@ describe("daemon config helpers", () => {
       // Document that DAEMON_FILE_LOGGING can override the default
       const override = process.env.DAEMON_FILE_LOGGING;
       // undefined means use default, otherwise parse as boolean
-      expect(override === undefined || ["true", "false", "1", "0", "yes", "no", "on", "off"].includes(override.toLowerCase())).toBe(true);
+      expect(
+        override === undefined ||
+          ["true", "false", "1", "0", "yes", "no", "on", "off"].includes(
+            override.toLowerCase(),
+          ),
+      ).toBe(true);
     });
   });
 });

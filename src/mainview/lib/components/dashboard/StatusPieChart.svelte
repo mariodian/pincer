@@ -1,9 +1,10 @@
 <script lang="ts">
+  import { format } from "@layerstack/utils";
+  import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
+  import { defaultChartPadding, PieChart, Text } from "layerchart";
+
   import * as Card from "$lib/components/ui/card";
   import { cn } from "$lib/utils.js";
-  import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
-  import { format } from "@layerstack/utils";
-  import { defaultChartPadding, PieChart, Text } from "layerchart";
   import AgentToggle from "./AgentToggle.svelte";
 
   const DEFAULT_PADDING = 24;
@@ -122,13 +123,13 @@
         class={[
           "min-h-50",
           "flex flex-1 items-center justify-center",
-          "text-sm text-muted-foreground",
+          "text-muted-foreground text-sm",
         ]}
       >
         No data for this period.
       </div>
     {:else}
-      <div class="w-full h-50 lg:h-60">
+      <div class="h-50 w-full lg:h-60">
         <PieChart
           data={statusData}
           key="status"
@@ -172,7 +173,7 @@
               value="Total"
               textAnchor="middle"
               verticalAnchor="middle"
-              class="text-sm font-medium text-muted-foreground"
+              class="text-muted-foreground text-sm font-medium"
               dy={textPosition * SUBTITLE_DY_MULTIPLIER}
             />
           {/snippet}

@@ -1,9 +1,10 @@
 <script lang="ts">
+  import type { AgentWithColor } from "$shared/rpc";
+  import type { TimeRange } from "$shared/types";
+
   import * as Card from "$lib/components/ui/card";
   import { cn } from "$lib/utils";
   import { padToFullRange, type PivotedRow } from "$lib/utils/metrics-data";
-  import type { AgentWithColor } from "$shared/rpc";
-  import type { TimeRange } from "$shared/types";
   import GapAreaChart from "../charts/GapAreaChart.svelte";
   import GapLineChart from "../charts/GapLineChart.svelte";
   import GradientBarChart from "../charts/GradientBarChart.svelte";
@@ -149,13 +150,13 @@
         class={[
           "min-h-50",
           "flex flex-1 items-center justify-center",
-          "text-sm text-muted-foreground",
+          "text-muted-foreground text-sm",
         ]}
       >
         No data for this period.
       </div>
     {:else}
-      <div class="w-full min-h-50 lg:h-60">
+      <div class="min-h-50 w-full lg:h-60">
         {#if chartType === "line"}
           <GapLineChart
             {...commonChartProps}

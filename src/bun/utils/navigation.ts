@@ -1,7 +1,8 @@
 import { Utils } from "electrobun/bun";
+
 import { getMainWindow } from "../rpc/windowRegistry";
-import { syncAgentsFromKnownStatuses } from "../trayManager";
 import { logger } from "../services/loggerService";
+import { syncAgentsFromKnownStatuses } from "../trayManager";
 import { getViewUrl, stripHash } from "./url";
 
 /** Route to navigate to after the renderer signals ready (used when window is recreated). */

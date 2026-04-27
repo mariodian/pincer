@@ -1,5 +1,5 @@
 import { AgentStorage } from "./backend";
-import { readAgents, writeAgents, insertAgent } from "./sqlite/agentsRepo";
+import { insertAgent, readAgents, writeAgents } from "./sqlite/agentsRepo";
 
 export type { AgentStorage } from "./backend";
 

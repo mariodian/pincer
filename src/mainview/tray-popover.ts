@@ -1,4 +1,5 @@
 import { mount } from "svelte";
+
 import TrayPopover from "./TrayPopover.svelte";
 
 declare global {

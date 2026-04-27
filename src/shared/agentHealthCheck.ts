@@ -1,11 +1,11 @@
-import type { Agent, CheckStatus } from "./types";
+import { normalizeUrl } from "./agent-helpers";
 import {
+  getAgentType,
+  STATUS_PARSERS,
   type StatusParser,
   type StatusShape,
-  STATUS_PARSERS,
-  getAgentType,
 } from "./agentTypes";
-import { normalizeUrl } from "./agent-helpers";
+import type { Agent, CheckStatus } from "./types";
 
 export interface HealthConfig {
   url: string;

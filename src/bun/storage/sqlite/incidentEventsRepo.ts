@@ -1,16 +1,16 @@
 import { desc, sql } from "drizzle-orm";
-import {
-  buildOpenIncidentsQuery,
-  buildHandedOffIncidentsQuery,
-} from "../../../shared/incident-queries";
+
 import { rowToIncidentEvent } from "../../../shared/db-helpers";
+import {
+  buildHandedOffIncidentsQuery,
+  buildOpenIncidentsQuery,
+} from "../../../shared/incident-queries";
 import type {
   CheckStatus,
   EventType,
   IncidentEvent,
 } from "../../../shared/types";
 import { logger } from "../../services/loggerService";
-
 import { getDatabase } from "./db";
 import { incidentEvents } from "./schema";
 

@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
+
+import { logger } from "../../services/loggerService";
 import { getDatabase } from "./db";
 import { appMeta } from "./schema";
-import { logger } from "../../services/loggerService";
 
 /**
  * Get a meta value by key.

@@ -1,7 +1,8 @@
-import { MAX_RESPONSE_TIMES, MIN_UPTIME_THRESHOLDS } from "$lib/constants";
 import { formatMs, formatUptime } from "$shared/format-helpers";
 import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
 import type { TimeRange } from "$shared/types";
+
+import { MAX_RESPONSE_TIMES, MIN_UPTIME_THRESHOLDS } from "$lib/constants";
 
 /**
  * A pivoted row containing an hour timestamp and per-agent metric columns.

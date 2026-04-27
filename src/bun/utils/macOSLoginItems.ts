@@ -1,7 +1,9 @@
 // macOS Login Items - Native SMAppService bindings via FFI
-import { dlopen, FFIType } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+
+import { dlopen, FFIType } from "bun:ffi";
+
 import { logger } from "../services/loggerService";
 
 export type LoginItemStatus =

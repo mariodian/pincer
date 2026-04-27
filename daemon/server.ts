@@ -1,5 +1,6 @@
 import { serve, type Server } from "bun";
 import { sql } from "drizzle-orm";
+
 import { daemonConfig } from "../src/shared/appConfig";
 import { rowToCheck, rowToIncidentEvent } from "../src/shared/db-helpers";
 import { logger } from "../src/shared/logger";
@@ -58,7 +59,11 @@ async function handleRequest(req: Request): Promise<Response> {
       if (!namespaceId) return errorResponse("Missing namespace", 400);
 
       const { db } = getDatabase();
-      const rows = db.select().from(agents).where(sql`${agents.namespaceId} = ${namespaceId}`).all();
+      const rows = db
+        .select()
+        .from(agents)
+        .where(sql`${agents.namespaceId} = ${namespaceId}`)
+        .all();
       return jsonResponse(
         rows.map((r) => ({
           id: r.agentId,
@@ -183,7 +188,9 @@ async function handleRequest(req: Request): Promise<Response> {
       const rows = db
         .select()
         .from(stats)
-        .where(sql`${stats.namespaceId} = ${namespaceId} AND ${stats.hourTimestamp} >= ${sinceSecs}`)
+        .where(
+          sql`${stats.namespaceId} = ${namespaceId} AND ${stats.hourTimestamp} >= ${sinceSecs}`,
+        )
         .orderBy(stats.hourTimestamp)
         .all();
 
@@ -201,7 +208,9 @@ async function handleRequest(req: Request): Promise<Response> {
       const rows = db
         .select()
         .from(incidentEvents)
-        .where(sql`${incidentEvents.namespaceId} = ${namespaceId} AND ${incidentEvents.eventAt} >= ${since}`)
+        .where(
+          sql`${incidentEvents.namespaceId} = ${namespaceId} AND ${incidentEvents.eventAt} >= ${since}`,
+        )
         .orderBy(incidentEvents.eventAt)
         .all();
 
@@ -215,12 +224,11 @@ async function handleRequest(req: Request): Promise<Response> {
 
       const { db } = getDatabase();
 
-      const openIncidents = db
-        .all<{
-          agentId: number;
-          incidentId: string;
-          openedAt: number;
-        }>(sql`
+      const openIncidents = db.all<{
+        agentId: number;
+        incidentId: string;
+        openedAt: number;
+      }>(sql`
           SELECT
             e1.agent_id as agentId,
             e1.incident_id as incidentId,

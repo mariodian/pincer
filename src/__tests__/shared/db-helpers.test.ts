@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
+
 import { rowToCheck, rowToIncidentEvent } from "../../shared/db-helpers";
 import type { Check, IncidentEvent } from "../../shared/types";
 

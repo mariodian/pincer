@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { format } from "@layerstack/utils";
+  import type { AgentUptimeSummary } from "$shared/reportTypes";
+
   import { Icon } from "$lib/components/ui/icon";
   import * as Table from "$lib/components/ui/table";
   import {
@@ -6,8 +9,6 @@
     formatUptime,
     getUptimeColor,
   } from "$lib/utils/metrics-data";
-  import type { AgentUptimeSummary } from "$shared/reportTypes";
-  import { format } from "@layerstack/utils";
 
   type SortKey = "name" | "uptime" | "checks" | "incidents" | "avgResponse";
 
@@ -112,7 +113,7 @@
         <Table.Cell>
           <div class="flex items-center gap-2">
             <span
-              class="w-2.5 h-2.5 rounded-full shrink-0"
+              class="h-2.5 w-2.5 shrink-0 rounded-full"
               style="background-color: {agent.color}"
             ></span>
             <span class="font-medium">{agent.agentName}</span>
@@ -122,7 +123,7 @@
           {#if agent.hasData}
             <div class="flex items-center gap-3">
               <div
-                class="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-30"
+                class="bg-muted h-2 max-w-30 flex-1 overflow-hidden rounded-full"
               >
                 <div
                   class={[
@@ -145,7 +146,7 @@
         </Table.Cell>
         <Table.Cell
           class={agent.incidentCount > 0
-            ? "text-red-600 dark:text-red-500 font-medium"
+            ? "font-medium text-red-600 dark:text-red-500"
             : "text-muted-foreground"}
         >
           {format(agent.incidentCount, "metric")}

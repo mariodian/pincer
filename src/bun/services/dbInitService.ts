@@ -1,13 +1,14 @@
+import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+
 import { getMeta, hasMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import {
-  settingsGeneral,
   settingsAdvanced,
-  settingsNotifications,
   settingsDaemon,
+  settingsGeneral,
+  settingsNotifications,
 } from "../storage/sqlite/schema";
 import { isMacOS } from "../utils/platform";
 import { logger } from "./loggerService";
-import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
 /**
  * Handles all database initialization tasks that run after migrations.

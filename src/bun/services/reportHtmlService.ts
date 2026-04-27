@@ -7,8 +7,8 @@ import {
   formatNumber,
   formatUptime,
 } from "../../shared/format-helpers";
-import { RANGE_LABELS } from "../../shared/time-range-helpers";
 import type { UptimeReport } from "../../shared/reportTypes";
+import { RANGE_LABELS } from "../../shared/time-range-helpers";
 import { APP_NAME } from "../config";
 
 const appVersion = packageJson.version;

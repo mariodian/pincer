@@ -1,4 +1,9 @@
 <script lang="ts">
+  import Router, { replace, router } from "@bmlt-enabled/svelte-spa-router";
+  import wrap from "@bmlt-enabled/svelte-spa-router/wrap";
+  import { mode, ModeWatcher } from "mode-watcher";
+  import { Toaster } from "svelte-sonner";
+
   import AppSidebar from "$lib/components/app/Sidebar.svelte";
   import Window from "$lib/components/app/Window.svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
@@ -9,11 +14,8 @@
   import Settings from "$lib/pages/Settings.svelte";
   import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
-  import Router, { replace, router } from "@bmlt-enabled/svelte-spa-router";
-  import wrap from "@bmlt-enabled/svelte-spa-router/wrap";
-  import { ModeWatcher, mode } from "mode-watcher";
-  import { Toaster } from "svelte-sonner";
   import { TRAY_TITLE } from "../bun/config";
+
   import "./app.css";
 
   const MAIN_WINDOW_MODE_STORAGE_KEY = "main-window-mode";
@@ -65,9 +67,9 @@
       <Sidebar.Inset
         data-slot="content"
         class={[
-          "min-w-0 m-1.5 pt-5 pb-4 px-4",
+          "m-1.5 min-w-0 px-4 pt-5 pb-4",
           "rounded-xl",
-          "shadow-xs shadow-black/10 inset-shadow-2xs inset-shadow-white/50",
+          "shadow-xs inset-shadow-2xs shadow-black/10 inset-shadow-white/50",
           "dark:shadow-none dark:inset-shadow-none",
           "bg-content-background",
         ]}

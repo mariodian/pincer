@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
 import {
-  resolveHealthConfig,
   executeHealthCheck,
   extractErrorCode,
+  resolveHealthConfig,
 } from "../../shared/agentHealthCheck";
 import {
   createAgent,
-  mockFetchOk,
   mockFetchError,
+  mockFetchOk,
   mockFetchThrow,
 } from "../setup";
 

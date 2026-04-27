@@ -12,20 +12,22 @@
  * - Shows "launcher" in background items
  * - Works without code signing requirements
  */
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { mkdirSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
+
 import { $ } from "bun";
 import { Updater, Utils } from "electrobun/bun";
-import { supportsSMAppService, isMacOS } from "../utils/platform";
+
 import {
-  registerMainAppLoginItem,
-  unregisterMainAppLoginItem,
   getMainAppLoginItemStatus,
   isLoginItemEnabled,
   isSMAppServiceAvailable,
-  requiresUserApproval,
   openLoginItemsSettings,
+  registerMainAppLoginItem,
+  requiresUserApproval,
+  unregisterMainAppLoginItem,
 } from "../utils/macOSLoginItems";
+import { isMacOS, supportsSMAppService } from "../utils/platform";
 import { logger } from "./loggerService";
 
 const BUNDLE_ID = "com.mariodian.pincer";

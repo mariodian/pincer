@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+
 import type { Agent } from "../../../shared/types";
 import { getDatabase } from "./db";
 import { agents, checks, incidentEvents, stats } from "./schema";

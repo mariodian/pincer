@@ -1,7 +1,8 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
-import type { Status } from "../shared/types";
 import { BrowserWindow, Tray, Utils } from "electrobun/bun";
+
 import { sortAgentsByStatus } from "../shared/agent-helpers";
+import type { Status } from "../shared/types";
 import {
   POPOVER_WINDOW,
   TRAY_ICON_LINUX_PATH,
@@ -24,8 +25,11 @@ import { getSettings } from "./storage/sqlite/settingsRepo";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { showMainWindow } from "./utils/navigation";
 import { getViewUrl } from "./utils/url";
-import type { PopoverWindowConfig } from "./utils/windowConfig";
-import { POPOVER_CONFIGS, readWindowConfig } from "./utils/windowConfig";
+import {
+  POPOVER_CONFIGS,
+  readWindowConfig,
+  type PopoverWindowConfig,
+} from "./utils/windowConfig";
 
 // Re-export for backward compat with setRefreshCallback in this file
 export { refreshAndPush };

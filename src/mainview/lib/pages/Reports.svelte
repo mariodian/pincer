@@ -1,4 +1,12 @@
 <script lang="ts">
+  import type { UptimeReport } from "$shared/reportTypes";
+  import {
+    RANGE_SHORT_LABELS,
+    REPORT_RANGES,
+  } from "$shared/time-range-helpers";
+  import type { TimeRange } from "$shared/types";
+  import { toast } from "svelte-sonner";
+
   import { AgentTable } from "$lib/components/reports";
   import KpiSummary from "$lib/components/reports/KpiSummary.svelte";
   import { Button } from "$lib/components/ui/button";
@@ -11,13 +19,6 @@
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import { cn } from "$lib/utils";
-  import type { UptimeReport } from "$shared/reportTypes";
-  import {
-    RANGE_SHORT_LABELS,
-    REPORT_RANGES,
-  } from "$shared/time-range-helpers";
-  import type { TimeRange } from "$shared/types";
-  import { toast } from "svelte-sonner";
 
   const REPORT_RANGE_OPTIONS = REPORT_RANGES.map((r) => ({
     value: r,
@@ -112,7 +113,7 @@
   });
 </script>
 
-<div class="flex flex-col h-full">
+<div class="flex h-full flex-col">
   <PageHeader
     title="Uptime Reports"
     description="Agent performance overview"
@@ -138,7 +139,7 @@
         description={error ?? undefined}
       >
         {#snippet icon()}
-          <Icon name="alertCircle" class="size-5 text-destructive" />
+          <Icon name="alertCircle" class="text-destructive size-5" />
         {/snippet}
         {#snippet cta()}
           <Button
@@ -153,7 +154,7 @@
       </ErrorState>
     {:else if loading}
       <div class="space-y-4">
-        <div class={["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"]}>
+        <div class={["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"]}>
           <Skeleton class="h-25 w-full rounded-lg" />
           <Skeleton class="h-25 w-full rounded-lg" />
           <Skeleton class="h-25 w-full rounded-lg" />
@@ -167,11 +168,11 @@
     {:else if reportWithData}
       <!-- KPI Row -->
       <KpiSummary
-        class={cn(["grid gap-3 lg:gap-4 mb-6", "grid-cols-2 lg:grid-cols-4"])}
+        class={cn(["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"])}
         data={reportWithData}
       />
 
-      <div class="flex items-center justify-between mb-4">
+      <div class="mb-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <Button
             variant="outline"

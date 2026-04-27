@@ -6,11 +6,11 @@ import type { SettingsRPCType } from "$bun/rpc/settingsRPC";
 import type { StatsRPCType } from "$bun/rpc/statsRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import type { UpdateRPCType } from "$bun/rpc/updateRPC";
-import { syncAgentsToCache } from "$lib/utils/storage";
-import type { LogEntry } from "$shared/rpc";
-import { RPC_MAX_REQUEST_TIME } from "$shared/rpc";
+import { RPC_MAX_REQUEST_TIME, type LogEntry } from "$shared/rpc";
 import type { AgentStatus } from "$shared/types";
 import { writable } from "svelte/store";
+
+import { syncAgentsToCache } from "$lib/utils/storage";
 
 /**
  * Set to true once notifyRendererReady has resolved. App.svelte gates Router

@@ -1,10 +1,12 @@
 // Shared Database Core - SQLite utilities for both main process and daemon
 // Provides singleton pattern, PRAGMA configuration, and basic connection management
 
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+
 import { logger } from "./logger";
 
 export interface DatabaseInstances {

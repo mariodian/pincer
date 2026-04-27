@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { format } from "@layerstack/utils";
+  import type { DashboardKpis } from "$shared/rpc";
+
   import { KpiCard } from "$lib/components/ui/kpi-card";
   import { NOT_AVAILABLE } from "$lib/constants";
   import { cn } from "$lib/utils";
@@ -8,8 +11,6 @@
     getResponseColor,
     getUptimeColor,
   } from "$lib/utils/metrics-data";
-  import type { DashboardKpis } from "$shared/rpc";
-  import { format } from "@layerstack/utils";
 
   interface Props {
     data: DashboardKpis | null;

@@ -1,7 +1,9 @@
 // Status Sync Service - Centralized status synchronization across windows and localStorage
 import type { BrowserWindow } from "electrobun/bun";
-import type { AgentStatus, AgentStatusInfo } from "../../shared/types";
+
 import { mergeAgentsWithStatuses } from "../../shared/agent-helpers";
+import type { AgentStatus, AgentStatusInfo } from "../../shared/types";
+import { getMainWindow } from "../rpc/windowRegistry";
 import {
   broadcastSyncAgents,
   DEFAULT_RETRY_ATTEMPTS,
@@ -9,7 +11,6 @@ import {
 } from "../utils/windowBroadcaster";
 import { readAgents } from "./agentService";
 import { logger } from "./loggerService";
-import { getMainWindow } from "../rpc/windowRegistry";
 
 type BroadcastTargets = {
   popoverWindow?: BrowserWindow | null;

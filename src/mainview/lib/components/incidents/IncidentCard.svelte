@@ -1,11 +1,5 @@
 <script lang="ts">
-  import { IncidentBadge } from "$lib/components/incidents";
-  import { Badge } from "$lib/components/ui/badge/";
-  import * as Card from "$lib/components/ui/card";
-  import { Icon } from "$lib/components/ui/icon";
-  import * as Timeline from "$lib/components/ui/timeline";
-  import { cn } from "$lib/utils";
-  import { formatDateTime } from "$lib/utils/datetime";
+  import { Duration, DurationUnits } from "@layerstack/utils";
   import {
     statusIcons,
     statusLabels,
@@ -13,7 +7,14 @@
     type StatusTone,
   } from "$shared/status-config";
   import type { IncidentEvent } from "$shared/types";
-  import { Duration, DurationUnits } from "@layerstack/utils";
+
+  import { IncidentBadge } from "$lib/components/incidents";
+  import { Badge } from "$lib/components/ui/badge/";
+  import * as Card from "$lib/components/ui/card";
+  import { Icon } from "$lib/components/ui/icon";
+  import * as Timeline from "$lib/components/ui/timeline";
+  import { cn } from "$lib/utils";
+  import { formatDateTime } from "$lib/utils/datetime";
 
   interface Props {
     events: IncidentEvent[];
@@ -95,7 +96,7 @@
   class={cn(
     className,
     "gap-4",
-    isOpen ? "border-destructive dark:border-red-800 border-2 " : "",
+    isOpen ? "border-destructive border-2 dark:border-red-800 " : "",
   )}
 >
   <Card.Header>
@@ -161,7 +162,7 @@
                 >
               </div>
               {#if event.eventType === "opened" || event.eventType === "status_changed"}
-                <Timeline.Title class="text-sm mt-2">
+                <Timeline.Title class="mt-2 text-sm">
                   {#if event.eventType === "opened" && event.toStatus}
                     <div class="flex items-center gap-1.5">
                       <Icon
@@ -212,7 +213,7 @@
 
               {#if event.reason}
                 <Timeline.Description
-                  class="mb-3 text-sm text-muted-foreground"
+                  class="text-muted-foreground mb-3 text-sm"
                 >
                   <p>
                     {event.reason}

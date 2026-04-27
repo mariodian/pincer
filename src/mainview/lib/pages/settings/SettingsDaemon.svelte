@@ -1,4 +1,7 @@
 <script lang="ts">
+  import type { DaemonSettings } from "$shared/types";
+  import { toast } from "svelte-sonner";
+
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
@@ -8,8 +11,6 @@
   import Spinner from "$lib/components/ui/spinner/spinner.svelte";
   import { SwitchCard } from "$lib/components/ui/switch-card";
   import { getMainRPC, whenReady } from "$lib/services/mainRPC";
-  import type { DaemonSettings } from "$shared/types";
-  import { toast } from "svelte-sonner";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -140,19 +141,19 @@
 </script>
 
 {#if loading}
-  <div class="space-y-6 max-w-lg">
+  <div class="max-w-lg space-y-6">
     <Skeleton class="h-4 w-32" />
     <Skeleton class="h-9 w-full" />
     <Skeleton class="h-9 w-full" />
     <Skeleton class="h-9 w-full" />
   </div>
 {:else}
-  <div class="space-y-6 max-w-lg">
-    <h3 class="font-medium mb-2">Daemon Sync</h3>
+  <div class="max-w-lg space-y-6">
+    <h3 class="mb-2 font-medium">Daemon Sync</h3>
     <Card.Root>
       <Card.Content>
         <SwitchCard
-          class="border-none bg-transparent! shadow-none p-0"
+          class="border-none bg-transparent! p-0 shadow-none"
           id="enable-daemon"
           title="Enable daemon sync"
           description="Sync collected data with a remote pincer-daemon instance to fill gaps when this machine sleeps."
@@ -198,7 +199,7 @@
             onblur={handleNamespaceKeyBlur}
             disabled={!enabled}
           />
-          <p class="text-xs text-muted-foreground">
+          <p class="text-muted-foreground text-xs">
             Clients using the same key share data on the daemon. Changing this
             key disconnects existing history.
           </p>
@@ -223,11 +224,11 @@
     </Card.Root>
 
     <Card.Root>
-      <Card.Content class="space-y-4 min-h-11">
+      <Card.Content class="min-h-11 space-y-4">
         <div class="flex items-center justify-between">
           <div>
             <Label class="text-sm">Last synced</Label>
-            <p class="text-xs text-muted-foreground mt-1">
+            <p class="text-muted-foreground mt-1 text-xs">
               {formatRelativeTime(lastSync)}
             </p>
           </div>

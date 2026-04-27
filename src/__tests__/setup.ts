@@ -1,3 +1,6 @@
+// ─── Mock incident tracker deps ─────────────────────────────────────────────
+
+import type { IncidentTrackerDeps } from "../shared/incidentCore";
 import type { Agent, CheckStatus } from "../shared/types";
 
 // ─── Factories ──────────────────────────────────────────────────────────────
@@ -73,10 +76,6 @@ export function withFrozenTime<T>(timestamp: number, fn: () => T): T {
     Date.now = original;
   }
 }
-
-// ─── Mock incident tracker deps ─────────────────────────────────────────────
-
-import type { IncidentTrackerDeps } from "../shared/incidentCore";
 
 export interface MockIncidentTrackerDeps extends IncidentTrackerDeps {
   _events: Array<{
