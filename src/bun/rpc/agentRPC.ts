@@ -1,5 +1,4 @@
 // Agent RPC - Shared RPC definition for agent management
-import { shouldTriggerHealthCheck } from "../../shared/agent-helpers";
 import { AgentStatusInfo } from "../../shared/types";
 import { STATUS_SHAPE_OPTIONS } from "../agentTypes";
 import {
@@ -20,6 +19,7 @@ import {
   getStatusSyncService,
   removeAgentStatus,
 } from "../services/statusSyncService";
+import { shouldMarkOffline, shouldRunHealthCheck } from "./agentRPCHelpers";
 import { withErrorLogging } from "./rpcHelpers";
 
 type AgentMutationCallback = () => void;
@@ -134,13 +134,10 @@ export const agentRequestHandlers = {
 
       if (result) {
         const sync = getStatusSyncService();
-        if (updates.enabled === false) {
+        if (shouldMarkOffline(updates)) {
           sync.markAgentOffline(id);
           await sync.sync();
-        } else if (
-          updates.enabled === true ||
-          shouldTriggerHealthCheck(updates)
-        ) {
+        } else if (shouldRunHealthCheck(updates)) {
           const status = await checkOneAgentStatus(id);
           if (status) await sync.pushOneStatus(status);
         }
