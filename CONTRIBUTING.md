@@ -48,15 +48,30 @@ bun run dev
 
 ### Commands
 
-| Command                    | Description                      |
-| -------------------------- | -------------------------------- |
-| `bun run dev`              | Full desktop dev flow            |
-| `bun run dev:hmr`          | Fast renderer iteration with HMR |
-| `bun run build`            | Production build                 |
-| `bun run typecheck:backend` | Fast TS check (backend + shared) |
-| `bun run typecheck`         | Full check including Svelte      |
-| `bun run daemon:start`     | Run daemon in development        |
-| `bun run daemon:bundle`    | Build daemon binary              |
+| Command                    | Description                                  |
+| -------------------------- | -------------------------------------------- |
+| `bun run dev`              | Full desktop dev flow                        |
+| `bun run dev:hmr`          | Fast renderer iteration with HMR             |
+| `bun run build`            | Production build                             |
+| `bun run build:native-libs`| Compile macOS native dylib                   |
+| `bun run build:canary`     | Production build (canary channel)            |
+| `bun run build:stable`     | Production build (stable channel)            |
+| `bun run typecheck`        | Typecheck Svelte + TS                        |
+| `bun run typecheck:backend`| Fast TS check (backend + shared)             |
+| `bun run typecheck:all`    | Full typecheck (app, backend, tests)         |
+| `bun run test`             | Run tests                                    |
+| `bun run test:watch`       | Run tests in watch mode                      |
+| `bun run test:coverage`    | Run tests with coverage                      |
+| `bun run daemon:start`     | Run daemon in development                    |
+| `bun run daemon:bundle`    | Build daemon binary for distribution         |
+
+### Database
+
+| Command                 | Description                    |
+| ----------------------- | ------------------------------ |
+| `bun run db:generate`   | Generate app migrations        |
+| `bun run db:push`       | Push app schema to database    |
+| `bun run db:studio`     | Open Drizzle Studio for app DB |
 
 ### Daemon Development
 
@@ -65,9 +80,8 @@ The daemon is a separate TypeScript project in `daemon/`. It uses dependencies f
 | Command                       | Description                          |
 | ----------------------------- | ------------------------------------ |
 | `bun run daemon:start`        | Run daemon in development            |
-| `bun run daemon:typecheck`    | Typecheck daemon code                |
-| `bun run daemon:format`       | Format daemon code                   |
 | `bun run daemon:db:generate`  | Generate daemon migrations           |
+| `bun run daemon:db:push`      | Push daemon schema to database       |
 | `bun run daemon:bundle`       | Build daemon binary for distribution |
 
 The daemon has its own `schema.ts` and `migrations/` directory (separate from the main app's `drizzle/migrations/`) because the daemon and app have different `__drizzle_migrations` tracking tables.
@@ -90,17 +104,23 @@ Pincer uses strict TypeScript and Svelte 5. Before submitting, run:
 # Format all code (app + daemon)
 bun run format
 
+# Check formatting without writing
+bun run format:check
+
 # Fast TS check (backend + shared)
 bun run typecheck:backend
 
 # Full check including Svelte components (run if you touched .svelte files)
 bun run typecheck
 
-# Typecheck daemon (if you modified daemon code)
-bun run daemon:typecheck
+# Full check including tests
+bun run typecheck:all
 
 # Typecheck tests (if you modified test files)
 bun run test:typecheck
+
+# Run the test suite
+bun run test
 ```
 
 See [AGENTS.md](./AGENTS.md) for full coding standards.

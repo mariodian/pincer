@@ -233,9 +233,6 @@ If you're working on the daemon source code, see [CONTRIBUTING.md](../CONTRIBUTI
 # Run daemon in development
 bun run daemon:start
 
-# Typecheck daemon code
-bun run daemon:typecheck
-
 # Build daemon binary
 bun run daemon:bundle
 ```
