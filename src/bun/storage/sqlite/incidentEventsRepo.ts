@@ -108,19 +108,30 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
   const filtered = events.filter((e) => {
     // Skip orphan recovered events
     if (e.eventType === "recovered" && !openedIds.has(e.incidentId)) {
+      logger.debug(
+        "incident",
+        `Filtering orphan recovered event for incident ${e.incidentId}`,
+      );
       return false;
     }
     // Skip duplicate opened/recovered events (lifecycle events are unique per incident)
     if (e.eventType === "opened" || e.eventType === "recovered") {
       const key = `${e.incidentId}:${e.eventType}`;
       if (existingLifecycleEvents.has(key)) {
+        logger.debug("incident", `Filtering duplicate lifecycle event ${key}`);
         return false;
       }
     }
     return true;
   });
 
-  if (filtered.length === 0) return 0;
+  if (filtered.length === 0) {
+    logger.debug(
+      "incident",
+      `Batch insert: ${events.length} events received, ${events.length - filtered.length} filtered, 0 inserted`,
+    );
+    return 0;
+  }
 
   // OPTIMIZATION: Find all unrecovered local incidents for unique agents in one batch query
   // This avoids N+1 queries when processing each event
@@ -152,6 +163,11 @@ export function insertEventsBatch(events: IncidentEvent[]): number {
     );
     inserted += result.changes ?? 0;
   }
+
+  logger.info(
+    "incident",
+    `Batch insert: ${events.length} events received, ${events.length - filtered.length} filtered, ${inserted} inserted`,
+  );
 
   return inserted;
 }

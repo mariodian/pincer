@@ -132,6 +132,7 @@ async function importFromDaemon<T>(
 ): Promise<number> {
   try {
     const data = await fetcher(client);
+    logger.debug("daemon", `Fetched ${data.length} ${label} from daemon`);
     return data.length > 0 ? processor(data) : 0;
   } catch (error) {
     logger.warn("daemon", `Failed to fetch ${label}:`, error);
