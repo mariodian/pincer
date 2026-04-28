@@ -48,9 +48,21 @@ interface PendingAgent {
   originalBaseline: string;
 }
 
+interface StatusNotifierDeps {
+  getNotificationSettings: typeof import("../storage/sqlite/settingsNotificationsRepo").getNotificationSettings;
+}
+
 export class StatusNotifier {
+  private readonly deps: StatusNotifierDeps;
   private readonly FIRST_POLL_MARKER = "__FIRST_POLL__";
   private readonly STATUS_VALUES: string[] = ["ok", "offline", "error"];
+
+  constructor(deps?: Partial<StatusNotifierDeps>) {
+    this.deps = {
+      getNotificationSettings:
+        deps?.getNotificationSettings ?? getNotificationSettings,
+    };
+  }
 
   /**
    * agentBaseline tracks each agent's status at the PREVIOUS poll.
@@ -123,7 +135,7 @@ export class StatusNotifier {
    * - Add to new status group
    */
   async checkAndNotify(statuses: AgentStatusInfo[]): Promise<void> {
-    const settings = getNotificationSettings();
+    const settings = this.deps.getNotificationSettings();
 
     if (!settings.notificationsEnabled) {
       return;

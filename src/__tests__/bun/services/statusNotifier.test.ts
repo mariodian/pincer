@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { AgentStatusInfo } from "../../../shared/types";
+import { mockShowNotification } from "../../mocks/electrobun";
 
 const mockGetNotificationSettings = mock(() => ({
   notificationsEnabled: true,
@@ -15,23 +16,20 @@ const mockGetNotificationSettings = mock(() => ({
 const mockReadAgents = mock(() =>
   Promise.resolve<{ id: number; name: string }[]>([]),
 );
-const mockShowNotification = mock(() => {});
 const mockLoggerInfo = mock(() => {});
 const mockLoggerDebug = mock(() => {});
 const mockLoggerWarn = mock(() => {});
 const mockLoggerError = mock(() => {});
 
-mock.module("../../../bun/storage/sqlite/settingsNotificationsRepo", () => ({
-  getNotificationSettings: mockGetNotificationSettings,
-}));
+// NOTE: We intentionally do NOT mock.settingsNotificationsRepo here.
+// StatusNotifier accepts getNotificationSettings as a constructor dependency
+// to avoid mock.module leaking across test files.
 
 mock.module("../../../bun/services/agentService", () => ({
   readAgents: mockReadAgents,
 }));
 
-mock.module("electrobun/bun", () => ({
-  Utils: { showNotification: mockShowNotification },
-}));
+mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
 
 mock.module("../../../bun/services/loggerService", () => ({
   logger: {
@@ -49,8 +47,18 @@ describe("StatusNotifier", () => {
   let notifier: InstanceType<typeof StatusNotifier>;
 
   beforeEach(() => {
-    notifier = new StatusNotifier();
-    mockGetNotificationSettings.mockClear();
+    mockGetNotificationSettings.mockImplementation(() => ({
+      notificationsEnabled: true,
+      notifyOnStatusChange: true,
+      notifyOnError: true,
+      statusChangeThreshold: 2,
+      silentNotifications: false,
+      failureThreshold: 3,
+      recoveryThreshold: 2,
+    }));
+    notifier = new StatusNotifier({
+      getNotificationSettings: mockGetNotificationSettings,
+    });
     mockReadAgents.mockClear();
     mockShowNotification.mockClear();
     mockLoggerInfo.mockClear();
