@@ -16,4 +16,8 @@ export default [
       "unused-imports/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
     },
   },
+  {
+    // @TODO: Move shadcn components to its own folders instead
+    ignores: ["src/mainview/lib/components/ui/**"],
+  },
 ];
