@@ -1,322 +1,760 @@
-import { describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-import type { IncidentEvent } from "../../../../shared/types";
+import * as electrobunMock from "../../../mocks/electrobun";
+import { resetTestDB, setupTestDB } from "./test-helpers";
 
-/**
- * incidentEventsRepo Unit Tests
- *
- * Tests the pure filtering, deduplication, and mapping logic embedded in
- * the repo functions without requiring a real SQLite database.
- */
+mock.module("electrobun/bun", () => electrobunMock);
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-function makeEvent(
-  overrides: Partial<IncidentEvent> & {
-    eventType: IncidentEvent["eventType"];
-  },
-): IncidentEvent {
-  return {
-    id: 1,
-    agentId: 1,
-    incidentId: "inc-1",
-    eventAt: 1000,
-    fromStatus: null,
-    toStatus: "offline",
-    reason: null,
-    linkedIncidentId: null,
-    ...overrides,
-  };
-}
-
-// ─── insertEventsBatch filtering logic ──────────────────────────────────────
-
-/**
- * Mirror of the filtering logic in insertEventsBatch so it can be tested
- * in isolation without a real database.
- */
-function filterBatchEvents(
-  events: IncidentEvent[],
-  existingOpenedIds: Set<string>,
-  existingLifecycleEvents: Set<string>,
-): IncidentEvent[] {
-  // Augment opened IDs with any "opened" events in this batch
-  const openedIds = new Set(existingOpenedIds);
-  for (const event of events) {
-    if (event.eventType === "opened") {
-      openedIds.add(event.incidentId);
-    }
-  }
-
-  return events.filter((e) => {
-    if (e.eventType === "recovered" && !openedIds.has(e.incidentId)) {
-      return false;
-    }
-    if (e.eventType === "opened" || e.eventType === "recovered") {
-      const key = `${e.incidentId}:${e.eventType}`;
-      if (existingLifecycleEvents.has(key)) {
-        return false;
-      }
-    }
-    return true;
-  });
-}
+const {
+  insertEvent,
+  insertEventsBatch,
+  getOpenIncidents,
+  getHandedOffIncidents,
+  getEventsForAgent,
+  getEventsForTimeRange,
+  getEventsForIncident,
+  getTotalEventsCount,
+  deleteOldEvents,
+  countOldEvents,
+  linkAndCloseLocalIncidents,
+  deleteIncident,
+} = await import("../../../../bun/storage/sqlite/incidentEventsRepo");
 
 describe("incidentEventsRepo", () => {
-  // ─── insertEventsBatch filtering ──────────────────────────────────────────
+  beforeEach(() => setupTestDB());
+  afterEach(() => resetTestDB());
 
-  describe("insertEventsBatch filtering logic", () => {
-    describe("orphan recovered event filtering", () => {
-      it("should filter out a recovered event with no matching opened event", () => {
-        const events = [
-          makeEvent({ eventType: "recovered", incidentId: "inc-orphan" }),
-        ];
-        const result = filterBatchEvents(events, new Set(), new Set());
-        expect(result).toHaveLength(0);
-      });
+  // ─── insertEvent ───────────────────────────────────────────────────────────
 
-      it("should keep a recovered event when opened event is already in DB", () => {
-        const events = [
-          makeEvent({ eventType: "recovered", incidentId: "inc-1" }),
-        ];
-        const openedIds = new Set(["inc-1"]);
-        const result = filterBatchEvents(events, openedIds, new Set());
-        expect(result).toHaveLength(1);
-      });
-
-      it("should keep a recovered event when opened event is in the same batch", () => {
-        const events = [
-          makeEvent({ eventType: "opened", incidentId: "inc-new", id: 1 }),
-          makeEvent({ eventType: "recovered", incidentId: "inc-new", id: 2 }),
-        ];
-        const result = filterBatchEvents(events, new Set(), new Set());
-        expect(result).toHaveLength(2);
-      });
+  describe("insertEvent", () => {
+    it("should insert a single event and return it", () => {
+      const event = insertEvent(
+        1,
+        "inc-1",
+        "opened",
+        null,
+        "offline",
+        "Agent went offline",
+      );
+      expect(event.id).toBeGreaterThan(0);
+      expect(event.agentId).toBe(1);
+      expect(event.incidentId).toBe("inc-1");
+      expect(event.eventType).toBe("opened");
+      expect(event.fromStatus).toBeNull();
+      expect(event.toStatus).toBe("offline");
+      expect(event.reason).toBe("Agent went offline");
+      expect(event.linkedIncidentId).toBeNull();
+      expect(event.eventAt).toBeGreaterThan(0);
     });
 
-    describe("duplicate lifecycle event filtering", () => {
-      it("should filter out a duplicate opened event for the same incident", () => {
-        const events = [
-          makeEvent({ eventType: "opened", incidentId: "inc-1" }),
-        ];
-        const existingLifecycle = new Set(["inc-1:opened"]);
-        const result = filterBatchEvents(events, new Set(), existingLifecycle);
-        expect(result).toHaveLength(0);
-      });
-
-      it("should filter out a duplicate recovered event for the same incident", () => {
-        const events = [
-          makeEvent({ eventType: "recovered", incidentId: "inc-1" }),
-        ];
-        const openedIds = new Set(["inc-1"]);
-        const existingLifecycle = new Set(["inc-1:recovered"]);
-        const result = filterBatchEvents(events, openedIds, existingLifecycle);
-        expect(result).toHaveLength(0);
-      });
-
-      it("should not filter out status_changed events regardless of duplicates", () => {
-        const events = [
-          makeEvent({
-            eventType: "status_changed",
-            incidentId: "inc-1",
-            fromStatus: "offline",
-            toStatus: "error",
-          }),
-          makeEvent({
-            eventType: "status_changed",
-            incidentId: "inc-1",
-            fromStatus: "offline",
-            toStatus: "error",
-          }),
-        ];
-        const result = filterBatchEvents(events, new Set(), new Set());
-        expect(result).toHaveLength(2);
-      });
-
-      it("should not filter out handoff events", () => {
-        const events = [
-          makeEvent({ eventType: "handoff", incidentId: "inc-1" }),
-        ];
-        const existingLifecycle = new Set(["inc-1:handoff"]);
-        const result = filterBatchEvents(
-          events,
-          new Set(["inc-1"]),
-          existingLifecycle,
-        );
-        expect(result).toHaveLength(1);
-      });
-    });
-
-    describe("mixed batch filtering", () => {
-      it("should keep opened, filter orphan recovered, and keep status_changed", () => {
-        const events = [
-          makeEvent({ eventType: "opened", incidentId: "inc-1", id: 1 }),
-          makeEvent({
-            eventType: "status_changed",
-            incidentId: "inc-1",
-            id: 2,
-          }),
-          makeEvent({
-            eventType: "recovered",
-            incidentId: "inc-orphan",
-            id: 3,
-          }),
-        ];
-        const result = filterBatchEvents(events, new Set(), new Set());
-        expect(result).toHaveLength(2);
-        expect(result[0].eventType).toBe("opened");
-        expect(result[1].eventType).toBe("status_changed");
-      });
-
-      it("should handle empty batch", () => {
-        const result = filterBatchEvents([], new Set(), new Set());
-        expect(result).toHaveLength(0);
-      });
-
-      it("should handle batch with all events filtered", () => {
-        const events = [
-          makeEvent({ eventType: "opened", incidentId: "inc-1" }),
-          makeEvent({ eventType: "recovered", incidentId: "inc-orphan" }),
-        ];
-        const existingLifecycle = new Set(["inc-1:opened"]);
-        const result = filterBatchEvents(events, new Set(), existingLifecycle);
-        expect(result).toHaveLength(0);
-      });
+    it("should accept a linked incident id", () => {
+      const event = insertEvent(
+        1,
+        "inc-1",
+        "status_changed",
+        "offline",
+        "error",
+        null,
+        "daemon-1",
+      );
+      expect(event.linkedIncidentId).toBe("daemon-1");
     });
   });
 
-  // ─── findUnrecoveredLocalIncidentsBatch logic ──────────────────────────────
+  // ─── insertEventsBatch ─────────────────────────────────────────────────────
 
-  describe("findUnrecoveredLocalIncidentsBatch mapping logic", () => {
-    /**
-     * Mirror of the JS portion of findUnrecoveredLocalIncidentsBatch:
-     * given open locals and daemon-recovered IDs, produce the agent→incident map.
-     */
-    function buildUnrecoveredMap(
-      agentIds: number[],
-      openLocals: Array<{ agentId: number; incidentId: string }>,
-      recoveredViaDaemon: Set<string>,
-    ): Map<number, string | null> {
-      const result = new Map<number, string | null>();
-      for (const agentId of agentIds) {
-        result.set(agentId, null);
-      }
+  describe("insertEventsBatch", () => {
+    it("should return 0 for empty array", () => {
+      expect(insertEventsBatch([])).toBe(0);
+    });
 
-      const unrecovered = openLocals.filter(
-        (r) => !recoveredViaDaemon.has(r.incidentId),
+    it("should insert events from daemon sync", () => {
+      const now = Date.now();
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "daemon-1",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "daemon-1",
+          eventAt: now + 1,
+          eventType: "status_changed",
+          fromStatus: "offline",
+          toStatus: "error",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(2);
+      expect(getTotalEventsCount()).toBe(2);
+    });
+
+    it("should filter out orphan recovered events (no matching opened)", () => {
+      const now = Date.now();
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-orphan",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "error",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(0);
+    });
+
+    it("should keep recovered when opened is in the same batch", () => {
+      const now = Date.now();
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now + 1,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(2);
+    });
+
+    it("should keep recovered when opened already exists in DB", () => {
+      const now = Date.now();
+      insertEvent(1, "inc-1", "opened", null, "offline", null);
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(1);
+    });
+
+    it("should filter out duplicate opened events for the same incident", () => {
+      const now = Date.now();
+      insertEvent(1, "inc-1", "opened", null, "offline", null);
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(0);
+    });
+
+    it("should filter out duplicate recovered events for the same incident", () => {
+      const now = Date.now();
+      insertEvent(1, "inc-1", "opened", null, "offline", null);
+      insertEvent(1, "inc-1", "recovered", "offline", "ok", null);
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(0);
+    });
+
+    it("should not filter status_changed events", () => {
+      const now = Date.now();
+      const inserted = insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "status_changed",
+          fromStatus: "offline",
+          toStatus: "error",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now + 1,
+          eventType: "status_changed",
+          fromStatus: "error",
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      expect(inserted).toBe(2);
+    });
+
+    it("should link events to unrecovered local incidents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "daemon-1",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      const events = getEventsForIncident("daemon-1");
+      expect(events.length).toBe(1);
+      expect(events[0].linkedIncidentId).toBe("local-1");
+    });
+
+    it("should prevent self-linking (linkedId == event incidentId)", () => {
+      insertEvent(1, "same-id", "opened", null, "offline", null);
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "same-id",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      const events = getEventsForIncident("same-id");
+      const batchEvent = events.find((e) => e.eventAt === now);
+      expect(batchEvent?.linkedIncidentId).toBeNull();
+    });
+
+    it("should not link to recovered local incidents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      insertEvent(1, "local-1", "recovered", "offline", "ok", null);
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "daemon-1",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+      const events = getEventsForIncident("daemon-1");
+      expect(events[0].linkedIncidentId).toBeNull();
+    });
+  });
+
+  // ─── getOpenIncidents ──────────────────────────────────────────────────────
+
+  describe("getOpenIncidents", () => {
+    it("should return incidents with opened but no recovered/handoff", () => {
+      insertEvent(1, "inc-open", "opened", null, "offline", null);
+      insertEvent(2, "inc-recovered", "opened", null, "offline", null);
+      insertEvent(2, "inc-recovered", "recovered", "offline", "ok", null);
+      insertEvent(3, "inc-handoff", "opened", null, "offline", null);
+      insertEvent(3, "inc-handoff", "handoff", "offline", "offline", null);
+
+      const open = getOpenIncidents();
+      expect(open.length).toBe(1);
+      expect(open[0].incidentId).toBe("inc-open");
+      expect(open[0].agentId).toBe(1);
+    });
+
+    it("should return empty array when no open incidents", () => {
+      expect(getOpenIncidents()).toEqual([]);
+    });
+  });
+
+  // ─── getHandedOffIncidents ─────────────────────────────────────────────────
+
+  describe("getHandedOffIncidents", () => {
+    it("should return incidents with handoff but no recovered", () => {
+      insertEvent(1, "inc-handoff", "opened", null, "offline", null);
+      insertEvent(1, "inc-handoff", "handoff", "offline", "offline", null);
+      insertEvent(2, "inc-recovered", "opened", null, "offline", null);
+      insertEvent(2, "inc-recovered", "handoff", "offline", "offline", null);
+      insertEvent(2, "inc-recovered", "recovered", "offline", "ok", null);
+
+      const handedOff = getHandedOffIncidents();
+      expect(handedOff.length).toBe(1);
+      expect(handedOff[0].incidentId).toBe("inc-handoff");
+    });
+
+    it("should include linkedIncidentId from handoff event", () => {
+      insertEvent(1, "inc-handoff", "opened", null, "offline", null);
+      insertEvent(
+        1,
+        "inc-handoff",
+        "handoff",
+        "offline",
+        "offline",
+        null,
+        "daemon-1",
       );
 
-      for (const r of unrecovered) {
-        if (!result.has(r.agentId) || result.get(r.agentId) === null) {
-          result.set(r.agentId, r.incidentId);
-        }
-      }
-
-      return result;
-    }
-
-    it("should return null for all agents when no open locals exist", () => {
-      const map = buildUnrecoveredMap([1, 2, 3], [], new Set());
-      expect(map.get(1)).toBeNull();
-      expect(map.get(2)).toBeNull();
-      expect(map.get(3)).toBeNull();
+      const handedOff = getHandedOffIncidents();
+      expect(handedOff[0].linkedIncidentId).toBe("daemon-1");
     });
 
-    it("should map agent to its open local incident", () => {
-      const openLocals = [{ agentId: 1, incidentId: "local-1" }];
-      const map = buildUnrecoveredMap([1, 2], openLocals, new Set());
-      expect(map.get(1)).toBe("local-1");
-      expect(map.get(2)).toBeNull();
-    });
-
-    it("should exclude incidents recovered via daemon", () => {
-      const openLocals = [
-        { agentId: 1, incidentId: "local-1" },
-        { agentId: 2, incidentId: "local-2" },
-      ];
-      const recoveredViaDaemon = new Set(["local-1"]);
-      const map = buildUnrecoveredMap([1, 2], openLocals, recoveredViaDaemon);
-      expect(map.get(1)).toBeNull();
-      expect(map.get(2)).toBe("local-2");
-    });
-
-    it("should use first unrecovered incident per agent when multiple exist", () => {
-      const openLocals = [
-        { agentId: 1, incidentId: "local-first" },
-        { agentId: 1, incidentId: "local-second" },
-      ];
-      const map = buildUnrecoveredMap([1], openLocals, new Set());
-      expect(map.get(1)).toBe("local-first");
-    });
-
-    it("should return empty map when agentIds is empty", () => {
-      const map = buildUnrecoveredMap([], [], new Set());
-      expect(map.size).toBe(0);
+    it("should return empty array when no handed-off incidents", () => {
+      expect(getHandedOffIncidents()).toEqual([]);
     });
   });
 
-  // ─── linkAndCloseLocalIncidents mapping logic ──────────────────────────────
+  // ─── getEventsForAgent ─────────────────────────────────────────────────────
 
-  describe("linkAndCloseLocalIncidents mapping logic", () => {
-    /**
-     * Mirror of the daemon-by-agent Map building step in linkAndCloseLocalIncidents.
-     */
-    function buildDaemonByAgentMap(
-      daemonOpenIncidents: Array<{ agentId: number; incidentId: string }>,
-    ): Map<number, string> {
-      const map = new Map<number, string>();
-      for (const di of daemonOpenIncidents) {
-        map.set(di.agentId, di.incidentId);
-      }
-      return map;
-    }
+  describe("getEventsForAgent", () => {
+    it("should return events for a specific agent within time range", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 5000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 1000,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          incidentId: "inc-2",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
 
-    it("should build a map from agentId to daemon incidentId", () => {
-      const daemonMap = buildDaemonByAgentMap([
+      const events = getEventsForAgent(1, now - 6000);
+      expect(events.length).toBe(2);
+      expect(events[0].eventType).toBe("recovered"); // most recent first (desc)
+      expect(events[1].eventType).toBe("opened");
+    });
+
+    it("should respect untilMs boundary", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 5000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 1000,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      const events = getEventsForAgent(1, now - 6000, now - 2000);
+      expect(events.length).toBe(1);
+      expect(events[0].eventType).toBe("opened");
+    });
+
+    it("should return empty array for non-existent agent", () => {
+      expect(getEventsForAgent(99, 0)).toEqual([]);
+    });
+  });
+
+  // ─── getEventsForTimeRange ─────────────────────────────────────────────────
+
+  describe("getEventsForTimeRange", () => {
+    it("should return events across all agents in time range", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 5000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          incidentId: "inc-2",
+          eventAt: now - 1000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      const events = getEventsForTimeRange(now - 6000);
+      expect(events.length).toBe(2);
+    });
+
+    it("should respect untilMs boundary", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 5000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 1000,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      const events = getEventsForTimeRange(now - 6000, now - 2000);
+      expect(events.length).toBe(1);
+    });
+
+    it("should return empty array when no events in range", () => {
+      expect(getEventsForTimeRange(0, 1)).toEqual([]);
+    });
+  });
+
+  // ─── getEventsForIncident ──────────────────────────────────────────────────
+
+  describe("getEventsForIncident", () => {
+    it("should return all events for a specific incident ordered by eventAt", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 2000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      const events = getEventsForIncident("inc-1");
+      expect(events.length).toBe(2);
+      expect(events[0].eventType).toBe("opened");
+      expect(events[1].eventType).toBe("recovered");
+    });
+
+    it("should return empty array for non-existent incident", () => {
+      expect(getEventsForIncident("nonexistent")).toEqual([]);
+    });
+  });
+
+  // ─── getTotalEventsCount ───────────────────────────────────────────────────
+
+  describe("getTotalEventsCount", () => {
+    it("should return total count across all incidents", () => {
+      insertEvent(1, "inc-1", "opened", null, "offline", null);
+      insertEvent(2, "inc-2", "opened", null, "offline", null);
+      expect(getTotalEventsCount()).toBe(2);
+    });
+
+    it("should return 0 for empty table", () => {
+      expect(getTotalEventsCount()).toBe(0);
+    });
+  });
+
+  // ─── countOldEvents ────────────────────────────────────────────────────────
+
+  describe("countOldEvents", () => {
+    it("should count only events older than cutoff", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 10000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 5000,
+          eventType: "status_changed",
+          fromStatus: "offline",
+          toStatus: "error",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "error",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      expect(countOldEvents(now - 3000)).toBe(2);
+    });
+
+    it("should return 0 for empty table", () => {
+      expect(countOldEvents(999)).toBe(0);
+    });
+  });
+
+  // ─── deleteOldEvents ───────────────────────────────────────────────────────
+
+  describe("deleteOldEvents", () => {
+    it("should delete events older than cutoff and return count", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 10000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 5000,
+          eventType: "status_changed",
+          fromStatus: "offline",
+          toStatus: "error",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "error",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      const deleted = deleteOldEvents(now - 3000);
+      expect(deleted).toBe(2);
+      expect(getTotalEventsCount()).toBe(1);
+    });
+
+    it("should return 0 when nothing to delete", () => {
+      expect(deleteOldEvents(Date.now() + 1000)).toBe(0);
+    });
+  });
+
+  // ─── linkAndCloseLocalIncidents ────────────────────────────────────────────
+
+  describe("linkAndCloseLocalIncidents", () => {
+    it("should create handoff events and link to daemon incidents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      insertEvent(2, "local-2", "opened", null, "error", null);
+
+      const closed = linkAndCloseLocalIncidents([
         { agentId: 1, incidentId: "daemon-1" },
         { agentId: 2, incidentId: "daemon-2" },
       ]);
-      expect(daemonMap.get(1)).toBe("daemon-1");
-      expect(daemonMap.get(2)).toBe("daemon-2");
+
+      expect(closed).toBe(2);
+      expect(getOpenIncidents().length).toBe(0);
+
+      const handedOff = getHandedOffIncidents();
+      expect(handedOff.length).toBe(2);
+      expect(
+        handedOff.find((h) => h.incidentId === "local-1")?.linkedIncidentId,
+      ).toBe("daemon-1");
+      expect(
+        handedOff.find((h) => h.incidentId === "local-2")?.linkedIncidentId,
+      ).toBe("daemon-2");
     });
 
-    it("should return empty map when no daemon incidents", () => {
-      const daemonMap = buildDaemonByAgentMap([]);
-      expect(daemonMap.size).toBe(0);
+    it("should handle agents with no daemon counterpart", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+
+      const closed = linkAndCloseLocalIncidents([]);
+
+      expect(closed).toBe(1);
+
+      const handedOff = getHandedOffIncidents();
+      expect(handedOff.length).toBe(1);
+      expect(handedOff[0].linkedIncidentId).toBeNull();
     });
 
-    it("should handle agents with no daemon counterpart (returns undefined)", () => {
-      const daemonMap = buildDaemonByAgentMap([
-        { agentId: 1, incidentId: "daemon-1" },
-      ]);
-      expect(daemonMap.get(99)).toBeUndefined();
+    it("should return 0 when no local open incidents", () => {
+      expect(
+        linkAndCloseLocalIncidents([{ agentId: 1, incidentId: "daemon-1" }]),
+      ).toBe(0);
     });
   });
 
-  // ─── self-link prevention logic ────────────────────────────────────────────
+  // ─── deleteIncident ────────────────────────────────────────────────────────
 
-  describe("self-link prevention (finalLinkedId)", () => {
-    /**
-     * Mirror of the self-link prevention check inside insertEventsBatch:
-     * don't link an incident to itself.
-     */
-    function resolveFinalLinkedId(
-      eventIncidentId: string,
-      linkedId: string | null,
-    ): string | null {
-      return linkedId === eventIncidentId ? null : linkedId;
-    }
+  describe("deleteIncident", () => {
+    it("should delete all events for an incident and return count", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 2000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          incidentId: "inc-2",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
 
-    it("should return null when linked ID equals the event's own incident ID", () => {
-      expect(resolveFinalLinkedId("inc-1", "inc-1")).toBeNull();
+      const deleted = deleteIncident("inc-1");
+      expect(deleted).toBe(2);
+      expect(getTotalEventsCount()).toBe(1);
+      expect(getEventsForIncident("inc-1")).toEqual([]);
     });
 
-    it("should return the linked ID when it differs from the event's incident ID", () => {
-      expect(resolveFinalLinkedId("inc-1", "daemon-1")).toBe("daemon-1");
-    });
-
-    it("should return null when linked ID is already null", () => {
-      expect(resolveFinalLinkedId("inc-1", null)).toBeNull();
+    it("should return 0 for non-existent incident", () => {
+      expect(deleteIncident("nonexistent")).toBe(0);
     });
   });
 });
