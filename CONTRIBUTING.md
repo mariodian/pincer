@@ -56,14 +56,29 @@ bun run dev
 | `bun run build:native-libs`| Compile macOS native dylib                   |
 | `bun run build:canary`     | Production build (canary channel)            |
 | `bun run build:stable`     | Production build (stable channel)            |
-| `bun run typecheck`        | Typecheck Svelte + TS                        |
+| `bun run setup`            | Build native libs + push DB schema           |
+| `bun run check`            | Run lint + typecheck + test                  |
+| `bun run typecheck`        | Full typecheck (backend + svelte + daemon + tests) |
 | `bun run typecheck:backend`| Fast TS check (backend + shared)             |
-| `bun run typecheck:all`    | Full typecheck (app, backend, tests)         |
+| `bun run typecheck:svelte` | Typecheck Svelte components                  |
 | `bun run test`             | Run tests                                    |
 | `bun run test:watch`       | Run tests in watch mode                      |
 | `bun run test:coverage`    | Run tests with coverage                      |
 | `bun run daemon:start`     | Run daemon in development                    |
 | `bun run daemon:bundle`    | Build daemon binary for distribution         |
+
+### Lint Commands
+
+| Command                    | Description                                  |
+| -------------------------- | -------------------------------------------- |
+| `bun run lint`             | Lint all code (backend + svelte + daemon + tests) |
+| `bun run lint:backend`     | Lint backend code (src/bun + src/shared)     |
+| `bun run lint:svelte`      | Lint Svelte components (src/mainview)        |
+| `bun run lint:fix`         | Fix lint issues in all code                  |
+| `bun run lint:fix:backend` | Fix lint issues in backend code              |
+| `bun run lint:fix:svelte`  | Fix lint issues in Svelte components         |
+| `bun run test:lint`        | Lint test code                               |
+| `bun run test:lint:fix`    | Fix lint issues in test code                 |
 
 ### Database
 
@@ -80,6 +95,9 @@ The daemon is a separate TypeScript project in `daemon/`. It uses dependencies f
 | Command                       | Description                          |
 | ----------------------------- | ------------------------------------ |
 | `bun run daemon:start`        | Run daemon in development            |
+| `bun run daemon:lint`         | Lint daemon code                     |
+| `bun run daemon:lint:fix`     | Fix lint issues in daemon code       |
+| `bun run daemon:typecheck`    | Typecheck daemon code                |
 | `bun run daemon:db:generate`  | Generate daemon migrations           |
 | `bun run daemon:db:push`      | Push daemon schema to database       |
 | `bun run daemon:bundle`       | Build daemon binary for distribution |
@@ -107,20 +125,20 @@ bun run format
 # Check formatting without writing
 bun run format:check
 
-# Fast TS check (backend + shared)
-bun run typecheck:backend
+# Run all quality checks at once
+bun run check
 
-# Full check including Svelte components (run if you touched .svelte files)
-bun run typecheck
+# Or run individual checks:
+bun run lint              # Lint all code
+bun run typecheck         # Typecheck all code
+bun run test              # Run the test suite
 
-# Full check including tests
-bun run typecheck:all
-
-# Typecheck tests (if you modified test files)
-bun run test:typecheck
-
-# Run the test suite
-bun run test
+# Targeted checks:
+bun run lint:backend      # Lint backend only
+bun run lint:svelte       # Lint Svelte only
+bun run typecheck:backend # Typecheck backend only
+bun run typecheck:svelte  # Typecheck Svelte only
+bun run test:typecheck    # Typecheck tests only
 ```
 
 See [AGENTS.md](./AGENTS.md) for full coding standards.

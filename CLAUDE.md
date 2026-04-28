@@ -10,17 +10,21 @@ Do not use Electron APIs or patterns. Electrobun uses Bun as the main process ru
 
 | Command                     | Purpose                                                                 |
 | --------------------------- | ----------------------------------------------------------------------- |
-| `bun run dev`               | Dev server (builds native dylib + Vite + Electrobun)                    |
+| `bun run dev`               | Dev server (setup + Vite + Electrobun)                                  |
 | `bun run dev:hmr`           | HMR for renderer iteration (Vite on :5173 + desktop runtime)            |
-| `bun run build`             | Production build (format + typecheck + native libs + Vite + Electrobun) |
+| `bun run build`             | Production build (setup + Vite + Electrobun)                            |
 | `bun run build:native-libs` | Compile macOS dylib — run if app crashes on startup                     |
-| `bun run format`            | Prettier on `src/**/*.{ts,svelte,js,css,html}`                          |
-| `bun run typecheck`         | Full typecheck including Svelte components                              |
+| `bun run setup`             | Build native libs + push DB schema                                      |
+| `bun run check`             | Run lint + typecheck + test                                             |
+| `bun run format`            | Prettier on `src/` and `daemon/` files                                  |
+| `bun run lint`              | Lint all code (backend + svelte + daemon + tests)                       |
+| `bun run typecheck`         | Full typecheck (backend + svelte + daemon + tests)                      |
 | `bun run typecheck:backend` | Fast TS check (`src/bun/`, `src/shared/`)                               |
+| `bun run typecheck:svelte`  | Typecheck Svelte components                                             |
+| `bun run test`              | Run test suite                                                          |
+| `bun run test:watch`        | Run tests in watch mode                                                 |
 | `bun run db:generate`       | Generate Drizzle migration after schema changes                         |
 | `bun run db:push`           | Push schema changes directly to dev DB                                  |
-
-No test runner is configured. `bun test` can be used if tests are added.
 
 ## Architecture
 

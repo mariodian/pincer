@@ -1,8 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["bun"]
+    "types": ["bun"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
   "include": ["src/**/__tests__", "daemon/__tests__"],
-  "exclude": ["node_modules", "dist", "build", "../../package/dist"]
+  "exclude": ["node_modules", "dist", "build"]
 }

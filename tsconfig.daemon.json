@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "rootDir": "../",
+    "rootDir": ".",
     "noEmit": true,
     "lib": ["ES2020"],
     "useDefineForClassFields": true,
@@ -20,10 +20,10 @@
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
-      "$shared/*": ["../src/shared/*"],
-      "$bun/*": ["../src/bun/*"]
+      "$shared/*": ["src/shared/*"],
+      "$bun/*": ["src/bun/*"]
     }
   },
-  "include": ["*.ts"],
+  "include": ["daemon/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

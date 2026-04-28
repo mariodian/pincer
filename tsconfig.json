@@ -29,5 +29,11 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "build", "src/**/__tests__", "daemon/__tests__", "../../package/dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "src/**/__tests__",
+    "daemon/__tests__"
+  ]
 }
