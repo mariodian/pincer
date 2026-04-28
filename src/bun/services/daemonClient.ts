@@ -117,7 +117,9 @@ export class DaemonClient {
       });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        throw new Error(`Daemon request timed out after ${this.timeout}ms`);
+        throw new Error(`Daemon request timed out after ${this.timeout}ms`, {
+          cause: error,
+        });
       }
       throw error;
     } finally {

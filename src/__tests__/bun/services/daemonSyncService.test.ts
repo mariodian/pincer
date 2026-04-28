@@ -1,3 +1,6 @@
+// Helper function for testing (mirrors the real implementation)
+import crypto from "node:crypto";
+
 import { describe, expect, it } from "bun:test";
 
 import type {
@@ -49,6 +52,7 @@ describe("daemonSyncService integration", () => {
         checksImported: 100,
         statsImported: 24,
         incidentsImported: 5,
+        agentsImported: 10,
         openIncidents: [{ agentId: 1, incidentId: "inc-1" }],
       };
 
@@ -64,6 +68,7 @@ describe("daemonSyncService integration", () => {
         checksImported: 0,
         statsImported: 0,
         incidentsImported: 0,
+        agentsImported: 0,
         openIncidents: [],
       };
 
@@ -77,6 +82,7 @@ describe("daemonSyncService integration", () => {
         checksImported: 0,
         statsImported: 0,
         incidentsImported: 0,
+        agentsImported: 0,
         openIncidents: [],
       };
 
@@ -442,8 +448,15 @@ describe("daemonSyncService integration", () => {
 
   describe("settings change detection", () => {
     it("should detect when url changes", () => {
-      const current = { enabled: true, url: "http://old:7378", secret: "test" };
-      const partial = { url: "http://new:7378" };
+      const _current = {
+        enabled: true,
+        url: "http://old:7378",
+        secret: "test",
+      };
+      void _current;
+      const partial: { url?: string; secret?: string; enabled?: boolean } = {
+        url: "http://new:7378",
+      };
 
       const settingsChanged =
         partial.url !== undefined || partial.secret !== undefined;
@@ -451,12 +464,15 @@ describe("daemonSyncService integration", () => {
     });
 
     it("should detect when secret changes", () => {
-      const current = {
+      const _current = {
         enabled: true,
         url: "http://daemon:7378",
         secret: "old",
       };
-      const partial = { secret: "new" };
+      void _current;
+      const partial: { url?: string; secret?: string; enabled?: boolean } = {
+        secret: "new",
+      };
 
       const settingsChanged =
         partial.url !== undefined || partial.secret !== undefined;
@@ -464,12 +480,15 @@ describe("daemonSyncService integration", () => {
     });
 
     it("should not detect change when only enabled changes", () => {
-      const current = {
+      const _current = {
         enabled: false,
         url: "http://daemon:7378",
         secret: "test",
       };
-      const partial = { enabled: true };
+      void _current;
+      const partial: { url?: string; secret?: string; enabled?: boolean } = {
+        enabled: true,
+      };
 
       const settingsChanged =
         partial.url !== undefined || partial.secret !== undefined;
@@ -478,13 +497,11 @@ describe("daemonSyncService integration", () => {
   });
 });
 
-// Helper function for testing (mirrors the real implementation)
 function computeAgentHash(agent: {
   type: string;
   url: string;
   port: number;
 }): string {
-  const crypto = require("node:crypto");
   return crypto
     .createHash("sha256")
     .update(`${agent.type}:${agent.url}:${agent.port}`)

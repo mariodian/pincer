@@ -153,7 +153,7 @@ describe("DaemonClient", () => {
     it("should throw a timeout error when request is aborted", async () => {
       global.fetch = (async (_url, init) => {
         // Simulate abort being triggered
-        const controller = { signal: init?.signal };
+        void init?.signal;
         await new Promise((_, reject) => {
           const err = new Error("The operation was aborted");
           err.name = "AbortError";
