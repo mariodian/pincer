@@ -397,10 +397,11 @@ describe("incidentCore", () => {
     describe("namespaceId support", () => {
       it("should include namespaceId in incident events when provided", () => {
         const deps = createMockIncidentDeps();
-        const tracker = createIncidentTracker(deps, {
+        const _tracker = createIncidentTracker(deps, {
           failureThreshold: 2,
           recoveryThreshold: 2,
         });
+        void _tracker;
 
         // Mock calling recordCheck with namespace context (simulating daemon poll behavior)
         // The insertEvent mock now captures namespaceId
@@ -421,10 +422,11 @@ describe("incidentCore", () => {
 
       it("should propagate namespaceId through opened event", () => {
         const deps = createMockIncidentDeps();
-        const tracker = createIncidentTracker(deps, {
+        const _tracker = createIncidentTracker(deps, {
           failureThreshold: 2,
           recoveryThreshold: 2,
         });
+        void _tracker;
 
         deps.insertEvent(
           1,
@@ -442,10 +444,11 @@ describe("incidentCore", () => {
 
       it("should propagate namespaceId through recovered event", () => {
         const deps = createMockIncidentDeps();
-        const tracker = createIncidentTracker(deps, {
+        const _tracker = createIncidentTracker(deps, {
           failureThreshold: 2,
           recoveryThreshold: 2,
         });
+        void _tracker;
 
         deps.insertEvent(
           1,
@@ -463,10 +466,11 @@ describe("incidentCore", () => {
 
       it("should propagate namespaceId through status_changed event", () => {
         const deps = createMockIncidentDeps();
-        const tracker = createIncidentTracker(deps, {
+        const _tracker = createIncidentTracker(deps, {
           failureThreshold: 2,
           recoveryThreshold: 2,
         });
+        void _tracker;
 
         deps.insertEvent(
           1,
@@ -484,10 +488,11 @@ describe("incidentCore", () => {
 
       it("should handle undefined namespaceId gracefully", () => {
         const deps = createMockIncidentDeps();
-        const tracker = createIncidentTracker(deps, {
+        const _tracker = createIncidentTracker(deps, {
           failureThreshold: 2,
           recoveryThreshold: 2,
         });
+        void _tracker;
 
         deps.insertEvent(1, "inc-1", "opened", null, "offline", "Test");
 

@@ -18,8 +18,8 @@ describe("retentionService", () => {
       info: ReturnType<typeof mock>;
       error: ReturnType<typeof mock>;
     };
-    setIntervalFn: ReturnType<typeof mock<typeof setInterval>>;
-    clearIntervalFn: ReturnType<typeof mock<typeof clearInterval>>;
+    setIntervalFn: typeof setInterval;
+    clearIntervalFn: typeof clearInterval;
   };
 
   beforeEach(() => {
@@ -34,7 +34,7 @@ describe("retentionService", () => {
         info: mock(() => {}),
         error: mock(() => {}),
       },
-      setIntervalFn: mock(() => 123 as unknown as NodeJS.Timeout),
+      setIntervalFn: mock(() => 123) as unknown as typeof setInterval,
       clearIntervalFn: mock(() => {}),
     };
   });

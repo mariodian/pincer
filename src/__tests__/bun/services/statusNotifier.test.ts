@@ -63,7 +63,10 @@ describe("StatusNotifier", () => {
     return { id, name };
   }
 
-  function makeStatus(id: number, status: string): AgentStatusInfo {
+  function makeStatus(
+    id: number,
+    status: "ok" | "offline" | "error",
+  ): AgentStatusInfo {
     return { id, status, lastChecked: Date.now() };
   }
 
