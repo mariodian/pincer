@@ -1,3 +1,4 @@
+
 # Testing Guide
 
 This document covers test patterns, mock strategies, and known pitfalls for the Pincer test suite (`src/__tests__/`).
@@ -56,6 +57,47 @@ mock.module("../../../bun/rpc/windowRegistry", () => ({
   getMainWindow: mock(() => null),
 }));
 ```
+
+### Breaking circular imports in tests
+
+When module A imports module B and module B imports module A, loading either module in a test will trigger the full cycle and may cause crashes or unexpected behavior.
+
+**The fix**: mock at one level below the circular boundary. Instead of mocking the service that has the cycle, mock its underlying storage/dependency directly.
+
+Example: `daemonSyncService` ↔ `agentService` circular import.
+- `agentService.readAgents` and `writeAgents` both delegate to `agentStorage`
+- Mocking `agentStorage` directly breaks the cycle without needing to mock `agentService`
+
+```ts
+// ✅ Correct — mock agentStorage (one level below agentService) to break the cycle
+mock.module("../../../bun/storage", () => ({
+  agentStorage: {
+    readAgents: mockReadAgents,
+    writeAgents: mockWriteAgents,
+    insertAgent: mock(() => Promise.resolve()),
+  },
+}));
+
+// ❌ Problematic — mocking agentService may still trigger the circular load
+mock.module("../../../bun/services/agentService", () => ({
+  readAgents: mockReadAgents,
+}));
+```
+
+This approach also removes the need to refactor production code just to make tests pass — mock at the storage layer, not the service layer.
+
+### Only mock exports that actually exist
+
+If a test imports a named export that doesn't exist in the source module, Bun throws a `SyntaxError` at load time:
+
+```
+SyntaxError: Export named 'writeAgents' not found in module agentService.ts
+```
+
+Always verify the export name in the source file before writing the mock or the import in the test. Common causes:
+- Function was renamed or removed
+- It was never exported (only used internally)
+- It lives in a different module than expected
 
 ---
 
@@ -146,6 +188,76 @@ function makeFetchMock(
   }) as unknown as typeof fetch;
 }
 ```
+
+---
+
+## Repo tests with a shared DB connection
+
+Repo tests (e.g. `settingsRepo`, `daemonSettingsRepo`, `appMetaRepo`) that use a real SQLite DB via `setupTestDB()` must **not** share state with other tests. Common failure modes:
+
+### Default values vs. seeded values
+
+If `getSettings()` returns a hardcoded default when no row exists, a test asserting the default must not seed a row first — and vice versa. Ensure `setupTestDB()` starts with a completely empty table.
+
+```ts
+// ❌ Fails if setupTestDB pre-seeds a row with defaults
+it("should return defaults when row is missing", () => {
+  const s = getDaemonSettings();
+  expect(s.enabled).toBe(false); // but DB was seeded with enabled=true
+});
+```
+
+### Missing exports
+
+If a test imports a function that isn't exported from the source module yet (`updateDaemonSettings`, `updateDaemonSettingsWithLifecycle`, etc.), every test in that file will fail with:
+
+```
+TypeError: updateDaemonSettings is not a function
+```
+
+Write the export in the source before writing tests that depend on it. Alternatively, check what's actually exported with a quick grep before writing the test file.
+
+### Async repo functions
+
+Some repo functions are sync (return a value directly); others are async (return a Promise). If a function is async and the test doesn't `await` it, assertions run against the unresolved Promise:
+
+```ts
+// ❌ Returns Promise, not the value
+expect(getOpenIncidents).toEqual([]);
+
+// ✅ Await the result
+expect(await getOpenIncidents()).toEqual([]);
+```
+
+Check the function signature before writing assertions.
+
+---
+
+## Refactoring for testability
+
+### Move side effects out of service layer
+
+When a service function triggers a side effect (e.g. `agentService.addAgent` calling `pushAgentsToDaemon`), testing that service in isolation forces you to mock the side-effect module — which can create circular import problems.
+
+**Preferred pattern**: keep service functions as pure data operations; move orchestration (calling multiple services in sequence) to the handler/RPC layer that already imports both.
+
+```ts
+// ❌ agentService.addAgent orchestrates its own side effect
+export async function addAgent(agent) {
+  const result = await agentStorage.insertAgent(agent);
+  pushAgentsToDaemon().catch(...); // ← pulls in daemonSyncService → circular
+  return result;
+}
+
+// ✅ RPC handler orchestrates both
+async function handleAddAgent(agent) {
+  const result = await addAgent(agent);           // pure data op
+  pushAgentsToDaemon().catch(...);                // side effect lives here
+  return result;
+}
+```
+
+This also makes each layer independently testable without circular mock workarounds.
 
 ---
 
