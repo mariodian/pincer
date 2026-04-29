@@ -143,6 +143,20 @@ bun run test:typecheck    # Typecheck tests only
 
 See [AGENTS.md](./AGENTS.md) for full coding standards.
 
+## Testing
+
+See [docs/testing.md](./docs/testing.md) for test patterns, mock strategies, and known pitfalls. Key rules:
+
+- Module mocks must come **before** `await import` of the module under test
+- Use `mockReset()` (not `mockClear()`) in `beforeEach` to avoid test contamination
+- Always mock `electrobun/bun` and `windowRegistry` in service tests
+- Save and restore `global.fetch` when mocking HTTP calls
+- Mock the exact module path that the module under test imports (not re-exports or barrel files)
+- Mock paths in `mock.module()` are relative to the test file, not the project root
+- Only mock exports that actually exist in the source module — Bun throws `SyntaxError` at load time for missing exports
+- For circular imports, mock at the storage/dependency layer below the service to break the cycle
+- Prefer the factory/DI pattern for new services — eliminates `mock.module` entirely and avoids circular import issues
+
 ## Committing Your Work
 
 Commit your changes:

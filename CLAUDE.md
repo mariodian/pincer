@@ -87,5 +87,6 @@ Configured in `vite.config.js` and `tsconfig.json`:
 - **Svelte 5**: Reactivity via runes (`$state`, `$derived`, `$effect`). Props via `$props()`. Events: `onclick={handler}` (no colon syntax). Use `cn()` from `$lib/utils` for conditional classes
 - **UI components**: shadcn-svelte in `src/mainview/shadcn-svelte/`. Charts: `layerchart`
 - **Tray**: macOS uses custom popover; Windows/Linux use native menu. Linux tray has known limitations (see `docs/linux-tray-limitation.md`)
+- **Testing**: See `docs/testing.md` for mock ordering, `mockReset` vs `mockClear`, circular import patterns, and fetch mocking
 
 See `AGENTS.md` for full coding standards.

@@ -58,6 +58,8 @@ mock.module("../../../bun/rpc/windowRegistry", () => ({
 }));
 ```
 
+**Note**: Services built with the [factory / DI pattern](#factory--dependency-injection-pattern) don't need these mocks because dependencies are passed in, not imported.
+
 ### Breaking circular imports in tests
 
 When module A imports module B and module B imports module A, loading either module in a test will trigger the full cycle and may cause crashes or unexpected behavior.
@@ -86,6 +88,14 @@ mock.module("../../../bun/services/agentService", () => ({
 
 This approach also removes the need to refactor production code just to make tests pass — mock at the storage layer, not the service layer.
 
+**Alternative**: if the service exports a data-only variant (e.g. `pushAgentsToDaemonWith(settings, agents, machineId)`), test that directly with plain data instead of loading the full module. This avoids the circular import entirely without any mocks.
+
+### Mock paths are relative to the test file
+
+`mock.module()` resolves paths from the test file's location, not the project root. A service imported at `../../../bun/services/fooService` in one test file may be `../../bun/services/fooService` in another.
+
+Always use the exact relative path from the test file to the source module.
+
 ### Only mock exports that actually exist
 
 If a test imports a named export that doesn't exist in the source module, Bun throws a `SyntaxError` at load time:
@@ -98,6 +108,27 @@ Always verify the export name in the source file before writing the mock or the 
 - Function was renamed or removed
 - It was never exported (only used internally)
 - It lives in a different module than expected
+
+### Plain functions vs `mock()` in `mock.module`
+
+You don't need `mock()` for every export in a `mock.module` block. Use plain functions when you never assert on them (e.g. logger methods in repo tests):
+
+```ts
+// ✅ Fine — no assertions on these methods
+mock.module("../../../../bun/services/loggerService", () => ({
+  logger: {
+    debug: () => {},
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+  },
+}));
+
+// ✅ Required — test asserts mockShowNotification was called
+mock.module("electrobun/bun", () => ({
+  Utils: { showNotification: mockShowNotification },
+}));
+```
 
 ---
 
@@ -147,13 +178,22 @@ afterEach(() => { global.fetch = originalFetch; });
 
 ### Type casting
 
-Bun's `typeof fetch` includes a `preconnect` property that plain async functions don't satisfy. Use double cast:
+Bun's `typeof fetch` includes a `preconnect` property that plain async functions don't satisfy. Use double cast as the safe default:
 
 ```ts
 global.fetch = (async (url, init) => {
   return new Response(JSON.stringify({ ok: true }), { status: 200 });
 }) as unknown as typeof fetch;
-// ❌ `as typeof fetch` alone causes a TS error — use `as unknown as typeof fetch`
+```
+
+A single `as typeof fetch` can compile when the mock function structurally matches fetch closely enough, but the double cast avoids brittle TS errors when Bun's fetch type changes.
+
+```ts
+// ✅ Safe default — works regardless of fetch type shape
+global.fetch = (async (url, init) => { ... }) as unknown as typeof fetch;
+
+// ⚠️ May compile today, but breaks if Bun adds new properties to fetch
+// global.fetch = (async (url, init) => { ... }) as typeof fetch;
 ```
 
 ### Account for all fetch calls in a function
@@ -217,6 +257,21 @@ TypeError: updateDaemonSettings is not a function
 
 Write the export in the source before writing tests that depend on it. Alternatively, check what's actually exported with a quick grep before writing the test file.
 
+### Accessing raw `sqlite` in repo tests
+
+`setupTestDB()` returns `{ db, sqlite }`. Call it again inside a test to get the raw `bun:sqlite` handle for seeding or verification:
+
+```ts
+it("should return values from DB after seeding", () => {
+  const { sqlite } = setupTestDB();
+  sqlite.run(`INSERT INTO settings_general (...) VALUES (...)`);
+  const s = getSettings();
+  expect(s.retentionDays).toBe(30);
+});
+```
+
+`beforeEach` already calls `setupTestDB()`; calling it again in the test body returns the same in-memory instance (with its tables already created) and gives you access to `sqlite` for raw SQL.
+
 ### Async repo functions
 
 Some repo functions are sync (return a value directly); others are async (return a Promise). If a function is async and the test doesn't `await` it, assertions run against the unresolved Promise:
@@ -234,6 +289,85 @@ Check the function signature before writing assertions.
 ---
 
 ## Refactoring for testability
+
+### Factory / dependency injection pattern
+
+The most robust way to make a service testable is to export a factory function that accepts all dependencies as an object. This eliminates the need for `mock.module` entirely and avoids circular import issues.
+
+```ts
+// ❌ Hard to test — imports its own dependencies
+export function startStatusUpdates() {
+  const agents = await readAgents();
+  setTimeout(() => poll(), getAdvancedSettings().pollingInterval);
+}
+
+// ✅ Fully testable — dependencies are injected
+export function createStatusCore(deps: StatusCoreDeps) {
+  return {
+    beginStatusUpdates() { ... },
+    refreshAndPush() { ... },
+    stopStatusUpdates() { ... },
+  };
+}
+```
+
+Test files import the factory directly and pass mock dependencies:
+
+```ts
+import { createStatusCore } from "../../../bun/services/statusCore";
+
+const deps = {
+  checkAllAgentsStatus: mock(() => Promise.resolve([])),
+  notifier: { checkAndNotify: mock(() => Promise.resolve()), removeAgent: mock(() => {}) },
+  setTimeoutFn: mock((cb: () => void) => { ... }) as unknown as typeof setTimeout,
+  // ... etc
+};
+
+const service = createStatusCore(deps);
+await service.beginStatusUpdates();
+expect(deps.checkAllAgentsStatus).toHaveBeenCalledTimes(1);
+```
+
+Services using this pattern (`statusCore`, `retentionCore`) require **no `mock.module` calls at all**.
+
+### Mocking timers via dependency injection
+
+When a service uses `setTimeout`/`setInterval`/`clearTimeout`, inject them as dependencies instead of relying on the globals. This makes timing fully deterministic without fake-timer libraries.
+
+```ts
+// In the service
+export function createStatusCore(deps: {
+  setTimeoutFn: typeof setTimeout;
+  clearTimeoutFn: typeof clearTimeout;
+  // ...
+}) {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  return {
+    beginStatusUpdates() {
+      timeoutId = deps.setTimeoutFn(() => poll(), interval);
+    },
+    stopStatusUpdates() {
+      if (timeoutId !== null) deps.clearTimeoutFn(timeoutId);
+    },
+  };
+}
+```
+
+In tests, capture the callback and invoke it manually:
+
+```ts
+let latestCallback: (() => void) | null = null;
+const deps = {
+  setTimeoutFn: mock((cb: () => void) => {
+    latestCallback = cb;
+    return 1;
+  }) as unknown as typeof setTimeout,
+  clearTimeoutFn: mock(() => { latestCallback = null; }),
+};
+
+// Trigger the next scheduled poll
+if (latestCallback) await latestCallback();
+```
 
 ### Move side effects out of service layer
 
@@ -258,6 +392,22 @@ async function handleAddAgent(agent) {
 ```
 
 This also makes each layer independently testable without circular mock workarounds.
+
+---
+
+## Tests without module mocking
+
+Not every test file needs `mock.module()`. Many modules are pure logic and can be imported directly:
+
+| Test file | What it tests | Mocking needed |
+|---|---|---|
+| `statusSyncService.test.ts` | In-memory status map | None |
+| `agentRPC.test.ts` | Pure helper functions | None |
+| `incidentCore.test.ts` | State machine logic | None |
+| `machineIdService.test.ts` | Regex / string parsing | None |
+| `shared/*.test.ts` | Utility functions | None |
+
+If a module has no side effects, no native dependencies, and no hard-wired imports, write the test with a direct import. It runs faster and has less ceremony.
 
 ---
 
