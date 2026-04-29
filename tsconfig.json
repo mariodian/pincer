@@ -1,10 +1,13 @@
 {
   "compilerOptions": {
+    // Language and module settings
     "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "rootDir": ".",
     "paths": {
       "$assets": ["./src/mainview/assets"],
       "$assets/*": ["./src/mainview/assets/*"],
@@ -17,16 +20,20 @@
       "$shared": ["./src/shared"],
       "$shared/*": ["./src/shared/*"]
     },
-    "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
+    // Type checking
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "useDefineForClassFields": true,
+    "isolatedModules": true,
+    // Output
+    "noEmit": true
   },
   "include": ["src"],
   "exclude": [

@@ -1,28 +1,30 @@
 {
   "compilerOptions": {
+    // Language and module settings
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "rootDir": ".",
-    "noEmit": true,
     "lib": ["ES2020"],
-    "useDefineForClassFields": true,
-    "isolatedModules": true,
+    "moduleResolution": "bundler",
     "moduleDetection": "force",
+    "rootDir": ".",
+    "paths": {
+      "$shared/*": ["./src/shared/*"],
+      "$bun/*": ["./src/bun/*"]
+    },
+    // Type checking
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
-    "paths": {
-      "$shared/*": ["src/shared/*"],
-      "$bun/*": ["src/bun/*"]
-    }
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "useDefineForClassFields": true,
+    "isolatedModules": true,
+    "types": ["node"],
+    // Output
+    "noEmit": true
   },
   "include": ["daemon/*.ts"],
   "exclude": ["node_modules", "dist"]
