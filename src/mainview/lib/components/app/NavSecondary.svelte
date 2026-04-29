@@ -14,7 +14,7 @@
 
   const sidebar = useSidebar();
   let shouldFlex = $state(false);
-  let shouldDisableSidebarTrigger = $state(false);
+  let shouldDisableSidebarTrigger = $derived(sidebar.isMobile);
 
   let currentLocation = $derived($currentRoute);
 
@@ -52,10 +52,6 @@
   }: {
     items: { title: string; url: string; icon: IconName }[];
   } & WithoutChildren<ComponentProps<typeof Sidebar.Group>> = $props();
-
-  $effect(() => {
-    shouldDisableSidebarTrigger = sidebar.isMobile;
-  });
 </script>
 
 <Sidebar.Group {...restProps}>

@@ -131,7 +131,7 @@
   });
 
   $effect(() => {
-    userPrefersMode.current;
+    void userPrefersMode.current;
     pushWindowAppearance?.(getRequestedAppearance());
   });
 

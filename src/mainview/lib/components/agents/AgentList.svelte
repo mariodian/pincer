@@ -141,7 +141,7 @@
   <PageBody>
     {#if loading}
       <div class="flex flex-col gap-4">
-        {#each [1, 2, 3] as _}
+        {#each [1, 2, 3] as _, i (i)}
           <div
             class={cn(
               "mt-0.5 flex min-h-18 items-center gap-3 p-4",

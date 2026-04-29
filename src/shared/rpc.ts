@@ -79,10 +79,7 @@ export type TrayPopoverRPCType = {
   webview: {
     requests: Record<string, never>;
     messages: {
-      syncAgents: {
-        params: AgentStatus[];
-        response: void;
-      };
+      syncAgents: AgentStatus[];
     };
   };
 };

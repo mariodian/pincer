@@ -85,7 +85,7 @@ export function isBrewInstall(): boolean {
     return false;
   }
 
-  let brewPaths = [
+  const brewPaths = [
     "/opt/homebrew/Caskroom/pincer", // Apple Silicon
     "/usr/local/Caskroom/pincer", // Intel
   ];

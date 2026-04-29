@@ -120,7 +120,7 @@
   </Card.Header>
   <Card.Content>
     <div class="ml-2 space-y-2">
-      {#each displayEvents as event, i}
+      {#each displayEvents as event, i (event.id)}
         <Timeline.Root withoutBorder={i === displayEvents.length - 1}>
           <Timeline.Item>
             <Timeline.Icon class="bg-card ring-card">

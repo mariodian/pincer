@@ -263,7 +263,7 @@ describe("agentsRepo", () => {
         url: "http://k",
         port: 80,
       });
-      const a2 = insertAgent({
+      const _a2 = insertAgent({
         type: "custom",
         name: "Remove",
         url: "http://r",

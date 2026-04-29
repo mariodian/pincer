@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CheckBucket, IncidentEvent, TimeRange } from "$shared/types";
+  import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
   import { Heatmap, IncidentCard } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
@@ -36,7 +37,7 @@
 
   const incidents = $derived.by(() => {
     // Group events by incidentId first
-    const byId = new Map<string, IncidentEvent[]>();
+    const byId = new SvelteMap<string, IncidentEvent[]>();
     for (const event of events) {
       const existing = byId.get(event.incidentId) || [];
       existing.push(event);
@@ -44,7 +45,7 @@
     }
 
     // Build linkedTo map: incidentId -> linkedIncidentId (from "opened" events)
-    const linkedTo = new Map<string, string>();
+    const linkedTo = new SvelteMap<string, string>();
     for (const event of events) {
       if (event.eventType === "opened" && event.linkedIncidentId) {
         linkedTo.set(event.incidentId, event.linkedIncidentId);
@@ -53,7 +54,7 @@
 
     // Resolve chains: find root incident for each incidentId
     function findRoot(id: string): string {
-      const visited = new Set<string>();
+      const visited = new SvelteSet<string>();
       let current = id;
       while (linkedTo.has(current) && !visited.has(current)) {
         visited.add(current);
@@ -63,8 +64,8 @@
     }
 
     // Merge linked incidents into groups
-    const merged = new Map<string, IncidentGroup>();
-    const assigned = new Set<string>();
+    const merged = new SvelteMap<string, IncidentGroup>();
+    const assigned = new SvelteSet<string>();
 
     for (const incidentId of byId.keys()) {
       if (assigned.has(incidentId)) continue;
@@ -75,7 +76,7 @@
 
       // Walk the chain from root, following linkedTo in reverse
       // Collect all incidentIds that resolve to this root
-      const chain = new Set<string>();
+      const chain = new SvelteSet<string>();
       for (const id of byId.keys()) {
         if (findRoot(id) === root) {
           chain.add(id);
@@ -119,7 +120,7 @@
 
   // Group incidents by day
   const incidentsByDay = $derived.by(() => {
-    const grouped = new Map<string, Array<IncidentGroup>>();
+    const grouped = new SvelteMap<string, Array<IncidentGroup>>();
     for (const group of incidents) {
       const maxTime = Math.max(...group.events.map((e) => e.eventAt));
       const day = formatShortDate(maxTime);
@@ -132,7 +133,7 @@
 
   // Combine all days from incidents (heatmap shows all checks at top)
   const allDays = $derived.by(() => {
-    const days = new Set<string>();
+    const days = new SvelteSet<string>();
     for (const day of incidentsByDay.keys()) {
       days.add(day);
     }

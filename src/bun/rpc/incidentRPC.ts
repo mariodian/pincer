@@ -98,7 +98,7 @@ export const incidentRequestHandlers = {
       const toMs = to * ONE_SECOND_MS;
 
       // Query ALL events for the full time range (incidents persist longer than checks)
-      let allEvents: IncidentEvent[] = [];
+      let allEvents: IncidentEvent[];
       if (agentId !== undefined) {
         allEvents = getEventsForAgent(agentId, fromMs, toMs);
       } else {

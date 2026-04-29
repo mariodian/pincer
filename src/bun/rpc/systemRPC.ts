@@ -56,16 +56,13 @@ export type SystemRPCType = {
   webview: {
     requests: Record<string, never>;
     messages: {
-      navigateTo: { params: { path: string }; response: void };
-      requestSaveAgentForm: { params: undefined; response: void };
+      navigateTo: { path: string };
+      requestSaveAgentForm: undefined;
       pushLog: {
-        params: {
-          level: "warn" | "error";
-          component: string;
-          message: string;
-          timestamp: string;
-        };
-        response: void;
+        level: "warn" | "error";
+        component: string;
+        message: string;
+        timestamp: string;
       };
     };
   };

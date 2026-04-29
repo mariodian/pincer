@@ -22,14 +22,14 @@
       messages: {
         // syncAgents is sent via rpc.send from the main process,
         // which passes the payload directly (not wrapped in { params: ... }).
-        syncAgents: ((data: AgentStatus[]) => {
+        syncAgents: (data: AgentStatus[]) => {
           if (typeof localStorage !== "undefined") {
             syncAgentsToCache(data);
           }
           // Reload from cache with filtering based on settings
           void loadAgents();
           triggerSyncCallbacks();
-        }) as any,
+        },
       },
     },
   });
@@ -150,7 +150,7 @@
   });
 
   $effect(() => {
-    agents;
+    void agents;
     requestAnimationFrame(updateScrollShadows);
   });
 

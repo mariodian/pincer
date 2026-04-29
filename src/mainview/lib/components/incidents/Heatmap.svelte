@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { CheckBucket, TimeRange } from "$shared/types";
+  import { SvelteDate, SvelteMap } from "svelte/reactivity";
 
   import { ONE_DAY_MS, ONE_HOUR_MS, SEVEN_DAYS_MS } from "$lib/constants";
   import { cn } from "$lib/utils";
@@ -32,7 +33,7 @@
 
   // Snap anchor to time bucket boundary
   function snapToBoundary(date: Date, msPerBucket: number): Date {
-    const snapped = new Date(date);
+    const snapped = new SvelteDate(date);
     if (msPerBucket === TEN_MINUTES_MS) {
       // Snap to 10-minute boundary
       snapped.setMinutes(Math.floor(snapped.getMinutes() / 10) * 10, 0, 0);
@@ -60,7 +61,7 @@
     number,
     { total: number; ok: number; degraded: number; failed: number }
   > {
-    const map = new Map<
+    const map = new SvelteMap<
       number,
       { total: number; ok: number; degraded: number; failed: number }
     >();

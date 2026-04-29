@@ -156,7 +156,7 @@ export async function initializeTray() {
           return;
         }
 
-        // @ts-ignore - getBounds may not be in types
+        // @ts-expect-error - getBounds may not be in types
         const bounds = tray.getBounds();
         const popoverConfig = getPopoverWindowConfig();
 

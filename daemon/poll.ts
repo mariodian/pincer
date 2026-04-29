@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { executeHealthCheck } from "../src/shared/agentHealthCheck";
 import { logger } from "../src/shared/logger";
 import { truncateToHour } from "../src/shared/time-utils";
-import type { CheckStatus } from "../src/shared/types";
+import type { Agent, CheckStatus } from "../src/shared/types";
 import { config } from "./config";
 import { getDatabase } from "./db";
 import { recordCheck as recordIncidentCheck } from "./incidents";
@@ -61,7 +61,7 @@ async function runPoll(): Promise<void> {
             healthEndpoint: agent.healthEndpoint,
             statusShape: agent.statusShape,
           };
-          const result = await executeHealthCheck(agentForCheck as any);
+          const result = await executeHealthCheck(agentForCheck as Agent);
           return {
             namespaceId: agent.namespaceId,
             agentId: agent.agentId,

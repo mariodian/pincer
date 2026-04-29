@@ -203,7 +203,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
       x: windowX,
       y: windowY,
     },
-    rpc: combinedRPC as any,
+    rpc: combinedRPC,
     ...(platformIsMacOS
       ? {
           titleBarStyle: wc.titleBarStyle,
@@ -245,8 +245,12 @@ export async function createMainWindow(): Promise<BrowserWindow> {
   // MacOS handles this natively via the setWindowMinSize call
   let resizeTimeout: Timer | null = null;
   if (!platformIsMacOS) {
-    mainWindow.on("resize", (event: any) => {
-      const { x, y, width, height } = event.data;
+    mainWindow.on("resize", (event: unknown) => {
+      const { x, y, width, height } = (
+        event as {
+          data: { x: number; y: number; width: number; height: number };
+        }
+      ).data;
 
       if (width < MAIN_WINDOW.minWidth || height < MAIN_WINDOW.minHeight) {
         if (resizeTimeout) clearTimeout(resizeTimeout);

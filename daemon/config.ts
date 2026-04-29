@@ -94,7 +94,6 @@ if (
   process.env.DAEMON_FILE_LOGGING !== undefined &&
   fileLoggingOverride === undefined
 ) {
-  // eslint-disable-next-line no-console
   console.warn(
     "Invalid DAEMON_FILE_LOGGING value. Use one of: true/false, 1/0, yes/no, on/off.",
   );
@@ -131,7 +130,6 @@ initLogger({
 
 if (!config.secret) {
   // Use console.error since logger might not be fully initialized yet
-  // eslint-disable-next-line no-console
   console.error("DAEMON_SECRET environment variable is required");
   process.exit(1);
 }

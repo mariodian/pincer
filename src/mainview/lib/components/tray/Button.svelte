@@ -55,7 +55,6 @@
       textColor,
       displayClasses[display],
       // `${sizeClasses[size]} ${className}`,
-      ,
     ],
     sizeClasses[size],
     className,

@@ -52,7 +52,12 @@ export function readCachedAgents(): AgentStatus[] | null {
 export function syncAgentsToCache(data: AgentStatus[]): void {
   try {
     const agents: Agent[] = data.map(
-      ({ status, lastChecked, errorMessage, ...agent }) => agent,
+      ({
+        status: _status,
+        lastChecked: _lastChecked,
+        errorMessage: _errorMessage,
+        ...agent
+      }) => agent,
     );
     const statuses: AgentStatusInfo[] = data.map(
       ({ id, status, lastChecked, errorMessage }) => ({
