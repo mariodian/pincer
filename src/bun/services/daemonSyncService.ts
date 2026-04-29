@@ -115,6 +115,34 @@ export async function pushAgentsToDaemon(): Promise<void> {
     }));
     const data = await client.pushAgents(payload);
     logger.info("daemon", `Pushed ${data.updated} agents to daemon`);
+
+    // Reconcile: delete daemon-side agents that no longer exist locally
+    const localIds = new Set(agents.map((a) => a.id));
+    const daemonAgents = await client.fetchAgents();
+    const orphanIds = daemonAgents
+      .map((da) => da.id)
+      .filter((id) => !localIds.has(id));
+
+    let deletedCount = 0;
+    for (const orphanId of orphanIds) {
+      try {
+        await client.deleteAgent(orphanId);
+        deletedCount++;
+      } catch (error) {
+        logger.warn(
+          "daemon",
+          `Failed to delete orphan agent ${orphanId} from daemon:`,
+          error,
+        );
+      }
+    }
+
+    if (deletedCount > 0) {
+      logger.info(
+        "daemon",
+        `Reconciled: deleted ${deletedCount} orphan agent(s) from daemon`,
+      );
+    }
   } catch (error) {
     logger.warn("daemon", "Failed to push agents to daemon:", error);
   }
