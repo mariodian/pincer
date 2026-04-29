@@ -1,35 +1,20 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 import type { AgentStatusInfo } from "../../../shared/types";
 import { mockShowNotification } from "../../mocks/electrobun";
 
-const mockGetNotificationSettings = mock(() => ({
-  notificationsEnabled: true,
-  notifyOnStatusChange: true,
-  notifyOnError: true,
-  statusChangeThreshold: 2,
-  silentNotifications: false,
-  failureThreshold: 3,
-  recoveryThreshold: 2,
+// ─── Must mock before dynamic imports ────────────────────────────────────────
+
+mock.module("../../../bun/services/agentService", () => ({
+  readAgents: mock(() => Promise.resolve<{ id: number; name: string }[]>([])),
 }));
 
-const mockReadAgents = mock(() =>
-  Promise.resolve<{ id: number; name: string }[]>([]),
-);
+mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
+
 const mockLoggerInfo = mock(() => {});
 const mockLoggerDebug = mock(() => {});
 const mockLoggerWarn = mock(() => {});
 const mockLoggerError = mock(() => {});
-
-// NOTE: We intentionally do NOT mock.settingsNotificationsRepo here.
-// StatusNotifier accepts getNotificationSettings as a constructor dependency
-// to avoid mock.module leaking across test files.
-
-mock.module("../../../bun/services/agentService", () => ({
-  readAgents: mockReadAgents,
-}));
-
-mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
 
 mock.module("../../../bun/services/loggerService", () => ({
   logger: {
@@ -40,44 +25,71 @@ mock.module("../../../bun/services/loggerService", () => ({
   },
 }));
 
+// ─── Dynamic imports ─────────────────────────────────────────────────────────
+
 const { buildNotificationMessage, StatusNotifier } =
   await import("../../../bun/services/statusNotifier");
 
-describe("StatusNotifier", () => {
-  let notifier: InstanceType<typeof StatusNotifier>;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  beforeEach(() => {
-    mockGetNotificationSettings.mockImplementation(() => ({
-      notificationsEnabled: true,
-      notifyOnStatusChange: true,
-      notifyOnError: true,
-      statusChangeThreshold: 2,
-      silentNotifications: false,
-      failureThreshold: 3,
-      recoveryThreshold: 2,
-    }));
-    notifier = new StatusNotifier({
-      getNotificationSettings: mockGetNotificationSettings,
-    });
-    mockReadAgents.mockClear();
-    mockShowNotification.mockClear();
-    mockLoggerInfo.mockClear();
-    mockLoggerDebug.mockClear();
-    mockLoggerWarn.mockClear();
-    mockLoggerError.mockClear();
+function defaultSettings() {
+  return {
+    notificationsEnabled: true,
+    notifyOnStatusChange: true,
+    notifyOnError: true,
+    statusChangeThreshold: 2,
+    silentNotifications: false,
+    failureThreshold: 3,
+    recoveryThreshold: 2,
+  };
+}
+
+function makeAgent(id: number, name: string) {
+  return { id, name };
+}
+
+function makeStatus(
+  id: number,
+  status: "ok" | "offline" | "error",
+): AgentStatusInfo {
+  return { id, status, lastChecked: Date.now() };
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+let notifier: InstanceType<typeof StatusNotifier>;
+let mockGetNotificationSettings: ReturnType<
+  typeof mock<() => ReturnType<typeof defaultSettings>>
+>;
+let mockReadAgents: ReturnType<
+  typeof mock<() => Promise<{ id: number; name: string }[]>>
+>;
+
+beforeEach(() => {
+  mockGetNotificationSettings = mock(() => defaultSettings());
+  mockReadAgents = mock(() =>
+    Promise.resolve<{ id: number; name: string }[]>([]),
+  );
+
+  // Re-mock agentService with fresh mock
+  mock.module("../../../bun/services/agentService", () => ({
+    readAgents: mockReadAgents,
+  }));
+
+  notifier = new StatusNotifier({
+    getNotificationSettings: mockGetNotificationSettings,
   });
+});
 
-  function makeAgent(id: number, name: string) {
-    return { id, name };
-  }
+afterEach(() => {
+  mockShowNotification.mockClear();
+  mockLoggerInfo.mockClear();
+  mockLoggerDebug.mockClear();
+  mockLoggerWarn.mockClear();
+  mockLoggerError.mockClear();
+});
 
-  function makeStatus(
-    id: number,
-    status: "ok" | "offline" | "error",
-  ): AgentStatusInfo {
-    return { id, status, lastChecked: Date.now() };
-  }
-
+describe("StatusNotifier", () => {
   describe("checkAndNotify", () => {
     it("should not notify on first poll (establishes baseline only)", async () => {
       mockReadAgents.mockImplementation(() =>
