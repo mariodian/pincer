@@ -19,7 +19,6 @@ import {
   type Settings,
 } from "../storage/sqlite/settingsRepo";
 import { upsertHourlyStat } from "../storage/sqlite/statsRepo";
-import { deleteAgentFromDaemon, pushAgentsToDaemon } from "./daemonSyncService";
 import { recordCheck } from "./incidentService";
 import { logger } from "./loggerService";
 
@@ -49,16 +48,6 @@ export async function writeAgents(agents: Agent[]): Promise<void> {
   return agentStorage.writeAgents(agents);
 }
 
-/**
- * Sync agents to daemon after mutation operations.
- * Non-blocking - runs in background with error handling.
- */
-function syncAgentsToDaemon(): void {
-  pushAgentsToDaemon().catch((err) =>
-    logger.warn("agent", "Failed to push agent to daemon:", err),
-  );
-}
-
 export async function getSettings(): Promise<Settings> {
   return getSettingsFromDb();
 }
@@ -72,7 +61,6 @@ export async function updateSettings(
 export async function addAgent(agent: Omit<Agent, "id">): Promise<Agent> {
   const result = await agentStorage.insertAgent(agent);
   logger.info("agent", `Agent added: ${result.name} (id=${result.id})`);
-  syncAgentsToDaemon();
   return result;
 }
 
@@ -90,7 +78,6 @@ export async function updateAgent(
   agents[index] = { ...agents[index], ...updates };
   await writeAgents(agents);
   logger.debug("agent", `Agent updated: id=${id}`);
-  syncAgentsToDaemon();
   return agents[index];
 }
 
@@ -103,14 +90,8 @@ export async function deleteAgent(id: number): Promise<boolean> {
     return false;
   }
 
-  // Delete from daemon first (non-blocking)
-  deleteAgentFromDaemon(id).catch((err) =>
-    logger.warn("agent", "Failed to delete agent from daemon:", err),
-  );
-
   await writeAgents(filteredAgents);
   logger.info("agent", `Agent deleted: id=${id}`);
-  syncAgentsToDaemon();
   return true;
 }
 

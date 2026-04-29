@@ -5,12 +5,12 @@ import type {
   DaemonSyncResult,
   DaemonTestResult,
 } from "../../shared/types";
+import { readAgents, writeAgents } from "../storage/sqlite/agentsRepo";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import { insertChecksBatch } from "../storage/sqlite/checksRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
 import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
-import { readAgents, writeAgents } from "./agentService";
 import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { logger } from "./loggerService";
 import { getMachineId } from "./machineIdService";
@@ -88,18 +88,24 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
   }
 }
 
-export async function pushAgentsToDaemon(): Promise<void> {
-  if (!isDaemonConfigured()) {
-    return;
-  }
-
-  const agents = await readAgents();
+export async function pushAgentsToDaemonWith(
+  settings: ReturnType<typeof getDaemonSettings>,
+  agents: Agent[],
+  machineId: string,
+): Promise<void> {
+  if (!settings.enabled || !settings.url || !settings.secret) return;
   if (agents.length === 0) {
     logger.debug("daemon", "No local agents to push to daemon");
     return;
   }
 
-  const client = await createDaemonClient();
+  const namespaceId = settings.namespaceKey || machineId;
+  const client = new DaemonClient(
+    settings.url,
+    settings.secret,
+    namespaceId,
+    machineId,
+  );
 
   try {
     const payload: AgentPushPayload[] = agents.map((a) => ({
@@ -116,7 +122,6 @@ export async function pushAgentsToDaemon(): Promise<void> {
     const data = await client.pushAgents(payload);
     logger.info("daemon", `Pushed ${data.updated} agents to daemon`);
 
-    // Reconcile: delete daemon-side agents that no longer exist locally
     const localIds = new Set(agents.map((a) => a.id));
     const daemonAgents = await client.fetchAgents();
     const orphanIds = daemonAgents
@@ -146,6 +151,17 @@ export async function pushAgentsToDaemon(): Promise<void> {
   } catch (error) {
     logger.warn("daemon", "Failed to push agents to daemon:", error);
   }
+}
+
+// Existing function becomes a thin wrapper — no logic change
+export async function pushAgentsToDaemon(): Promise<void> {
+  if (!isDaemonConfigured()) return;
+  const [agents, settings, machineId] = await Promise.all([
+    readAgents(),
+    Promise.resolve(getDaemonSettings()),
+    getMachineId(),
+  ]);
+  return pushAgentsToDaemonWith(settings, agents, machineId);
 }
 
 export async function deleteAgentFromDaemon(agentId: number): Promise<void> {

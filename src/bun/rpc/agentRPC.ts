@@ -12,6 +12,10 @@ import {
   readAgents,
   updateAgent,
 } from "../services/agentService";
+import {
+  deleteAgentFromDaemon,
+  pushAgentsToDaemon,
+} from "../services/daemonSyncService";
 import { removeAgentState } from "../services/incidentService";
 import { logger } from "../services/loggerService";
 import { removeAgentStatusTracking } from "../services/statusService";
@@ -118,6 +122,10 @@ export const agentRequestHandlers = {
         if (status) await sync.pushOneStatus(status);
       }
 
+      pushAgentsToDaemon().catch((err) =>
+        logger.warn("agentRPC", "Failed to push agents to daemon:", err),
+      );
+
       if (onAgentMutation) onAgentMutation();
       return result;
     } catch (error) {
@@ -140,6 +148,10 @@ export const agentRequestHandlers = {
         }
       }
 
+      pushAgentsToDaemon().catch((err) =>
+        logger.warn("agentRPC", "Failed to push agents to daemon:", err),
+      );
+
       if (onAgentMutation) onAgentMutation();
       return result;
     } catch (error) {
@@ -150,6 +162,13 @@ export const agentRequestHandlers = {
   deleteAgent: async (id: number) => {
     try {
       const result = await deleteAgent(id);
+
+      deleteAgentFromDaemon(id).catch((err) =>
+        logger.warn("agentRPC", "Failed to delete agent from daemon:", err),
+      );
+      pushAgentsToDaemon().catch((err) =>
+        logger.warn("agentRPC", "Failed to push agents to daemon:", err),
+      );
 
       // Clean up in-memory state to prevent memory leaks
       removeAgentState(id);
