@@ -11,6 +11,9 @@ artifacts/
 drizzle/dev.db
 drizzle/dev.db-shm
 drizzle/dev.db-wal
+daemon/drizzle/dev.db
+daemon/drizzle/dev.db-shm
+daemon/drizzle/dev.db-wal
 
 # Native build output
 libMacOS.dylib

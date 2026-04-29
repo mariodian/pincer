@@ -24,6 +24,7 @@ CREATE INDEX `idx_stats_hour` ON `stats` (`hour_timestamp`);--> statement-breakp
 ALTER TABLE `agents` ADD `namespace_id` text NOT NULL DEFAULT 'default';--> statement-breakpoint
 ALTER TABLE `agents` ADD `agent_id` integer NOT NULL DEFAULT 0;--> statement-breakpoint
 ALTER TABLE `agents` ADD `agent_hash` text;--> statement-breakpoint
+UPDATE `agents` SET `agent_id` = `id` WHERE `agent_id` = 0;--> statement-breakpoint
 CREATE UNIQUE INDEX `agents_namespace_id_agent_id_unique` ON `agents` (`namespace_id`,`agent_id`);--> statement-breakpoint
 ALTER TABLE `incident_events` ADD `namespace_id` text NOT NULL DEFAULT 'default';--> statement-breakpoint
 ALTER TABLE `incident_events` ADD `linked_incident_id` text;--> statement-breakpoint

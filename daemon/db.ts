@@ -24,7 +24,7 @@ export function getDatabase() {
 
 export async function initializeDatabase(): Promise<void> {
   const { db } = getDatabase();
-  const migrationDir = join(getRuntimeBaseDir(), "migrations");
+  const migrationDir = join(getRuntimeBaseDir(), "drizzle/migrations");
 
   if (existsSync(migrationDir)) {
     migrate(db, { migrationsFolder: migrationDir });
