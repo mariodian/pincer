@@ -380,7 +380,9 @@ export async function syncDataOnly(): Promise<DaemonSyncResult> {
     fetchOpenIncidents(client),
   ]);
 
-  setMeta(DAEMON_SYNC_KEY, Date.now().toString());
+  const nowMs = Date.now();
+  const hourBoundaryMs = Math.floor(nowMs / 3600000) * 3600000;
+  setMeta(DAEMON_SYNC_KEY, hourBoundaryMs.toString());
 
   logger.info(
     "daemon",
