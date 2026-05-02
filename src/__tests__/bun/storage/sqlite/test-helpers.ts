@@ -109,6 +109,9 @@ export function setupTestDB(): TestDB {
   sqlite.run(
     `CREATE INDEX IF NOT EXISTS idx_incident_events_linked_type ON incident_events (linked_incident_id, event_type)`,
   );
+  sqlite.run(
+    `CREATE UNIQUE INDEX IF NOT EXISTS uniq_incident_events ON incident_events (agent_id, incident_id, event_type, event_at)`,
+  );
 
   // ── settings_general ──
   sqlite.run(`

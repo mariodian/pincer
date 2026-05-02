@@ -173,5 +173,12 @@ export const incidentEvents = sqliteTable(
       table.linkedIncidentId,
       table.eventType,
     ),
+    // Prevent duplicate incident events (same event can't be synced twice)
+    unique("uniq_incident_events").on(
+      table.agentId,
+      table.incidentId,
+      table.eventType,
+      table.eventAt,
+    ),
   ],
 );

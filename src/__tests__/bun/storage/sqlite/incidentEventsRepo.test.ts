@@ -232,6 +232,32 @@ describe("incidentEventsRepo", () => {
       expect(inserted).toBe(2);
     });
 
+    it("should not duplicate identical status_changed events on repeated sync (INSERT OR IGNORE)", () => {
+      const now = Date.now();
+      const event = {
+        id: 0,
+        agentId: 1,
+        incidentId: "inc-1",
+        eventAt: now,
+        eventType: "status_changed" as const,
+        fromStatus: "offline" as const,
+        toStatus: "error" as const,
+        reason: null,
+        linkedIncidentId: null,
+      };
+
+      // First sync inserts 1 row
+      const inserted1 = insertEventsBatch([event]);
+      expect(inserted1).toBe(1);
+
+      // Second sync with the same event should insert 0 (INSERT OR IGNORE)
+      const inserted2 = insertEventsBatch([event]);
+      expect(inserted2).toBe(0);
+
+      // Only 1 row in DB
+      expect(getTotalEventsCount()).toBe(1);
+    });
+
     it("should link events to unrecovered local incidents", () => {
       insertEvent(1, "local-1", "opened", null, "offline", null);
       const now = Date.now();
