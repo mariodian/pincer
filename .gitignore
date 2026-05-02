@@ -23,6 +23,7 @@ libMacOS.dylib
 .githooks
 .opencode
 .planning
+.sisyphus
 .tmp/
 
 # Mempalace state
