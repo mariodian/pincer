@@ -543,7 +543,7 @@ describe("checksRepo", () => {
       expect(agent1Bucket).toBeDefined();
       expect(agent1Bucket!.total).toBe(3);
       expect(agent1Bucket!.okCount).toBe(2);
-      expect(agent1Bucket!.failedCount).toBe(1);
+      expect(agent1Bucket!.degradedCount).toBe(1);
       expect(agent1Bucket!.avgResponseMs).toBeCloseTo(100, 0); // (100+200+0)/3
 
       const agent2Bucket = buckets.find((b) => b.agentId === 2);
@@ -590,8 +590,8 @@ describe("checksRepo", () => {
         bucketStart + tenMinMs,
       );
       expect(buckets.length).toBe(1);
-      expect(buckets[0].degradedCount).toBe(2); // offline + degraded both count toward degraded
-      expect(buckets[0].failedCount).toBe(0);
+      expect(buckets[0].failedCount).toBe(2); // offline + degraded both count toward degraded
+      expect(buckets[0].degradedCount).toBe(0);
     });
 
     it("should return empty array when no checks in range", () => {

@@ -230,8 +230,8 @@ function getChecksAggregated(
         agent_id as agentId,
         COUNT(*) as total,
         SUM(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) as ok_count,
-        SUM(CASE WHEN status IN ('degraded', 'offline') THEN 1 ELSE 0 END) as degraded_count,
-        SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as failed_count,
+        SUM(CASE WHEN status IN ('degraded', 'offline') THEN 1 ELSE 0 END) as failed_count,
+        SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as degraded_count,
         AVG(response_ms) as avg_response_ms
       FROM checks
       WHERE checked_at >= ? AND checked_at <= ?
