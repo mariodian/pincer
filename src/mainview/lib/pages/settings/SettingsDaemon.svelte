@@ -22,10 +22,10 @@
   let enabled = $state(false);
   let url = $state("");
   let secret = $state("");
-  let namespaceKey = $state("");
   let savedUrl = $state("");
   let savedSecret = $state("");
-  let savedNamespaceKey = $state("");
+  // let namespaceKey = $state("");
+  // let savedNamespaceKey = $state("");
   let testStatus = $state<"testing" | null>(null);
   let syncStatus = $state<"syncing" | null>(null);
   let lastSync = $state<number | null>(null);
@@ -42,10 +42,10 @@
       enabled = settings.enabled;
       url = settings.url;
       secret = settings.secret;
-      namespaceKey = settings.namespaceKey;
       savedUrl = url;
       savedSecret = secret;
-      savedNamespaceKey = namespaceKey;
+      // namespaceKey = settings.namespaceKey;
+      // savedNamespaceKey = namespaceKey;
       lastSync = lastSyncTime;
     } catch (error) {
       console.error("Failed to load daemon settings:", error);
@@ -82,11 +82,11 @@
     await saveField({ secret });
   }
 
-  async function handleNamespaceKeyBlur() {
-    if (namespaceKey === savedNamespaceKey) return;
-    savedNamespaceKey = namespaceKey;
-    await saveField({ namespaceKey });
-  }
+  // async function handleNamespaceKeyBlur() {
+  //   if (namespaceKey === savedNamespaceKey) return;
+  //   savedNamespaceKey = namespaceKey;
+  //   await saveField({ namespaceKey });
+  // }
 
   async function handleEnabledChange(checked: boolean) {
     enabled = checked;
@@ -189,7 +189,7 @@
           />
         </div>
 
-        <div class="space-y-2">
+        <!-- <div class="space-y-2">
           <Label for="daemon-namespace">Namespace key</Label>
           <Input
             id="daemon-namespace"
@@ -203,7 +203,7 @@
             Clients using the same key share data on the daemon. Changing this
             key disconnects existing history.
           </p>
-        </div>
+        </div> -->
 
         <div class="flex items-center gap-2 pt-2">
           <Button
