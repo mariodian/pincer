@@ -48,6 +48,11 @@
         if (seenOpened) return false;
         seenOpened = true;
       }
+      // Filter out "handoff" events for simplicity, as they can be noisy
+      // and don't represent a change in incident status
+      if (e.eventType === "handoff") {
+        return false;
+      }
       return true;
     });
   });
