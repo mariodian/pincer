@@ -16,6 +16,7 @@ import { logger } from "./loggerService";
 import { getMachineId } from "./machineIdService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
+const DAEMON_SYNC_STATS_KEY = "daemon_last_sync_stats";
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -359,8 +360,11 @@ export async function syncDataOnly(): Promise<DaemonSyncResult> {
   }
 
   const client = await createDaemonClient();
+  const syncStartMs = Date.now();
   const lastSyncAt = parseInt(getMeta(DAEMON_SYNC_KEY) || "0", 10);
+  const lastSyncStatsAt = parseInt(getMeta(DAEMON_SYNC_STATS_KEY) || "0", 10);
 
+  // Checks and incidents are append-only: use precise sync time to avoid re-fetching
   const checks = await importChecks(client, lastSyncAt);
   if (!checks.reachable) {
     return {
@@ -374,15 +378,16 @@ export async function syncDataOnly(): Promise<DaemonSyncResult> {
     };
   }
 
+  // Stats are upserted in-place: use hour boundary to catch current-hour updates
   const [stats, incidents, openIncidents] = await Promise.all([
-    importStats(client, lastSyncAt),
+    importStats(client, lastSyncStatsAt),
     importIncidentEvents(client, lastSyncAt),
     fetchOpenIncidents(client),
   ]);
 
-  const nowMs = Date.now();
-  const hourBoundaryMs = Math.floor(nowMs / 3600000) * 3600000;
-  setMeta(DAEMON_SYNC_KEY, hourBoundaryMs.toString());
+  const hourBoundaryMs = Math.floor(syncStartMs / 3600000) * 3600000;
+  setMeta(DAEMON_SYNC_KEY, syncStartMs.toString());
+  setMeta(DAEMON_SYNC_STATS_KEY, hourBoundaryMs.toString());
 
   logger.info(
     "daemon",
