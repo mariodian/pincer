@@ -39,9 +39,9 @@ describe("daemon poll", () => {
         statusShape: "json_status",
       };
 
-      // Simulate executeHealthCheck result
+      // Simulate executeHealthCheck with correct agentId (now receives agent.agentId)
       const result = {
-        agentId: agent.id, // executeHealthCheck uses agent.id
+        agentId: agent.agentId,
         status: "ok" as CheckStatus,
         responseMs: 42,
         httpStatus: 200,
@@ -49,10 +49,10 @@ describe("daemon poll", () => {
         errorMessage: null,
       };
 
-      // The poll loop MUST override with agent.agentId
+      // The poll loop explicitly maps to agent.agentId (safety measure)
       const pollResult = {
         namespaceId: agent.namespaceId,
-        agentId: agent.agentId, // <-- this is the fix
+        agentId: agent.agentId,
         status: result.status,
         responseMs: result.responseMs,
         httpStatus: result.httpStatus,

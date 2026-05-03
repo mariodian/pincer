@@ -88,6 +88,11 @@ export interface MockIncidentTrackerDeps extends IncidentTrackerDeps {
     namespaceId?: string;
   }>;
   _checks: Map<number, Array<{ status: CheckStatus; checkedAt: number }>>;
+  getHandedOffIncidents: () => Array<{
+    agentId: number;
+    incidentId: string;
+    linkedIncidentId: string | null;
+  }>;
 }
 
 export function createMockIncidentDeps(
@@ -149,6 +154,24 @@ export function createMockIncidentDeps(
       return events.some(
         (e) => e.incidentId === incidentId && e.eventType === "recovered",
       );
+    },
+    getExistingOpenIncident: (agentId) => {
+      // Check open incidents (same logic as getOpenIncidents mock)
+      const open = new Set<string>();
+      const recovered = new Set<string>();
+      for (const e of events) {
+        if (e.eventType === "opened") open.add(e.incidentId);
+        if (e.eventType === "recovered") recovered.add(e.incidentId);
+      }
+      for (const incidentId of open) {
+        if (!recovered.has(incidentId)) {
+          const e = events.find(
+            (ev) => ev.incidentId === incidentId && ev.eventType === "opened",
+          )!;
+          if (e.agentId === agentId) return incidentId;
+        }
+      }
+      return null;
     },
     log: () => {},
     ...overrides,

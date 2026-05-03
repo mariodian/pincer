@@ -100,6 +100,12 @@ const tracker = createIncidentTracker(
       return (result?.count ?? 0) > 0;
     },
 
+    getExistingOpenIncident(agentId: number): string | null {
+      // Daemon doesn't create handoff events, so only check open incidents
+      const open = this.getOpenIncidents().find((i) => i.agentId === agentId);
+      return open ? open.incidentId : null;
+    },
+
     log(level: "info" | "debug", message: string): void {
       if (level === "info") {
         logger.info("incidents", message);
@@ -115,7 +121,7 @@ const tracker = createIncidentTracker(
 export function reconstructState(): void {
   const { db } = getDatabase();
   const enabledAgents = db
-    .select({ id: agents.id })
+    .select({ id: agents.agentId })
     .from(agents)
     .where(sql`${agents.enabled} = 1`)
     .all();

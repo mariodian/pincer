@@ -30,6 +30,32 @@ let recoveryThreshold = DEFAULT_RECOVERY_THRESHOLD;
 let tracker = createTracker();
 
 function createTracker() {
+  // Standalone helper so getExistingOpenIncident can call it before the deps object is complete
+  function _hasIncidentRecovered(incidentId: string): boolean {
+    const { sqlite } = getDatabase();
+    const result = sqlite
+      .prepare(
+        `
+        SELECT EXISTS (
+          -- Check if the incident itself has a recovered event
+          SELECT 1 FROM incident_events
+          WHERE incident_id = ? AND event_type = 'recovered'
+          UNION
+          -- Check if any linked daemon incident has recovered
+          SELECT 1 FROM incident_events e1
+          WHERE e1.linked_incident_id = ?
+          AND EXISTS (
+            SELECT 1 FROM incident_events e2
+            WHERE e2.incident_id = e1.incident_id AND e2.event_type = 'recovered'
+          )
+        ) as hasRecovered
+      `,
+      )
+      .get(incidentId, incidentId) as { hasRecovered: number };
+
+    return result.hasRecovered === 1;
+  }
+
   return createIncidentTracker(
     {
       insertEvent(
@@ -73,31 +99,28 @@ function createTracker() {
         return getHandedOffIncidents();
       },
 
-      hasIncidentRecovered(incidentId: string): boolean {
-        // Single optimized SQL query to check if incident has recovered
-        // Checks both: the incident itself, AND any linked daemon incidents
-        const { sqlite } = getDatabase();
-        const result = sqlite
-          .prepare(
-            `
-            SELECT EXISTS (
-              -- Check if the incident itself has a recovered event
-              SELECT 1 FROM incident_events
-              WHERE incident_id = ? AND event_type = 'recovered'
-              UNION
-              -- Check if any linked daemon incident has recovered
-              SELECT 1 FROM incident_events e1
-              WHERE e1.linked_incident_id = ?
-              AND EXISTS (
-                SELECT 1 FROM incident_events e2
-                WHERE e2.incident_id = e1.incident_id AND e2.event_type = 'recovered'
-              )
-            ) as hasRecovered
-          `,
-          )
-          .get(incidentId, incidentId) as { hasRecovered: number };
+      hasIncidentRecovered: _hasIncidentRecovered,
 
-        return result.hasRecovered === 1;
+      getExistingOpenIncident(agentId: number): string | null {
+        // Check open incidents first (opened but no recovered/handoff)
+        const openIncidents = getOpenIncidents();
+        const open = openIncidents.find((i) => i.agentId === agentId);
+        if (open) return open.incidentId;
+
+        // Check handed-off incidents (handoff but no recovered)
+        // Each handed-off incident may be resolved via a linked daemon incident,
+        // so we must call hasIncidentRecovered to check the full picture.
+        const handedOffIncidents = getHandedOffIncidents();
+        const handedOff = handedOffIncidents.find((i) => i.agentId === agentId);
+        if (handedOff) {
+          if (_hasIncidentRecovered(handedOff.incidentId)) {
+            // This handed-off incident is resolved (via local or linked daemon recovery)
+            return null;
+          }
+          return handedOff.incidentId;
+        }
+
+        return null;
       },
 
       log(level: "info" | "debug", message: string): void {

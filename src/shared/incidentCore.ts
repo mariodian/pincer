@@ -50,6 +50,8 @@ export interface IncidentTrackerDeps {
   }>;
   /** Check if an incident has a recovered event */
   hasIncidentRecovered: (incidentId: string) => boolean;
+  /** Check the DB for any existing open or handed-off-but-unrecovered incident for an agent */
+  getExistingOpenIncident: (agentId: number) => string | null;
   /** Logger function for incident-related logging */
   log: (level: "info" | "debug", message: string) => void;
 }
@@ -134,17 +136,12 @@ export function createIncidentTracker(
         // (incident was handed off to daemon but not yet recovered)
         const handedOff = handedOffByAgent.get(agentId);
         if (handedOff) {
-          // Check if the local incident itself has recovered
-          const localRecovered = deps.hasIncidentRecovered(
-            handedOff.incidentId,
-          );
-
-          // Check if the linked daemon incident has recovered
-          const daemonRecovered = handedOff.linkedIncidentId
-            ? deps.hasIncidentRecovered(handedOff.linkedIncidentId)
-            : false;
-
-          const isResolved = localRecovered || daemonRecovered;
+          // Check if the local incident is resolved:
+          // - Has the local incident itself recovered? OR
+          // - Has any daemon incident linked to it recovered?
+          // Note: we intentionally do NOT check linkedIncidentId separately —
+          // hasIncidentRecovered already covers linked daemon incidents.
+          const isResolved = deps.hasIncidentRecovered(handedOff.incidentId);
 
           if (!isResolved) {
             state.openIncidentId = handedOff.incidentId;
@@ -288,24 +285,36 @@ export function createIncidentTracker(
     if (state.openIncidentId === null) {
       // No open incident yet - check if we should open one
       if (state.failureCounter >= config.failureThreshold) {
-        // Open a new incident
-        const incidentId = generateIncidentId(agentId);
-        state.openIncidentId = incidentId;
+        // Guard: check DB for any existing unrecovered incident before creating a new one.
+        // This prevents duplicate incidents when in-memory state diverges from the DB
+        // (e.g., after a buggy reconstruction or state loss).
+        const existingId = deps.getExistingOpenIncident(agentId);
+        if (existingId !== null) {
+          state.openIncidentId = existingId;
+          deps.log(
+            "info",
+            `[Agent ${agentId}] Reattached to existing incident: ${existingId}`,
+          );
+        } else {
+          // Open a new incident
+          const incidentId = generateIncidentId(agentId);
+          state.openIncidentId = incidentId;
 
-        deps.insertEvent(
-          agentId,
-          incidentId,
-          "opened",
-          state.failureStartStatus,
-          status,
-          `Incident opened after ${state.failureCounter} consecutive non-OK checks`,
-          namespaceId,
-        );
+          deps.insertEvent(
+            agentId,
+            incidentId,
+            "opened",
+            state.failureStartStatus,
+            status,
+            `Incident opened after ${state.failureCounter} consecutive non-OK checks`,
+            namespaceId,
+          );
 
-        deps.log(
-          "info",
-          `[Agent ${agentId}] Incident ${incidentId} opened (status: ${status})`,
-        );
+          deps.log(
+            "info",
+            `[Agent ${agentId}] Incident ${incidentId} opened (status: ${status})`,
+          );
+        }
       }
     } else {
       // There's already an open incident

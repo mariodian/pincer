@@ -83,6 +83,24 @@ describe("incidentService integration", () => {
           (e) => e.incidentId === incidentId && e.eventType === "recovered",
         );
       },
+      getExistingOpenIncident: (agentId) => {
+        // Check open incidents
+        const open = new Set<string>();
+        const recovered = new Set<string>();
+        for (const e of events) {
+          if (e.eventType === "opened") open.add(e.incidentId);
+          if (e.eventType === "recovered") recovered.add(e.incidentId);
+        }
+        for (const incidentId of open) {
+          if (!recovered.has(incidentId)) {
+            const e = events.find(
+              (ev) => ev.incidentId === incidentId && ev.eventType === "opened",
+            )!;
+            if (e.agentId === agentId) return incidentId;
+          }
+        }
+        return null;
+      },
       log: () => {},
       events,
       checks,
@@ -277,12 +295,13 @@ describe("incidentService integration", () => {
       expect(tracker.getOpenIncidentId(1)).toBe("local-1");
     });
 
-    it("should not reconstruct resolved handed-off incidents", () => {
+    it("should not reconstruct resolved handed-off incidents (local incident recovered)", () => {
       const deps = createTestDeps();
       deps.getHandedOffIncidents = () => [
         { agentId: 1, incidentId: "local-1", linkedIncidentId: "daemon-1" },
       ];
-      deps.hasIncidentRecovered = (id) => id === "daemon-1";
+      // hasIncidentRecovered is only called with handedOff.incidentId ("local-1")
+      deps.hasIncidentRecovered = (id) => id === "local-1";
 
       const tracker = createIncidentTracker(deps, {
         failureThreshold: 3,
@@ -291,6 +310,26 @@ describe("incidentService integration", () => {
 
       tracker.reconstructState([{ id: 1 }]);
       expect(tracker.hasOpenIncident(1)).toBe(false);
+    });
+
+    it("should reconstruct handed-off incident even if linkedIncidentId triggers false positive", () => {
+      const deps = createTestDeps();
+      deps.getHandedOffIncidents = () => [
+        { agentId: 1, incidentId: "local-1", linkedIncidentId: "daemon-old" },
+      ];
+      // linkedIncidentId "daemon-old" would trigger hasIncidentRecovered true,
+      // but local-1 itself is NOT recovered — so it should still be open
+      deps.hasIncidentRecovered = (id) => id === "daemon-old";
+
+      const tracker = createIncidentTracker(deps, {
+        failureThreshold: 3,
+        recoveryThreshold: 2,
+      });
+
+      tracker.reconstructState([{ id: 1 }]);
+      // local-1 is not resolved — should be reconstructed as open
+      expect(tracker.hasOpenIncident(1)).toBe(true);
+      expect(tracker.getOpenIncidentId(1)).toBe("local-1");
     });
   });
 });

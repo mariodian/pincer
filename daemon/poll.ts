@@ -52,7 +52,7 @@ async function runPoll(): Promise<void> {
         try {
           // Create a compatible Agent object for executeHealthCheck
           const agentForCheck = {
-            id: agent.id,
+            id: agent.agentId,
             type: agent.type,
             name: agent.name,
             url: agent.url,
