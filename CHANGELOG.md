@@ -5,6 +5,13 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.7-rc] - 2026-05-03
+
+### Fixed
+
+- Repaired upgraded installs affected by broken migrations 0022 and 0024 by reapplying the missing unique indexes for checks and incident events during database initialization.
+- Corrected the affected migration files so fresh databases create the intended unique indexes during setup.
+
 ## [v0.3.6] - 2026-05-03
 
 ### Added
