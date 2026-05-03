@@ -102,7 +102,7 @@ The daemon is a separate TypeScript project in `daemon/`. It uses dependencies f
 | `bun run daemon:db:push`      | Push daemon schema to database       |
 | `bun run daemon:bundle`       | Build daemon binary for distribution |
 
-The daemon has its own `schema.ts` and `migrations/` directory (separate from the main app's `drizzle/migrations/`) because the daemon and app have different `__drizzle_migrations` tracking tables.
+The daemon has its own `schema.ts` and `drizzle/migrations/` directory (separate from the main app's `drizzle/migrations/`) because the daemon and app have different `__drizzle_migrations` tracking tables.
 
 ### Development Notes
 

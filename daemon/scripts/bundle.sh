@@ -24,7 +24,8 @@ bun build --compile "${DAEMON_DIR}/index.ts" --outfile "${BINARY_PATH}"
 cleanup_bun_build_artifacts
 
 # Copy migrations
-cp -R "${DAEMON_DIR}/migrations" "${BUNDLE_DIR}/migrations"
+mkdir -p "${BUNDLE_DIR}/drizzle"
+cp -R "${DAEMON_DIR}/drizzle/migrations" "${BUNDLE_DIR}/drizzle/migrations"
 
 # Generate version.json from root package.json
 VERSION=$(node -p "require('${PROJECT_DIR}/package.json').version")
@@ -35,7 +36,7 @@ Pincer Daemon Bundle
 
 Contents:
 - pincerd (standalone binary)
-- migrations/ (required for DB migrations)
+- drizzle/migrations/ (required for DB migrations)
 - version.json (used for version metadata)
 
 Run example:
