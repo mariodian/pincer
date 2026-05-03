@@ -5,7 +5,7 @@
     DashboardStats,
     TimeSeriesPoint,
   } from "$shared/rpc";
-  import type { Settings, TimeRange } from "$shared/types";
+  import type { AdvancedSettings, Settings, TimeRange } from "$shared/types";
 
   import { StatusPieChart } from "$lib/components/dashboard";
   import KpiSummary from "$lib/components/dashboard/KpiSummary.svelte";
@@ -17,9 +17,17 @@
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
-  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import { MIN_POLLING_INTERVAL_MS } from "$lib/constants";
+  import {
+    getMainRPC,
+    offAgentSync,
+    onAgentSync,
+    whenReady,
+  } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import { cn } from "$lib/utils";
+  import { createDebouncedVisibility } from "$lib/utils/debounced-visibility.svelte";
+  import { createFetchState } from "$lib/utils/fetch-state.svelte";
   import {
     aggregateByDay,
     fillHourlySlots,
@@ -39,24 +47,41 @@
     { value: "30d", label: "30d" },
   ];
 
-  let currentPath = $derived($currentRoute);
-  let prevPath = $derived($previousRoute);
-
-  // State
-  let loading = $state(true);
-  let error = $state<string | null>(null);
   let stats = $state<DashboardStats | null>(null);
   let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
   let showDisabledAgents = $state(false);
+  let anchorDate = $state(new Date());
+  let pollingIntervalMs = $state<number | null>(null);
 
   // Per-chart agent filter state
   let selectedUptime = $state<number[]>([]);
   let selectedResponse = $state<number[]>([]);
   let selectedResponseBar = $state<number[]>([]);
   let selectedStatus = $state<number[]>([]);
+  let syncKey: string;
 
   let chartAgents = $state<AgentWithColor[]>([]);
   let chartTimeSeries = $state<TimeSeriesPoint[]>([]);
+
+  const fetchState = createFetchState();
+
+  let currentPath = $derived($currentRoute);
+  let prevPath = $derived($previousRoute);
+
+  let error = $derived(fetchState.error);
+  let initialLoading = $derived(fetchState.initialLoading);
+  let refreshing = $derived(fetchState.refreshing);
+
+  const refreshingIndicator = createDebouncedVisibility(
+    () => refreshing && !initialLoading,
+    1000,
+  );
+
+  let showRefreshing = $derived(refreshingIndicator.visible);
+  let xAxisFormat = $derived(timeRange === "24h" ? formatHour : formatDay);
+  let shouldShowLastUpdated = $derived(
+    pollingIntervalMs !== null && pollingIntervalMs >= MIN_POLLING_INTERVAL_MS,
+  );
 
   // Chart data — derived reactively from source state
   let uptimeData = $derived.by(() => {
@@ -78,51 +103,44 @@
   });
 
   // Fetch data
-  async function fetchData() {
-    loading = true;
-    error = null;
-    try {
-      await whenReady();
-      const rpc = getMainRPC();
+  async function fetchData(range: TimeRange, silent: boolean = false) {
+    await fetchState.run(
+      async () => {
+        await whenReady();
+        const rpc = getMainRPC();
 
-      // Fetch settings and stats in parallel
-      const [settings, result] = await Promise.all([
-        rpc.request.getSettings({}) as Promise<Settings>,
-        rpc.request.getDashboardStats({ range: timeRange }),
-      ]);
+        // Fetch settings and stats in parallel
+        const [settings, result, advancedSettings] = await Promise.all([
+          rpc.request.getSettings({}) as Promise<Settings>,
+          rpc.request.getDashboardStats({ range }),
+          rpc.request.getAdvancedSettings({}) as Promise<AdvancedSettings>,
+        ]);
 
-      showDisabledAgents = settings.showDisabledAgents;
-      stats = result;
+        stats = result;
+        showDisabledAgents = settings.showDisabledAgents;
+        pollingIntervalMs = advancedSettings.pollingInterval;
+        anchorDate = new Date(); // snapshot "now" at the moment data arrived
 
-      // Filter disabled agents on the client side
-      chartAgents = showDisabledAgents
-        ? result.agents
-        : result.agents.filter((a) => a.enabled !== false);
-      chartTimeSeries = showDisabledAgents
-        ? result.timeSeries
-        : result.timeSeries.filter((p) =>
-            chartAgents.some((a) => a.id === p.agentId),
-          );
+        // Filter disabled agents on the client side
+        chartAgents = showDisabledAgents
+          ? result.agents
+          : result.agents.filter((a) => a.enabled !== false);
+        chartTimeSeries = showDisabledAgents
+          ? result.timeSeries
+          : result.timeSeries.filter((p) =>
+              chartAgents.some((a) => a.id === p.agentId),
+            );
 
-      // Initialize all visible agents as selected if empty
-      const allIds = chartAgents.map((a) => a.id);
-      if (selectedUptime.length === 0) selectedUptime = allIds;
-      if (selectedResponse.length === 0) selectedResponse = allIds;
-      if (selectedResponseBar.length === 0) selectedResponseBar = allIds;
-      if (selectedStatus.length === 0) selectedStatus = allIds;
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading = false;
-    }
+        // Initialize all visible agents as selected if empty
+        const allIds = chartAgents.map((a) => a.id);
+        if (selectedUptime.length === 0) selectedUptime = allIds;
+        if (selectedResponse.length === 0) selectedResponse = allIds;
+        if (selectedResponseBar.length === 0) selectedResponseBar = allIds;
+        if (selectedStatus.length === 0) selectedStatus = allIds;
+      },
+      { silent },
+    );
   }
-
-  // Fetch on mount and when timeRange changes
-  $effect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    timeRange; // reactive dependency
-    fetchData();
-  });
 
   // Toggle helper — returns a setter for the given $state array
   function toggleAgent(selected: number[]) {
@@ -135,12 +153,22 @@
     };
   }
 
-  // X-axis formatter depends on time range
-  let xAxisFormat = $derived(timeRange === "24h" ? formatHour : formatDay);
-
   function handleTimeRangeChange(range: TimeRange) {
+    fetchState.clearError();
+    fetchState.beginInitialLoading(); // Show skeletons immediately on range change
     timeRange = range;
   }
+
+  // Fetch on mount and when timeRange changes
+  $effect(() => {
+    fetchData(timeRange, true);
+  });
+
+  // Subscribe to agent sync events to refresh data
+  $effect(() => {
+    syncKey = onAgentSync(() => fetchData(timeRange, true));
+    return () => offAgentSync(syncKey); // cleanup on unmount
+  });
 </script>
 
 <div class="flex h-full flex-col">
@@ -151,11 +179,21 @@
     {currentPath}
   >
     {#snippet actions()}
-      <TimeRangePicker
-        value={timeRange}
-        options={TIME_RANGES}
-        onchange={handleTimeRangeChange}
-      />
+      <div class="flex items-center gap-2">
+        {#if showRefreshing}
+          <span class="text-muted-foreground text-xs">updating...</span>
+        {/if}
+        <TimeRangePicker
+          value={timeRange}
+          options={TIME_RANGES}
+          onchange={handleTimeRangeChange}
+          onrefresh={shouldShowLastUpdated
+            ? () => fetchData(timeRange, true)
+            : undefined}
+          {refreshing}
+          lastUpdated={shouldShowLastUpdated ? anchorDate : undefined}
+        />
+      </div>
     {/snippet}
   </PageHeader>
 
@@ -172,15 +210,15 @@
         {#snippet cta()}
           <Button
             variant="outline"
-            disabled={loading}
-            onclick={() => fetchData()}
+            disabled={refreshing}
+            onclick={() => fetchData(timeRange)}
           >
             <Icon name="alertCircle" />
-            {loading ? "Retrying..." : "Retry"}
+            {refreshing ? "Retrying..." : "Retry"}
           </Button>
         {/snippet}
       </ErrorState>
-    {:else if loading}
+    {:else if initialLoading}
       <div class={["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"]}>
         <Skeleton class="h-25 w-full rounded-lg" />
         <Skeleton class="h-25 w-full rounded-lg" />

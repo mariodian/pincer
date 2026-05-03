@@ -18,6 +18,7 @@
       color: string;
     }>;
     range?: TimeRange;
+    anchorDate?: Date;
     class?: string;
   }
 
@@ -26,6 +27,7 @@
     checkBuckets,
     agents,
     range = "24h",
+    anchorDate = new Date(),
     class: className,
   }: Props = $props();
 
@@ -160,7 +162,7 @@
 <TooltipProvider delayDuration={0} skipDelayDuration={300}>
   <div class={cn("w-full max-w-full min-w-0 space-y-3", className)}>
     <!-- Single heatmap for the entire period (24h or 7d) -->
-    <Heatmap {range} {checkBuckets} cellSize={4} />
+    <Heatmap {range} {checkBuckets} {anchorDate} cellSize={4} />
 
     {#each allDays as day (day)}
       {@const dayIncidents = incidentsByDay.get(day)}

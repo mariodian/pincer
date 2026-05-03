@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { IncidentTimeline } from "$bun/rpc/incidentRPC";
-  import type { TimeRange } from "$shared/types";
+  import type { AdvancedSettings, TimeRange } from "$shared/types";
 
   import { Timeline } from "$lib/components/incidents";
   import { Button } from "$lib/components/ui/button";
@@ -10,8 +10,16 @@
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
-  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import { MIN_POLLING_INTERVAL_MS } from "$lib/constants";
+  import {
+    getMainRPC,
+    offAgentSync,
+    onAgentSync,
+    whenReady,
+  } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
+  import { createDebouncedVisibility } from "$lib/utils/debounced-visibility.svelte";
+  import { createFetchState } from "$lib/utils/fetch-state.svelte";
 
   type TimeRangeOption = { value: TimeRange; label: string };
 
@@ -21,43 +29,31 @@
     { value: "7d", label: "7d" },
   ];
 
+  let timeline = $state<IncidentTimeline | null>(null);
+  let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
+  let anchorDate = $state(new Date());
+  let pollingIntervalMs = $state<number | null>(null);
+  let syncKey: string;
+
+  const fetchState = createFetchState();
+
   let currentPath = $derived($currentRoute);
   let prevPath = $derived($previousRoute);
 
-  // State
-  let loading = $state(true);
-  let error = $state<string | null>(null);
-  let timeline = $state<IncidentTimeline | null>(null);
-  let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
+  let error = $derived(fetchState.error);
+  let initialLoading = $derived(fetchState.initialLoading);
+  let refreshing = $derived(fetchState.refreshing);
 
-  async function fetchData() {
-    try {
-      await whenReady();
-      const rpc = getMainRPC();
-      timeline = await rpc.request.getIncidentTimeline({ range: timeRange });
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading = false;
-    }
-  }
+  const refreshingIndicator = createDebouncedVisibility(
+    () => refreshing && !initialLoading,
+    1000,
+  );
 
-  // Fetch on mount and when timeRange changes
-  $effect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    timeRange; // reactive dependency
-    fetchData();
-  });
+  let showRefreshing = $derived(refreshingIndicator.visible);
+  let shouldShowLastUpdated = $derived(
+    pollingIntervalMs !== null && pollingIntervalMs >= MIN_POLLING_INTERVAL_MS,
+  );
 
-  function handleTimeRangeChange(range: TimeRange) {
-    if (range === timeRange) return; // No change (prevents re-clicking same)
-    loading = true; // Immediate skeleton feedback
-    error = null;
-    timeline = null; // Clear old data
-    timeRange = range;
-  }
-
-  // Derived state for empty check - ensures proper reactivity
   let isEmpty = $derived(
     timeline !== null &&
       timeline.recent7d.events.length === 0 &&
@@ -70,6 +66,44 @@
   );
 
   let checkBuckets = $derived(timeline?.recent7d.checkBuckets ?? []);
+
+  async function fetchData(range: TimeRange, silent: boolean = false) {
+    await fetchState.run(
+      async () => {
+        await whenReady();
+        const rpc = getMainRPC();
+
+        const [nextTimeline, advancedSettings] = await Promise.all([
+          rpc.request.getIncidentTimeline({ range }),
+          rpc.request.getAdvancedSettings({}) as Promise<AdvancedSettings>,
+        ]);
+
+        timeline = nextTimeline;
+        pollingIntervalMs = advancedSettings.pollingInterval;
+        anchorDate = new Date(); // snapshot "now" at the moment data arrived
+      },
+      { silent },
+    );
+  }
+
+  function handleTimeRangeChange(range: TimeRange) {
+    if (range === timeRange) return; // No change (prevents re-clicking same)
+    fetchState.clearError();
+    fetchState.beginInitialLoading(); // Show skeletons immediately on range change
+    timeline = null; // Clear old data
+    timeRange = range;
+  }
+
+  // Fetch on mount and when timeRange changes
+  $effect(() => {
+    fetchData(timeRange, true);
+  });
+
+  // Subscribe to agent sync events to refresh data
+  $effect(() => {
+    syncKey = onAgentSync(() => fetchData(timeRange, true));
+    return () => offAgentSync(syncKey); // cleanup on unmount
+  });
 </script>
 
 <div class="flex h-full flex-col">
@@ -80,11 +114,19 @@
     {currentPath}
   >
     {#snippet actions()}
-      <TimeRangePicker
-        value={timeRange}
-        options={TIME_RANGES}
-        onchange={handleTimeRangeChange}
-      />
+      <div class="flex items-center gap-3">
+        {#if showRefreshing}
+          <span class="text-muted-foreground text-xs"> updating... </span>
+        {/if}
+        <TimeRangePicker
+          value={timeRange}
+          options={TIME_RANGES}
+          onchange={handleTimeRangeChange}
+          onrefresh={() => fetchData(timeRange, true)}
+          {refreshing}
+          lastUpdated={shouldShowLastUpdated ? anchorDate : undefined}
+        />
+      </div>
     {/snippet}
   </PageHeader>
 
@@ -101,15 +143,15 @@
         {#snippet cta()}
           <Button
             variant="outline"
-            disabled={loading}
-            onclick={() => fetchData()}
+            disabled={refreshing}
+            onclick={() => fetchData(timeRange)}
           >
             <Icon name="alertCircle" />
-            {loading ? "Retrying..." : "Retry"}
+            {refreshing ? "Retrying..." : "Retry"}
           </Button>
         {/snippet}
       </ErrorState>
-    {:else if loading}
+    {:else if initialLoading}
       <div class="space-y-4">
         <Skeleton class="mb-6 h-29 w-120 rounded-lg" />
         <Skeleton class="mb-6 h-8 w-full rounded-lg" />
@@ -124,6 +166,7 @@
         {checkBuckets}
         agents={timeline.agents}
         range={timeRange}
+        {anchorDate}
       />
     {:else}
       <Empty.Root class="border border-dashed">

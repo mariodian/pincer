@@ -4,7 +4,7 @@
     RANGE_SHORT_LABELS,
     REPORT_RANGES,
   } from "$shared/time-range-helpers";
-  import type { TimeRange } from "$shared/types";
+  import type { AdvancedSettings, TimeRange } from "$shared/types";
   import { toast } from "svelte-sonner";
 
   import { AgentTable } from "$lib/components/reports";
@@ -16,9 +16,17 @@
   import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
-  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import { MIN_POLLING_INTERVAL_MS } from "$lib/constants";
+  import {
+    getMainRPC,
+    offAgentSync,
+    onAgentSync,
+    whenReady,
+  } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import { cn } from "$lib/utils";
+  import { createDebouncedVisibility } from "$lib/utils/debounced-visibility.svelte";
+  import { createFetchState } from "$lib/utils/fetch-state.svelte";
 
   const REPORT_RANGE_OPTIONS = REPORT_RANGES.map((r) => ({
     value: r,
@@ -29,15 +37,31 @@
 
   let sortKey = $state<SortKey>("uptime");
   let sortAsc = $state(false);
+  let report = $state<UptimeReport | null>(null);
+  let timeRange = $state<TimeRange>("30d");
+  let exporting = $state(false);
+  let anchorDate = $state(new Date());
+  let pollingIntervalMs = $state<number | null>(null);
+  let syncKey: string;
+
+  const fetchState = createFetchState();
 
   let currentPath = $derived($currentRoute);
   let prevPath = $derived($previousRoute);
 
-  let loading = $state(true);
-  let exporting = $state(false);
-  let error = $state<string | null>(null);
-  let report = $state<UptimeReport | null>(null);
-  let range = $state<TimeRange>("30d");
+  let error = $derived(fetchState.error);
+  let initialLoading = $derived(fetchState.initialLoading);
+  let refreshing = $derived(fetchState.refreshing);
+
+  const refreshingIndicator = createDebouncedVisibility(
+    () => refreshing && !initialLoading,
+    1000,
+  );
+
+  let showRefreshing = $derived(refreshingIndicator.visible);
+  let shouldShowLastUpdated = $derived(
+    pollingIntervalMs !== null && pollingIntervalMs >= MIN_POLLING_INTERVAL_MS,
+  );
 
   const reportWithData = $derived(
     report !== null && report.agents.some((agent) => agent.hasData)
@@ -45,30 +69,26 @@
       : null,
   );
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      sortAsc = !sortAsc;
-    } else {
-      sortKey = key;
-      sortAsc = key !== "uptime" && key !== "checks";
-    }
+  async function fetchData(range: TimeRange, silent: boolean = false) {
+    await fetchState.run(
+      async () => {
+        await whenReady();
+        const rpc = getMainRPC();
+
+        const [data, advancedSettings] = await Promise.all([
+          rpc.request.getUptimeReport({ range }),
+          rpc.request.getAdvancedSettings({}) as Promise<AdvancedSettings>,
+        ]);
+
+        report = data;
+        pollingIntervalMs = advancedSettings.pollingInterval;
+        anchorDate = new Date(); // snapshot "now" at the moment data arrived
+      },
+      { silent },
+    );
   }
 
-  async function fetchData() {
-    loading = true;
-    error = null;
-    try {
-      await whenReady();
-      const rpc = getMainRPC();
-      report = await rpc.request.getUptimeReport({ range });
-    } catch (e) {
-      error = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading = false;
-    }
-  }
-
-  async function handleExportHtml() {
+  async function handleExportHtml(range: TimeRange) {
     exporting = true;
     try {
       await whenReady();
@@ -106,10 +126,29 @@
     }
   }
 
+  function handleTimeRangeChange(range: TimeRange) {
+    fetchState.clearError();
+    fetchState.beginInitialLoading(); // Show skeletons immediately on range change
+    timeRange = range;
+  }
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      sortAsc = !sortAsc;
+    } else {
+      sortKey = key;
+      sortAsc = key !== "uptime" && key !== "checks";
+    }
+  }
+
   $effect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    range; // reactive dependency
-    fetchData();
+    fetchData(timeRange, true);
+  });
+
+  // Subscribe to agent sync events to refresh data
+  $effect(() => {
+    syncKey = onAgentSync(() => fetchData(timeRange, true));
+    return () => offAgentSync(syncKey); // cleanup on unmount
   });
 </script>
 
@@ -122,10 +161,18 @@
   >
     {#snippet actions()}
       <div class="flex items-center gap-2">
+        {#if showRefreshing}
+          <span class="text-muted-foreground text-xs">updating...</span>
+        {/if}
         <TimeRangePicker
-          value={range}
+          value={timeRange}
           options={REPORT_RANGE_OPTIONS}
-          onchange={(r) => (range = r)}
+          onchange={handleTimeRangeChange}
+          onrefresh={shouldShowLastUpdated
+            ? () => fetchData(timeRange, true)
+            : undefined}
+          {refreshing}
+          lastUpdated={shouldShowLastUpdated ? anchorDate : undefined}
         />
       </div>
     {/snippet}
@@ -144,15 +191,15 @@
         {#snippet cta()}
           <Button
             variant="outline"
-            disabled={loading}
-            onclick={() => fetchData()}
+            disabled={refreshing}
+            onclick={() => fetchData(timeRange)}
           >
             <Icon name="alertCircle" />
-            {loading ? "Retrying..." : "Retry"}
+            {refreshing ? "Retrying..." : "Retry"}
           </Button>
         {/snippet}
       </ErrorState>
-    {:else if loading}
+    {:else if initialLoading}
       <div class="space-y-4">
         <div class={["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"]}>
           <Skeleton class="h-25 w-full rounded-lg" />
@@ -177,8 +224,8 @@
           <Button
             variant="outline"
             size="sm"
-            disabled={exporting || loading}
-            onclick={handleExportHtml}
+            disabled={exporting || refreshing || initialLoading}
+            onclick={() => handleExportHtml(timeRange)}
           >
             <Icon name="download" />
             {exporting ? "Exporting..." : "Export HTML"}

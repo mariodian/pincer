@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Duration, DurationUnits } from "@layerstack/utils";
   import {
     statusIcons,
     statusLabels,
@@ -14,7 +13,7 @@
   import { Icon } from "$lib/components/ui/icon";
   import * as Timeline from "$lib/components/ui/timeline";
   import { cn } from "$lib/utils";
-  import { formatDateTime } from "$lib/utils/datetime";
+  import { formatDateTime, formatElapsedDuration } from "$lib/utils/datetime";
 
   interface Props {
     events: IncidentEvent[];
@@ -64,31 +63,10 @@
   const isOpen = $derived(!recoveredEvent);
 
   const duration = $derived(() => {
-    if (!openedEvent) return null;
-    const endTime = recoveredEvent?.eventAt ?? Date.now();
-    const diff = endTime - openedEvent.eventAt;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    const duration = new Duration({
-      start: new Date(openedEvent.eventAt),
-      end: new Date(endTime),
-    });
-
-    const minUnits =
-      days > 0
-        ? DurationUnits.Day
-        : hours > 0
-          ? DurationUnits.Hour
-          : minutes > 0
-            ? DurationUnits.Minute
-            : DurationUnits.Second;
-
-    return duration.format({
-      minUnits: minUnits,
-      variant: "short",
-    });
+    return formatElapsedDuration(
+      openedEvent?.eventAt,
+      recoveredEvent?.eventAt ?? Date.now(),
+    );
   });
 </script>
 
