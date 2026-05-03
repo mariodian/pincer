@@ -246,10 +246,8 @@
       >
     {/if}
 
-    <Button onclick={handleRefresh} size="xs" class="flex-0">
-      <div class={["refresh-icon", isRefreshing ? "is-spinning" : ""]}>
-        <Icon name="refresh" size={14} />
-      </div>
+    <Button onclick={handleRefresh} size="xs" class="inline-flex flex-0">
+      <Icon name="refresh" animate={isRefreshing} size={14} />
     </Button>
   </div>
 
@@ -371,15 +369,6 @@
   .header,
   .footer {
     transition: box-shadow 200ms ease;
-  }
-
-  .refresh-icon {
-    /* display: block; */
-    transform-origin: 50% 50%;
-  }
-
-  .refresh-icon.is-spinning {
-    animation: refresh-spin 700ms linear infinite;
   }
 
   @keyframes refresh-spin {

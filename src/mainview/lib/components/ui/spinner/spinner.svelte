@@ -26,5 +26,6 @@
 	{strokeWidth}
 	ariaLabel={ariaLabel}
 	class={cn("animate-spin", className)}
+  animate={true}
 	{role}
 />

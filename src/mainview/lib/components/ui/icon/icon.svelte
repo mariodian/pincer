@@ -12,6 +12,7 @@
 		class?: string;
 		role?: string;
 		stroke?: string;
+    animate?: boolean;
 	}
 
 	let {
@@ -23,9 +24,20 @@
 		class: className,
 		role,
 		stroke,
+    animate = false,
 	}: Props = $props();
 
-	let resolvedClass = $derived(cn(className ?? undefined));
+	let resolvedClass = $derived(
+		cn(
+      // Centering normalization
+			"inline-block align-middle [transform-box:fill-box] [transform-origin:center]",
+      "p-0 animate-spin",
+			className ?? undefined,
+      animate
+        ? "[animation-play-state:running]"
+        : "[animation-play-state:paused]",
+		),
+	);
 	let resolvedColor = $derived(color);
 
 	// Determine which source to use
