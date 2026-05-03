@@ -1,33 +1,18 @@
 <script lang="ts">
   import { push } from "@bmlt-enabled/svelte-spa-router";
-  import type {
-    AgentWithColor,
-    DashboardStats,
-    TimeSeriesPoint,
-  } from "$shared/rpc";
-  import type { AdvancedSettings, Settings, TimeRange } from "$shared/types";
+  import type { AgentWithColor, TimeSeriesPoint } from "$shared/rpc";
+  import type { Settings, TimeRange } from "$shared/types";
 
   import { StatusPieChart } from "$lib/components/dashboard";
   import KpiSummary from "$lib/components/dashboard/KpiSummary.svelte";
   import MetricChart from "$lib/components/dashboard/MetricChart.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
+  import { DataPage } from "$lib/components/ui/data-page";
   import * as Empty from "$lib/components/ui/empty/index.js";
-  import { ErrorState } from "$lib/components/ui/error-state/index.js";
   import { Icon } from "$lib/components/ui/icon";
-  import { PageBody, PageHeader } from "$lib/components/ui/page";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { TimeRangePicker } from "$lib/components/ui/time-range-picker";
-  import { MIN_POLLING_INTERVAL_MS } from "$lib/constants";
-  import {
-    getMainRPC,
-    offAgentSync,
-    onAgentSync,
-    whenReady,
-  } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
   import { cn } from "$lib/utils";
-  import { createDebouncedVisibility } from "$lib/utils/debounced-visibility.svelte";
-  import { createFetchState } from "$lib/utils/fetch-state.svelte";
   import {
     aggregateByDay,
     fillHourlySlots,
@@ -37,57 +22,62 @@
     formatUptime,
     pivotTimeSeries,
   } from "$lib/utils/metrics-data";
+  import { createPolledPage } from "$lib/utils/polled-page.svelte";
 
-  type TimeRangeOption = { value: TimeRange; label: string };
-
-  const DEFAULT_TIME_RANGE: TimeRange = "7d";
-  const TIME_RANGES: TimeRangeOption[] = [
+  const TIME_RANGES: { value: TimeRange; label: string }[] = [
     { value: "24h", label: "24h" },
     { value: "7d", label: "7d" },
     { value: "30d", label: "30d" },
   ];
 
-  let stats = $state<DashboardStats | null>(null);
-  let timeRange = $state<TimeRange>(DEFAULT_TIME_RANGE);
   let showDisabledAgents = $state(false);
-  let anchorDate = $state(new Date());
-  let pollingIntervalMs = $state<number | null>(null);
 
-  // Per-chart agent filter state
   let selectedUptime = $state<number[]>([]);
   let selectedResponse = $state<number[]>([]);
   let selectedResponseBar = $state<number[]>([]);
   let selectedStatus = $state<number[]>([]);
-  let syncKey: string;
 
   let chartAgents = $state<AgentWithColor[]>([]);
   let chartTimeSeries = $state<TimeSeriesPoint[]>([]);
 
-  const fetchState = createFetchState();
+  const page = createPolledPage({
+    defaultRange: "7d",
+    fetch: async (rpc, range) => {
+      const [settings, stats] = await Promise.all([
+        rpc.getSettings({}) as Promise<Settings>,
+        rpc.getDashboardStats({ range }),
+      ]);
+      return { settings, stats };
+    },
+    onData: (data) => {
+      showDisabledAgents = data.settings.showDisabledAgents;
 
-  let currentPath = $derived($currentRoute);
-  let prevPath = $derived($previousRoute);
+      chartAgents = showDisabledAgents
+        ? data.stats.agents
+        : data.stats.agents.filter((a) => a.enabled !== false);
+      chartTimeSeries = showDisabledAgents
+        ? data.stats.timeSeries
+        : data.stats.timeSeries.filter((p) =>
+            chartAgents.some((a) => a.id === p.agentId),
+          );
 
-  let error = $derived(fetchState.error);
-  let initialLoading = $derived(fetchState.initialLoading);
-  let refreshing = $derived(fetchState.refreshing);
+      const allIds = chartAgents.map((a) => a.id);
+      if (selectedUptime.length === 0) selectedUptime = allIds;
+      if (selectedResponse.length === 0) selectedResponse = allIds;
+      if (selectedResponseBar.length === 0) selectedResponseBar = allIds;
+      if (selectedStatus.length === 0) selectedStatus = allIds;
+    },
+  });
 
-  const refreshingIndicator = createDebouncedVisibility(
-    () => refreshing && !initialLoading,
-    1000,
-  );
+  let stats = $derived(page.data?.stats ?? null);
+  let isEmpty = $derived(stats === null || chartAgents.length === 0);
 
-  let showRefreshing = $derived(refreshingIndicator.visible);
-  let xAxisFormat = $derived(timeRange === "24h" ? formatHour : formatDay);
-  let shouldShowLastUpdated = $derived(
-    pollingIntervalMs !== null && pollingIntervalMs >= MIN_POLLING_INTERVAL_MS,
-  );
+  let xAxisFormat = $derived(page.timeRange === "24h" ? formatHour : formatDay);
 
-  // Chart data — derived reactively from source state
   let uptimeData = $derived.by(() => {
     let pivoted = pivotTimeSeries(chartTimeSeries, chartAgents, "uptimePct");
     pivoted = fillHourlySlots(pivoted, chartAgents, "uptime");
-    if (timeRange !== "24h") pivoted = aggregateByDay(pivoted);
+    if (page.timeRange !== "24h") pivoted = aggregateByDay(pivoted);
     return pivoted;
   });
 
@@ -98,51 +88,10 @@
       "avgResponseMs",
     );
     pivoted = fillHourlySlots(pivoted, chartAgents, "response");
-    if (timeRange !== "24h") pivoted = aggregateByDay(pivoted);
+    if (page.timeRange !== "24h") pivoted = aggregateByDay(pivoted);
     return pivoted;
   });
 
-  // Fetch data
-  async function fetchData(range: TimeRange, silent: boolean = false) {
-    await fetchState.run(
-      async () => {
-        await whenReady();
-        const rpc = getMainRPC();
-
-        // Fetch settings and stats in parallel
-        const [settings, result, advancedSettings] = await Promise.all([
-          rpc.request.getSettings({}) as Promise<Settings>,
-          rpc.request.getDashboardStats({ range }),
-          rpc.request.getAdvancedSettings({}) as Promise<AdvancedSettings>,
-        ]);
-
-        stats = result;
-        showDisabledAgents = settings.showDisabledAgents;
-        pollingIntervalMs = advancedSettings.pollingInterval;
-        anchorDate = new Date(); // snapshot "now" at the moment data arrived
-
-        // Filter disabled agents on the client side
-        chartAgents = showDisabledAgents
-          ? result.agents
-          : result.agents.filter((a) => a.enabled !== false);
-        chartTimeSeries = showDisabledAgents
-          ? result.timeSeries
-          : result.timeSeries.filter((p) =>
-              chartAgents.some((a) => a.id === p.agentId),
-            );
-
-        // Initialize all visible agents as selected if empty
-        const allIds = chartAgents.map((a) => a.id);
-        if (selectedUptime.length === 0) selectedUptime = allIds;
-        if (selectedResponse.length === 0) selectedResponse = allIds;
-        if (selectedResponseBar.length === 0) selectedResponseBar = allIds;
-        if (selectedStatus.length === 0) selectedStatus = allIds;
-      },
-      { silent },
-    );
-  }
-
-  // Toggle helper — returns a setter for the given $state array
   function toggleAgent(selected: number[]) {
     return (id: number) => {
       const idx = selected.indexOf(id);
@@ -152,179 +101,137 @@
       return selected.filter((sid) => sid !== id);
     };
   }
-
-  function handleTimeRangeChange(range: TimeRange) {
-    fetchState.clearError();
-    fetchState.beginInitialLoading(); // Show skeletons immediately on range change
-    timeRange = range;
-  }
-
-  // Fetch on mount and when timeRange changes
-  $effect(() => {
-    fetchData(timeRange, true);
-  });
-
-  // Subscribe to agent sync events to refresh data
-  $effect(() => {
-    syncKey = onAgentSync(() => fetchData(timeRange, true));
-    return () => offAgentSync(syncKey); // cleanup on unmount
-  });
 </script>
 
-<div class="flex h-full flex-col">
-  <PageHeader
-    title="Dashboard"
-    description="Monitor agent health and performance"
-    {prevPath}
-    {currentPath}
-  >
-    {#snippet actions()}
-      <div class="flex items-center gap-2">
-        {#if showRefreshing}
-          <span class="text-muted-foreground text-xs">updating...</span>
-        {/if}
-        <TimeRangePicker
-          value={timeRange}
-          options={TIME_RANGES}
-          onchange={handleTimeRangeChange}
-          onrefresh={shouldShowLastUpdated
-            ? () => fetchData(timeRange, true)
-            : undefined}
-          {refreshing}
-          lastUpdated={shouldShowLastUpdated ? anchorDate : undefined}
-        />
-      </div>
-    {/snippet}
-  </PageHeader>
+<DataPage
+  title="Dashboard"
+  description="Monitor agent health and performance"
+  prevPath={$previousRoute}
+  currentPath={$currentRoute}
+  errorTitle="Failed to load dashboard"
+  error={page.error}
+  initialLoading={page.initialLoading}
+  refreshing={page.refreshing}
+  showRefreshing={page.showRefreshing}
+  timeRange={page.timeRange}
+  timeRangeOptions={TIME_RANGES}
+  onTimeRangeChange={page.handleTimeRangeChange}
+  onRefresh={page.refresh}
+  lastUpdated={page.shouldShowLastUpdated ? page.anchorDate : undefined}
+  onRetry={() => page.retry()}
+  {isEmpty}
+>
+  {#snippet skeleton()}
+    <div class={["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"]}>
+      <Skeleton class="h-25 w-full rounded-lg" />
+      <Skeleton class="h-25 w-full rounded-lg" />
+      <Skeleton class="h-25 w-full rounded-lg" />
+      <Skeleton class="h-25 w-full rounded-lg" />
+    </div>
+    <div class="mt-8 grid gap-4 lg:mt-12 lg:gap-6">
+      <Skeleton class="h-75 w-full rounded-lg" />
+      <Skeleton class="h-75 w-full rounded-lg" />
+      <Skeleton class="h-75 w-full rounded-lg" />
+      <Skeleton class="h-75 w-full rounded-lg" />
+    </div>
+  {/snippet}
 
-  <PageBody>
-    {#if error}
-      <ErrorState
-        class="flex-1 py-16"
-        title="Failed to load dashboard"
-        description={error ?? undefined}
-      >
-        {#snippet icon()}
-          <Icon name="alertCircle" class="text-destructive size-5" />
-        {/snippet}
-        {#snippet cta()}
-          <Button
-            variant="outline"
-            disabled={refreshing}
-            onclick={() => fetchData(timeRange)}
-          >
-            <Icon name="alertCircle" />
-            {refreshing ? "Retrying..." : "Retry"}
-          </Button>
-        {/snippet}
-      </ErrorState>
-    {:else if initialLoading}
-      <div class={["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"]}>
-        <Skeleton class="h-25 w-full rounded-lg" />
-        <Skeleton class="h-25 w-full rounded-lg" />
-        <Skeleton class="h-25 w-full rounded-lg" />
-        <Skeleton class="h-25 w-full rounded-lg" />
-      </div>
-      <div class="mt-8 grid gap-4 lg:mt-12 lg:gap-6">
-        <Skeleton class="h-75 w-full rounded-lg" />
-        <Skeleton class="h-75 w-full rounded-lg" />
-        <Skeleton class="h-75 w-full rounded-lg" />
-        <Skeleton class="h-75 w-full rounded-lg" />
-      </div>
-    {:else if stats && chartAgents.length > 0}
-      <!-- KPI Row -->
-      <KpiSummary
-        class={cn(["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"])}
-        data={stats.kpis}
+  {#snippet content()}
+    <KpiSummary
+      class={cn(["mb-6 grid gap-3 lg:gap-4", "grid-cols-2 lg:grid-cols-4"])}
+      data={page.data!.stats.kpis}
+    />
+
+    <div
+      class={[
+        "mt-8 grid gap-4 lg:mt-12 lg:gap-6",
+        "3xl:grid-cols-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3",
+      ]}
+    >
+      <MetricChart
+        chartType="line"
+        title="Uptime % Over Time"
+        description="Agent availability over the selected period"
+        data={uptimeData}
+        xKey="hourTimestamp"
+        agents={chartAgents}
+        selectedIds={selectedUptime}
+        onToggleAgent={(id) =>
+          (selectedUptime = toggleAgent(selectedUptime)(id))}
+        yPrefix="uptime"
+        xFormat={xAxisFormat}
+        yFormat={formatUptime}
+        padding={{
+          left: 40,
+          right: 20,
+          top: 20,
+          bottom: 40,
+        }}
+        gaps={true}
       />
 
-      <div
-        class={[
-          "mt-8 grid gap-4 lg:mt-12 lg:gap-6",
-          "3xl:grid-cols-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3",
-        ]}
-      >
-        <MetricChart
-          chartType="line"
-          title="Uptime % Over Time"
-          description="Agent availability over the selected period"
-          data={uptimeData}
-          xKey="hourTimestamp"
-          agents={chartAgents}
-          selectedIds={selectedUptime}
-          onToggleAgent={(id) =>
-            (selectedUptime = toggleAgent(selectedUptime)(id))}
-          yPrefix="uptime"
-          xFormat={xAxisFormat}
-          yFormat={formatUptime}
-          padding={{
-            left: 40,
-            right: 20,
-            top: 20,
-            bottom: 40,
-          }}
-          gaps={true}
-        />
+      <MetricChart
+        chartType="line"
+        title="Response Time"
+        description="Average response time per agent"
+        data={responseData}
+        xKey="hourTimestamp"
+        agents={chartAgents}
+        selectedIds={selectedResponse}
+        onToggleAgent={(id) =>
+          (selectedResponse = toggleAgent(selectedResponse)(id))}
+        yPrefix="response"
+        xFormat={xAxisFormat}
+        yFormat={formatMs}
+        padding={{
+          left: 40,
+          right: 20,
+          top: 20,
+          bottom: 40,
+        }}
+        gaps={true}
+      />
 
-        <MetricChart
-          chartType="line"
-          title="Response Time"
-          description="Average response time per agent"
-          data={responseData}
-          xKey="hourTimestamp"
-          agents={chartAgents}
-          selectedIds={selectedResponse}
-          onToggleAgent={(id) =>
-            (selectedResponse = toggleAgent(selectedResponse)(id))}
-          yPrefix="response"
-          xFormat={xAxisFormat}
-          yFormat={formatMs}
-          padding={{
-            left: 40,
-            right: 20,
-            top: 20,
-            bottom: 40,
-          }}
-          gaps={true}
-        />
+      <StatusPieChart
+        title="Status Distribution"
+        description="Aggregate ok / offline / error counts"
+        timeSeries={chartTimeSeries}
+        agents={chartAgents}
+        selectedIds={selectedStatus}
+        onToggleAgent={(id) =>
+          (selectedStatus = toggleAgent(selectedStatus)(id))}
+        height={200}
+        padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
+      />
 
-        <StatusPieChart
-          title="Status Distribution"
-          description="Aggregate ok / offline / error counts"
-          timeSeries={chartTimeSeries}
-          agents={chartAgents}
-          selectedIds={selectedStatus}
-          onToggleAgent={(id) =>
-            (selectedStatus = toggleAgent(selectedStatus)(id))}
-          height={200}
-          padding={{ left: 0, right: 80, bottom: 0, top: 0 }}
-        />
+      <MetricChart
+        chartType="bar"
+        title="Response Time (Bar)"
+        description="Compare response times visually (in ms)"
+        data={responseData}
+        xKey="hourTimestamp"
+        agents={chartAgents}
+        selectedIds={selectedResponseBar}
+        onToggleAgent={(id) =>
+          (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
+        yPrefix="response"
+        xFormat={xAxisFormat}
+        yFormat={formatMs}
+        padding={{
+          left: 0,
+          right: 0,
+          top: 20,
+          bottom: 32,
+        }}
+        gradient={true}
+        strokeWidth={0}
+        timeRange={page.timeRange}
+      />
+    </div>
+  {/snippet}
 
-        <MetricChart
-          chartType="bar"
-          title="Response Time (Bar)"
-          description="Compare response times visually (in ms)"
-          data={responseData}
-          xKey="hourTimestamp"
-          agents={chartAgents}
-          selectedIds={selectedResponseBar}
-          onToggleAgent={(id) =>
-            (selectedResponseBar = toggleAgent(selectedResponseBar)(id))}
-          yPrefix="response"
-          xFormat={xAxisFormat}
-          yFormat={formatMs}
-          padding={{
-            left: 0,
-            right: 0,
-            top: 20,
-            bottom: 32,
-          }}
-          gradient={true}
-          strokeWidth={0}
-          {timeRange}
-        />
-      </div>
-    {:else if stats && stats.agents.length > 0}
+  {#snippet empty()}
+    {#if stats && stats.agents.length > 0}
       <Empty.Root class="border border-dashed">
         <Empty.Header>
           <Empty.Media variant="icon">
@@ -361,5 +268,5 @@
         </Empty.Content>
       </Empty.Root>
     {/if}
-  </PageBody>
-</div>
+  {/snippet}
+</DataPage>
