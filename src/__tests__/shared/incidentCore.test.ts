@@ -159,6 +159,24 @@ describe("incidentCore", () => {
         expect(deps._events[0].agentId).toBe(1);
         expect(deps._events[1].agentId).toBe(2);
       });
+
+      it("should reattach to existing incident instead of creating a duplicate", () => {
+        const deps = createMockIncidentDeps({
+          getExistingOpenIncident: () => "existing-incident-1",
+        });
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 2,
+          recoveryThreshold: 2,
+        });
+
+        tracker.recordCheck(1, "offline");
+        tracker.recordCheck(1, "offline");
+
+        expect(tracker.hasOpenIncident(1)).toBe(true);
+        expect(tracker.getOpenIncidentId(1)).toBe("existing-incident-1");
+        // No new event should be inserted (existing incident reused)
+        expect(deps._events.length).toBe(0);
+      });
     });
 
     describe("reconstructState", () => {
@@ -194,6 +212,34 @@ describe("incidentCore", () => {
 
         tracker.reconstructState([{ id: 1 }]);
 
+        expect(tracker.hasOpenIncident(1)).toBe(true);
+        expect(tracker.getOpenIncidentId(1)).toBe("1-handoff");
+      });
+
+      it("should reconstruct handed-off incident even if linkedIncidentId triggers false positive", () => {
+        const deps = createMockIncidentDeps({
+          getOpenIncidents: () => [],
+          getHandedOffIncidents: () => [
+            {
+              agentId: 1,
+              incidentId: "1-handoff",
+              linkedIncidentId: "daemon-old",
+            },
+          ],
+          // hasIncidentRecovered("daemon-old") would return true (simulating the
+          // false positive where a different daemon incident links to the same
+          // local ID and recovered). But hasIncidentRecovered is only called with
+          // the local incidentId ("1-handoff"), which returns false.
+          hasIncidentRecovered: (id) => id === "daemon-old",
+        });
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 3,
+          recoveryThreshold: 2,
+        });
+
+        tracker.reconstructState([{ id: 1 }]);
+
+        // Should still be open because "1-handoff" is not resolved
         expect(tracker.hasOpenIncident(1)).toBe(true);
         expect(tracker.getOpenIncidentId(1)).toBe("1-handoff");
       });
