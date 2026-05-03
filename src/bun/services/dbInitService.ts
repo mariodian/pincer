@@ -1,5 +1,6 @@
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
+import { getDatabaseInstances } from "../../shared/db-core";
 import { getMeta, hasMeta, setMeta } from "../storage/sqlite/appMetaRepo";
 import {
   settingsAdvanced,
@@ -34,6 +35,9 @@ export async function runDatabaseInitialization(
 
   // Handle fresh install platform-specific defaults
   await handleFreshInstallDefaults(db);
+
+  // Fix for broken migrations 0022/0024 — see migration file comments for details
+  fixMissingUniqueIndexes();
 }
 
 function seedSettingsGeneral(
@@ -130,5 +134,63 @@ export function getInitialVersion(): string | null {
 export function setInitialVersion(version: string): void {
   if (!hasMeta("initial_version")) {
     setMeta("initial_version", version);
+  }
+}
+
+/**
+ * Fix missing unique indexes from broken migrations 0022 and 0024.
+ *
+ * The original migration files were missing --> statement-breakpoint between
+ * their two SQL statements (DELETE + CREATE UNIQUE INDEX). Drizzle splits .sql
+ * files by that delimiter, and bun:sqlite's prepare() only executes the first
+ * statement in a multi-statement string. So the CREATE UNIQUE INDEX was
+ * silently skipped, even though the migration was recorded as applied.
+ *
+ * This one-time fix re-applies both deduplication and unique index creation
+ * for databases that ran the broken version (v0.3.6 and earlier).
+ * Fresh databases are handled by the fixed migration files.
+ *
+ * Fixed 2026-05-03.
+ */
+function fixMissingUniqueIndexes(): void {
+  if (hasMeta("fix_0022_0024_unique_indexes")) return;
+
+  const { sqlite } = getDatabaseInstances() ?? {};
+  if (!sqlite) return;
+
+  try {
+    // 0022: Deduplicate checks + add unique index
+    sqlite.exec(`
+      DELETE FROM checks
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid)
+        FROM checks
+        GROUP BY agent_id, checked_at
+      );
+    `);
+    sqlite.run(
+      `CREATE UNIQUE INDEX IF NOT EXISTS uniq_checks_agent_time ON checks (agent_id, checked_at)`,
+    );
+
+    // 0024: Deduplicate incident_events + add unique index
+    sqlite.exec(`
+      DELETE FROM incident_events
+      WHERE id NOT IN (
+        SELECT MIN(id)
+        FROM incident_events
+        GROUP BY agent_id, incident_id, event_type, event_at
+      );
+    `);
+    sqlite.run(
+      `CREATE UNIQUE INDEX IF NOT EXISTS uniq_incident_events ON incident_events (agent_id, incident_id, event_type, event_at)`,
+    );
+
+    setMeta("fix_0022_0024_unique_indexes", "true");
+    logger.info(
+      "db-init",
+      "Applied fix for missing unique indexes from migrations 0022/0024",
+    );
+  } catch (error) {
+    logger.warn("db-init", "Failed to apply unique index fix:", error);
   }
 }
