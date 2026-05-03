@@ -5,6 +5,37 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.6] - 2026-05-03
+
+### Added
+
+- Added auto refresh and manual page refresh support so users can keep data current automatically or fetch the latest data on demand.
+- Added namespace-aware daemon synchronization support, including namespace key handling in the sync pipeline.
+- Added Linux daemon installation script improvements and Homebrew postflight quarantine-removal support.
+- Added broader automated test coverage for daemon client flows, SQLite repositories, shared modules, and status synchronization behavior.
+- Added CI workflow configuration and concurrency controls for more reliable pipeline execution.
+
+### Changed
+
+- Refactored refresh-page behavior into a reusable data-page component.
+- Refactored status and incident processing by moving core logic into dedicated services and unifying incident recovery checks.
+- Refactored daemon sync architecture to support pull/sync flows, cursor-based pagination, and cleaner sync orchestration.
+- Refactored test infrastructure by introducing shared mocks and updated test type definitions.
+- Updated package scripts, TypeScript project configuration, ESLint setup, and dependency metadata to align desktop and daemon workflows.
+
+### Removed
+
+- Removed the unused daemon server module.
+
+### Fixed
+
+- Fixed incident filtering and handoff-event display behavior in timeline views.
+- Fixed incident tracking by propagating namespace identifiers through event recording and non-OK check handling.
+- Fixed daemon sync consistency by reconciling orphan agents, syncing namespaced agent data correctly, and aligning sync timestamps to hour boundaries.
+- Fixed dashboard status aggregation by correcting failed versus degraded count assignment.
+- Fixed icon animation handling for spinning indicators.
+- Fixed agent deletion behavior by cascading removal of related records.
+
 ## [v0.3.5] - 2026-04-25
 
 ### Added

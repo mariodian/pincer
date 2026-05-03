@@ -1,6 +1,6 @@
 {
   "name": "pincer",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Desktop application for monitoring and managing local AI agents via system tray, featuring health checks, status history, and performance charts.",
   "type": "module",
   "scripts": {

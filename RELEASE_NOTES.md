@@ -4,7 +4,8 @@ User-facing release history for Pincer. For full technical details, see [CHANGEL
 
 | Version                             | Date       | Summary                                               |
 | ----------------------------------- | ---------- | ----------------------------------------------------- |
-| [v0.3.5](./release-notes/v0.3.5.md) | 2026-04-25 | Homebrew update instructions, logging fixes            |
+| [v0.3.6](./release-notes/v0.3.6.md) | 2026-05-03 | Better daemon sync plus auto and manual refresh       |
+| [v0.3.5](./release-notes/v0.3.5.md) | 2026-04-25 | Homebrew update instructions, logging fixes           |
 | [v0.3.4](./release-notes/v0.3.4.md) | 2026-04-24 | Daemon reliability, linked incidents, faster timeline |
 | [v0.3.3](./release-notes/v0.3.3.md) | 2026-04-18 | Homebrew uninstall, Linux autostart fix               |
 | [v0.3.2](./release-notes/v0.3.2.md) | 2026-04-16 | Homebrew install support                              |
