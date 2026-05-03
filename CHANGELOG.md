@@ -5,6 +5,13 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.7] - 2026-05-04
+
+### Fixed
+
+- Fixed upgraded-install migrations by restoring statement delimiters so required unique indexes are applied reliably.
+- Fixed daemon sync statistics handling to keep reported status totals consistent.
+
 ## [v0.3.7-rc] - 2026-05-03
 
 ### Fixed
