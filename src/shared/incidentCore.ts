@@ -159,25 +159,36 @@ export function createIncidentTracker(
         }
       }
 
-      // Load recent checks to count consecutive non-OK checks
+      // Load recent checks to count consecutive non-OK and OK checks
       const recentChecks = deps.getAgentLastNChecks(
         agentId,
-        config.failureThreshold + 1,
+        Math.max(config.failureThreshold, config.recoveryThreshold) + 1,
       );
       if (recentChecks.length > 0) {
-        // Count consecutive non-OK checks from the most recent check working backward
         let consecutiveNonOk = 0;
+        let consecutiveOk = 0;
         let lastNonOkStatus: CheckStatus | null = null;
         let failureStartStatus: CheckStatus | null = null;
 
-        for (const check of recentChecks) {
-          if (check.status !== "ok") {
-            consecutiveNonOk++;
-            lastNonOkStatus = check.status;
-          } else {
-            // Found the OK check that preceded the failure streak
-            failureStartStatus = check.status;
-            break;
+        if (recentChecks[0].status !== "ok") {
+          // Most recent check is non-OK: count failure streak going backward
+          for (const check of recentChecks) {
+            if (check.status !== "ok") {
+              consecutiveNonOk++;
+              lastNonOkStatus = check.status;
+            } else {
+              failureStartStatus = check.status;
+              break;
+            }
+          }
+        } else if (state.openIncidentId !== null) {
+          // Most recent check is OK and there's an open incident: count recovery streak
+          for (const check of recentChecks) {
+            if (check.status === "ok") {
+              consecutiveOk++;
+            } else {
+              break;
+            }
           }
         }
 
@@ -185,14 +196,16 @@ export function createIncidentTracker(
         state.lastStatus = recentChecks[0].status;
         state.lastNonOkStatus = lastNonOkStatus;
 
-        // If there's an open incident and we found the status before failures, use it
-        if (state.openIncidentId !== null && failureStartStatus !== null) {
-          state.failureStartStatus = failureStartStatus;
+        if (state.openIncidentId !== null) {
+          if (failureStartStatus !== null) {
+            state.failureStartStatus = failureStartStatus;
+          }
+          state.recoveryCounter = consecutiveOk;
         }
 
         deps.log(
           "debug",
-          `[Agent ${agentId}] Reconstructed failureCounter=${consecutiveNonOk}, lastStatus=${state.lastStatus}, lastNonOkStatus=${lastNonOkStatus}, failureStartStatus=${failureStartStatus}`,
+          `[Agent ${agentId}] Reconstructed failureCounter=${consecutiveNonOk}, recoveryCounter=${consecutiveOk}, lastStatus=${state.lastStatus}, lastNonOkStatus=${lastNonOkStatus}, failureStartStatus=${failureStartStatus}`,
         );
       }
 
@@ -217,8 +230,19 @@ export function createIncidentTracker(
     state.failureCounter = 0;
 
     if (state.openIncidentId === null) {
-      // No open incident, nothing to do
-      return;
+      // Defensive: if state was lost or not reconstructed, check DB for existing
+      // open incident before giving up. This mirrors the guard in handleNonOkCheck.
+      const existingId = deps.getExistingOpenIncident(agentId);
+      if (existingId !== null) {
+        state.openIncidentId = existingId;
+        state.recoveryCounter = 0;
+        deps.log(
+          "info",
+          `[Agent ${agentId}] Reattached to existing incident for recovery: ${existingId}`,
+        );
+      } else {
+        return;
+      }
     }
 
     // There's an open incident, increment recovery counter

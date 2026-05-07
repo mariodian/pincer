@@ -438,6 +438,98 @@ describe("incidentCore", () => {
         expect(state?.recoveryCounter).toBe(0);
         expect(state?.openIncidentId).not.toBeNull();
       });
+
+      it("should recover open incident from DB when in-memory state is lost", () => {
+        const deps = createMockIncidentDeps();
+
+        // Simulate an open incident in the DB from a previous session
+        deps._events.push({
+          agentId: 1,
+          incidentId: "1-orphan",
+          eventType: "opened",
+          fromStatus: "ok",
+          toStatus: "offline",
+          reason: "Incident opened after 3 consecutive non-OK checks",
+          namespaceId: undefined,
+        });
+
+        // Fresh tracker — no reconstructState called (simulates lost in-memory state)
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 3,
+          recoveryThreshold: 2,
+        });
+
+        // OK checks should reattach to the DB incident and recover
+        tracker.recordCheck(1, "ok");
+        expect(tracker.hasOpenIncident(1)).toBe(true);
+        expect(tracker.getOpenIncidentId(1)).toBe("1-orphan");
+
+        tracker.recordCheck(1, "ok"); // recovery threshold reached
+        expect(tracker.hasOpenIncident(1)).toBe(false);
+        expect(deps._events.length).toBe(2);
+        expect(deps._events[1].eventType).toBe("recovered");
+      });
+
+      it("should reconstruct recoveryCounter from consecutive OK checks when incident is open", () => {
+        const deps = createMockIncidentDeps({
+          getOpenIncidents: () => [
+            { agentId: 1, incidentId: "1-open", openedAt: 5000 },
+          ],
+        });
+
+        // 3 consecutive OKs following an offline record
+        deps._checks.set(1, [
+          { status: "ok", checkedAt: 4000 },
+          { status: "ok", checkedAt: 3000 },
+          { status: "ok", checkedAt: 2000 },
+          { status: "offline", checkedAt: 1000 },
+        ]);
+
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 3,
+          recoveryThreshold: 2,
+        });
+
+        tracker.reconstructState([{ id: 1 }]);
+        const state = tracker.getAgentState(1);
+
+        expect(state?.openIncidentId).toBe("1-open");
+        expect(state?.recoveryCounter).toBe(3);
+        expect(state?.failureCounter).toBe(0);
+        expect(state?.lastStatus).toBe("ok");
+      });
+
+      it("should recover immediately after reconstructState when recoveryCounter already met", () => {
+        const deps = createMockIncidentDeps({
+          getOpenIncidents: () => [
+            { agentId: 1, incidentId: "1-open", openedAt: 5000 },
+          ],
+        });
+
+        // 2 consecutive OKs (meeting recoveryThreshold) following an offline record
+        deps._checks.set(1, [
+          { status: "ok", checkedAt: 3000 },
+          { status: "ok", checkedAt: 2000 },
+          { status: "offline", checkedAt: 1000 },
+        ]);
+
+        const tracker = createIncidentTracker(deps, {
+          failureThreshold: 3,
+          recoveryThreshold: 2,
+        });
+
+        tracker.reconstructState([{ id: 1 }]);
+
+        // recoveryCounter should be 2 — threshold already met
+        const state = tracker.getAgentState(1);
+        expect(state?.recoveryCounter).toBe(2);
+
+        // One more OK check should trigger recovery immediately
+        tracker.recordCheck(1, "ok");
+        expect(tracker.hasOpenIncident(1)).toBe(false);
+        expect(deps._events.length).toBe(1);
+        expect(deps._events[0].eventType).toBe("recovered");
+      });
     });
 
     describe("namespaceId support", () => {
