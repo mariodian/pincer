@@ -122,7 +122,7 @@ describe("namespaceId resolution", () => {
     });
 
     await push({ settings: { namespaceKey: "custom-namespace" } });
-    expect(capturedNamespaceHeader).toBe("custom-namespace");
+    expect(capturedNamespaceHeader).toBe("custom-namespace:test");
   });
 
   it("falls back to machineId when namespaceKey is empty", async () => {
@@ -135,7 +135,7 @@ describe("namespaceId resolution", () => {
     });
 
     await push({ settings: { namespaceKey: "" }, machineId: "machine-abc" });
-    expect(capturedNamespaceHeader).toBe("machine-abc");
+    expect(capturedNamespaceHeader).toBe("machine-abc:test");
   });
 });
 

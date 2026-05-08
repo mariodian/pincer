@@ -10,6 +10,7 @@ import {
   getLastUpdateCheck as getLastUpdateCheckFromDb,
   setLastUpdateCheck as setLastUpdateCheckToDb,
 } from "../storage/sqlite/appStateRepo";
+import { getChannel } from "../utils/channel";
 import { ONE_DAY_MS } from "../utils/constants";
 import { isBrewInstall } from "../utils/platform";
 
@@ -102,7 +103,7 @@ export const updateRequestHandlers = {
       const lastCheckTimestamp = getLastUpdateCheckFromDb();
       const version = await Updater.localInfo.version();
       const hash = await Updater.localInfo.hash();
-      const channel = await Updater.localInfo.channel();
+      const channel = await getChannel();
 
       // Use cached check result if available
       const updateAvailable = cachedUpdateCheck?.updateAvailable ?? false;

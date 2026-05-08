@@ -16,8 +16,9 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { $ } from "bun";
-import { Updater, Utils } from "electrobun/bun";
+import { Utils } from "electrobun/bun";
 
+import { getChannel } from "../utils/channel";
 import {
   getMainAppLoginItemStatus,
   isLoginItemEnabled,
@@ -31,22 +32,6 @@ import { isMacOS, supportsSMAppService } from "../utils/platform";
 import { logger } from "./loggerService";
 
 const BUNDLE_ID = "com.mariodian.pincer";
-
-/**
- * Get the current channel (stable, dev, canary).
- */
-async function getChannel(): Promise<string> {
-  try {
-    return await Updater.localInfo.channel();
-  } catch (error) {
-    logger.warn(
-      "autostart",
-      "Failed to get channel, defaulting to 'stable':",
-      error,
-    );
-    return "stable";
-  }
-}
 
 /**
  * Get the channel-specific bundle ID.

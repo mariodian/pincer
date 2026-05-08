@@ -10,8 +10,9 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { $ } from "bun";
-import { Updater, Utils } from "electrobun/bun";
+import { Utils } from "electrobun/bun";
 
+import { getChannel } from "../utils/channel";
 import { isBSD, isLinux, isMacOS, isWindows } from "../utils/platform";
 import { logger } from "./loggerService";
 import {
@@ -21,22 +22,6 @@ import {
 } from "./macOSAutostartService";
 
 const APP_NAME = "Pincer";
-
-/**
- * Get the current channel (stable, dev, canary).
- */
-async function getChannel(): Promise<string> {
-  try {
-    return await Updater.localInfo.channel();
-  } catch (error) {
-    logger.warn(
-      "autostart",
-      "Failed to get channel, defaulting to 'stable':",
-      error,
-    );
-    return "stable";
-  }
-}
 
 /**
  * Get the channel-specific app name.

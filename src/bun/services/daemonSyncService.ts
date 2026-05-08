@@ -11,6 +11,7 @@ import { insertChecksBatch } from "../storage/sqlite/checksRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
 import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
 import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
+import { getChannel } from "../utils/channel";
 import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { logger } from "./loggerService";
 import { getMachineId } from "./machineIdService";
@@ -29,7 +30,9 @@ function formatUptime(seconds: number): string {
 
 async function getNamespaceId(): Promise<string> {
   const settings = getDaemonSettings();
-  return settings.namespaceKey || (await getMachineId());
+  const base = settings.namespaceKey || (await getMachineId());
+  const channel = await getChannel();
+  return `${base}:${channel}`;
 }
 
 export function computeAgentHash(agent: Agent): string {
@@ -100,7 +103,9 @@ export async function pushAgentsToDaemonWith(
     return;
   }
 
-  const namespaceId = settings.namespaceKey || machineId;
+  const base = settings.namespaceKey || machineId;
+  const channel = await getChannel();
+  const namespaceId = `${base}:${channel}`;
   const client = new DaemonClient(
     settings.url,
     settings.secret,

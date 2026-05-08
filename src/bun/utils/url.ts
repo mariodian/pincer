@@ -1,13 +1,12 @@
-import { Updater } from "electrobun/bun";
-
 import { logger } from "../services/loggerService";
+import { getChannel } from "./channel";
 
 const DEV_SERVER_PORT = 5173;
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`;
 
 // Resolve the correct page URL for dev (Vite HMR) and packaged builds.
 export async function getViewUrl(pagePath = "index.html"): Promise<string> {
-  const channel = await Updater.localInfo.channel();
+  const channel = await getChannel();
   if (channel === "dev") {
     try {
       await fetch(DEV_SERVER_URL, { method: "HEAD" });

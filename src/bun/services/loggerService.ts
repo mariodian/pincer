@@ -9,10 +9,11 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-import { Updater, Utils } from "electrobun/bun";
+import { Utils } from "electrobun/bun";
 
 import { getDefaultLogLevel, type LogLevel } from "../../shared/logger";
 import { getMainWindow } from "../rpc/windowRegistry";
+import { getChannel } from "../utils/channel";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -150,7 +151,7 @@ function log(
 }
 
 export async function initLogger(): Promise<void> {
-  channel = await Updater.localInfo.channel();
+  channel = await getChannel();
 
   // Read env var overrides
   const envLevel = process.env.LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
