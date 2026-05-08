@@ -18,6 +18,7 @@ import { getMachineId } from "./machineIdService";
 
 const DAEMON_SYNC_KEY = "daemon_last_sync";
 const DAEMON_SYNC_STATS_KEY = "daemon_last_sync_stats";
+const DAEMON_LAST_NAMESPACE_KEY = "daemon_last_namespace_id";
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -92,20 +93,94 @@ export async function testDaemonConnection(): Promise<DaemonTestResult> {
   }
 }
 
+async function migrateNamespaceIfNeeded(
+  currentNamespaceId: string,
+  settings: ReturnType<typeof getDaemonSettings>,
+  machineId: string,
+  deps: {
+    getMeta: typeof getMeta;
+    setMeta: typeof setMeta;
+  } = { getMeta, setMeta },
+): Promise<void> {
+  const lastNamespaceId = deps.getMeta(DAEMON_LAST_NAMESPACE_KEY);
+
+  if (lastNamespaceId === currentNamespaceId) {
+    return;
+  }
+
+  let fromNamespace: string | null = lastNamespaceId;
+
+  if (!fromNamespace) {
+    const legacyNamespace = settings.namespaceKey || machineId;
+
+    const probeClient = new DaemonClient(
+      settings.url,
+      settings.secret,
+      legacyNamespace,
+      machineId,
+    );
+
+    try {
+      const legacyAgents = await probeClient.fetchAgents();
+      if (legacyAgents.length > 0) {
+        fromNamespace = legacyNamespace;
+      }
+    } catch {
+      logger.warn("daemon", "Could not probe for legacy namespace");
+    }
+  }
+
+  if (!fromNamespace) {
+    deps.setMeta(DAEMON_LAST_NAMESPACE_KEY, currentNamespaceId);
+    return;
+  }
+
+  logger.info(
+    "daemon",
+    `Namespace changed from ${fromNamespace} to ${currentNamespaceId}, migrating...`,
+  );
+
+  const oldClient = new DaemonClient(
+    settings.url,
+    settings.secret,
+    fromNamespace,
+    machineId,
+  );
+
+  try {
+    const result = await oldClient.migrateNamespace(currentNamespaceId);
+    logger.info(
+      "daemon",
+      `Migrated ${result.agents} agents, ${result.checks} checks, ${result.stats} stats, ${result.incidents} incidents`,
+    );
+    deps.setMeta(DAEMON_LAST_NAMESPACE_KEY, currentNamespaceId);
+  } catch (error) {
+    logger.warn("daemon", "Namespace migration failed:", error);
+  }
+}
+
 export async function pushAgentsToDaemonWith(
   settings: ReturnType<typeof getDaemonSettings>,
   agents: Agent[],
   machineId: string,
+  deps: {
+    getMeta: typeof getMeta;
+    setMeta: typeof setMeta;
+  } = { getMeta, setMeta },
 ): Promise<void> {
   if (!settings.enabled || !settings.url || !settings.secret) return;
+
+  const base = settings.namespaceKey || machineId;
+  const channel = await getChannel();
+  const namespaceId = `${base}:${channel}`;
+
+  await migrateNamespaceIfNeeded(namespaceId, settings, machineId, deps);
+
   if (agents.length === 0) {
     logger.debug("daemon", "No local agents to push to daemon");
     return;
   }
 
-  const base = settings.namespaceKey || machineId;
-  const channel = await getChannel();
-  const namespaceId = `${base}:${channel}`;
   const client = new DaemonClient(
     settings.url,
     settings.secret,

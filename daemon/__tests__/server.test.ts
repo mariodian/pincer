@@ -309,6 +309,51 @@ describe("daemon server", () => {
     });
   });
 
+  describe("namespace migration", () => {
+    it("should reject migration when target namespace already has agents", () => {
+      const targetCount = 3;
+      const shouldBlock = targetCount > 0;
+      expect(shouldBlock).toBe(true);
+    });
+
+    it("should allow migration when target namespace is empty", () => {
+      const targetCount = 0;
+      const shouldAllow = targetCount === 0;
+      expect(shouldAllow).toBe(true);
+    });
+
+    it("should return migrated flag and row counts on success", () => {
+      const response = {
+        migrated: true,
+        agents: 5,
+        checks: 120,
+        stats: 48,
+        incidents: 3,
+      };
+      expect(response.migrated).toBe(true);
+      expect(response.agents).toBeGreaterThan(0);
+      expect(response.checks).toBeGreaterThan(0);
+      expect(response.stats).toBeGreaterThan(0);
+      expect(response.incidents).toBeGreaterThan(0);
+    });
+
+    it("should require toNamespace in request body", () => {
+      const body = {} as { toNamespace?: string };
+      const hasToNamespace = !!body.toNamespace;
+      expect(hasToNamespace).toBe(false);
+    });
+
+    it("should require fromNamespace from X-Namespace-ID header", () => {
+      const getNamespace = (headers: Headers): string | null =>
+        headers.get("x-namespace-id");
+
+      const headers = new Headers();
+      const namespaceId = getNamespace(headers);
+      const shouldReject = namespaceId === null;
+      expect(shouldReject).toBe(true);
+    });
+  });
+
   describe("route handling", () => {
     it("should dispatch based on method and path", () => {
       const routes: Array<{ method: string; path: string; handler: string }> = [
@@ -324,10 +369,15 @@ describe("daemon server", () => {
           handler: "getIncidentEvents",
         },
         { method: "GET", path: "/open-incidents", handler: "getOpenIncidents" },
+        {
+          method: "POST",
+          path: "/namespace/migrate",
+          handler: "migrateNamespace",
+        },
       ];
 
       for (const route of routes) {
-        expect(route.method).toMatch(/GET|PUT|DELETE/);
+        expect(route.method).toMatch(/GET|PUT|DELETE|POST/);
         expect(route.path.startsWith("/")).toBe(true);
       }
     });

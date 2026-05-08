@@ -96,6 +96,30 @@ export class DaemonClient {
     return res.json() as Promise<{ deleted: boolean }>;
   }
 
+  async migrateNamespace(toNamespace: string): Promise<{
+    migrated: boolean;
+    agents: number;
+    checks: number;
+    stats: number;
+    incidents: number;
+  }> {
+    const res = await this.request("/namespace/migrate", {
+      method: "POST",
+      body: JSON.stringify({ toNamespace }),
+    });
+    if (!res.ok) {
+      const body = (await res.json()) as { error?: string };
+      throw new Error(body.error || `Migration failed: ${res.status}`);
+    }
+    return res.json() as Promise<{
+      migrated: boolean;
+      agents: number;
+      checks: number;
+      stats: number;
+      incidents: number;
+    }>;
+  }
+
   private async request(
     path: string,
     options?: RequestInit,

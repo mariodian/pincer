@@ -285,6 +285,59 @@ async function handleRequest(req: Request): Promise<Response> {
       return jsonResponse(openIncidents);
     }
 
+    // POST /namespace/migrate - migrate all data from one namespace to another
+    if (method === "POST" && path === "/namespace/migrate") {
+      const fromNamespaceId = getNamespaceId(req);
+      if (!fromNamespaceId) return errorResponse("Missing namespace", 400);
+
+      const body = (await req.json()) as { toNamespace?: string };
+      const toNamespaceId = body.toNamespace;
+      if (!toNamespaceId) {
+        return errorResponse("Missing toNamespace", 400);
+      }
+
+      const { sqlite } = getDatabase();
+
+      const existing = sqlite
+        .query("SELECT COUNT(*) as count FROM agents WHERE namespace_id = ?")
+        .get(toNamespaceId) as { count: number } | null;
+      if (existing && existing.count > 0) {
+        return errorResponse("Target namespace already exists", 409);
+      }
+
+      sqlite.run("BEGIN IMMEDIATE");
+      try {
+        const agentsResult = sqlite.run(
+          "UPDATE agents SET namespace_id = ? WHERE namespace_id = ?",
+          [toNamespaceId, fromNamespaceId],
+        );
+        const checksResult = sqlite.run(
+          "UPDATE checks SET namespace_id = ? WHERE namespace_id = ?",
+          [toNamespaceId, fromNamespaceId],
+        );
+        const statsResult = sqlite.run(
+          "UPDATE stats SET namespace_id = ? WHERE namespace_id = ?",
+          [toNamespaceId, fromNamespaceId],
+        );
+        const incidentsResult = sqlite.run(
+          "UPDATE incident_events SET namespace_id = ? WHERE namespace_id = ?",
+          [toNamespaceId, fromNamespaceId],
+        );
+        sqlite.run("COMMIT");
+
+        return jsonResponse({
+          migrated: true,
+          agents: agentsResult.changes,
+          checks: checksResult.changes,
+          stats: statsResult.changes,
+          incidents: incidentsResult.changes,
+        });
+      } catch (err) {
+        sqlite.run("ROLLBACK");
+        throw err;
+      }
+    }
+
     return errorResponse("Not found", 404);
   } catch (error) {
     logger.error("server", "Request handler error", error);
