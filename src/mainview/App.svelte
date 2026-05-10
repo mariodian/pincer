@@ -68,7 +68,7 @@
         data-slot="content"
         class={[
           "m-1.5 min-w-0 px-4 pt-5 pb-4",
-          "rounded-xl",
+          "rounded-2xl",
           "shadow-xs inset-shadow-2xs shadow-black/10 inset-shadow-white/50",
           "dark:shadow-none dark:inset-shadow-none",
           "bg-content-background",
