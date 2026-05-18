@@ -5,6 +5,24 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.8] - 2026-05-18
+
+### Added
+
+- Added namespace migration support between daemon and desktop synchronization flows, with matching test coverage for migration behavior.
+- Added local incident recovery support so unresolved incidents can be reconstructed reliably from persisted event history.
+
+### Changed
+
+- Replaced tray status reconciliation fallback logic with `StatusSyncService` to keep tray state aligned with synchronized status data.
+- Extracted channel resolution into shared utilities so update, autostart, and daemon sync services use consistent channel detection.
+- Updated Electrobun to 1.18.1.
+
+### Fixed
+
+- Fixed incident recovery handling so open incidents are reconstructed more consistently after state restoration.
+- Fixed main app corner-radius styling to align with updated interface geometry.
+
 ## [v0.3.7] - 2026-05-04
 
 ### Fixed
