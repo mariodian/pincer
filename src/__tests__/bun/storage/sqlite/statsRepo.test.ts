@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import {
   deleteOldStats,
@@ -9,8 +9,6 @@ import {
   upsertStatsBatch,
 } from "../../../../bun/storage/sqlite/statsRepo";
 import { resetTestDB, setupTestDB } from "./test-helpers";
-
-mock.module("electrobun/bun", () => import("../../../mocks/electrobun"));
 
 describe("statsRepo", () => {
   beforeEach(() => setupTestDB());

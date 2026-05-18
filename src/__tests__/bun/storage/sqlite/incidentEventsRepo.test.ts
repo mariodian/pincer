@@ -1,9 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-import * as electrobunMock from "../../../mocks/electrobun";
 import { resetTestDB, setupTestDB } from "./test-helpers";
-
-mock.module("electrobun/bun", () => electrobunMock);
 
 const {
   insertEvent,

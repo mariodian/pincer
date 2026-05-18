@@ -149,7 +149,7 @@ See [docs/testing.md](./docs/testing.md) for test patterns, mock strategies, and
 
 - Module mocks must come **before** `await import` of the module under test
 - Use `mockReset()` (not `mockClear()`) in `beforeEach` to avoid test contamination
-- Always mock `electrobun/bun` and `windowRegistry` in service tests
+- Do **not** mock `electrobun/bun` in test files — the preload script (`src/__tests__/setup/mock-electrobun.ts`) handles it globally. Redundant mocks cause Bun ≥1.3.14 to hang
 - Save and restore `global.fetch` when mocking HTTP calls
 - Mock the exact module path that the module under test imports (not re-exports or barrel files)
 - Mock paths in `mock.module()` are relative to the test file, not the project root

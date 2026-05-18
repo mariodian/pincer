@@ -4,8 +4,6 @@ import { createAgent, mockFetchThrow } from "../../setup";
 
 // ─── Must mock before dynamic imports ────────────────────────────────────────
 
-mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
-
 mock.module("../../../bun/services/loggerService", () => ({
   logger: {
     info: mock(() => {}),

@@ -78,6 +78,18 @@ export function resetDatabaseInstances(): void {
 }
 
 /**
+ * Close the database connection and reset singletons.
+ * Should be called during test cleanup to prevent file descriptor leaks
+ * that can cause the test runner to hang (especially on Bun ≥1.3.14).
+ */
+export function closeDatabase(): void {
+  if (sqliteInstance) {
+    sqliteInstance.close();
+  }
+  resetDatabaseInstances();
+}
+
+/**
  * Execute operations within a database transaction.
  * Automatically handles BEGIN IMMEDIATE, COMMIT, and ROLLBACK.
  *

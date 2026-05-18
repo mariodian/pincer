@@ -9,8 +9,6 @@ mock.module("../../../bun/services/agentService", () => ({
   readAgents: mock(() => Promise.resolve<{ id: number; name: string }[]>([])),
 }));
 
-mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
-
 const mockLoggerInfo = mock(() => {});
 const mockLoggerDebug = mock(() => {});
 const mockLoggerWarn = mock(() => {});

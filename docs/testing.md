@@ -47,12 +47,15 @@ mock.module("../../../bun/storage/index", () => ({
 }));
 ```
 
-### Always mock `electrobun/bun` and `windowRegistry` for service tests
+### `electrobun/bun` is mocked globally
 
-Any service that imports `loggerService` (directly or transitively) will pull in `electrobun/bun` → `Updater` → tries to read `version.json` → crashes. Always add these two mocks in service test files:
+The preload script (`src/__tests__/setup/mock-electrobun.ts`, configured in `bunfig.toml`) mocks `electrobun/bun` for every test. **Do not add `mock.module("electrobun/bun", ...)` in individual test files** — redundant mocks cause Bun ≥1.3.14 to hang during teardown.
+
+### Mock `windowRegistry` when needed
+
+Services that transitively import `windowRegistry` (e.g. via `loggerService`) need it mocked:
 
 ```ts
-mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
 mock.module("../../../bun/rpc/windowRegistry", () => ({
   getMainWindow: mock(() => null),
 }));
@@ -233,7 +236,22 @@ function makeFetchMock(
 
 ## Repo tests with a shared DB connection
 
-Repo tests (e.g. `settingsRepo`, `daemonSettingsRepo`, `appMetaRepo`) that use a real SQLite DB via `setupTestDB()` must **not** share state with other tests. Common failure modes:
+Repo tests (e.g. `settingsRepo`, `daemonSettingsRepo`, `appMetaRepo`) that use a real SQLite DB via `setupTestDB()` must **not** share state with other tests. Use the `test-helpers` pattern from `src/__tests__/bun/storage/sqlite/test-helpers.ts`:
+
+```ts
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { resetTestDB, setupTestDB } from "./test-helpers";
+
+describe("myRepo", () => {
+  beforeEach(() => setupTestDB());
+  afterEach(() => resetTestDB());
+  // ...
+});
+```
+
+`setupTestDB()` creates a fresh in-memory DB with all schema tables. `resetTestDB()` resets singletons so the next test gets a clean database.
+
+Common failure modes:
 
 ### Default values vs. seeded values
 
@@ -270,7 +288,7 @@ it("should return values from DB after seeding", () => {
 });
 ```
 
-`beforeEach` already calls `setupTestDB()`; calling it again in the test body returns the same in-memory instance (with its tables already created) and gives you access to `sqlite` for raw SQL.
+`beforeEach` already calls `setupTestDB()`; calling it again in the test body returns a fresh in-memory instance (singletons are reset) and gives you access to `sqlite` for raw SQL. The old handle is garbage collected.
 
 ### Async repo functions
 
@@ -421,7 +439,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 const mockFoo = mock(() => Promise.resolve(defaultValue));
 
 // 3. Register module mocks (MUST be before await import)
-mock.module("electrobun/bun", () => import("../../mocks/electrobun"));
+//    Do NOT mock electrobun/bun — the preload handles it globally
 mock.module("../../../bun/rpc/windowRegistry", () => ({ getMainWindow: mock(() => null) }));
 mock.module("../../../bun/services/fooService", () => ({ foo: mockFoo }));
 

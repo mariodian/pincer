@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 import { resetTestDB, setupTestDB } from "./test-helpers";
 
-mock.module("electrobun/bun", () => import("../../../mocks/electrobun"));
-
 mock.module("../../../../bun/services/loggerService", () => ({
   logger: {
     debug: () => {},

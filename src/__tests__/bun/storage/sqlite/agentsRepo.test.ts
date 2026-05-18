@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import {
   deleteAgent,
@@ -8,8 +8,6 @@ import {
   writeAgents,
 } from "../../../../bun/storage/sqlite/agentsRepo";
 import { resetTestDB, setupTestDB } from "./test-helpers";
-
-mock.module("electrobun/bun", () => import("../../../mocks/electrobun"));
 
 describe("agentsRepo", () => {
   beforeEach(() => setupTestDB());
