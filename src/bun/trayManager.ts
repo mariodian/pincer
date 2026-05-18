@@ -253,7 +253,7 @@ export async function initializeTray() {
   setRefreshCallback(() => refreshAndPush());
 
   // Register mutation callback — push to all windows after add/edit/delete
-  setAgentMutationCallback(() => syncAgentsFromKnownStatuses());
+  setAgentMutationCallback(() => getStatusSyncService().sync());
 }
 
 /**
@@ -375,19 +375,6 @@ export async function updateTrayMenu() {
         ...NAV_MENU_ITEMS,
       ]);
     }
-  }
-}
-
-/**
- * Push current known statuses to all windows and optionally update menu.
- * @deprecated Use StatusSyncService.sync() directly for more control
- */
-export async function syncAgentsFromKnownStatuses(updateMenu = true) {
-  const sync = getStatusSyncService();
-  await sync.pushKnownStatuses();
-  // Use cached value - restart required to change tray type
-  if (updateMenu && useNativeTrayCached) {
-    updateTrayMenu();
   }
 }
 

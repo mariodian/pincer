@@ -24,13 +24,14 @@ import {
   beginStatusUpdates,
   stopStatusUpdates,
 } from "./services/statusService";
+import { getStatusSyncService } from "./services/statusSyncService";
 import {
   getWindowBounds,
   setWindowBounds,
   type WindowBounds,
 } from "./storage/sqlite/appStateRepo";
 import { getSettings } from "./storage/sqlite/settingsRepo";
-import { initializeTray, syncAgentsFromKnownStatuses } from "./trayManager";
+import { initializeTray } from "./trayManager";
 import { applyMacOSWindowEffects } from "./utils/macOSWindowEffects";
 import { isMacOS } from "./utils/platform";
 import { getViewUrl } from "./utils/url";
@@ -296,7 +297,7 @@ Utils.setDockIconVisible(false);
 
 setRendererReadyCallback(({ view }) => {
   if (view === "main") {
-    void syncAgentsFromKnownStatuses(false);
+    void getStatusSyncService().sync({ updateMenu: false });
     void beginStatusUpdates();
   }
 });

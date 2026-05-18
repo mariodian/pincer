@@ -2,7 +2,7 @@ import { Utils } from "electrobun/bun";
 
 import { getMainWindow } from "../rpc/windowRegistry";
 import { logger } from "../services/loggerService";
-import { syncAgentsFromKnownStatuses } from "../trayManager";
+import { getStatusSyncService } from "../services/statusSyncService";
 import { getViewUrl, stripHash } from "./url";
 
 /** Route to navigate to after the renderer signals ready (used when window is recreated). */
@@ -47,5 +47,5 @@ export async function showMainWindow(page: string): Promise<void> {
   win.focus();
 
   // Push current statuses so the renderer has fresh data immediately
-  void syncAgentsFromKnownStatuses(false);
+  void getStatusSyncService().sync({ updateMenu: false });
 }
