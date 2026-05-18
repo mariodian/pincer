@@ -28,6 +28,7 @@ export interface StatusCoreDeps {
   reconstructIncidentState(): Promise<void>;
   switchToDaemonMode(
     openIncidents: Array<{ agentId: number; incidentId: string }>,
+    healthyAgentIds?: number[],
   ): void;
   startRetentionService(): void;
   notifier: {
@@ -65,7 +66,7 @@ interface PollMode {
       | "daemon-connected"
       | "daemon-disconnected"
       | "daemon-disabled",
-  ): void;
+  ): void | Promise<void>;
 }
 
 export function createStatusCore(deps: StatusCoreDeps): StatusCore {
@@ -134,7 +135,7 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
 
       return { success: false, fallbackTo: "local" };
     },
-    onEnter(reason) {
+    async onEnter(reason) {
       if (reason === "daemon-connected") {
         deps.logger.info(
           "status",
@@ -142,7 +143,15 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
         );
         void deps.syncAgents();
         if (incidentServiceInitialized) {
-          deps.switchToDaemonMode(lastOpenIncidents);
+          const agents = await deps.readAgents();
+          const healthyAgentIds: number[] = [];
+          for (const agent of agents) {
+            const latestCheck = deps.getAgentLatestCheck(agent.id);
+            if (latestCheck?.status === "ok") {
+              healthyAgentIds.push(agent.id);
+            }
+          }
+          deps.switchToDaemonMode(lastOpenIncidents, healthyAgentIds);
         }
         incidentServiceInitialized = false;
       }
@@ -198,7 +207,7 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
 
         if (result.success) {
           if (!daemonConnected) {
-            daemonMode.onEnter("daemon-connected");
+            await daemonMode.onEnter("daemon-connected");
           }
           daemonConnected = true;
         } else {

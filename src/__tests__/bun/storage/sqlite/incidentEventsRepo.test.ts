@@ -14,6 +14,7 @@ const {
   deleteOldEvents,
   countOldEvents,
   linkAndCloseLocalIncidents,
+  recoverLocalIncidents,
   deleteIncident,
 } = await import("../../../../bun/storage/sqlite/incidentEventsRepo");
 
@@ -726,6 +727,81 @@ describe("incidentEventsRepo", () => {
       expect(
         linkAndCloseLocalIncidents([{ agentId: 1, incidentId: "daemon-1" }]),
       ).toBe(0);
+    });
+  });
+
+  // ─── recoverLocalIncidents ─────────────────────────────────────────────────
+
+  describe("recoverLocalIncidents", () => {
+    it("should recover open incidents for specified agents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      insertEvent(2, "local-2", "opened", null, "error", null);
+
+      const recovered = recoverLocalIncidents([1], "connectivity_restored");
+
+      expect(recovered).toBe(1);
+      expect(getOpenIncidents().length).toBe(1);
+      expect(getOpenIncidents()[0].agentId).toBe(2);
+
+      const events1 = getEventsForIncident("local-1");
+      const recoveredEvent = events1.find((e) => e.eventType === "recovered");
+      expect(recoveredEvent).toBeDefined();
+      expect(recoveredEvent!.fromStatus).toBe("offline");
+      expect(recoveredEvent!.toStatus).toBe("ok");
+      expect(recoveredEvent!.reason).toBe("connectivity_restored");
+    });
+
+    it("should recover multiple open incidents across different agents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      insertEvent(2, "local-2", "opened", null, "error", null);
+      insertEvent(3, "local-3", "opened", null, "degraded", null);
+
+      const recovered = recoverLocalIncidents([1, 3], "connectivity_restored");
+
+      expect(recovered).toBe(2);
+      expect(getOpenIncidents().length).toBe(1);
+      expect(getOpenIncidents()[0].agentId).toBe(2);
+    });
+
+    it("should return 0 when no matching open incidents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+
+      const recovered = recoverLocalIncidents([99], "connectivity_restored");
+
+      expect(recovered).toBe(0);
+      expect(getOpenIncidents().length).toBe(1);
+    });
+
+    it("should return 0 for empty agentIds array", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+
+      const recovered = recoverLocalIncidents([], "connectivity_restored");
+
+      expect(recovered).toBe(0);
+      expect(getOpenIncidents().length).toBe(1);
+    });
+
+    it("should not recover already-handed-off incidents", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      linkAndCloseLocalIncidents([]);
+
+      const recovered = recoverLocalIncidents([1], "connectivity_restored");
+
+      expect(recovered).toBe(0);
+      expect(getHandedOffIncidents().length).toBe(1);
+    });
+
+    it("should use the last event toStatus as fromStatus in recovered event", () => {
+      insertEvent(1, "local-1", "opened", null, "offline", null);
+      insertEvent(1, "local-1", "status_changed", "offline", "error", null);
+
+      const recovered = recoverLocalIncidents([1], "connectivity_restored");
+
+      expect(recovered).toBe(1);
+      const events = getEventsForIncident("local-1");
+      const recoveredEvent = events.find((e) => e.eventType === "recovered");
+      expect(recoveredEvent!.fromStatus).toBe("error");
+      expect(recoveredEvent!.toStatus).toBe("ok");
     });
   });
 

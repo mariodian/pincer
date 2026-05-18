@@ -8,6 +8,8 @@ export type Status = "ok" | "error" | "offline";
 // Extended status including "degraded" for checks
 export type CheckStatus = "ok" | "offline" | "error" | "degraded";
 
+export type { IncidentReasonKey } from "./reason-keys";
+
 // Incident event types
 export type EventType = "opened" | "status_changed" | "recovered" | "handoff";
 

@@ -35,7 +35,10 @@ describe("statusCore", () => {
     reconstructIncidentState: ReturnType<typeof mock<() => Promise<void>>>;
     switchToDaemonMode: ReturnType<
       typeof mock<
-        (openIncidents: Array<{ agentId: number; incidentId: string }>) => void
+        (
+          openIncidents: Array<{ agentId: number; incidentId: string }>,
+          healthyAgentIds?: number[],
+        ) => void
       >
     >;
     startRetentionService: ReturnType<typeof mock<() => void>>;
@@ -318,9 +321,10 @@ describe("statusCore", () => {
       await triggerNextPoll();
 
       expect(deps.syncAgents).toHaveBeenCalled();
-      expect(deps.switchToDaemonMode).toHaveBeenCalledWith([
-        { agentId: 1, incidentId: "inc-1" },
-      ]);
+      expect(deps.switchToDaemonMode).toHaveBeenCalledWith(
+        [{ agentId: 1, incidentId: "inc-1" }],
+        [],
+      );
     });
 
     it("does not call switchToDaemonMode if incidentServiceInitialized was false", async () => {
@@ -338,6 +342,124 @@ describe("statusCore", () => {
       expect(deps.reconstructIncidentState).not.toHaveBeenCalled();
       expect(deps.syncAgents).toHaveBeenCalled();
       expect(deps.switchToDaemonMode).not.toHaveBeenCalled();
+    });
+
+    it("recovers local incidents for agents that are healthy on daemon when reconnecting", async () => {
+      const agent1: Agent = {
+        id: 1,
+        type: "http",
+        name: "Agent 1",
+        url: "http://localhost",
+        port: 80,
+      };
+      const agent2: Agent = {
+        id: 2,
+        type: "http",
+        name: "Agent 2",
+        url: "http://localhost",
+        port: 81,
+      };
+
+      deps.isDaemonConfigured.mockImplementation(() => false);
+      deps.checkAllAgentsStatus.mockImplementation(() => Promise.resolve([]));
+
+      const service = createService();
+      await service.beginStatusUpdates();
+
+      expect(deps.initIncidentService).toHaveBeenCalledTimes(1);
+
+      deps.isDaemonConfigured.mockImplementation(() => true);
+      deps.syncDataOnly.mockImplementation(() =>
+        Promise.resolve({
+          success: true,
+          openIncidents: [],
+        }),
+      );
+      deps.readAgents.mockImplementation(() =>
+        Promise.resolve([agent1, agent2]),
+      );
+      deps.getAgentLatestCheck.mockImplementation((id: number) => {
+        if (id === 1)
+          return { status: "ok", checkedAt: 12345, errorMessage: null };
+        if (id === 2)
+          return {
+            status: "offline",
+            checkedAt: 12344,
+            errorMessage: "timeout",
+          };
+        return null;
+      });
+
+      await triggerNextPoll();
+
+      expect(deps.switchToDaemonMode).toHaveBeenCalledWith([], [1]);
+    });
+
+    it("passes empty healthyAgentIds when no agents have ok status on daemon", async () => {
+      const agent: Agent = {
+        id: 1,
+        type: "http",
+        name: "Agent 1",
+        url: "http://localhost",
+        port: 80,
+      };
+
+      deps.isDaemonConfigured.mockImplementation(() => false);
+      deps.checkAllAgentsStatus.mockImplementation(() => Promise.resolve([]));
+
+      const service = createService();
+      await service.beginStatusUpdates();
+
+      deps.isDaemonConfigured.mockImplementation(() => true);
+      deps.syncDataOnly.mockImplementation(() =>
+        Promise.resolve({
+          success: true,
+          openIncidents: [{ agentId: 1, incidentId: "inc-1" }],
+        }),
+      );
+      deps.readAgents.mockImplementation(() => Promise.resolve([agent]));
+      deps.getAgentLatestCheck.mockImplementation(() => ({
+        status: "offline",
+        checkedAt: 12345,
+        errorMessage: "timeout",
+      }));
+
+      await triggerNextPoll();
+
+      expect(deps.switchToDaemonMode).toHaveBeenCalledWith(
+        [{ agentId: 1, incidentId: "inc-1" }],
+        [],
+      );
+    });
+
+    it("passes empty healthyAgentIds when getAgentLatestCheck returns null", async () => {
+      const agent: Agent = {
+        id: 1,
+        type: "http",
+        name: "Agent 1",
+        url: "http://localhost",
+        port: 80,
+      };
+
+      deps.isDaemonConfigured.mockImplementation(() => false);
+      deps.checkAllAgentsStatus.mockImplementation(() => Promise.resolve([]));
+
+      const service = createService();
+      await service.beginStatusUpdates();
+
+      deps.isDaemonConfigured.mockImplementation(() => true);
+      deps.syncDataOnly.mockImplementation(() =>
+        Promise.resolve({
+          success: true,
+          openIncidents: [],
+        }),
+      );
+      deps.readAgents.mockImplementation(() => Promise.resolve([agent]));
+      deps.getAgentLatestCheck.mockImplementation(() => null);
+
+      await triggerNextPoll();
+
+      expect(deps.switchToDaemonMode).toHaveBeenCalledWith([], []);
     });
   });
 

@@ -14,6 +14,7 @@
   import * as Timeline from "$lib/components/ui/timeline";
   import { cn } from "$lib/utils";
   import { formatDateTime, formatElapsedDuration } from "$lib/utils/datetime";
+  import { formatReason } from "$lib/utils/reason-mapper";
 
   interface Props {
     events: IncidentEvent[];
@@ -194,12 +195,12 @@
                 </Timeline.Title>
               {/if}
 
-              {#if event.reason}
+              {#if formatReason(event.reason)}
                 <Timeline.Description
                   class="text-muted-foreground mb-3 text-sm"
                 >
                   <p>
-                    {event.reason}
+                    {formatReason(event.reason)}
                   </p>
                 </Timeline.Description>
               {/if}

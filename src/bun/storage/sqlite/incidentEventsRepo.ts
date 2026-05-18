@@ -5,6 +5,10 @@ import {
   buildHandedOffIncidentsQuery,
   buildOpenIncidentsQuery,
 } from "../../../shared/incident-queries";
+import {
+  incidentReasonKeys,
+  type IncidentReasonKey,
+} from "../../../shared/reason-keys";
 import type {
   CheckStatus,
   EventType,
@@ -453,8 +457,8 @@ export function linkAndCloseLocalIncidents(
       incidentStatus,
       incidentStatus,
       daemonIncidentId
-        ? "Handed off to daemon monitoring"
-        : "Switched to daemon monitoring",
+        ? incidentReasonKeys.daemonHandoff
+        : incidentReasonKeys.daemonSwitched,
       daemonIncidentId ?? null,
     );
     closed++;
@@ -468,6 +472,48 @@ export function linkAndCloseLocalIncidents(
   }
 
   return closed;
+}
+
+/**
+ * Recover local open incidents for the given agent IDs.
+ * Inserts "recovered" events for all local open incidents belonging to the specified agents.
+ * Used when switching to daemon mode and daemon confirms agents are healthy —
+ * these local incidents were false positives caused by connectivity issues.
+ * Returns the number of incidents recovered.
+ */
+export function recoverLocalIncidents(
+  agentIds: number[],
+  reason: IncidentReasonKey,
+): number {
+  const localOpen = getOpenIncidents();
+
+  let recovered = 0;
+  for (const local of localOpen) {
+    if (!agentIds.includes(local.agentId)) continue;
+
+    const events = getEventsForIncident(local.incidentId);
+    const lastEvent = events[events.length - 1];
+    const incidentStatus: CheckStatus = lastEvent?.toStatus ?? "offline";
+
+    insertEvent(
+      local.agentId,
+      local.incidentId,
+      "recovered",
+      incidentStatus,
+      "ok",
+      reason,
+    );
+    recovered++;
+  }
+
+  if (recovered > 0) {
+    logger.info(
+      "incident",
+      `Recovered ${recovered} local incident(s) - agents confirmed healthy on daemon`,
+    );
+  }
+
+  return recovered;
 }
 
 /**

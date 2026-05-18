@@ -3,6 +3,7 @@ import {
   DEFAULT_FAILURE_THRESHOLD,
   DEFAULT_RECOVERY_THRESHOLD,
 } from "../../shared/incidentCore";
+import { incidentReasonKeys } from "../../shared/reason-keys";
 import type { CheckStatus } from "../../shared/types";
 import {
   getAgentLastNChecks,
@@ -14,6 +15,7 @@ import {
   getOpenIncidents,
   insertEvent,
   linkAndCloseLocalIncidents,
+  recoverLocalIncidents,
 } from "../storage/sqlite/incidentEventsRepo";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";
 import { readAgents } from "./agentService";
@@ -250,14 +252,24 @@ export function clearState(): void {
 
 /**
  * Switch to daemon monitoring mode.
- * Links local open incidents to daemon incidents (if provided),
- * creates handoff events, and clears in-memory tracker state.
- * Returns the number of incidents closed.
+ * First recovers local open incidents for agents confirmed healthy by daemon,
+ * then hands off any remaining open incidents to daemon monitoring.
+ * Returns the number of incidents closed (recovered + handed off).
  */
 export function switchToDaemonMode(
   daemonOpenIncidents?: Array<{ agentId: number; incidentId: string }>,
+  healthyAgentIds?: number[],
 ): number {
-  const closed = linkAndCloseLocalIncidents(daemonOpenIncidents ?? []);
+  let closed = 0;
+
+  if (healthyAgentIds && healthyAgentIds.length > 0) {
+    closed += recoverLocalIncidents(
+      healthyAgentIds,
+      incidentReasonKeys.connectivityRestored,
+    );
+  }
+
+  closed += linkAndCloseLocalIncidents(daemonOpenIncidents ?? []);
   tracker.clearState();
   return closed;
 }
