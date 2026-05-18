@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
-    "electrobun": "1.16.0"
+    "electrobun": "1.18.1"
   },
   "devDependencies": {
     "@bmlt-enabled/svelte-spa-router": "^5.0.8",
