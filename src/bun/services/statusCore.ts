@@ -1,12 +1,21 @@
 // Status Core - Pure status polling logic, dependency-injected for testability.
 // This module does NOT import Bun/Electrobun/runtime modules.
 
-import type { Agent, AgentStatusInfo, CheckStatus } from "../../shared/types";
+import type { AgentStatusInfo, CheckStatus } from "../../shared/types";
 
 export interface StatusCoreLogger {
   info(channel: string, message: string): void;
   warn(channel: string, message: string): void;
   debug(channel: string, message: string): void;
+}
+
+export interface AgentCheckResult {
+  agentId: number;
+  check: {
+    status: CheckStatus;
+    checkedAt: number;
+    errorMessage: string | null;
+  } | null;
 }
 
 export interface StatusCoreDeps {
@@ -17,12 +26,7 @@ export interface StatusCoreDeps {
   }>;
   syncAgents(): Promise<number>;
   checkAllAgentsStatus(): Promise<AgentStatusInfo[]>;
-  readAgents(): Promise<Agent[]>;
-  getAgentLatestCheck(agentId: number): {
-    status: CheckStatus;
-    checkedAt: number;
-    errorMessage: string | null;
-  } | null;
+  getAgentLatestChecks(): Promise<AgentCheckResult[]>;
   getAdvancedSettings(): { pollingInterval: number };
   initIncidentService(): void;
   reconstructIncidentState(): Promise<void>;
@@ -77,6 +81,7 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
   let daemonConnected = false;
   let incidentServiceInitialized = false;
   let lastOpenIncidents: Array<{ agentId: number; incidentId: string }> = [];
+  let lastHealthyAgentIds: number[] = [];
   let statusUpdateInterval: ReturnType<typeof setTimeout> | null = null;
   let statusUpdatesStarted = false;
 
@@ -85,20 +90,23 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
    * Queries the latest checks from DB (synced from daemon) and compares to lastKnownStatuses.
    */
   async function processSyncedData(): Promise<void> {
-    const agents = await deps.readAgents();
+    const agentChecks = await deps.getAgentLatestChecks();
     const currentStatuses: AgentStatusInfo[] = [];
+    lastHealthyAgentIds = [];
 
-    for (const agent of agents) {
-      const latestCheck = deps.getAgentLatestCheck(agent.id);
-      if (latestCheck) {
+    for (const ac of agentChecks) {
+      if (ac.check) {
+        if (ac.check.status === "ok") {
+          lastHealthyAgentIds.push(ac.agentId);
+        }
         // Map CheckStatus to Status (treat "degraded" as "error")
         const status =
-          latestCheck.status === "degraded" ? "error" : latestCheck.status;
+          ac.check.status === "degraded" ? "error" : ac.check.status;
         currentStatuses.push({
-          id: agent.id,
+          id: ac.agentId,
           status,
-          lastChecked: latestCheck.checkedAt,
-          errorMessage: latestCheck.errorMessage ?? undefined,
+          lastChecked: ac.check.checkedAt,
+          errorMessage: ac.check.errorMessage ?? undefined,
         });
       }
     }
@@ -135,7 +143,7 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
 
       return { success: false, fallbackTo: "local" };
     },
-    async onEnter(reason) {
+    onEnter(reason) {
       if (reason === "daemon-connected") {
         deps.logger.info(
           "status",
@@ -143,15 +151,7 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
         );
         void deps.syncAgents();
         if (incidentServiceInitialized) {
-          const agents = await deps.readAgents();
-          const healthyAgentIds: number[] = [];
-          for (const agent of agents) {
-            const latestCheck = deps.getAgentLatestCheck(agent.id);
-            if (latestCheck?.status === "ok") {
-              healthyAgentIds.push(agent.id);
-            }
-          }
-          deps.switchToDaemonMode(lastOpenIncidents, healthyAgentIds);
+          deps.switchToDaemonMode(lastOpenIncidents, lastHealthyAgentIds);
         }
         incidentServiceInitialized = false;
       }

@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-import { createStatusCore } from "../../../bun/services/statusCore";
-import type { Agent, AgentStatusInfo } from "../../../shared/types";
+import {
+  createStatusCore,
+  type AgentCheckResult,
+} from "../../../bun/services/statusCore";
+import type { AgentStatusInfo } from "../../../shared/types";
 
 describe("statusCore", () => {
   let deps: {
@@ -18,15 +21,8 @@ describe("statusCore", () => {
     checkAllAgentsStatus: ReturnType<
       typeof mock<() => Promise<AgentStatusInfo[]>>
     >;
-    readAgents: ReturnType<typeof mock<() => Promise<Agent[]>>>;
-    getAgentLatestCheck: ReturnType<
-      typeof mock<
-        (agentId: number) => {
-          status: "ok" | "offline" | "error" | "degraded";
-          checkedAt: number;
-          errorMessage: string | null;
-        } | null
-      >
+    getAgentLatestChecks: ReturnType<
+      typeof mock<() => Promise<AgentCheckResult[]>>
     >;
     getAdvancedSettings: ReturnType<
       typeof mock<() => { pollingInterval: number }>
@@ -81,8 +77,7 @@ describe("statusCore", () => {
       ),
       syncAgents: mock(() => Promise.resolve(0)),
       checkAllAgentsStatus: mock(() => Promise.resolve([])),
-      readAgents: mock(() => Promise.resolve([])),
-      getAgentLatestCheck: mock(() => null),
+      getAgentLatestChecks: mock(() => Promise.resolve([])),
       getAdvancedSettings: mock(() => ({ pollingInterval: 30000 })),
       initIncidentService: mock(() => {}),
       reconstructIncidentState: mock(() => Promise.resolve()),
@@ -170,7 +165,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -183,7 +178,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -202,23 +197,22 @@ describe("statusCore", () => {
 
   describe("daemon mode", () => {
     it("success path - does not call checkAllAgentsStatus, calls notifier with synced statuses, daemonConnected flips to true", async () => {
-      const agent: Agent = {
-        id: 1,
-        type: "http",
-        name: "Agent 1",
-        url: "http://localhost",
-        port: 80,
-      };
       deps.isDaemonConfigured.mockImplementation(() => true);
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([agent]));
-      deps.getAgentLatestCheck.mockImplementation(() => ({
-        status: "ok" as const,
-        checkedAt: 12345,
-        errorMessage: null,
-      }));
+      deps.getAgentLatestChecks.mockImplementation(() =>
+        Promise.resolve([
+          {
+            agentId: 1,
+            check: {
+              status: "ok" as const,
+              checkedAt: 12345,
+              errorMessage: null,
+            },
+          },
+        ]),
+      );
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -245,23 +239,22 @@ describe("statusCore", () => {
     });
 
     it("maps degraded status to error in the notifier", async () => {
-      const agent: Agent = {
-        id: 1,
-        type: "http",
-        name: "Agent 1",
-        url: "http://localhost",
-        port: 80,
-      };
       deps.isDaemonConfigured.mockImplementation(() => true);
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([agent]));
-      deps.getAgentLatestCheck.mockImplementation(() => ({
-        status: "degraded" as const,
-        checkedAt: 12345,
-        errorMessage: "slow",
-      }));
+      deps.getAgentLatestChecks.mockImplementation(() =>
+        Promise.resolve([
+          {
+            agentId: 1,
+            check: {
+              status: "degraded" as const,
+              checkedAt: 12345,
+              errorMessage: "slow",
+            },
+          },
+        ]),
+      );
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -316,7 +309,7 @@ describe("statusCore", () => {
           openIncidents: [{ agentId: 1, incidentId: "inc-1" }],
         }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
 
       await triggerNextPoll();
 
@@ -332,7 +325,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -345,21 +338,6 @@ describe("statusCore", () => {
     });
 
     it("recovers local incidents for agents that are healthy on daemon when reconnecting", async () => {
-      const agent1: Agent = {
-        id: 1,
-        type: "http",
-        name: "Agent 1",
-        url: "http://localhost",
-        port: 80,
-      };
-      const agent2: Agent = {
-        id: 2,
-        type: "http",
-        name: "Agent 2",
-        url: "http://localhost",
-        port: 81,
-      };
-
       deps.isDaemonConfigured.mockImplementation(() => false);
       deps.checkAllAgentsStatus.mockImplementation(() => Promise.resolve([]));
 
@@ -375,20 +353,22 @@ describe("statusCore", () => {
           openIncidents: [],
         }),
       );
-      deps.readAgents.mockImplementation(() =>
-        Promise.resolve([agent1, agent2]),
+      deps.getAgentLatestChecks.mockImplementation(() =>
+        Promise.resolve([
+          {
+            agentId: 1,
+            check: { status: "ok", checkedAt: 12345, errorMessage: null },
+          },
+          {
+            agentId: 2,
+            check: {
+              status: "offline",
+              checkedAt: 12344,
+              errorMessage: "timeout",
+            },
+          },
+        ]),
       );
-      deps.getAgentLatestCheck.mockImplementation((id: number) => {
-        if (id === 1)
-          return { status: "ok", checkedAt: 12345, errorMessage: null };
-        if (id === 2)
-          return {
-            status: "offline",
-            checkedAt: 12344,
-            errorMessage: "timeout",
-          };
-        return null;
-      });
 
       await triggerNextPoll();
 
@@ -396,14 +376,6 @@ describe("statusCore", () => {
     });
 
     it("passes empty healthyAgentIds when no agents have ok status on daemon", async () => {
-      const agent: Agent = {
-        id: 1,
-        type: "http",
-        name: "Agent 1",
-        url: "http://localhost",
-        port: 80,
-      };
-
       deps.isDaemonConfigured.mockImplementation(() => false);
       deps.checkAllAgentsStatus.mockImplementation(() => Promise.resolve([]));
 
@@ -417,12 +389,18 @@ describe("statusCore", () => {
           openIncidents: [{ agentId: 1, incidentId: "inc-1" }],
         }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([agent]));
-      deps.getAgentLatestCheck.mockImplementation(() => ({
-        status: "offline",
-        checkedAt: 12345,
-        errorMessage: "timeout",
-      }));
+      deps.getAgentLatestChecks.mockImplementation(() =>
+        Promise.resolve([
+          {
+            agentId: 1,
+            check: {
+              status: "offline",
+              checkedAt: 12345,
+              errorMessage: "timeout",
+            },
+          },
+        ]),
+      );
 
       await triggerNextPoll();
 
@@ -432,15 +410,7 @@ describe("statusCore", () => {
       );
     });
 
-    it("passes empty healthyAgentIds when getAgentLatestCheck returns null", async () => {
-      const agent: Agent = {
-        id: 1,
-        type: "http",
-        name: "Agent 1",
-        url: "http://localhost",
-        port: 80,
-      };
-
+    it("passes empty healthyAgentIds when agent checks are null", async () => {
       deps.isDaemonConfigured.mockImplementation(() => false);
       deps.checkAllAgentsStatus.mockImplementation(() => Promise.resolve([]));
 
@@ -454,8 +424,9 @@ describe("statusCore", () => {
           openIncidents: [],
         }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([agent]));
-      deps.getAgentLatestCheck.mockImplementation(() => null);
+      deps.getAgentLatestChecks.mockImplementation(() =>
+        Promise.resolve([{ agentId: 1, check: null }]),
+      );
 
       await triggerNextPoll();
 
@@ -485,7 +456,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -512,7 +483,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.readAgents.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
 
       const service = createService();
       await service.beginStatusUpdates();

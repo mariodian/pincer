@@ -16,7 +16,7 @@ import {
 } from "./incidentService";
 import { logger } from "./loggerService";
 import { startRetentionService } from "./retentionService";
-import { createStatusCore } from "./statusCore";
+import { createStatusCore, type AgentCheckResult } from "./statusCore";
 import { StatusNotifier } from "./statusNotifier";
 import { getStatusSyncService } from "./statusSyncService";
 
@@ -49,13 +49,20 @@ const statusSync = {
   },
 };
 
+async function getAgentLatestChecks(): Promise<AgentCheckResult[]> {
+  const agents = await readAgents();
+  return agents.map((agent) => ({
+    agentId: agent.id,
+    check: getAgentLatestCheck(agent.id),
+  }));
+}
+
 const core = createStatusCore({
   isDaemonConfigured,
   syncDataOnly,
   syncAgents,
   checkAllAgentsStatus,
-  readAgents,
-  getAgentLatestCheck,
+  getAgentLatestChecks,
   getAdvancedSettings,
   initIncidentService,
   reconstructIncidentState,
