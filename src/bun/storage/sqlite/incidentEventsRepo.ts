@@ -261,6 +261,38 @@ function findUnrecoveredLocalIncidentsBatch(
   return result;
 }
 
+function getLastEventStatusForIncidents(
+  incidentIds: string[],
+): Map<string, CheckStatus> {
+  const result = new Map<string, CheckStatus>();
+  if (incidentIds.length === 0) return result;
+
+  const { sqlite } = getDatabase();
+  const placeholders = incidentIds.map(() => "?").join(",");
+
+  const rows = sqlite
+    .prepare(
+      `
+      SELECT incident_id as incidentId, to_status as toStatus
+      FROM incident_events
+      WHERE incident_id IN (${placeholders})
+      ORDER BY event_at DESC, id DESC
+    `,
+    )
+    .all(...incidentIds) as Array<{
+    incidentId: string;
+    toStatus: string | null;
+  }>;
+
+  for (const row of rows) {
+    if (!result.has(row.incidentId)) {
+      result.set(row.incidentId, (row.toStatus as CheckStatus) ?? "offline");
+    }
+  }
+
+  return result;
+}
+
 /**
  * Get all open incidents (incidents that have been opened but not recovered or handed off).
  * Uses SQL anti-join pattern to find incidents with 'opened' event
@@ -439,14 +471,13 @@ export function linkAndCloseLocalIncidents(
     daemonByAgent.set(di.agentId, di.incidentId);
   }
 
+  const localIncidentIds = localOpen.map((l) => l.incidentId);
+  const lastStatuses = getLastEventStatusForIncidents(localIncidentIds);
+
   let closed = 0;
   for (const local of localOpen) {
     const daemonIncidentId = daemonByAgent.get(local.agentId);
-
-    // Get the incident's last status from its most recent event
-    const events = getEventsForIncident(local.incidentId);
-    const lastEvent = events[events.length - 1];
-    const incidentStatus: CheckStatus = lastEvent?.toStatus ?? "offline";
+    const incidentStatus = lastStatuses.get(local.incidentId) ?? "offline";
 
     // Create handoff event with linkedIncidentId directly on the handoff row
     // This is where getHandedOffIncidents() reads it from
@@ -486,14 +517,15 @@ export function recoverLocalIncidents(
   reason: IncidentReasonKey,
 ): number {
   const localOpen = getOpenIncidents();
+  const agentIdSet = new Set(agentIds);
+
+  const matchingLocals = localOpen.filter((l) => agentIdSet.has(l.agentId));
+  const incidentIds = matchingLocals.map((l) => l.incidentId);
+  const lastStatuses = getLastEventStatusForIncidents(incidentIds);
 
   let recovered = 0;
-  for (const local of localOpen) {
-    if (!agentIds.includes(local.agentId)) continue;
-
-    const events = getEventsForIncident(local.incidentId);
-    const lastEvent = events[events.length - 1];
-    const incidentStatus: CheckStatus = lastEvent?.toStatus ?? "offline";
+  for (const local of matchingLocals) {
+    const incidentStatus = lastStatuses.get(local.incidentId) ?? "offline";
 
     insertEvent(
       local.agentId,
