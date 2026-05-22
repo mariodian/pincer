@@ -254,22 +254,16 @@ export function clearState(): void {
  * Switch to daemon monitoring mode.
  * First recovers local open incidents for agents confirmed healthy by daemon,
  * then hands off any remaining open incidents to daemon monitoring.
- * Returns the number of incidents closed (recovered + handed off).
  */
 export function switchToDaemonMode(
-  daemonOpenIncidents?: Array<{ agentId: number; incidentId: string }>,
-  healthyAgentIds?: number[],
-): number {
-  let closed = 0;
-
-  if (healthyAgentIds && healthyAgentIds.length > 0) {
-    closed += recoverLocalIncidents(
-      healthyAgentIds,
-      incidentReasonKeys.connectivityRestored,
-    );
-  }
-
-  closed += linkAndCloseLocalIncidents(daemonOpenIncidents ?? []);
+  daemonOpenIncidents: Array<{ agentId: number; incidentId: string }> = [],
+  healthyAgentIds: number[] = [],
+): { recovered: number; handedOff: number } {
+  const recovered = recoverLocalIncidents(
+    healthyAgentIds,
+    incidentReasonKeys.connectivityRestored,
+  );
+  const handedOff = linkAndCloseLocalIncidents(daemonOpenIncidents);
   tracker.clearState();
-  return closed;
+  return { recovered, handedOff };
 }

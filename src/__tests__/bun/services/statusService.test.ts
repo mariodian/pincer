@@ -32,7 +32,7 @@ describe("statusCore", () => {
         (
           openIncidents: Array<{ agentId: number; incidentId: string }>,
           healthyAgentIds?: number[],
-        ) => void
+        ) => { recovered: number; handedOff: number }
       >
     >;
     startRetentionService: ReturnType<typeof mock<() => void>>;
@@ -79,7 +79,7 @@ describe("statusCore", () => {
       getAdvancedSettings: mock(() => ({ pollingInterval: 30000 })),
       initIncidentService: mock(() => {}),
       reconstructIncidentState: mock(() => Promise.resolve()),
-      switchToDaemonMode: mock(() => {}),
+      switchToDaemonMode: mock(() => ({ recovered: 0, handedOff: 0 })),
       startRetentionService: mock(() => {}),
       notifier: {
         checkAndNotify: mock(() => Promise.resolve()),

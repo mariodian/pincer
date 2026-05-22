@@ -33,7 +33,7 @@ export interface StatusCoreDeps {
   switchToDaemonMode(
     openIncidents: Array<{ agentId: number; incidentId: string }>,
     healthyAgentIds?: number[],
-  ): void;
+  ): { recovered: number; handedOff: number };
   startRetentionService(): void;
   notifier: {
     checkAndNotify(statuses: AgentStatusInfo[]): Promise<void>;
