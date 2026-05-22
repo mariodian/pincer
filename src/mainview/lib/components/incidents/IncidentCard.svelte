@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatReason } from "$shared/reason-keys";
   import {
     statusIcons,
     statusLabels,
@@ -14,7 +15,6 @@
   import * as Timeline from "$lib/components/ui/timeline";
   import { cn } from "$lib/utils";
   import { formatDateTime, formatElapsedDuration } from "$lib/utils/datetime";
-  import { formatReason } from "$lib/utils/reason-mapper";
 
   interface Props {
     events: IncidentEvent[];
