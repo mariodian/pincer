@@ -26,7 +26,7 @@ export interface StatusCoreDeps {
   }>;
   syncAgents(): Promise<number>;
   checkAllAgentsStatus(): Promise<AgentStatusInfo[]>;
-  getAgentLatestChecks(): Promise<AgentCheckResult[]>;
+  getAgentLatestChecks(): AgentCheckResult[];
   getAdvancedSettings(): { pollingInterval: number };
   initIncidentService(): void;
   reconstructIncidentState(): Promise<void>;
@@ -90,7 +90,7 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
    * Queries the latest checks from DB (synced from daemon) and compares to lastKnownStatuses.
    */
   async function processSyncedData(): Promise<void> {
-    const agentChecks = await deps.getAgentLatestChecks();
+    const agentChecks = deps.getAgentLatestChecks();
     const currentStatuses: AgentStatusInfo[] = [];
     lastHealthyAgentIds = [];
 

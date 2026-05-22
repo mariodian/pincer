@@ -21,9 +21,7 @@ describe("statusCore", () => {
     checkAllAgentsStatus: ReturnType<
       typeof mock<() => Promise<AgentStatusInfo[]>>
     >;
-    getAgentLatestChecks: ReturnType<
-      typeof mock<() => Promise<AgentCheckResult[]>>
-    >;
+    getAgentLatestChecks: ReturnType<typeof mock<() => AgentCheckResult[]>>;
     getAdvancedSettings: ReturnType<
       typeof mock<() => { pollingInterval: number }>
     >;
@@ -77,7 +75,7 @@ describe("statusCore", () => {
       ),
       syncAgents: mock(() => Promise.resolve(0)),
       checkAllAgentsStatus: mock(() => Promise.resolve([])),
-      getAgentLatestChecks: mock(() => Promise.resolve([])),
+      getAgentLatestChecks: mock(() => []),
       getAdvancedSettings: mock(() => ({ pollingInterval: 30000 })),
       initIncidentService: mock(() => {}),
       reconstructIncidentState: mock(() => Promise.resolve()),
@@ -165,7 +163,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => []);
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -178,7 +176,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => []);
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -201,18 +199,16 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() =>
-        Promise.resolve([
-          {
-            agentId: 1,
-            check: {
-              status: "ok" as const,
-              checkedAt: 12345,
-              errorMessage: null,
-            },
+      deps.getAgentLatestChecks.mockImplementation(() => [
+        {
+          agentId: 1,
+          check: {
+            status: "ok" as const,
+            checkedAt: 12345,
+            errorMessage: null,
           },
-        ]),
-      );
+        },
+      ]);
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -243,18 +239,16 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() =>
-        Promise.resolve([
-          {
-            agentId: 1,
-            check: {
-              status: "degraded" as const,
-              checkedAt: 12345,
-              errorMessage: "slow",
-            },
+      deps.getAgentLatestChecks.mockImplementation(() => [
+        {
+          agentId: 1,
+          check: {
+            status: "degraded" as const,
+            checkedAt: 12345,
+            errorMessage: "slow",
           },
-        ]),
-      );
+        },
+      ]);
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -309,7 +303,7 @@ describe("statusCore", () => {
           openIncidents: [{ agentId: 1, incidentId: "inc-1" }],
         }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => []);
 
       await triggerNextPoll();
 
@@ -325,7 +319,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => []);
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -353,22 +347,20 @@ describe("statusCore", () => {
           openIncidents: [],
         }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() =>
-        Promise.resolve([
-          {
-            agentId: 1,
-            check: { status: "ok", checkedAt: 12345, errorMessage: null },
+      deps.getAgentLatestChecks.mockImplementation(() => [
+        {
+          agentId: 1,
+          check: { status: "ok", checkedAt: 12345, errorMessage: null },
+        },
+        {
+          agentId: 2,
+          check: {
+            status: "offline",
+            checkedAt: 12344,
+            errorMessage: "timeout",
           },
-          {
-            agentId: 2,
-            check: {
-              status: "offline",
-              checkedAt: 12344,
-              errorMessage: "timeout",
-            },
-          },
-        ]),
-      );
+        },
+      ]);
 
       await triggerNextPoll();
 
@@ -389,18 +381,16 @@ describe("statusCore", () => {
           openIncidents: [{ agentId: 1, incidentId: "inc-1" }],
         }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() =>
-        Promise.resolve([
-          {
-            agentId: 1,
-            check: {
-              status: "offline",
-              checkedAt: 12345,
-              errorMessage: "timeout",
-            },
+      deps.getAgentLatestChecks.mockImplementation(() => [
+        {
+          agentId: 1,
+          check: {
+            status: "offline",
+            checkedAt: 12345,
+            errorMessage: "timeout",
           },
-        ]),
-      );
+        },
+      ]);
 
       await triggerNextPoll();
 
@@ -424,9 +414,9 @@ describe("statusCore", () => {
           openIncidents: [],
         }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() =>
-        Promise.resolve([{ agentId: 1, check: null }]),
-      );
+      deps.getAgentLatestChecks.mockImplementation(() => [
+        { agentId: 1, check: null },
+      ]);
 
       await triggerNextPoll();
 
@@ -456,7 +446,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => []);
 
       const service = createService();
       await service.beginStatusUpdates();
@@ -483,7 +473,7 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => Promise.resolve([]));
+      deps.getAgentLatestChecks.mockImplementation(() => []);
 
       const service = createService();
       await service.beginStatusUpdates();

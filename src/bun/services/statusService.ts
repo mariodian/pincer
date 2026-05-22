@@ -2,8 +2,8 @@
 // Thin production wrapper around statusCore.
 
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
-import { getAgentLatestCheck } from "../storage/sqlite/checksRepo";
-import { checkAllAgentsStatus, readAgents } from "./agentService";
+import { getAllAgentLatestChecks } from "../storage/sqlite/checksRepo";
+import { checkAllAgentsStatus } from "./agentService";
 import {
   isDaemonConfigured,
   syncAgents,
@@ -49,11 +49,15 @@ const statusSync = {
   },
 };
 
-async function getAgentLatestChecks(): Promise<AgentCheckResult[]> {
-  const agents = await readAgents();
-  return agents.map((agent) => ({
-    agentId: agent.id,
-    check: getAgentLatestCheck(agent.id),
+function getAgentLatestChecks(): AgentCheckResult[] {
+  const checks = getAllAgentLatestChecks();
+  return checks.map((check) => ({
+    agentId: check.agentId,
+    check: {
+      status: check.status,
+      checkedAt: check.checkedAt,
+      errorMessage: check.errorMessage,
+    },
   }));
 }
 

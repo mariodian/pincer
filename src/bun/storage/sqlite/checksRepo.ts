@@ -186,6 +186,50 @@ export function getTotalChecksCount(): number {
 }
 
 /**
+ * Get the latest check for every agent in a single query.
+ * Returns one check per agent that has at least one check.
+ * Uses JOIN with MAX(checked_at) subquery — the unique constraint
+ * on (agent_id, checked_at) guarantees unambiguous results.
+ */
+export function getAllAgentLatestChecks(): Check[] {
+  const { sqlite } = getDatabase();
+
+  const rows = sqlite
+    .prepare(
+      `SELECT c.*
+       FROM checks c
+       INNER JOIN (
+         SELECT agent_id, MAX(checked_at) AS max_checked_at
+         FROM checks
+         GROUP BY agent_id
+       ) latest
+         ON c.agent_id = latest.agent_id
+         AND c.checked_at = latest.max_checked_at`,
+    )
+    .all() as Array<{
+    id: number;
+    agent_id: number;
+    checked_at: number;
+    status: string;
+    response_ms: number | null;
+    http_status: number | null;
+    error_code: string | null;
+    error_message: string | null;
+  }>;
+
+  return rows.map((row) => ({
+    id: row.id,
+    agentId: row.agent_id,
+    checkedAt: row.checked_at,
+    status: row.status as Check["status"],
+    responseMs: row.response_ms,
+    httpStatus: row.http_status,
+    errorCode: row.error_code,
+    errorMessage: row.error_message,
+  }));
+}
+
+/**
  * Get the latest check for a specific agent.
  * Returns null if no checks exist for the agent.
  */

@@ -5,6 +5,7 @@ import {
   deleteOldChecks,
   getAgentLastNChecks,
   getAgentLatestCheck,
+  getAllAgentLatestChecks,
   getAllChecks,
   getChecksAggregatedBy10Min,
   getChecksAggregatedByHour,
@@ -337,6 +338,81 @@ describe("checksRepo", () => {
         },
       ]);
       expect(getAgentLatestCheck(1)).toBeNull();
+    });
+  });
+
+  // ─── getAllAgentLatestChecks ────────────────────────────────────────────────
+
+  describe("getAllAgentLatestChecks", () => {
+    it("should return the latest check per agent", () => {
+      const now = Date.now();
+      insertChecksBatch([
+        {
+          id: 0,
+          agentId: 1,
+          checkedAt: now - 3000,
+          status: "ok",
+          responseMs: 10,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          checkedAt: now,
+          status: "error",
+          responseMs: 0,
+          httpStatus: null,
+          errorCode: "ERR",
+          errorMessage: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          checkedAt: now - 1000,
+          status: "degraded",
+          responseMs: 500,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: "slow",
+        },
+      ]);
+
+      const results = getAllAgentLatestChecks();
+      expect(results.length).toBe(2);
+
+      const agent1 = results.find((c) => c.agentId === 1);
+      expect(agent1).toBeDefined();
+      expect(agent1!.status).toBe("error"); // most recent
+
+      const agent2 = results.find((c) => c.agentId === 2);
+      expect(agent2).toBeDefined();
+      expect(agent2!.status).toBe("degraded");
+    });
+
+    it("should return empty array when no checks exist", () => {
+      expect(getAllAgentLatestChecks()).toEqual([]);
+    });
+
+    it("should not return agents that have zero checks", () => {
+      const now = Date.now();
+      insertChecksBatch([
+        {
+          id: 0,
+          agentId: 1,
+          checkedAt: now,
+          status: "ok",
+          responseMs: 10,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+      ]);
+
+      const results = getAllAgentLatestChecks();
+      expect(results.length).toBe(1);
+      expect(results[0].agentId).toBe(1);
     });
   });
 
