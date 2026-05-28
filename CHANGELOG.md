@@ -5,6 +5,18 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.9] - 2026-05-28
+
+### Added
+
+- Added Ollama and LM Studio agent type support with correct health-check endpoints and status parsing.
+- Added plain-text response handling for Ollama health checks, including `Ollama is running` status messages.
+
+### Fixed
+
+- Improved health-check fallback handling for non-JSON agent responses to prevent false offline states.
+- Fixed response body consumption issue by cloning responses before attempting JSON parsing.
+
 ## [v0.3.8] - 2026-05-18
 
 ### Added
