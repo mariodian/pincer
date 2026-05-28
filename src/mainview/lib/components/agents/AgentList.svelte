@@ -86,14 +86,18 @@
     switch (type) {
       case "custom":
         return "Custom";
-      case "openclaw":
-        return "OpenClaw";
-      case "opencrabs":
-        return "OpenCrabs";
       case "hermes":
         return "Hermes";
+      case "lmstudio":
+        return "LM Studio";
+      case "ollama":
+        return "Ollama";
+      case "openclaw":
+        return "OpenClaw";
       case "opencode":
         return "OpenCode";
+      case "opencrabs":
+        return "OpenCrabs";
       default:
         return type;
     }

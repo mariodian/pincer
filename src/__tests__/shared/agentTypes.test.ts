@@ -12,10 +12,12 @@ describe("agentTypes", () => {
   describe("AGENT_TYPES registry", () => {
     it("should contain all expected agent types", () => {
       expect(AGENT_TYPES.custom).toBeDefined();
-      expect(AGENT_TYPES.openclaw).toBeDefined();
-      expect(AGENT_TYPES.opencrabs).toBeDefined();
       expect(AGENT_TYPES.hermes).toBeDefined();
+      expect(AGENT_TYPES.lmstudio).toBeDefined();
+      expect(AGENT_TYPES.ollama).toBeDefined();
+      expect(AGENT_TYPES.openclaw).toBeDefined();
       expect(AGENT_TYPES.opencode).toBeDefined();
+      expect(AGENT_TYPES.opencrabs).toBeDefined();
     });
 
     it("should have correct defaults for custom agent", () => {
@@ -25,6 +27,32 @@ describe("agentTypes", () => {
       expect(custom.healthEndpoint).toBe("/health");
       expect(custom.healthMethod).toBe("GET");
       expect(custom.defaultPort).toBe(18790);
+    });
+
+    it("should have correct defaults for hermes agent", () => {
+      const hermes = AGENT_TYPES.hermes;
+      expect(hermes.id).toBe("hermes");
+      expect(hermes.name).toBe("Hermes");
+      expect(hermes.healthEndpoint).toBe("/health");
+      expect(hermes.defaultPort).toBe(8642);
+    });
+
+    it("should have correct defaults for lmstudio agent", () => {
+      const lmstudio = AGENT_TYPES.lmstudio;
+      expect(lmstudio.id).toBe("lmstudio");
+      expect(lmstudio.name).toBe("LM Studio");
+      expect(lmstudio.healthEndpoint).toBe("/api/v1/models");
+      expect(lmstudio.defaultPort).toBe(1234);
+      expect(lmstudio.responseFormat).toBe("json");
+    });
+
+    it("should have correct defaults for ollama agent", () => {
+      const ollama = AGENT_TYPES.ollama;
+      expect(ollama.id).toBe("ollama");
+      expect(ollama.name).toBe("Ollama");
+      expect(ollama.healthEndpoint).toBe("/");
+      expect(ollama.defaultPort).toBe(11434);
+      expect(ollama.responseFormat).toBe("text");
     });
 
     it("should have correct defaults for openclaw agent", () => {
@@ -111,6 +139,22 @@ describe("agentTypes", () => {
 
       it("should return error for missing status field", () => {
         expect(STATUS_PARSERS.json_status({})).toEqual({ status: "error" });
+      });
+    });
+  });
+
+  describe("Ollama health parser", () => {
+    it("should return ok for Ollama running text responses", () => {
+      const parser = AGENT_TYPES.ollama.parseStatus;
+      expect(parser("Ollama is running")).toEqual({ status: "ok" });
+      expect(parser("Ollama is running\n")).toEqual({ status: "ok" });
+    });
+
+    it("should return error for unexpected Ollama text responses", () => {
+      const parser = AGENT_TYPES.ollama.parseStatus;
+      expect(parser("something else")).toEqual({
+        status: "error",
+        errorMessage: "Unexpected Ollama health response",
       });
     });
   });

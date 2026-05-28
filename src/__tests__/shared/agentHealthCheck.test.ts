@@ -113,6 +113,14 @@ describe("agentHealthCheck", () => {
       const config = resolveHealthConfig(agent);
       expect(config.timeout).toBe(5000);
     });
+
+    it("should resolve responseFormat from agent type", () => {
+      const ollama = createAgent({ type: "ollama" });
+      expect(resolveHealthConfig(ollama).responseFormat).toBe("text");
+
+      const lmstudio = createAgent({ type: "lmstudio" });
+      expect(resolveHealthConfig(lmstudio).responseFormat).toBe("json");
+    });
   });
 
   describe("extractErrorCode", () => {
@@ -267,6 +275,7 @@ describe("agentHealthCheck", () => {
         headers: { Accept: "application/json" },
         timeout: 1000,
         parseStatus: () => ({ status: "ok" as const }),
+        responseFormat: "json" as const,
       };
 
       await executeHealthCheck(agent, customConfig);
@@ -303,6 +312,22 @@ describe("agentHealthCheck", () => {
       // When JSON parsing fails, it falls back to parseStatus(null)
       // json_status parser returns error for null
       expect(result.status).toBe("error");
+    });
+
+    it("should handle Ollama text/plain health responses", async () => {
+      global.fetch = (() =>
+        Promise.resolve(
+          new Response("Ollama is running", {
+            status: 200,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          }),
+        )) as unknown as typeof fetch;
+
+      const agent = createAgent({ type: "ollama" });
+      const result = await executeHealthCheck(agent);
+
+      expect(result.status).toBe("ok");
+      expect(result.httpStatus).toBe(200);
     });
   });
 });

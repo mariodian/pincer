@@ -13,6 +13,7 @@ export interface HealthConfig {
   headers: Record<string, string>;
   timeout: number;
   parseStatus: StatusParser;
+  responseFormat: "json" | "text";
 }
 
 export interface HealthCheckResult {
@@ -42,6 +43,7 @@ export function resolveHealthConfig(agent: Agent): HealthConfig {
   const parseStatus = agent.statusShape
     ? STATUS_PARSERS[agent.statusShape as StatusShape]
     : (agentType?.parseStatus ?? STATUS_PARSERS.always_ok);
+  const responseFormat = agentType?.responseFormat ?? "json";
 
   return {
     url: `${baseUrl}:${agent.port}${endpoint}`,
@@ -49,6 +51,7 @@ export function resolveHealthConfig(agent: Agent): HealthConfig {
     headers,
     timeout,
     parseStatus,
+    responseFormat,
   };
 }
 
@@ -114,28 +117,27 @@ export async function executeHealthCheck(
     const httpStatus = response.status;
 
     if (response.ok) {
-      try {
-        const data = await response.json();
-        const result = healthConfig.parseStatus(data);
-        return {
-          agentId: agent.id,
-          status: result.status as CheckStatus,
-          responseMs,
-          httpStatus,
-          errorCode: null,
-          errorMessage: result.errorMessage ?? null,
-        };
-      } catch {
-        const result = healthConfig.parseStatus(null);
-        return {
-          agentId: agent.id,
-          status: result.status as CheckStatus,
-          responseMs,
-          httpStatus,
-          errorCode: null,
-          errorMessage: result.errorMessage ?? null,
-        };
+      let body: unknown;
+      if (healthConfig.responseFormat === "text") {
+        body = await response.text();
+      } else {
+        const responseClone = response.clone();
+        try {
+          body = await response.json();
+        } catch {
+          body = await responseClone.text().catch(() => null);
+        }
       }
+
+      const result = healthConfig.parseStatus(body);
+      return {
+        agentId: agent.id,
+        status: result.status as CheckStatus,
+        responseMs,
+        httpStatus,
+        errorCode: null,
+        errorMessage: result.errorMessage ?? null,
+      };
     } else {
       return {
         agentId: agent.id,

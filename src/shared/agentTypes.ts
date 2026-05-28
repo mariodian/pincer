@@ -10,10 +10,11 @@ export interface AgentTypeConfig {
   parseStatus: StatusParser;
   timeout?: number;
   defaultPort: number;
+  responseFormat: "json" | "text";
 }
 
 /** Signature for a health response parser. */
-export type StatusParser = (json: unknown) => {
+export type StatusParser = (body: unknown) => {
   status: Status;
   errorMessage?: string;
 };
@@ -28,16 +29,16 @@ export type StatusShape = (typeof STATUS_SHAPE_OPTIONS)[number]["value"];
 
 /** Maps a status shape preset to its parser function. */
 export const STATUS_PARSERS: Record<StatusShape, StatusParser> = {
-  always_ok: (_json) => {
+  always_ok: (_body) => {
     try {
       return { status: "ok" };
     } catch {
       return { status: "error", errorMessage: "Parser error" };
     }
   },
-  json_status: (json) => {
+  json_status: (body) => {
     try {
-      const data = json as { status?: Status };
+      const data = body as { status?: Status };
       return data.status === "ok" ? { status: "ok" } : { status: "error" };
     } catch {
       return { status: "error", errorMessage: "Invalid JSON status format" };
@@ -49,14 +50,30 @@ export const STATUS_PARSERS: Record<StatusShape, StatusParser> = {
  * Standard status parser for OpenClaw/OpenCrabs agents.
  * Returns "error" if the response JSON has status "error", otherwise "ok".
  */
-function parseStandardAgentStatus(json: unknown): {
+function parseStandardAgentStatus(body: unknown): {
   status: Status;
   errorMessage?: string;
 } {
   try {
-    const data = json as { status?: Status };
+    const data = body as { status?: Status };
     if (data.status === "error") return { status: "error" };
     return { status: "ok" };
+  } catch {
+    return { status: "error", errorMessage: "Invalid health response format" };
+  }
+}
+
+function parseOllamaStatus(text: unknown): {
+  status: Status;
+  errorMessage?: string;
+} {
+  try {
+    if (typeof text !== "string") {
+      return { status: "error", errorMessage: "Expected text response" };
+    }
+    return text.toLowerCase().includes("ollama is running")
+      ? { status: "ok" }
+      : { status: "error", errorMessage: "Unexpected Ollama health response" };
   } catch {
     return { status: "error", errorMessage: "Invalid health response format" };
   }
@@ -70,22 +87,7 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthMethod: "GET",
     parseStatus: STATUS_PARSERS.always_ok,
     defaultPort: 18790,
-  },
-  openclaw: {
-    id: "openclaw",
-    name: "OpenClaw",
-    healthEndpoint: "/health",
-    healthMethod: "GET",
-    parseStatus: parseStandardAgentStatus,
-    defaultPort: 18789,
-  },
-  opencrabs: {
-    id: "opencrabs",
-    name: "OpenCrabs",
-    healthEndpoint: "/a2a/health",
-    healthMethod: "GET",
-    parseStatus: parseStandardAgentStatus,
-    defaultPort: 18790,
+    responseFormat: "json",
   },
   hermes: {
     id: "hermes",
@@ -94,6 +96,34 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthMethod: "GET",
     parseStatus: parseStandardAgentStatus,
     defaultPort: 8642,
+    responseFormat: "json",
+  },
+  lmstudio: {
+    id: "lmstudio",
+    name: "LM Studio",
+    healthEndpoint: "/api/v1/models",
+    healthMethod: "GET",
+    parseStatus: parseStandardAgentStatus,
+    defaultPort: 1234,
+    responseFormat: "json",
+  },
+  ollama: {
+    id: "ollama",
+    name: "Ollama",
+    healthEndpoint: "/",
+    healthMethod: "GET",
+    parseStatus: parseOllamaStatus,
+    defaultPort: 11434,
+    responseFormat: "text",
+  },
+  openclaw: {
+    id: "openclaw",
+    name: "OpenClaw",
+    healthEndpoint: "/health",
+    healthMethod: "GET",
+    parseStatus: parseStandardAgentStatus,
+    defaultPort: 18789,
+    responseFormat: "json",
   },
   opencode: {
     id: "opencode",
@@ -102,6 +132,16 @@ export const AGENT_TYPES: Record<string, AgentTypeConfig> = {
     healthMethod: "GET",
     parseStatus: parseStandardAgentStatus,
     defaultPort: 4096,
+    responseFormat: "json",
+  },
+  opencrabs: {
+    id: "opencrabs",
+    name: "OpenCrabs",
+    healthEndpoint: "/a2a/health",
+    healthMethod: "GET",
+    parseStatus: parseStandardAgentStatus,
+    defaultPort: 18790,
+    responseFormat: "json",
   },
 };
 
