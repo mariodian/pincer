@@ -5,6 +5,26 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.0] - 2026-06-12
+
+### Added
+
+- Added **force sync** functionality that discards all local data and re-downloads everything from the daemon, with a confirmation dialog and progress notifications.
+- Added `getDaemonSyncStatus` RPC endpoint and real-time sync status notifications.
+- Added alert dialog UI components.
+- Added test coverage for force sync flows.
+
+### Changed
+
+- Extracted shared test data creation helpers for incident events and stats repositories.
+- Updated sync timestamp logic and UI to reflect force sync state.
+
+### Fixed
+
+- Reset database sequences after bulk deletes during force sync to prevent ID conflicts.
+- Clarified force sync warning message in the confirmation dialog.
+- Fixed platform badge links in README.
+
 ## [v0.3.9] - 2026-05-28
 
 ### Added
