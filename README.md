@@ -8,7 +8,7 @@ Desktop monitoring for local AI agents.<br />Check health, status, and charts fr
 
 [![Build](https://img.shields.io/github/actions/workflow/status/mariodian/pincer/ci.yml)](https://github.com/mariodian/pincer/actions)
 [![Version](https://img.shields.io/github/v/release/mariodian/pincer)](https://github.com/mariodian/pincer/releases)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)](#-installation)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 </div>
