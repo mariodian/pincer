@@ -322,9 +322,14 @@
           <AlertDialog.Header>
             <AlertDialog.Title>Force Sync from Daemon?</AlertDialog.Title>
             <AlertDialog.Description>
-              This will permanently discard all local checks, incidents, and
-              stats, then re-download everything from the daemon. This action
-              cannot be reversed.
+              <p>
+                All local data will be permanently replaced with the latest data
+                from the daemon.
+              </p>
+              <p class="text-muted-foreground mt-2 text-xs">
+                Depending on your data size and connection speed, this may take
+                a few minutes.
+              </p>
             </AlertDialog.Description>
           </AlertDialog.Header>
           <AlertDialog.Footer>
