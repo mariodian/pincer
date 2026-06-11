@@ -1,11 +1,15 @@
 // Status Service - Centralized status polling for agent monitoring
 // Thin production wrapper around statusCore.
 
+import type { DaemonSyncResult } from "../../shared/types";
+import { getMainWindow } from "../rpc/windowRegistry";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
 import { getAllAgentLatestChecks } from "../storage/sqlite/checksRepo";
 import { checkAllAgentsStatus } from "./agentService";
 import {
   isDaemonConfigured,
+  setOnSyncComplete,
+  setOnSyncStart,
   syncAgents,
   syncDataOnly,
 } from "./daemonSyncService";
@@ -75,6 +79,20 @@ const core = createStatusCore({
   notifier,
   statusSync,
   logger,
+});
+
+setOnSyncStart(() => {
+  stopStatusUpdates();
+});
+
+setOnSyncComplete((result) => {
+  void restartStatusUpdates();
+
+  const mainWindow = getMainWindow();
+  const rpc = mainWindow?.webview.rpc as {
+    send?: { forceSyncComplete?: (data: DaemonSyncResult) => void };
+  } | null;
+  rpc?.send?.forceSyncComplete?.(result);
 });
 
 export async function beginStatusUpdates() {

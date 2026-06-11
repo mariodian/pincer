@@ -2,6 +2,7 @@
   import type { DaemonSettings } from "$shared/types";
   import { toast } from "svelte-sonner";
 
+  import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "$lib/components/ui/button";
   import * as Card from "$lib/components/ui/card";
   import { Input } from "$lib/components/ui/input";
@@ -10,7 +11,13 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import Spinner from "$lib/components/ui/spinner/spinner.svelte";
   import { SwitchCard } from "$lib/components/ui/switch-card";
-  import { getMainRPC, whenReady } from "$lib/services/mainRPC";
+  import {
+    forceSyncInProgress,
+    getMainRPC,
+    offForceSyncComplete,
+    onForceSyncComplete,
+    whenReady,
+  } from "$lib/services/mainRPC";
 
   interface Props {
     onSaveStatus: (status: "saving" | "saved" | "error" | null) => void;
@@ -29,6 +36,12 @@
   let testStatus = $state<"testing" | null>(null);
   let syncStatus = $state<"syncing" | null>(null);
   let lastSync = $state<number | null>(null);
+  let forceSyncOpen = $state(false);
+  let forceSyncing = $state(false);
+
+  const unsubForceSync = forceSyncInProgress.subscribe((value) => {
+    forceSyncing = value;
+  });
 
   async function loadSettings() {
     try {
@@ -56,6 +69,23 @@
 
   $effect(() => {
     loadSettings();
+  });
+
+  $effect(() => {
+    const key = onForceSyncComplete((result) => {
+      lastSync = Date.now();
+      if (result.success) {
+        toast.success(
+          `Force synced: ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents`,
+        );
+      } else {
+        toast.error(result.error || "Force sync failed");
+      }
+    });
+    return () => {
+      offForceSyncComplete(key);
+      unsubForceSync();
+    };
   });
 
   async function saveField(updates: Partial<DaemonSettings>) {
@@ -125,6 +155,18 @@
       toast.error("Sync failed");
     } finally {
       syncStatus = null;
+    }
+  }
+
+  async function forceSync() {
+    forceSyncOpen = false;
+    forceSyncInProgress.set(true);
+    try {
+      const rpc = getMainRPC();
+      await rpc.request.forceSyncDaemon({});
+    } catch {
+      forceSyncInProgress.set(false);
+      toast.error("Force sync failed");
     }
   }
 
@@ -232,21 +274,58 @@
               {formatRelativeTime(lastSync)}
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onclick={syncNow}
-            disabled={syncStatus === "syncing" || !enabled}
-          >
-            {#if syncStatus === "syncing"}
-              <Spinner />
-              Syncing...
-            {:else}
-              Sync now
-            {/if}
-          </Button>
+          <div class="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onclick={syncNow}
+              disabled={syncStatus === "syncing" || forceSyncing || !enabled}
+            >
+              {#if syncStatus === "syncing"}
+                <Spinner />
+                Syncing...
+              {:else}
+                Sync now
+              {/if}
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onclick={() => (forceSyncOpen = true)}
+              disabled={forceSyncing || syncStatus === "syncing" || !enabled}
+            >
+              {#if forceSyncing}
+                <Spinner />
+                Force syncing...
+              {:else}
+                Force sync
+              {/if}
+            </Button>
+          </div>
         </div>
       </Card.Content>
     </Card.Root>
+
+    <AlertDialog.Root bind:open={forceSyncOpen}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay />
+        <AlertDialog.Content size="sm">
+          <AlertDialog.Header>
+            <AlertDialog.Title>Force Sync from Daemon?</AlertDialog.Title>
+            <AlertDialog.Description>
+              This will permanently discard all local checks, incidents, and
+              stats, then re-download everything from the daemon. This action
+              cannot be reversed.
+            </AlertDialog.Description>
+          </AlertDialog.Header>
+          <AlertDialog.Footer>
+            <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+            <AlertDialog.Action variant="destructive" onclick={forceSync}>
+              Force sync
+            </AlertDialog.Action>
+          </AlertDialog.Footer>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
   </div>
 {/if}

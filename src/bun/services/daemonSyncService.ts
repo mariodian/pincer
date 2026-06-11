@@ -7,10 +7,16 @@ import type {
 } from "../../shared/types";
 import { readAgents, writeAgents } from "../storage/sqlite/agentsRepo";
 import { getMeta, setMeta } from "../storage/sqlite/appMetaRepo";
-import { insertChecksBatch } from "../storage/sqlite/checksRepo";
+import {
+  deleteAllChecks,
+  insertChecksBatch,
+} from "../storage/sqlite/checksRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
-import { insertEventsBatch } from "../storage/sqlite/incidentEventsRepo";
-import { upsertStatsBatch } from "../storage/sqlite/statsRepo";
+import {
+  deleteAllEvents,
+  insertEventsBatch,
+} from "../storage/sqlite/incidentEventsRepo";
+import { deleteAllStats, upsertStatsBatch } from "../storage/sqlite/statsRepo";
 import { getChannel } from "../utils/channel";
 import { DaemonClient, type AgentPushPayload } from "./daemonClient";
 import { logger } from "./loggerService";
@@ -19,6 +25,19 @@ import { getMachineId } from "./machineIdService";
 const DAEMON_SYNC_KEY = "daemon_last_sync";
 const DAEMON_SYNC_STATS_KEY = "daemon_last_sync_stats";
 const DAEMON_LAST_NAMESPACE_KEY = "daemon_last_namespace_id";
+
+let onSyncStart: (() => void) | null = null;
+let onSyncComplete: ((result: DaemonSyncResult) => void) | null = null;
+
+export function setOnSyncStart(cb: () => void): void {
+  onSyncStart = cb;
+}
+
+export function setOnSyncComplete(
+  cb: (result: DaemonSyncResult) => void,
+): void {
+  onSyncComplete = cb;
+}
 
 function formatUptime(seconds: number): string {
   const days = Math.floor(seconds / 86400);
@@ -494,4 +513,42 @@ export async function sync(): Promise<DaemonSyncResult> {
   }
 
   return syncDataOnly();
+}
+
+/**
+ * Force sync from daemon: discard all local checks, incidents, and stats,
+ * reset sync cursors, and re-download everything from daemon for the current namespace.
+ * Agents are preserved (not deleted).
+ *
+ * This function is non-blocking: it clears data and fires the sync in the background,
+ * then returns immediately. The actual sync result is delivered via the onSyncComplete callback.
+ */
+export async function forceSync(): Promise<{ success: boolean }> {
+  if (!isDaemonConfigured()) {
+    return { success: false };
+  }
+
+  onSyncStart?.();
+
+  logger.info("daemon", "Force sync: discarding local data...");
+
+  const checksDeleted = deleteAllChecks();
+  const eventsDeleted = deleteAllEvents();
+  const statsDeleted = deleteAllStats();
+
+  logger.info(
+    "daemon",
+    `Force sync: deleted ${checksDeleted} checks, ${eventsDeleted} events, ${statsDeleted} stats`,
+  );
+
+  setMeta(DAEMON_SYNC_KEY, "0");
+  setMeta(DAEMON_SYNC_STATS_KEY, "0");
+
+  logger.info("daemon", "Force sync: re-downloading all data from daemon...");
+
+  void sync().then((result) => {
+    onSyncComplete?.(result);
+  });
+
+  return { success: true };
 }

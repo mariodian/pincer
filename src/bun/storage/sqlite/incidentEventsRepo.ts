@@ -563,3 +563,16 @@ export function deleteIncident(incidentId: string): number {
   // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
   return result.changes ?? 0;
 }
+
+/**
+ * Delete all incident events from the database.
+ * Returns the number of deleted rows.
+ */
+export function deleteAllEvents(): number {
+  const { db } = getDatabase();
+
+  const result = db.delete(incidentEvents).run();
+
+  // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
+  return result.changes ?? 0;
+}

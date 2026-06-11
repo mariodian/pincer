@@ -3,7 +3,11 @@ import type {
   DaemonSyncResult,
   DaemonTestResult,
 } from "../../shared/types";
-import { sync, testDaemonConnection } from "../services/daemonSyncService";
+import {
+  forceSync,
+  sync,
+  testDaemonConnection,
+} from "../services/daemonSyncService";
 import { logger } from "../services/loggerService";
 import { getMeta } from "../storage/sqlite/appMetaRepo";
 import {
@@ -21,6 +25,10 @@ export type DaemonSyncRPCType = {
       };
       updateDaemonSettings: { params: Partial<DaemonSettings>; response: void };
       syncDaemon: { params: Record<string, never>; response: DaemonSyncResult };
+      forceSyncDaemon: {
+        params: Record<string, never>;
+        response: { success: boolean };
+      };
       testDaemonConnection: {
         params: Record<string, never>;
         response: DaemonTestResult;
@@ -32,7 +40,12 @@ export type DaemonSyncRPCType = {
     };
     messages: Record<string, never>;
   };
-  webview: { requests: Record<string, never>; messages: Record<string, never> };
+  webview: {
+    requests: Record<string, never>;
+    messages: {
+      forceSyncComplete: DaemonSyncResult;
+    };
+  };
 };
 
 export const daemonRequestHandlers = {
@@ -68,6 +81,15 @@ export const daemonRequestHandlers = {
         agentsImported: 0,
         openIncidents: [],
       },
+    ),
+
+  forceSyncDaemon: () =>
+    withErrorResult(
+      "daemonRPC",
+      async () => {
+        return forceSync();
+      },
+      { success: false },
     ),
 
   testDaemonConnection: () =>

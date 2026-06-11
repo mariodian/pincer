@@ -182,3 +182,16 @@ export function deleteOldStats(cutoffTimestamp: number): number {
   // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
   return result.changes ?? 0;
 }
+
+/**
+ * Delete all stats from the database.
+ * Returns the number of deleted rows.
+ */
+export function deleteAllStats(): number {
+  const { db } = getDatabase();
+
+  const result = db.delete(stats).run();
+
+  // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
+  return result.changes ?? 0;
+}

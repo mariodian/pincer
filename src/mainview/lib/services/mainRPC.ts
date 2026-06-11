@@ -7,7 +7,7 @@ import type { StatsRPCType } from "$bun/rpc/statsRPC";
 import type { SystemRPCType } from "$bun/rpc/systemRPC";
 import type { UpdateRPCType } from "$bun/rpc/updateRPC";
 import { RPC_MAX_REQUEST_TIME, type LogEntry } from "$shared/rpc";
-import type { AgentStatus } from "$shared/types";
+import type { AgentStatus, DaemonSyncResult } from "$shared/types";
 import { writable } from "svelte/store";
 
 import { syncAgentsToCache } from "$lib/utils/storage";
@@ -79,6 +79,27 @@ let initPromise: Promise<void> | null = null;
 type SyncCallback = () => void;
 const syncCallbacks = new Map<string, SyncCallback>();
 let callbackKeyCounter = 0;
+
+type ForceSyncCompleteCallback = (result: DaemonSyncResult) => void;
+const forceSyncCompleteCallbacks = new Map<string, ForceSyncCompleteCallback>();
+let forceSyncCallbackCounter = 0;
+
+export const forceSyncInProgress = writable(false);
+
+export function onForceSyncComplete(cb: ForceSyncCompleteCallback): string {
+  const key = String(++forceSyncCallbackCounter);
+  forceSyncCompleteCallbacks.set(key, cb);
+  return key;
+}
+
+export function offForceSyncComplete(key: string): void {
+  forceSyncCompleteCallbacks.delete(key);
+  for (const [k] of forceSyncCompleteCallbacks) {
+    if (typeof forceSyncCompleteCallbacks.get(k) !== "function") {
+      forceSyncCompleteCallbacks.delete(k);
+    }
+  }
+}
 
 // Log storage for pushed log entries (warn/error from main process)
 const logMessages: LogEntry[] = [];
@@ -190,6 +211,12 @@ export async function initMainRPC(handlers: {
           },
           pushLog: (entry: LogEntry) => {
             logMessages.push(entry);
+          },
+          forceSyncComplete: (result: DaemonSyncResult) => {
+            forceSyncInProgress.set(false);
+            for (const [, cb] of forceSyncCompleteCallbacks) {
+              cb(result);
+            }
           },
         },
       },

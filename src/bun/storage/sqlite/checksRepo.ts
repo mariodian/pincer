@@ -326,3 +326,16 @@ export function getChecksAggregatedBy10Min(
 ): CheckBucket[] {
   return getChecksAggregated(sinceMs, untilMs, TEN_MINUTES_MS);
 }
+
+/**
+ * Delete all checks from the database.
+ * Returns the number of deleted rows.
+ */
+export function deleteAllChecks(): number {
+  const { db } = getDatabase();
+
+  const result = db.delete(checks).run();
+
+  // @ts-expect-error - Drizzle returns void but sqlite3 returns object with changes
+  return result.changes ?? 0;
+}

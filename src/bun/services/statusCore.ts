@@ -55,6 +55,7 @@ export interface StatusCore {
   refreshAndPush(updateMenu?: boolean): Promise<void>;
   removeAgentStatusTracking(agentId: number): void;
   isDaemonConnected(): boolean;
+  processSyncedData(): Promise<void>;
 }
 
 /**
@@ -286,5 +287,6 @@ export function createStatusCore(deps: StatusCoreDeps): StatusCore {
     refreshAndPush,
     removeAgentStatusTracking,
     isDaemonConnected,
+    processSyncedData,
   };
 }
