@@ -12,6 +12,7 @@ import {
   insertChecksBatch,
 } from "../storage/sqlite/checksRepo";
 import { getDaemonSettings } from "../storage/sqlite/daemonSettingsRepo";
+import { resetSequence } from "../storage/sqlite/db";
 import {
   deleteAllEvents,
   insertEventsBatch,
@@ -543,7 +544,9 @@ export async function forceSync(): Promise<{ success: boolean }> {
   logger.info("daemon", "Force sync: discarding local data...");
 
   const checksDeleted = deleteAllChecks();
+  resetSequence("checks");
   const eventsDeleted = deleteAllEvents();
+  resetSequence("incident_events");
   const statsDeleted = deleteAllStats();
 
   logger.info(

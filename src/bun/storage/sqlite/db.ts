@@ -83,6 +83,16 @@ export async function initializeDatabase(): Promise<{
   return { db, sqlite };
 }
 
+/**
+ * Reset the AUTOINCREMENT sequence for a table.
+ * Deletes the sqlite_sequence entry so the next insert starts from 1.
+ * Use after bulk deletes (e.g., forceSync) to prevent unbounded ID growth.
+ */
+export function resetSequence(tableName: string): void {
+  const { sqlite } = getDatabase();
+  sqlite.prepare("DELETE FROM sqlite_sequence WHERE name = ?").run(tableName);
+}
+
 function startPruningJob(_db: ReturnType<typeof drizzle>): void {
   // Run pruning on startup, then every 24 hours
   pruneOldStats();
