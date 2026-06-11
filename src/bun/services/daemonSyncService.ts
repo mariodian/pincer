@@ -28,6 +28,7 @@ const DAEMON_LAST_NAMESPACE_KEY = "daemon_last_namespace_id";
 
 let onSyncStart: (() => void) | null = null;
 let onSyncComplete: ((result: DaemonSyncResult) => void) | null = null;
+let forceSyncRunning = false;
 
 export function setOnSyncStart(cb: () => void): void {
   onSyncStart = cb;
@@ -37,6 +38,10 @@ export function setOnSyncComplete(
   cb: (result: DaemonSyncResult) => void,
 ): void {
   onSyncComplete = cb;
+}
+
+export function isForceSyncInProgress(): boolean {
+  return forceSyncRunning;
 }
 
 function formatUptime(seconds: number): string {
@@ -528,6 +533,7 @@ export async function forceSync(): Promise<{ success: boolean }> {
     return { success: false };
   }
 
+  forceSyncRunning = true;
   onSyncStart?.();
 
   logger.info("daemon", "Force sync: discarding local data...");
@@ -546,9 +552,24 @@ export async function forceSync(): Promise<{ success: boolean }> {
 
   logger.info("daemon", "Force sync: re-downloading all data from daemon...");
 
-  void sync().then((result) => {
-    onSyncComplete?.(result);
-  });
+  void sync().then(
+    (result) => {
+      forceSyncRunning = false;
+      onSyncComplete?.(result);
+    },
+    (error) => {
+      forceSyncRunning = false;
+      onSyncComplete?.({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        checksImported: 0,
+        statsImported: 0,
+        incidentsImported: 0,
+        agentsImported: 0,
+        openIncidents: [],
+      });
+    },
+  );
 
   return { success: true };
 }

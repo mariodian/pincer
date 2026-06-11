@@ -5,6 +5,7 @@ import type {
 } from "../../shared/types";
 import {
   forceSync,
+  isForceSyncInProgress,
   sync,
   testDaemonConnection,
 } from "../services/daemonSyncService";
@@ -36,6 +37,10 @@ export type DaemonSyncRPCType = {
       getLastDaemonSync: {
         params: Record<string, never>;
         response: number | null;
+      };
+      getDaemonSyncStatus: {
+        params: Record<string, never>;
+        response: { inProgress: boolean };
       };
     };
     messages: Record<string, never>;
@@ -106,5 +111,12 @@ export const daemonRequestHandlers = {
         return value ? parseInt(value, 10) : null;
       },
       null,
+    ),
+
+  getDaemonSyncStatus: () =>
+    withErrorResult(
+      "daemonRPC",
+      async () => ({ inProgress: isForceSyncInProgress() }),
+      { inProgress: false },
     ),
 };

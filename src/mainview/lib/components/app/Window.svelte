@@ -4,6 +4,7 @@
   import { onMount, type Snippet } from "svelte";
 
   import {
+    forceSyncInProgress,
     getMainRPC,
     initMainRPC,
     pendingNavigationRoute,
@@ -71,6 +72,12 @@
           pendingNavigationRoute.set(initialRoute);
         }
         rpcReady.set(true);
+
+        void rpc.request.getDaemonSyncStatus({}).then(({ inProgress }) => {
+          if (inProgress) {
+            forceSyncInProgress.set(true);
+          }
+        });
 
         const result = await rpc.request.getPlatform({});
         if (isDisposed) {

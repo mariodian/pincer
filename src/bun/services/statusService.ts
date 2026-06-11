@@ -1,6 +1,8 @@
 // Status Service - Centralized status polling for agent monitoring
 // Thin production wrapper around statusCore.
 
+import { Utils } from "electrobun/bun";
+
 import type { DaemonSyncResult } from "../../shared/types";
 import { getMainWindow } from "../rpc/windowRegistry";
 import { getAdvancedSettings } from "../storage/sqlite/advancedSettingsRepo";
@@ -89,10 +91,35 @@ setOnSyncComplete((result) => {
   void restartStatusUpdates();
 
   const mainWindow = getMainWindow();
-  const rpc = mainWindow?.webview.rpc as {
+  if (!mainWindow) {
+    const title = result.success ? "Force sync complete" : "Force sync failed";
+    const body = result.success
+      ? `Synced ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents from daemon.`
+      : result.error || "An error occurred during force sync.";
+    try {
+      Utils.showNotification({ title, body });
+    } catch (error) {
+      logger.warn("status", "Failed to send force sync notification:", error);
+    }
+    return;
+  }
+
+  const rpc = mainWindow.webview.rpc as {
     send?: { forceSyncComplete?: (data: DaemonSyncResult) => void };
   } | null;
-  rpc?.send?.forceSyncComplete?.(result);
+  if (rpc?.send?.forceSyncComplete) {
+    rpc.send.forceSyncComplete(result);
+  } else {
+    const title = result.success ? "Force sync complete" : "Force sync failed";
+    const body = result.success
+      ? `Synced ${result.checksImported} checks, ${result.statsImported} stats, ${result.incidentsImported} incidents from daemon.`
+      : result.error || "An error occurred during force sync.";
+    try {
+      Utils.showNotification({ title, body });
+    } catch (error) {
+      logger.warn("status", "Failed to send force sync notification:", error);
+    }
+  }
 });
 
 export async function beginStatusUpdates() {

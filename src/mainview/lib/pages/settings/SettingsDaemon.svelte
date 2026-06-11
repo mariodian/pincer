@@ -47,9 +47,10 @@
     try {
       await whenReady();
       const rpc = getMainRPC();
-      const [settings, lastSyncTime] = await Promise.all([
+      const [settings, lastSyncTime, syncStatus] = await Promise.all([
         rpc.request.getDaemonSettings({}),
         rpc.request.getLastDaemonSync({}),
+        rpc.request.getDaemonSyncStatus({}),
       ]);
 
       enabled = settings.enabled;
@@ -60,6 +61,7 @@
       // namespaceKey = settings.namespaceKey;
       // savedNamespaceKey = namespaceKey;
       lastSync = lastSyncTime;
+      forceSyncInProgress.set(syncStatus.inProgress);
     } catch (error) {
       console.error("Failed to load daemon settings:", error);
     } finally {
