@@ -6,10 +6,10 @@ Desktop monitoring for local AI agents.<br />Check health, status, and charts fr
 
 [Changelog](./CHANGELOG.md) · [Report Bug](https://github.com/mariodian/pincer/issues/new?template=bug-report.md) · [Request Feature](https://github.com/mariodian/pincer/issues/new?template=feature-request.md)
 
-![Status](https://img.shields.io/badge/status-alpha-red)
-![Release](https://img.shields.io/github/v/release/mariodian/pincer)
+[![Build](https://img.shields.io/github/actions/workflow/status/mariodian/pincer/ci.yml)](https://github.com/mariodian/pincer/actions)
+[![Version](https://img.shields.io/github/v/release/mariodian/pincer)](https://github.com/mariodian/pincer/releases)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 </div>
 
