@@ -176,11 +176,12 @@
     if (!timestamp) return "Never";
     const now = Date.now();
     const diff = now - timestamp;
-    if (diff < 60_000) return "just now";
+    if (diff < 5_000) return "just now";
+    if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
     if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
     if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
     if (diff < 2_592_000_000) return `${Math.floor(diff / 86_400_000)}d ago`;
-    return `${Math.floor(diff / 2_592_000_000)}d ago`;
+    return `${Math.floor(diff / 2_592_000_000)}mo ago`;
   }
 </script>
 
@@ -193,7 +194,7 @@
   </div>
 {:else}
   <div class="max-w-lg space-y-6">
-    <h3 class="mb-2 font-medium">Daemon Sync</h3>
+    <h3 class="mb-2 font-medium">Connection</h3>
     <Card.Root>
       <Card.Content>
         <SwitchCard
@@ -267,6 +268,7 @@
       </Card.Content>
     </Card.Root>
 
+    <h3 class="mb-2 font-medium">Sync Status</h3>
     <Card.Root>
       <Card.Content class="min-h-11 space-y-4">
         <div class="flex items-center justify-between">
@@ -305,6 +307,11 @@
             </Button>
           </div>
         </div>
+        <p class="text-muted-foreground text-xs">
+          <strong>Sync now</strong> pulls new data incrementally.
+          <strong>Force sync</strong> discards all local data and re-downloads everything
+          from the daemon.
+        </p>
       </Card.Content>
     </Card.Root>
 

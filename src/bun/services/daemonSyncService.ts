@@ -489,9 +489,13 @@ export async function syncDataOnly(): Promise<DaemonSyncResult> {
     fetchOpenIncidents(client),
   ]);
 
-  const hourBoundaryMs = Math.floor(syncStartMs / 3600000) * 3600000;
-  setMeta(DAEMON_SYNC_KEY, syncStartMs.toString());
-  setMeta(DAEMON_SYNC_STATS_KEY, hourBoundaryMs.toString());
+  // Only update sync timestamp if there's actual new data
+  const hasNewData = checks.imported > 0 || stats > 0 || incidents > 0;
+  if (hasNewData) {
+    const hourBoundaryMs = Math.floor(syncStartMs / 3600000) * 3600000;
+    setMeta(DAEMON_SYNC_KEY, syncStartMs.toString());
+    setMeta(DAEMON_SYNC_STATS_KEY, hourBoundaryMs.toString());
+  }
 
   logger.info(
     "daemon",

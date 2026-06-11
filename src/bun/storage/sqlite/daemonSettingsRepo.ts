@@ -43,11 +43,11 @@ export function updateDaemonSettingsWithLifecycle(
   const daemonJustEnabled = partial.enabled === true && !current.enabled;
 
   if (daemonJustEnabled) {
-    // Reset sync timestamp to prevent syncing duplicate data from the offline period
-    setMeta("daemon_last_sync", Date.now().toString());
+    // Reset sync timestamp to 0 so first sync fetches all historical data
+    setMeta("daemon_last_sync", "0");
     logger.debug(
       "daemon",
-      "Daemon enabled - reset sync timestamp to prevent duplicate data",
+      "Daemon enabled - reset sync timestamp to fetch all data",
     );
   }
 

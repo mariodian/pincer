@@ -133,7 +133,7 @@ describe("daemonSettingsRepo", () => {
       expect(result.settingsChanged).toBe(false);
     });
 
-    it("should write daemon_last_sync meta when enabling", () => {
+    it("should reset daemon_last_sync meta to 0 when enabling", () => {
       const { sqlite } = setupTestDB();
       sqlite.run(
         `INSERT INTO settings_daemon (id, enabled, url, secret, namespace_key) VALUES (1, 0, '', '', '')`,
@@ -145,7 +145,7 @@ describe("daemonSettingsRepo", () => {
         .prepare("SELECT value FROM app_meta WHERE key = 'daemon_last_sync'")
         .get() as { value: string } | undefined;
       expect(meta).toBeDefined();
-      expect(Number(meta!.value)).toBeGreaterThan(0);
+      expect(meta!.value).toBe("0");
     });
   });
 });
