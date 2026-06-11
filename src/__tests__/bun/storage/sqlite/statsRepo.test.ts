@@ -9,9 +9,19 @@ import {
   upsertHourlyStat,
   upsertStatsBatch,
 } from "../../../../bun/storage/sqlite/statsRepo";
+import { createHourlyStat } from "../../../setup";
 import { resetTestDB, setupTestDB } from "./test-helpers";
 
 describe("statsRepo", () => {
+  const baseStat = {
+    totalChecks: 1,
+    okCount: 1,
+    offlineCount: 0,
+    errorCount: 0,
+    uptimePct: 100,
+    avgResponseMs: 10,
+  };
+
   beforeEach(() => setupTestDB());
   afterEach(() => resetTestDB());
 
@@ -89,26 +99,22 @@ describe("statsRepo", () => {
 
     it("should insert multiple stats", () => {
       const count = upsertStatsBatch([
-        {
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 1000,
           totalChecks: 5,
           okCount: 4,
           offlineCount: 1,
-          errorCount: 0,
           uptimePct: 80,
           avgResponseMs: 50,
-        },
-        {
+        }),
+        createHourlyStat({
           agentId: 2,
           hourTimestamp: 1000,
           totalChecks: 3,
           okCount: 3,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 30,
-        },
+        }),
       ]);
       expect(count).toBe(2);
       expect(getStatsCount()).toBe(2);
@@ -116,28 +122,25 @@ describe("statsRepo", () => {
 
     it("should replace existing rows on conflict", () => {
       upsertStatsBatch([
-        {
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 1000,
           totalChecks: 5,
           okCount: 4,
           offlineCount: 1,
-          errorCount: 0,
           uptimePct: 80,
           avgResponseMs: 50,
-        },
+        }),
       ]);
       upsertStatsBatch([
-        {
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 1000,
           totalChecks: 10,
           okCount: 10,
-          offlineCount: 0,
-          errorCount: 0,
           uptimePct: 100,
           avgResponseMs: 40,
-        },
+        }),
       ]);
 
       const stats = getAgentStats(1, 0, 9999999999);
@@ -152,26 +155,20 @@ describe("statsRepo", () => {
   describe("getAgentStats", () => {
     it("should return stats for the specified agent only", () => {
       upsertStatsBatch([
-        {
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 1000,
           totalChecks: 5,
           okCount: 5,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 50,
-        },
-        {
+        }),
+        createHourlyStat({
           agentId: 2,
           hourTimestamp: 1000,
           totalChecks: 3,
           okCount: 3,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 30,
-        },
+        }),
       ]);
 
       const stats = getAgentStats(1, 0, 9999999999);
@@ -181,36 +178,9 @@ describe("statsRepo", () => {
 
     it("should filter by time range", () => {
       upsertStatsBatch([
-        {
-          agentId: 1,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 500,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
+        { agentId: 1, hourTimestamp: 100, ...baseStat },
+        { agentId: 1, hourTimestamp: 500, ...baseStat },
+        { agentId: 1, hourTimestamp: 1000, ...baseStat },
       ]);
 
       const stats = getAgentStats(1, 200, 800);
@@ -224,36 +194,9 @@ describe("statsRepo", () => {
 
     it("should sort by hour_timestamp ascending", () => {
       upsertStatsBatch([
-        {
-          agentId: 1,
-          hourTimestamp: 300,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 200,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
+        { agentId: 1, hourTimestamp: 300, ...baseStat },
+        { agentId: 1, hourTimestamp: 100, ...baseStat },
+        { agentId: 1, hourTimestamp: 200, ...baseStat },
       ]);
 
       const stats = getAgentStats(1, 0, 9999999999);
@@ -266,26 +209,20 @@ describe("statsRepo", () => {
   describe("getAllAgentStats", () => {
     it("should return stats for all agents", () => {
       upsertStatsBatch([
-        {
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 1000,
           totalChecks: 5,
           okCount: 5,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 50,
-        },
-        {
+        }),
+        createHourlyStat({
           agentId: 2,
           hourTimestamp: 1000,
           totalChecks: 3,
           okCount: 3,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 30,
-        },
+        }),
       ]);
 
       const stats = getAllAgentStats(0, 9999999999);
@@ -296,36 +233,9 @@ describe("statsRepo", () => {
 
     it("should sort by agentId then hour_timestamp", () => {
       upsertStatsBatch([
-        {
-          agentId: 2,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 200,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
+        { agentId: 2, hourTimestamp: 100, ...baseStat },
+        { agentId: 1, hourTimestamp: 200, ...baseStat },
+        { agentId: 1, hourTimestamp: 100, ...baseStat },
       ]);
 
       const stats = getAllAgentStats(0, 9999999999);
@@ -346,26 +256,8 @@ describe("statsRepo", () => {
   describe("getStatsCount", () => {
     it("should return total row count", () => {
       upsertStatsBatch([
-        {
-          agentId: 1,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 2000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
+        { agentId: 1, hourTimestamp: 1000, ...baseStat },
+        { agentId: 1, hourTimestamp: 2000, ...baseStat },
       ]);
       expect(getStatsCount()).toBe(2);
     });
@@ -380,36 +272,9 @@ describe("statsRepo", () => {
   describe("deleteOldStats", () => {
     it("should delete stats older than cutoff and return count", () => {
       upsertStatsBatch([
-        {
-          agentId: 1,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 500,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
+        { agentId: 1, hourTimestamp: 100, ...baseStat },
+        { agentId: 1, hourTimestamp: 500, ...baseStat },
+        { agentId: 1, hourTimestamp: 1000, ...baseStat },
       ]);
 
       const deleted = deleteOldStats(600);
@@ -423,36 +288,9 @@ describe("statsRepo", () => {
 
     it("should only delete old stats across all agents", () => {
       upsertStatsBatch([
-        {
-          agentId: 1,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 2,
-          hourTimestamp: 100,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 1,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
+        { agentId: 1, hourTimestamp: 100, ...baseStat },
+        { agentId: 2, hourTimestamp: 100, ...baseStat },
+        { agentId: 1, hourTimestamp: 1000, ...baseStat },
       ]);
 
       const deleted = deleteOldStats(500);
@@ -466,36 +304,28 @@ describe("statsRepo", () => {
   describe("deleteAllStats", () => {
     it("should delete all stats and return count", () => {
       upsertStatsBatch([
-        {
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 1000,
           totalChecks: 5,
           okCount: 5,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 50,
-        },
-        {
+        }),
+        createHourlyStat({
           agentId: 1,
           hourTimestamp: 2000,
           totalChecks: 3,
           okCount: 3,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
           avgResponseMs: 30,
-        },
-        {
+        }),
+        createHourlyStat({
           agentId: 2,
           hourTimestamp: 1000,
-          totalChecks: 1,
           okCount: 0,
           offlineCount: 1,
-          errorCount: 0,
           uptimePct: 0,
           avgResponseMs: 10,
-        },
+        }),
       ]);
 
       expect(getStatsCount()).toBe(3);
@@ -510,36 +340,9 @@ describe("statsRepo", () => {
 
     it("should delete stats from all agents", () => {
       upsertStatsBatch([
-        {
-          agentId: 1,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 10,
-        },
-        {
-          agentId: 2,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 20,
-        },
-        {
-          agentId: 3,
-          hourTimestamp: 1000,
-          totalChecks: 1,
-          okCount: 1,
-          offlineCount: 0,
-          errorCount: 0,
-          uptimePct: 100,
-          avgResponseMs: 30,
-        },
+        { agentId: 1, hourTimestamp: 1000, ...baseStat },
+        { agentId: 2, hourTimestamp: 1000, ...baseStat, avgResponseMs: 20 },
+        { agentId: 3, hourTimestamp: 1000, ...baseStat, avgResponseMs: 30 },
       ]);
 
       const deleted = deleteAllStats();

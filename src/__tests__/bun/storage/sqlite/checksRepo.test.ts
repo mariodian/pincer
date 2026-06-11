@@ -15,6 +15,7 @@ import {
   insertCheck,
   insertChecksBatch,
 } from "../../../../bun/storage/sqlite/checksRepo";
+import { createCheck } from "../../../setup";
 import { resetTestDB, setupTestDB } from "./test-helpers";
 
 describe("checksRepo", () => {
@@ -60,55 +61,29 @@ describe("checksRepo", () => {
 
     it("should insert multiple checks and return count", () => {
       const inserted = insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: 1000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({ checkedAt: 1000 }),
+        createCheck({
           checkedAt: 2000,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
           errorMessage: "fail",
-        },
+        }),
       ]);
       expect(inserted).toBe(2);
       expect(getTotalChecksCount()).toBe(2);
     });
 
     it("should ignore duplicates (same agentId + checkedAt)", () => {
-      insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: 1000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-      ]);
+      insertChecksBatch([createCheck({ checkedAt: 1000 })]);
       const inserted = insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({
           checkedAt: 1000,
           status: "error",
           responseMs: 99,
           httpStatus: 500,
-          errorCode: null,
-          errorMessage: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(0);
       expect(getTotalChecksCount()).toBe(1);
@@ -120,69 +95,29 @@ describe("checksRepo", () => {
   describe("getRecentChecks", () => {
     it("should return checks within time range sorted desc", () => {
       const now = Date.now();
-      // Use manual inserts with controlled timestamps
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 5000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({ checkedAt: now - 5000 }),
+        createCheck({
           checkedAt: now - 1000,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 10000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        }),
+        createCheck({ checkedAt: now - 10000 }),
       ]);
 
       const recent = getRecentChecks(1, now - 6000);
-      expect(recent.length).toBe(2); // -5000 and -1000
-      expect(recent[0].status).toBe("error"); // most recent first
+      expect(recent.length).toBe(2);
+      expect(recent[0].status).toBe("error");
       expect(recent[1].status).toBe("ok");
     });
 
     it("should respect untilMs boundary", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 5000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 1000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        createCheck({ checkedAt: now - 5000 }),
+        createCheck({ checkedAt: now - 1000 }),
       ]);
 
       const recent = getRecentChecks(1, now - 6000, now - 2000);
@@ -196,18 +131,7 @@ describe("checksRepo", () => {
 
     it("should not return checks for other agents", () => {
       const now = Date.now();
-      insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-      ]);
+      insertChecksBatch([createCheck({ checkedAt: now })]);
       expect(getRecentChecks(2, now - 1000)).toEqual([]);
     });
   });
@@ -218,40 +142,18 @@ describe("checksRepo", () => {
     it("should return exactly N most recent checks", () => {
       const now = Date.now();
       for (let i = 0; i < 5; i++) {
-        insertChecksBatch([
-          {
-            id: 0,
-            agentId: 1,
-            checkedAt: now - i * 1000,
-            status: "ok",
-            responseMs: 10,
-            httpStatus: 200,
-            errorCode: null,
-            errorMessage: null,
-          },
-        ]);
+        insertChecksBatch([createCheck({ checkedAt: now - i * 1000 })]);
       }
 
       const last3 = getAgentLastNChecks(1, 3);
       expect(last3.length).toBe(3);
-      expect(last3[0].checkedAt).toBe(now); // most recent
+      expect(last3[0].checkedAt).toBe(now);
       expect(last3[2].checkedAt).toBe(now - 2000);
     });
 
     it("should return fewer than N when not enough rows", () => {
       const now = Date.now();
-      insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-      ]);
+      insertChecksBatch([createCheck({ checkedAt: now })]);
       expect(getAgentLastNChecks(1, 10).length).toBe(1);
     });
 
@@ -262,26 +164,15 @@ describe("checksRepo", () => {
     it("should not include checks from other agents", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
+        createCheck({ checkedAt: now }),
+        createCheck({
           agentId: 2,
           checkedAt: now - 100,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
+        }),
       ]);
       expect(getAgentLastNChecks(1, 10).length).toBe(1);
       expect(getAgentLastNChecks(1, 10)[0].agentId).toBe(1);
@@ -294,26 +185,14 @@ describe("checksRepo", () => {
     it("should return the most recent check for the agent", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 2000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({ checkedAt: now - 2000 }),
+        createCheck({
           checkedAt: now,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
+        }),
       ]);
       const latest = getAgentLatestCheck(1);
       expect(latest).not.toBeNull();
@@ -326,18 +205,7 @@ describe("checksRepo", () => {
 
     it("should not return checks for other agents", () => {
       const now = Date.now();
-      insertChecksBatch([
-        {
-          id: 0,
-          agentId: 2,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-      ]);
+      insertChecksBatch([createCheck({ agentId: 2, checkedAt: now })]);
       expect(getAgentLatestCheck(1)).toBeNull();
     });
   });
@@ -348,36 +216,21 @@ describe("checksRepo", () => {
     it("should return the latest check per agent", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 3000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({ checkedAt: now - 3000 }),
+        createCheck({
           checkedAt: now,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
-        {
-          id: 0,
+        }),
+        createCheck({
           agentId: 2,
           checkedAt: now - 1000,
           status: "degraded",
           responseMs: 500,
-          httpStatus: 200,
-          errorCode: null,
           errorMessage: "slow",
-        },
+        }),
       ]);
 
       const results = getAllAgentLatestChecks();
@@ -385,7 +238,7 @@ describe("checksRepo", () => {
 
       const agent1 = results.find((c) => c.agentId === 1);
       expect(agent1).toBeDefined();
-      expect(agent1!.status).toBe("error"); // most recent
+      expect(agent1!.status).toBe("error");
 
       const agent2 = results.find((c) => c.agentId === 2);
       expect(agent2).toBeDefined();
@@ -398,18 +251,7 @@ describe("checksRepo", () => {
 
     it("should not return agents that have zero checks", () => {
       const now = Date.now();
-      insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-      ]);
+      insertChecksBatch([createCheck({ checkedAt: now })]);
 
       const results = getAllAgentLatestChecks();
       expect(results.length).toBe(1);
@@ -423,26 +265,15 @@ describe("checksRepo", () => {
     it("should return checks across all agents", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
+        createCheck({ checkedAt: now }),
+        createCheck({
           agentId: 2,
           checkedAt: now - 100,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
+        }),
       ]);
       const all = getAllChecks(now - 1000);
       expect(all.length).toBe(2);
@@ -459,36 +290,9 @@ describe("checksRepo", () => {
     it("should count only checks older than cutoff", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 10000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 5000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        createCheck({ checkedAt: now - 10000 }),
+        createCheck({ checkedAt: now - 5000 }),
+        createCheck({ checkedAt: now }),
       ]);
       expect(countOldChecks(now - 3000)).toBe(2);
     });
@@ -504,36 +308,9 @@ describe("checksRepo", () => {
     it("should delete checks older than cutoff and return count", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 10000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 5000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        createCheck({ checkedAt: now - 10000 }),
+        createCheck({ checkedAt: now - 5000 }),
+        createCheck({ checkedAt: now }),
       ]);
       const deleted = deleteOldChecks(now - 3000);
       expect(deleted).toBe(2);
@@ -566,46 +343,20 @@ describe("checksRepo", () => {
       const hourMs = 60 * 60 * 1000;
       const bucketStart = Math.floor(Date.now() / hourMs) * hourMs;
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: bucketStart + 1000,
-          status: "ok",
-          responseMs: 100,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: bucketStart + 2000,
-          status: "ok",
-          responseMs: 200,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({ checkedAt: bucketStart + 1000, responseMs: 100 }),
+        createCheck({ checkedAt: bucketStart + 2000, responseMs: 200 }),
+        createCheck({
           checkedAt: bucketStart + 3000,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
-        {
-          id: 0,
+        }),
+        createCheck({
           agentId: 2,
           checkedAt: bucketStart + 4000,
-          status: "ok",
           responseMs: 50,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        }),
       ]);
 
       const buckets = getChecksAggregatedByHour(
@@ -619,7 +370,7 @@ describe("checksRepo", () => {
       expect(agent1Bucket!.total).toBe(3);
       expect(agent1Bucket!.okCount).toBe(2);
       expect(agent1Bucket!.degradedCount).toBe(1);
-      expect(agent1Bucket!.avgResponseMs).toBeCloseTo(100, 0); // (100+200+0)/3
+      expect(agent1Bucket!.avgResponseMs).toBeCloseTo(100, 0);
 
       const agent2Bucket = buckets.find((b) => b.agentId === 2);
       expect(agent2Bucket).toBeDefined();
@@ -638,26 +389,18 @@ describe("checksRepo", () => {
       const tenMinMs = 10 * 60 * 1000;
       const bucketStart = Math.floor(Date.now() / tenMinMs) * tenMinMs;
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({
           checkedAt: bucketStart + 1000,
           status: "offline",
           responseMs: 0,
           httpStatus: null,
           errorCode: "CONN",
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        }),
+        createCheck({
           checkedAt: bucketStart + 2000,
           status: "degraded",
           responseMs: 500,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        }),
       ]);
 
       const buckets = getChecksAggregatedBy10Min(
@@ -665,7 +408,7 @@ describe("checksRepo", () => {
         bucketStart + tenMinMs,
       );
       expect(buckets.length).toBe(1);
-      expect(buckets[0].failedCount).toBe(2); // offline + degraded both count toward degraded
+      expect(buckets[0].failedCount).toBe(2);
       expect(buckets[0].degradedCount).toBe(0);
     });
 
@@ -680,36 +423,15 @@ describe("checksRepo", () => {
     it("should delete all checks and return count", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now - 2000,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createCheck({ checkedAt: now - 2000 }),
+        createCheck({
           checkedAt: now - 1000,
           status: "error",
           responseMs: 0,
           httpStatus: null,
           errorCode: "ERR",
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 2,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 50,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        }),
+        createCheck({ agentId: 2, checkedAt: now, responseMs: 50 }),
       ]);
 
       expect(getTotalChecksCount()).toBe(3);
@@ -725,36 +447,9 @@ describe("checksRepo", () => {
     it("should delete checks from all agents", () => {
       const now = Date.now();
       insertChecksBatch([
-        {
-          id: 0,
-          agentId: 1,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 10,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 2,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 20,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
-        {
-          id: 0,
-          agentId: 3,
-          checkedAt: now,
-          status: "ok",
-          responseMs: 30,
-          httpStatus: 200,
-          errorCode: null,
-          errorMessage: null,
-        },
+        createCheck({ checkedAt: now }),
+        createCheck({ agentId: 2, checkedAt: now, responseMs: 20 }),
+        createCheck({ agentId: 3, checkedAt: now, responseMs: 30 }),
       ]);
 
       const deleted = deleteAllChecks();

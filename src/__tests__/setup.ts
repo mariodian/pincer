@@ -1,7 +1,15 @@
 // ─── Mock incident tracker deps ─────────────────────────────────────────────
 
+import type { AgentCheckResult } from "../bun/services/statusCore";
 import type { IncidentTrackerDeps } from "../shared/incidentCore";
-import type { Agent, CheckStatus } from "../shared/types";
+import type {
+  Agent,
+  AgentStatusInfo,
+  Check,
+  CheckStatus,
+  HourlyStat,
+  IncidentEvent,
+} from "../shared/types";
 
 // ─── Factories ──────────────────────────────────────────────────────────────
 
@@ -26,6 +34,79 @@ export function createAgents(
   return Array.from({ length: count }, (_, i) =>
     createAgent({ id: i + 1, name: `Agent ${i + 1}`, ...base }),
   );
+}
+
+/** Create a minimal Check for tests (id: 0 is batch-insert placeholder) */
+export function createCheck(overrides: Partial<Check> = {}): Check {
+  return {
+    id: 0,
+    agentId: 1,
+    checkedAt: Date.now(),
+    status: "ok",
+    responseMs: 10,
+    httpStatus: 200,
+    errorCode: null,
+    errorMessage: null,
+    ...overrides,
+  };
+}
+
+/** Create a minimal IncidentEvent for tests (id: 0 is batch-insert placeholder) */
+export function createEvent(
+  overrides: Partial<IncidentEvent> = {},
+): IncidentEvent {
+  return {
+    id: 0,
+    agentId: 1,
+    incidentId: "inc-1",
+    eventAt: Date.now(),
+    eventType: "opened",
+    fromStatus: null,
+    toStatus: "offline",
+    reason: null,
+    linkedIncidentId: null,
+    ...overrides,
+  };
+}
+
+/** Create a minimal HourlyStat for tests */
+export function createHourlyStat(
+  overrides: Partial<HourlyStat> = {},
+): HourlyStat {
+  return {
+    agentId: 1,
+    hourTimestamp: 1000,
+    totalChecks: 1,
+    okCount: 1,
+    offlineCount: 0,
+    errorCount: 0,
+    uptimePct: 100,
+    avgResponseMs: 10,
+    ...overrides,
+  };
+}
+
+/** Create a minimal AgentStatusInfo for tests */
+export function createAgentStatusInfo(
+  overrides: Partial<AgentStatusInfo> = {},
+): AgentStatusInfo {
+  return {
+    id: 1,
+    status: "ok",
+    lastChecked: 1000,
+    ...overrides,
+  };
+}
+
+/** Create a minimal AgentCheckResult for tests */
+export function createAgentCheckResult(
+  overrides: Partial<AgentCheckResult> = {},
+): AgentCheckResult {
+  return {
+    agentId: 1,
+    check: { status: "ok", checkedAt: 12345, errorMessage: null },
+    ...overrides,
+  };
 }
 
 // ─── Mock fetch ─────────────────────────────────────────────────────────────

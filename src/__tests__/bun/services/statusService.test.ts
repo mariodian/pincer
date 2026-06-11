@@ -5,6 +5,9 @@ import {
   type AgentCheckResult,
 } from "../../../bun/services/statusCore";
 import type { AgentStatusInfo } from "../../../shared/types";
+import { createAgentCheckResult, createAgentStatusInfo } from "../../setup";
+
+const baseCheckResult = createAgentCheckResult();
 
 describe("statusCore", () => {
   let deps: {
@@ -122,7 +125,7 @@ describe("statusCore", () => {
   describe("refreshAndPush", () => {
     it("calls checkAllAgentsStatus and passes statuses to notifier and statusSync with updateMenu true by default", async () => {
       const statuses: AgentStatusInfo[] = [
-        { id: 1, status: "ok", lastChecked: 123 },
+        createAgentStatusInfo({ lastChecked: 123 }),
       ];
       deps.checkAllAgentsStatus.mockImplementation(() =>
         Promise.resolve(statuses),
@@ -139,7 +142,7 @@ describe("statusCore", () => {
 
     it("calls sync with updateMenu false when passed false", async () => {
       const statuses: AgentStatusInfo[] = [
-        { id: 1, status: "ok", lastChecked: 123 },
+        createAgentStatusInfo({ lastChecked: 123 }),
       ];
       deps.checkAllAgentsStatus.mockImplementation(() =>
         Promise.resolve(statuses),
@@ -199,36 +202,17 @@ describe("statusCore", () => {
       deps.syncDataOnly.mockImplementation(() =>
         Promise.resolve({ success: true, openIncidents: [] }),
       );
-      deps.getAgentLatestChecks.mockImplementation(() => [
-        {
-          agentId: 1,
-          check: {
-            status: "ok" as const,
-            checkedAt: 12345,
-            errorMessage: null,
-          },
-        },
-      ]);
+      deps.getAgentLatestChecks.mockImplementation(() => [baseCheckResult]);
 
       const service = createService();
       await service.beginStatusUpdates();
 
       expect(deps.checkAllAgentsStatus).not.toHaveBeenCalled();
       expect(deps.notifier.checkAndNotify).toHaveBeenCalledWith([
-        {
-          id: 1,
-          status: "ok",
-          lastChecked: 12345,
-          errorMessage: undefined,
-        },
+        createAgentStatusInfo({ lastChecked: 12345 }),
       ]);
       expect(deps.statusSync.updateStatusMap).toHaveBeenCalledWith([
-        {
-          id: 1,
-          status: "ok",
-          lastChecked: 12345,
-          errorMessage: undefined,
-        },
+        createAgentStatusInfo({ lastChecked: 12345 }),
       ]);
       expect(deps.statusSync.sync).toHaveBeenCalledWith({ updateMenu: true });
       expect(service.isDaemonConnected()).toBe(true);
@@ -240,32 +224,26 @@ describe("statusCore", () => {
         Promise.resolve({ success: true, openIncidents: [] }),
       );
       deps.getAgentLatestChecks.mockImplementation(() => [
-        {
-          agentId: 1,
-          check: {
-            status: "degraded" as const,
-            checkedAt: 12345,
-            errorMessage: "slow",
-          },
-        },
+        createAgentCheckResult({
+          check: { status: "degraded", checkedAt: 12345, errorMessage: "slow" },
+        }),
       ]);
 
       const service = createService();
       await service.beginStatusUpdates();
 
       expect(deps.notifier.checkAndNotify).toHaveBeenCalledWith([
-        {
-          id: 1,
+        createAgentStatusInfo({
           status: "error",
           lastChecked: 12345,
           errorMessage: "slow",
-        },
+        }),
       ]);
     });
 
     it("fallback - falls back to local mode when syncDataOnly fails", async () => {
       const localStatuses: AgentStatusInfo[] = [
-        { id: 1, status: "ok", lastChecked: 123 },
+        createAgentStatusInfo({ lastChecked: 123 }),
       ];
       deps.isDaemonConfigured.mockImplementation(() => true);
       deps.syncDataOnly.mockImplementation(() =>
@@ -348,18 +326,15 @@ describe("statusCore", () => {
         }),
       );
       deps.getAgentLatestChecks.mockImplementation(() => [
-        {
-          agentId: 1,
-          check: { status: "ok", checkedAt: 12345, errorMessage: null },
-        },
-        {
+        baseCheckResult,
+        createAgentCheckResult({
           agentId: 2,
           check: {
             status: "offline",
             checkedAt: 12344,
             errorMessage: "timeout",
           },
-        },
+        }),
       ]);
 
       await triggerNextPoll();
@@ -382,14 +357,13 @@ describe("statusCore", () => {
         }),
       );
       deps.getAgentLatestChecks.mockImplementation(() => [
-        {
-          agentId: 1,
+        createAgentCheckResult({
           check: {
             status: "offline",
             checkedAt: 12345,
             errorMessage: "timeout",
           },
-        },
+        }),
       ]);
 
       await triggerNextPoll();
@@ -415,7 +389,7 @@ describe("statusCore", () => {
         }),
       );
       deps.getAgentLatestChecks.mockImplementation(() => [
-        { agentId: 1, check: null },
+        createAgentCheckResult({ check: null }),
       ]);
 
       await triggerNextPoll();

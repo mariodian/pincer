@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+import { createEvent } from "../../../setup";
 import { resetTestDB, setupTestDB } from "./test-helpers";
 
 const {
@@ -20,6 +21,17 @@ const {
 } = await import("../../../../bun/storage/sqlite/incidentEventsRepo");
 
 describe("incidentEventsRepo", () => {
+  const baseEvent = {
+    id: 0,
+    agentId: 1,
+    incidentId: "inc-1",
+    eventType: "opened" as const,
+    fromStatus: null,
+    toStatus: "offline" as const,
+    reason: null,
+    linkedIncidentId: null,
+  };
+
   beforeEach(() => setupTestDB());
   afterEach(() => resetTestDB());
 
@@ -70,28 +82,14 @@ describe("incidentEventsRepo", () => {
     it("should insert events from daemon sync", () => {
       const now = Date.now();
       const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "daemon-1",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
+        createEvent({ incidentId: "daemon-1", eventAt: now }),
+        createEvent({
           incidentId: "daemon-1",
           eventAt: now + 1,
           eventType: "status_changed",
           fromStatus: "offline",
           toStatus: "error",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(2);
       expect(getTotalEventsCount()).toBe(2);
@@ -100,17 +98,13 @@ describe("incidentEventsRepo", () => {
     it("should filter out orphan recovered events (no matching opened)", () => {
       const now = Date.now();
       const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
+        createEvent({
           incidentId: "inc-orphan",
           eventAt: now,
           eventType: "recovered",
           fromStatus: "error",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(0);
     });
@@ -118,28 +112,13 @@ describe("incidentEventsRepo", () => {
     it("should keep recovered when opened is in the same batch", () => {
       const now = Date.now();
       const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now, ...baseEvent },
+        createEvent({
           eventAt: now + 1,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(2);
     });
@@ -148,17 +127,12 @@ describe("incidentEventsRepo", () => {
       const now = Date.now();
       insertEvent(1, "inc-1", "opened", null, "offline", null);
       const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        createEvent({
           eventAt: now,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(1);
     });
@@ -166,19 +140,7 @@ describe("incidentEventsRepo", () => {
     it("should filter out duplicate opened events for the same incident", () => {
       const now = Date.now();
       insertEvent(1, "inc-1", "opened", null, "offline", null);
-      const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-      ]);
+      const inserted = insertEventsBatch([createEvent({ eventAt: now })]);
       expect(inserted).toBe(0);
     });
 
@@ -187,17 +149,12 @@ describe("incidentEventsRepo", () => {
       insertEvent(1, "inc-1", "opened", null, "offline", null);
       insertEvent(1, "inc-1", "recovered", "offline", "ok", null);
       const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        createEvent({
           eventAt: now,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(0);
     });
@@ -205,55 +162,37 @@ describe("incidentEventsRepo", () => {
     it("should not filter status_changed events", () => {
       const now = Date.now();
       const inserted = insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        createEvent({
           eventAt: now,
           eventType: "status_changed",
           fromStatus: "offline",
           toStatus: "error",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        }),
+        createEvent({
           eventAt: now + 1,
           eventType: "status_changed",
           fromStatus: "error",
           toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       expect(inserted).toBe(2);
     });
 
     it("should not duplicate identical status_changed events on repeated sync (INSERT OR IGNORE)", () => {
       const now = Date.now();
-      const event = {
-        id: 0,
-        agentId: 1,
-        incidentId: "inc-1",
+      const event = createEvent({
         eventAt: now,
-        eventType: "status_changed" as const,
-        fromStatus: "offline" as const,
-        toStatus: "error" as const,
-        reason: null,
-        linkedIncidentId: null,
-      };
+        eventType: "status_changed",
+        fromStatus: "offline",
+        toStatus: "error",
+      });
 
-      // First sync inserts 1 row
       const inserted1 = insertEventsBatch([event]);
       expect(inserted1).toBe(1);
 
-      // Second sync with the same event should insert 0 (INSERT OR IGNORE)
       const inserted2 = insertEventsBatch([event]);
       expect(inserted2).toBe(0);
 
-      // Only 1 row in DB
       expect(getTotalEventsCount()).toBe(1);
     });
 
@@ -261,17 +200,7 @@ describe("incidentEventsRepo", () => {
       insertEvent(1, "local-1", "opened", null, "offline", null);
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "daemon-1",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        createEvent({ incidentId: "daemon-1", eventAt: now }),
       ]);
       const events = getEventsForIncident("daemon-1");
       expect(events.length).toBe(1);
@@ -282,17 +211,13 @@ describe("incidentEventsRepo", () => {
       insertEvent(1, "same-id", "opened", null, "offline", null);
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
+        createEvent({
           incidentId: "same-id",
           eventAt: now,
           eventType: "status_changed",
           fromStatus: "offline",
           toStatus: "error",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
       const events = getEventsForIncident("same-id");
       const batchEvent = events.find((e) => e.eventAt === now);
@@ -304,17 +229,7 @@ describe("incidentEventsRepo", () => {
       insertEvent(1, "local-1", "recovered", "offline", "ok", null);
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "daemon-1",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        createEvent({ incidentId: "daemon-1", eventAt: now }),
       ]);
       const events = getEventsForIncident("daemon-1");
       expect(events[0].linkedIncidentId).toBeNull();
@@ -384,72 +299,32 @@ describe("incidentEventsRepo", () => {
     it("should return events for a specific agent within time range", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 5000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 5000, ...baseEvent },
+        createEvent({
           eventAt: now - 1000,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 2,
-          incidentId: "inc-2",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
+        createEvent({ agentId: 2, incidentId: "inc-2", eventAt: now }),
       ]);
 
       const events = getEventsForAgent(1, now - 6000);
       expect(events.length).toBe(2);
-      expect(events[0].eventType).toBe("recovered"); // most recent first (desc)
+      expect(events[0].eventType).toBe("recovered");
       expect(events[1].eventType).toBe("opened");
     });
 
     it("should respect untilMs boundary", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 5000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 5000, ...baseEvent },
+        createEvent({
           eventAt: now - 1000,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
 
       const events = getEventsForAgent(1, now - 6000, now - 2000);
@@ -468,28 +343,8 @@ describe("incidentEventsRepo", () => {
     it("should return events across all agents in time range", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 5000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 2,
-          incidentId: "inc-2",
-          eventAt: now - 1000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        { eventAt: now - 5000, ...baseEvent },
+        createEvent({ agentId: 2, incidentId: "inc-2", eventAt: now - 1000 }),
       ]);
 
       const events = getEventsForTimeRange(now - 6000);
@@ -499,28 +354,13 @@ describe("incidentEventsRepo", () => {
     it("should respect untilMs boundary", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 5000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 5000, ...baseEvent },
+        createEvent({
           eventAt: now - 1000,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
 
       const events = getEventsForTimeRange(now - 6000, now - 2000);
@@ -538,28 +378,13 @@ describe("incidentEventsRepo", () => {
     it("should return all events for a specific incident ordered by eventAt", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 2000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 2000, ...baseEvent },
+        createEvent({
           eventAt: now,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
 
       const events = getEventsForIncident("inc-1");
@@ -593,39 +418,19 @@ describe("incidentEventsRepo", () => {
     it("should count only events older than cutoff", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 10000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 10000, ...baseEvent },
+        createEvent({
           eventAt: now - 5000,
           eventType: "status_changed",
           fromStatus: "offline",
           toStatus: "error",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        }),
+        createEvent({
           eventAt: now,
           eventType: "recovered",
           fromStatus: "error",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
 
       expect(countOldEvents(now - 3000)).toBe(2);
@@ -812,39 +617,14 @@ describe("incidentEventsRepo", () => {
     it("should delete all events for an incident and return count", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 2000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 2000, ...baseEvent },
+        createEvent({
           eventAt: now,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 2,
-          incidentId: "inc-2",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
+        createEvent({ agentId: 2, incidentId: "inc-2", eventAt: now }),
       ]);
 
       const deleted = deleteIncident("inc-1");
@@ -864,39 +644,19 @@ describe("incidentEventsRepo", () => {
     it("should delete all events and return count", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now - 2000,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
+        { eventAt: now - 2000, ...baseEvent },
+        createEvent({
           eventAt: now - 1000,
           eventType: "recovered",
           fromStatus: "offline",
           toStatus: "ok",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
+        }),
+        createEvent({
           agentId: 2,
           incidentId: "inc-2",
           eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
           toStatus: "error",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
 
       expect(getTotalEventsCount()).toBe(3);
@@ -912,39 +672,19 @@ describe("incidentEventsRepo", () => {
     it("should delete events from all agents and incidents", () => {
       const now = Date.now();
       insertEventsBatch([
-        {
-          id: 0,
-          agentId: 1,
-          incidentId: "inc-1",
-          eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
-          toStatus: "offline",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
+        { eventAt: now, ...baseEvent },
+        createEvent({
           agentId: 2,
           incidentId: "inc-2",
           eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
           toStatus: "error",
-          reason: null,
-          linkedIncidentId: null,
-        },
-        {
-          id: 0,
+        }),
+        createEvent({
           agentId: 3,
           incidentId: "inc-3",
           eventAt: now,
-          eventType: "opened",
-          fromStatus: null,
           toStatus: "degraded",
-          reason: null,
-          linkedIncidentId: null,
-        },
+        }),
       ]);
 
       const deleted = deleteAllEvents();

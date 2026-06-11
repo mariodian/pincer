@@ -7,9 +7,12 @@ import {
   updateAgent,
   writeAgents,
 } from "../../../../bun/storage/sqlite/agentsRepo";
+import { createAgent } from "../../../setup";
 import { resetTestDB, setupTestDB } from "./test-helpers";
 
 describe("agentsRepo", () => {
+  const baseAgent = { type: "custom", name: "A", url: "http://a", port: 80 };
+
   beforeEach(() => setupTestDB());
   afterEach(() => resetTestDB());
 
@@ -21,14 +24,9 @@ describe("agentsRepo", () => {
     });
 
     it("should return all inserted agents", () => {
+      insertAgent({ ...baseAgent, name: "Agent A", url: "http://a" });
       insertAgent({
-        type: "custom",
-        name: "Agent A",
-        url: "http://a",
-        port: 80,
-      });
-      insertAgent({
-        type: "custom",
+        ...baseAgent,
         name: "Agent B",
         url: "http://b",
         port: 443,
@@ -41,10 +39,9 @@ describe("agentsRepo", () => {
 
     it("should preserve optional fields", () => {
       insertAgent({
-        type: "custom",
+        ...baseAgent,
         name: "Agent A",
         url: "http://a",
-        port: 80,
         enabled: false,
         healthEndpoint: "/health",
         statusShape: "v1",
@@ -60,29 +57,14 @@ describe("agentsRepo", () => {
 
   describe("insertAgent", () => {
     it("should assign an auto-increment id", () => {
-      const a1 = insertAgent({
-        type: "custom",
-        name: "A1",
-        url: "http://a1",
-        port: 80,
-      });
-      const a2 = insertAgent({
-        type: "custom",
-        name: "A2",
-        url: "http://a2",
-        port: 80,
-      });
+      const a1 = insertAgent({ ...baseAgent, name: "A1", url: "http://a1" });
+      const a2 = insertAgent({ ...baseAgent, name: "A2", url: "http://a2" });
       expect(a1.id).toBeGreaterThan(0);
       expect(a2.id).toBe(a1.id + 1);
     });
 
     it("should default enabled to true", () => {
-      const a = insertAgent({
-        type: "custom",
-        name: "A",
-        url: "http://a",
-        port: 80,
-      });
+      const a = insertAgent(baseAgent);
       expect(a.enabled).toBe(true);
     });
   });
@@ -91,12 +73,7 @@ describe("agentsRepo", () => {
 
   describe("updateAgent", () => {
     it("should update only specified fields", () => {
-      const a = insertAgent({
-        type: "custom",
-        name: "A",
-        url: "http://a",
-        port: 80,
-      });
+      const a = insertAgent(baseAgent);
       updateAgent(a.id, { name: "Renamed", port: 8080 });
 
       const updated = readAgents().find((ag) => ag.id === a.id)!;
@@ -107,12 +84,7 @@ describe("agentsRepo", () => {
     });
 
     it("should update optional fields", () => {
-      const a = insertAgent({
-        type: "custom",
-        name: "A",
-        url: "http://a",
-        port: 80,
-      });
+      const a = insertAgent(baseAgent);
       updateAgent(a.id, {
         healthEndpoint: "/healthz",
         statusShape: "v2",
@@ -126,7 +98,6 @@ describe("agentsRepo", () => {
     });
 
     it("should be no-op for non-existent id", () => {
-      // Should not throw
       updateAgent(9999, { name: "Ghost" });
       expect(readAgents()).toEqual([]);
     });
@@ -137,14 +108,8 @@ describe("agentsRepo", () => {
   describe("deleteAgent", () => {
     it("should delete agent and cascade related checks", () => {
       const { sqlite } = setupTestDB();
-      const a = insertAgent({
-        type: "custom",
-        name: "A",
-        url: "http://a",
-        port: 80,
-      });
+      const a = insertAgent(baseAgent);
 
-      // Insert related data manually
       sqlite.run(
         `INSERT INTO checks (agent_id, checked_at, status) VALUES (${a.id}, 1000, 'ok')`,
       );
@@ -174,18 +139,8 @@ describe("agentsRepo", () => {
 
     it("should not affect other agents data", () => {
       const { sqlite } = setupTestDB();
-      const a1 = insertAgent({
-        type: "custom",
-        name: "A1",
-        url: "http://a1",
-        port: 80,
-      });
-      const a2 = insertAgent({
-        type: "custom",
-        name: "A2",
-        url: "http://a2",
-        port: 80,
-      });
+      const a1 = insertAgent({ ...baseAgent, name: "A1", url: "http://a1" });
+      const a2 = insertAgent({ ...baseAgent, name: "A2", url: "http://a2" });
 
       sqlite.run(
         `INSERT INTO checks (agent_id, checked_at, status) VALUES (${a1.id}, 1000, 'ok')`,
@@ -215,7 +170,7 @@ describe("agentsRepo", () => {
   describe("writeAgents", () => {
     it("should insert new agents with id > 0 when they do not exist", () => {
       writeAgents([
-        { id: 10, type: "custom", name: "A10", url: "http://a10", port: 80 },
+        createAgent({ id: 10, name: "A10", url: "http://a10", port: 80 }),
       ]);
       const agents = readAgents();
       expect(agents.length).toBe(1);
@@ -223,20 +178,14 @@ describe("agentsRepo", () => {
     });
 
     it("should upsert existing agents by id", () => {
-      const a = insertAgent({
-        type: "custom",
-        name: "A",
-        url: "http://a",
-        port: 80,
-      });
+      const a = insertAgent(baseAgent);
       writeAgents([
-        {
+        createAgent({
           id: a.id,
-          type: "custom",
           name: "Updated",
           url: "http://new",
           port: 8080,
-        },
+        }),
       ]);
 
       const agents = readAgents();
@@ -247,7 +196,7 @@ describe("agentsRepo", () => {
 
     it("should auto-assign id for agents with id <= 0", () => {
       writeAgents([
-        { id: 0, type: "custom", name: "New1", url: "http://n1", port: 80 },
+        createAgent({ id: 0, name: "New1", url: "http://n1", port: 80 }),
       ]);
       const agents = readAgents();
       expect(agents.length).toBe(1);
@@ -255,21 +204,11 @@ describe("agentsRepo", () => {
     });
 
     it("should remove local agents not in incoming list", () => {
-      const a1 = insertAgent({
-        type: "custom",
-        name: "Keep",
-        url: "http://k",
-        port: 80,
-      });
-      const _a2 = insertAgent({
-        type: "custom",
-        name: "Remove",
-        url: "http://r",
-        port: 80,
-      });
+      const a1 = insertAgent({ ...baseAgent, name: "Keep", url: "http://k" });
+      insertAgent({ ...baseAgent, name: "Remove", url: "http://r" });
 
       writeAgents([
-        { id: a1.id, type: "custom", name: "Keep", url: "http://k", port: 80 },
+        createAgent({ id: a1.id, name: "Keep", url: "http://k", port: 80 }),
       ]);
 
       const agents = readAgents();
@@ -279,25 +218,15 @@ describe("agentsRepo", () => {
 
     it("should cascade delete when removing agents via writeAgents", () => {
       const { sqlite } = setupTestDB();
-      const a1 = insertAgent({
-        type: "custom",
-        name: "Keep",
-        url: "http://k",
-        port: 80,
-      });
-      const a2 = insertAgent({
-        type: "custom",
-        name: "Remove",
-        url: "http://r",
-        port: 80,
-      });
+      const a1 = insertAgent({ ...baseAgent, name: "Keep", url: "http://k" });
+      const a2 = insertAgent({ ...baseAgent, name: "Remove", url: "http://r" });
 
       sqlite.run(
         `INSERT INTO checks (agent_id, checked_at, status) VALUES (${a2.id}, 1000, 'ok')`,
       );
 
       writeAgents([
-        { id: a1.id, type: "custom", name: "Keep", url: "http://k", port: 80 },
+        createAgent({ id: a1.id, name: "Keep", url: "http://k", port: 80 }),
       ]);
 
       const checks = sqlite.prepare("SELECT * FROM checks").all() as unknown[];
@@ -305,22 +234,11 @@ describe("agentsRepo", () => {
     });
 
     it("should handle mixed batch of inserts and updates", () => {
-      const existing = insertAgent({
-        type: "custom",
-        name: "Old",
-        url: "http://o",
-        port: 80,
-      });
+      const existing = insertAgent({ ...baseAgent, name: "Old" });
       writeAgents([
-        {
-          id: existing.id,
-          type: "custom",
-          name: "Updated",
-          url: "http://o",
-          port: 80,
-        },
-        { id: 99, type: "custom", name: "New99", url: "http://n", port: 80 },
-        { id: 0, type: "custom", name: "Auto", url: "http://a", port: 80 },
+        createAgent({ id: existing.id, name: "Updated" }),
+        createAgent({ id: 99, name: "New99", url: "http://n", port: 80 }),
+        createAgent({ id: 0, name: "Auto", url: "http://a", port: 80 }),
       ]);
 
       const agents = readAgents();

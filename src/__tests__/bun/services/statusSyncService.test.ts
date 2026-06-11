@@ -1,18 +1,11 @@
 import { describe, expect, it } from "bun:test";
 
 import { StatusSyncService } from "../../../bun/services/statusSyncService";
-import type { AgentStatusInfo } from "../../../shared/types";
+import { createAgentStatusInfo } from "../../setup";
+
+const baseStatus = createAgentStatusInfo();
 
 // ─── Factories ───────────────────────────────────────────────────────────────
-function makeStatus(overrides: Partial<AgentStatusInfo> = {}): AgentStatusInfo {
-  return {
-    id: 1,
-    status: "ok",
-    lastChecked: 1000,
-    ...overrides,
-  };
-}
-
 function makeService() {
   return new StatusSyncService({
     getMainWindow: () => null,
@@ -32,39 +25,29 @@ describe("StatusSyncService", () => {
   describe("updateStatusMap", () => {
     it("should store a new agent status", () => {
       const service = makeService();
-      service.updateStatusMap([makeStatus({ id: 1, status: "ok" })]);
+      service.updateStatusMap([baseStatus]);
       expect(service.getAgentStatus(1)?.status).toBe("ok");
     });
 
     it("should accept a newer timestamp for the same status", () => {
       const service = makeService();
-      service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok", lastChecked: 1000 }),
-      ]);
-      service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok", lastChecked: 2000 }),
-      ]);
+      service.updateStatusMap([baseStatus]);
+      service.updateStatusMap([createAgentStatusInfo({ lastChecked: 2000 })]);
       expect(service.getAgentStatus(1)?.lastChecked).toBe(2000);
     });
 
     it("should reject a stale timestamp when status is unchanged", () => {
       const service = makeService();
-      service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok", lastChecked: 2000 }),
-      ]);
-      service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok", lastChecked: 500 }),
-      ]);
+      service.updateStatusMap([createAgentStatusInfo({ lastChecked: 2000 })]);
+      service.updateStatusMap([createAgentStatusInfo({ lastChecked: 500 })]);
       expect(service.getAgentStatus(1)?.lastChecked).toBe(2000);
     });
 
     it("should always accept a status change even with older timestamp", () => {
       const service = makeService();
+      service.updateStatusMap([createAgentStatusInfo({ lastChecked: 2000 })]);
       service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok", lastChecked: 2000 }),
-      ]);
-      service.updateStatusMap([
-        makeStatus({ id: 1, status: "error", lastChecked: 500 }),
+        createAgentStatusInfo({ status: "error", lastChecked: 500 }),
       ]);
       expect(service.getAgentStatus(1)?.status).toBe("error");
     });
@@ -72,8 +55,8 @@ describe("StatusSyncService", () => {
     it("should update multiple agents independently", () => {
       const service = makeService();
       service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok" }),
-        makeStatus({ id: 2, status: "offline" }),
+        baseStatus,
+        createAgentStatusInfo({ id: 2, status: "offline" }),
       ]);
       expect(service.getAgentStatus(1)?.status).toBe("ok");
       expect(service.getAgentStatus(2)?.status).toBe("offline");
@@ -83,11 +66,9 @@ describe("StatusSyncService", () => {
   describe("setAgentStatus", () => {
     it("should unconditionally overwrite existing status", () => {
       const service = makeService();
-      service.updateStatusMap([
-        makeStatus({ id: 1, status: "ok", lastChecked: 9999 }),
-      ]);
+      service.updateStatusMap([createAgentStatusInfo({ lastChecked: 9999 })]);
       service.setAgentStatus(
-        makeStatus({ id: 1, status: "error", lastChecked: 1 }),
+        createAgentStatusInfo({ status: "error", lastChecked: 1 }),
       );
       expect(service.getAgentStatus(1)?.status).toBe("error");
       expect(service.getAgentStatus(1)?.lastChecked).toBe(1);
@@ -121,7 +102,7 @@ describe("StatusSyncService", () => {
   describe("removeAgentStatus", () => {
     it("should remove a known agent", () => {
       const service = makeService();
-      service.updateStatusMap([makeStatus({ id: 1 })]);
+      service.updateStatusMap([baseStatus]);
       service.removeAgentStatus(1);
       expect(service.getAgentStatus(1)).toBeUndefined();
     });
@@ -140,7 +121,9 @@ describe("StatusSyncService", () => {
 
     it("should return the stored status", () => {
       const service = makeService();
-      service.updateStatusMap([makeStatus({ id: 5, status: "offline" })]);
+      service.updateStatusMap([
+        createAgentStatusInfo({ id: 5, status: "offline" }),
+      ]);
       expect(service.getAgentStatus(5)?.status).toBe("offline");
     });
   });
