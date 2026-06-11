@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import {
   countOldChecks,
+  deleteAllChecks,
   deleteOldChecks,
   getAgentLastNChecks,
   getAgentLatestCheck,
@@ -670,6 +671,96 @@ describe("checksRepo", () => {
 
     it("should return empty array when no checks in range", () => {
       expect(getChecksAggregatedBy10Min(0, 1000)).toEqual([]);
+    });
+  });
+
+  // ─── deleteAllChecks ───────────────────────────────────────────────────────
+
+  describe("deleteAllChecks", () => {
+    it("should delete all checks and return count", () => {
+      const now = Date.now();
+      insertChecksBatch([
+        {
+          id: 0,
+          agentId: 1,
+          checkedAt: now - 2000,
+          status: "ok",
+          responseMs: 10,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          checkedAt: now - 1000,
+          status: "error",
+          responseMs: 0,
+          httpStatus: null,
+          errorCode: "ERR",
+          errorMessage: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          checkedAt: now,
+          status: "ok",
+          responseMs: 50,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+      ]);
+
+      expect(getTotalChecksCount()).toBe(3);
+      const deleted = deleteAllChecks();
+      expect(deleted).toBe(3);
+      expect(getTotalChecksCount()).toBe(0);
+    });
+
+    it("should return 0 for empty table", () => {
+      expect(deleteAllChecks()).toBe(0);
+    });
+
+    it("should delete checks from all agents", () => {
+      const now = Date.now();
+      insertChecksBatch([
+        {
+          id: 0,
+          agentId: 1,
+          checkedAt: now,
+          status: "ok",
+          responseMs: 10,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          checkedAt: now,
+          status: "ok",
+          responseMs: 20,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+        {
+          id: 0,
+          agentId: 3,
+          checkedAt: now,
+          status: "ok",
+          responseMs: 30,
+          httpStatus: 200,
+          errorCode: null,
+          errorMessage: null,
+        },
+      ]);
+
+      const deleted = deleteAllChecks();
+      expect(deleted).toBe(3);
+      expect(getTotalChecksCount()).toBe(0);
+      expect(getAllAgentLatestChecks()).toEqual([]);
     });
   });
 });

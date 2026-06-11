@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 import {
+  deleteAllStats,
   deleteOldStats,
   getAgentStats,
   getAllAgentStats,
@@ -457,6 +458,94 @@ describe("statsRepo", () => {
       const deleted = deleteOldStats(500);
       expect(deleted).toBe(2);
       expect(getStatsCount()).toBe(1);
+    });
+  });
+
+  // ─── deleteAllStats ────────────────────────────────────────────────────────
+
+  describe("deleteAllStats", () => {
+    it("should delete all stats and return count", () => {
+      upsertStatsBatch([
+        {
+          agentId: 1,
+          hourTimestamp: 1000,
+          totalChecks: 5,
+          okCount: 5,
+          offlineCount: 0,
+          errorCount: 0,
+          uptimePct: 100,
+          avgResponseMs: 50,
+        },
+        {
+          agentId: 1,
+          hourTimestamp: 2000,
+          totalChecks: 3,
+          okCount: 3,
+          offlineCount: 0,
+          errorCount: 0,
+          uptimePct: 100,
+          avgResponseMs: 30,
+        },
+        {
+          agentId: 2,
+          hourTimestamp: 1000,
+          totalChecks: 1,
+          okCount: 0,
+          offlineCount: 1,
+          errorCount: 0,
+          uptimePct: 0,
+          avgResponseMs: 10,
+        },
+      ]);
+
+      expect(getStatsCount()).toBe(3);
+      const deleted = deleteAllStats();
+      expect(deleted).toBe(3);
+      expect(getStatsCount()).toBe(0);
+    });
+
+    it("should return 0 for empty table", () => {
+      expect(deleteAllStats()).toBe(0);
+    });
+
+    it("should delete stats from all agents", () => {
+      upsertStatsBatch([
+        {
+          agentId: 1,
+          hourTimestamp: 1000,
+          totalChecks: 1,
+          okCount: 1,
+          offlineCount: 0,
+          errorCount: 0,
+          uptimePct: 100,
+          avgResponseMs: 10,
+        },
+        {
+          agentId: 2,
+          hourTimestamp: 1000,
+          totalChecks: 1,
+          okCount: 1,
+          offlineCount: 0,
+          errorCount: 0,
+          uptimePct: 100,
+          avgResponseMs: 20,
+        },
+        {
+          agentId: 3,
+          hourTimestamp: 1000,
+          totalChecks: 1,
+          okCount: 1,
+          offlineCount: 0,
+          errorCount: 0,
+          uptimePct: 100,
+          avgResponseMs: 30,
+        },
+      ]);
+
+      const deleted = deleteAllStats();
+      expect(deleted).toBe(3);
+      expect(getStatsCount()).toBe(0);
+      expect(getAllAgentStats(0, 9999999999)).toEqual([]);
     });
   });
 });

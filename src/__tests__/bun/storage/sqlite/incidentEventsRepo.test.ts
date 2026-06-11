@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { resetTestDB, setupTestDB } from "./test-helpers";
 
 const {
+  deleteAllEvents,
   insertEvent,
   insertEventsBatch,
   getOpenIncidents,
@@ -854,6 +855,102 @@ describe("incidentEventsRepo", () => {
 
     it("should return 0 for non-existent incident", () => {
       expect(deleteIncident("nonexistent")).toBe(0);
+    });
+  });
+
+  // ─── deleteAllEvents ───────────────────────────────────────────────────────
+
+  describe("deleteAllEvents", () => {
+    it("should delete all events and return count", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 2000,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now - 1000,
+          eventType: "recovered",
+          fromStatus: "offline",
+          toStatus: "ok",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          incidentId: "inc-2",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "error",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      expect(getTotalEventsCount()).toBe(3);
+      const deleted = deleteAllEvents();
+      expect(deleted).toBe(3);
+      expect(getTotalEventsCount()).toBe(0);
+    });
+
+    it("should return 0 for empty table", () => {
+      expect(deleteAllEvents()).toBe(0);
+    });
+
+    it("should delete events from all agents and incidents", () => {
+      const now = Date.now();
+      insertEventsBatch([
+        {
+          id: 0,
+          agentId: 1,
+          incidentId: "inc-1",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "offline",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 2,
+          incidentId: "inc-2",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "error",
+          reason: null,
+          linkedIncidentId: null,
+        },
+        {
+          id: 0,
+          agentId: 3,
+          incidentId: "inc-3",
+          eventAt: now,
+          eventType: "opened",
+          fromStatus: null,
+          toStatus: "degraded",
+          reason: null,
+          linkedIncidentId: null,
+        },
+      ]);
+
+      const deleted = deleteAllEvents();
+      expect(deleted).toBe(3);
+      expect(getTotalEventsCount()).toBe(0);
+      expect(getOpenIncidents()).toEqual([]);
     });
   });
 });

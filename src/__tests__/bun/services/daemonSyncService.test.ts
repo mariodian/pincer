@@ -13,7 +13,7 @@ mock.module("../../../bun/services/loggerService", () => ({
   },
 }));
 
-const { pushAgentsToDaemonWith, computeAgentHash } =
+const { pushAgentsToDaemonWith, computeAgentHash, isForceSyncInProgress } =
   await import("../../../bun/services/daemonSyncService");
 
 // ─── Reusable fetch mock ──────────────────────────────────────────────────────
@@ -76,9 +76,11 @@ async function push(
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 let originalFetch: typeof global.fetch;
+
 beforeEach(() => {
   originalFetch = global.fetch;
 });
+
 afterEach(() => {
   global.fetch = originalFetch;
 });
@@ -358,5 +360,13 @@ describe("namespace migration", () => {
 
     await push({ agents: [], deps });
     expect(deps._store["daemon_last_namespace_id"]).toBe("old-namespace");
+  });
+});
+
+// ─── forceSync tests ─────────────────────────────────────────────────────────
+
+describe("isForceSyncInProgress", () => {
+  it("returns false initially", () => {
+    expect(isForceSyncInProgress()).toBe(false);
   });
 });
