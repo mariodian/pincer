@@ -22,9 +22,33 @@ export function getDatabase() {
   return createDatabase({ dbPath: config.dbPath });
 }
 
+function getMigrationDir(): string {
+  // 1. Explicit override
+  if (process.env.PINCERD_MIGRATIONS_DIR) {
+    return process.env.PINCERD_MIGRATIONS_DIR;
+  }
+
+  const base = getRuntimeBaseDir();
+  const primary = join(base, "drizzle/migrations");
+  if (existsSync(primary)) {
+    return primary;
+  }
+
+  // 2. Homebrew pkgetc location: /opt/homebrew/etc/pincerd/migrations
+  //    Formula installs with `pkgetc.install "drizzle/migrations"`
+  const homebrewPrefix = process.env.HOMEBREW_PREFIX || "/opt/homebrew";
+  const pkgetc = join(homebrewPrefix, "etc/pincerd/migrations");
+  if (existsSync(pkgetc)) {
+    return pkgetc;
+  }
+
+  // 3. Return primary path so the caller gets a clear error
+  return primary;
+}
+
 export async function initializeDatabase(): Promise<void> {
   const { db } = getDatabase();
-  const migrationDir = join(getRuntimeBaseDir(), "drizzle/migrations");
+  const migrationDir = getMigrationDir();
 
   if (existsSync(migrationDir)) {
     migrate(db, { migrationsFolder: migrationDir });

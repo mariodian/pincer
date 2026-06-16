@@ -95,8 +95,23 @@ sudo xattr -dr com.apple.quarantine /opt/pincerd/pincerd
 brew tap mariodian/tap
 brew install pincerd
 
-# Start the service after setting DAEMON_SECRET
-brew services edit pincerd   # add DAEMON_SECRET to environment
+# Edit the plist to add DAEMON_SECRET
+open /opt/homebrew/opt/pincerd/homebrew.mxcl.pincerd.plist
+```
+
+Add the following **before the closing `</dict>` tag**:
+
+```xml
+<key>EnvironmentVariables</key>
+<dict>
+  <key>DAEMON_SECRET</key>
+  <string>your-secret-here</string>
+</dict>
+```
+
+Then start the service:
+
+```bash
 brew services start pincerd
 ```
 
