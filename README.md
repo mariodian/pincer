@@ -73,7 +73,7 @@ Running multiple local AI agents means constantly switching between terminals an
 - **Flexible controls**: polling, retention, notifications, startup, and auto-update settings
 - **Local and cross-platform**: SQLite-backed, runs on macOS, Windows, and Linux
 - **Agent support**: [OpenClaw](https://github.com/openclaw/openclaw), [OpenCrabs](https://github.com/adolfousier/opencrabs), [Hermes](https://github.com/nousresearch/hermes-agent), [OpenCode](https://github.com/anomalyco/opencode), and custom HTTP health endpoints
-- **Background daemon (Linux-only for now)**: `pincerd` keeps collecting checks and sync data even when the desktop app is not running
+- **Background daemon**: `pincerd` keeps collecting checks and sync data even when the desktop app is not running (macOS arm64, Linux x86_64)
 
 ## 📥 Installation
 
@@ -119,7 +119,7 @@ bun run build:stable
 
 Pincer includes a standalone daemon, `pincerd`, for always-on collection and sync when the desktop app is not running.
 
-> **Platform:** Linux x86_64 only. Requires `curl`, `tar`, `sudo`.
+> **Platforms:** macOS arm64, Linux x86_64. Requires `curl`, `tar`, `sudo`.
 
 ### Quick Install
 
@@ -127,17 +127,22 @@ Pincer includes a standalone daemon, `pincerd`, for always-on collection and syn
 # Install only
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
 
-# Install with systemd service (recommended)
+# Install with service (recommended)
 # Note: DON'T forget to set your own secret here!
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
---systemd --secret=your-secret-here
+  --service --secret=your-secret-here
+
+# Uninstall
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
+  --uninstall
 ```
 
 ### Script Options
 
 | Flag                | Description                                   |
 | ------------------- | --------------------------------------------- |
-| `--systemd`         | Install and enable systemd service            |
+| `--service`         | Install and enable service (systemd on Linux, launchd on macOS) |
+| `--uninstall`       | Uninstall the daemon and remove service       |
 | `--secret=<token>`  | Set DAEMON_SECRET (Bearer token for API auth) |
 | `--port=<number>`   | Set DAEMON_PORT (default: 7378)               |
 | `--user=<username>` | User to run daemon as (default: current user) |

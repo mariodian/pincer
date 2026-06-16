@@ -2,18 +2,18 @@
 
 A lightweight, always-on Bun HTTP server that runs the same collection pipeline as Pincer and exposes a pull API so Pincer can sync the gap when it wakes up from sleep.
 
-> **Platform support:** Linux deployment is supported. Other platforms are not yet officially supported.
+> **Platform support:** macOS arm64 and Linux x86_64 are supported.
 
 ## Quick Start
 
 ```bash
-# One-line install (Linux x86_64 only)
+# One-line install (macOS arm64 / Linux x86_64)
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
 
-# Install with systemd service (recommended for production)
+# Install with service (recommended for production)
 # Note: DON'T forget to set your own secret here!
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
---systemd --secret=your-secret-here
+  --service --secret=your-secret-here
 
 # Start manually
 export DAEMON_SECRET=your-secret-here
@@ -24,26 +24,31 @@ export DAEMON_SECRET=your-secret-here
 
 ### Option A: One-Line Installer (Recommended)
 
-The install script handles downloading, extracting, and optionally setting up systemd:
+The install script handles downloading, extracting, and optionally setting up a service (systemd on Linux, launchd on macOS):
 
 ```bash
 # Install only
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash
 
-# Install with systemd service
+# Install with service
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
---systemd --secret=your-secret-here
+  --service --secret=your-secret-here
 
 # Install with custom port and user
 curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
---systemd --secret=my-secret --port=8080 --user=pincer
+  --service --secret=my-secret --port=8080 --user=pincer
+
+# Uninstall
+curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/install.sh | bash -s -- \
+  --uninstall
 ```
 
 **Script options:**
 
 | Flag                | Description                                   |
 | ------------------- | --------------------------------------------- |
-| `--systemd`         | Install and enable systemd service            |
+| `--service`         | Install and enable service (systemd on Linux, launchd on macOS) |
+| `--uninstall`       | Uninstall the daemon and remove service       |
 | `--secret=<token>`  | Set DAEMON_SECRET (Bearer token for API auth) |
 | `--port=<number>`   | Set DAEMON_PORT (default: 7378)               |
 | `--user=<username>` | User to run daemon as (default: current user) |
@@ -57,25 +62,45 @@ curl -fsSL https://raw.githubusercontent.com/mariodian/pincer/HEAD/daemon/instal
 | `DAEMON_PORT`   | Same as `--port`   |
 | `PINCERD_USER`  | Same as `--user`   |
 
-**Requirements:** Linux x86_64, `curl`, `tar`, `sudo`.
+**Requirements:** macOS arm64 or Linux x86_64, `curl`, `tar`, `sudo`.
 
 ### Option B: Download from GitHub Releases
 
 ```bash
 VERSION="v0.3.4"  # Change to desired version
+
+# macOS arm64
+curl -L -o /tmp/pincerd.tar.gz \
+  "https://github.com/mariodian/pincer/releases/download/${VERSION}/pincerd-${VERSION}-macos-arm64.tar.gz"
+
+# Linux x86_64
 curl -L -o /tmp/pincerd.tar.gz \
   "https://github.com/mariodian/pincer/releases/download/${VERSION}/pincerd-${VERSION}-linux-x64.tar.gz"
 
 sudo mkdir -p /opt
 sudo tar -xzf /tmp/pincerd.tar.gz -C /opt
 
+# macOS: remove quarantine
+sudo xattr -dr com.apple.quarantine /opt/pincerd/pincerd
+
 # The installed directory contains:
 # - /opt/pincerd/pincerd (binary)
-# - /opt/pincerd/migrations/ (database migrations)
+# - /opt/pincerd/drizzle/migrations/ (database migrations)
 # - /opt/pincerd/version.json (version metadata)
 ```
 
-### Option B: Build from Source
+### Option C: Homebrew (macOS)
+
+```bash
+brew tap mariodian/tap
+brew install pincerd
+
+# Start the service after setting DAEMON_SECRET
+brew services edit pincerd   # add DAEMON_SECRET to environment
+brew services start pincerd
+```
+
+### Option D: Build from Source
 
 If you have the Pincer source repository:
 
@@ -130,7 +155,64 @@ export LOG_FILE_PATH=/var/log/pincerd/daemon.log
 
 ## Running the Daemon
 
-### With systemd (Recommended)
+### With launchd (macOS)
+
+Create `/Library/LaunchDaemons/com.mariodian.pincerd.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mariodian.pincerd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/pincerd/pincerd</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/opt/pincerd</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>DAEMON_SECRET</key>
+        <string>your-secret-here</string>
+        <key>DAEMON_PORT</key>
+        <string>7378</string>
+    </dict>
+    <key>UserName</key>
+    <string>your-user</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/var/log/pincerd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/pincerd.log</string>
+</dict>
+</plist>
+```
+
+Load and start:
+
+```bash
+sudo launchctl bootstrap system /Library/LaunchDaemons/com.mariodian.pincerd.plist
+```
+
+Manage:
+
+```bash
+# Check status
+sudo launchctl print system/com.mariodian.pincerd
+
+# Stop and unload
+sudo launchctl bootout system/com.mariodian.pincerd
+
+# View logs
+tail -f /var/log/pincerd.log
+```
+
+### With systemd (Linux)
 
 Create `/etc/systemd/system/pincerd.service`:
 
