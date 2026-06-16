@@ -19,13 +19,31 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "version_bare=${version#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Download macOS artifact and compute SHA256
-        id: sha
+      - name: Download macOS app and compute SHA256
+        id: sha_app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version="${{ steps.release.outputs.version }}"
           pattern="stable-macos-arm64-Pincer.dmg"
+
+          gh release download "$version" \
+            --repo "${{ github.repository }}" \
+            --pattern "$pattern" \
+            --dir /tmp/assets
+
+          file="/tmp/assets/$pattern"
+          sha256=$(sha256sum "$file" | awk '{print $1}')
+
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Download macOS daemon and compute SHA256
+        id: sha_daemon
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ steps.release.outputs.version }}"
+          pattern="pincerd-${version}-macos-arm64.tar.gz"
 
           gh release download "$version" \
             --repo "${{ github.repository }}" \
@@ -43,13 +61,15 @@ jobs:
         run: |
           version="${{ steps.release.outputs.version }}"
           version_bare="${{ steps.release.outputs.version_bare }}"
-          sha256="${{ steps.sha.outputs.sha256 }}"
+          sha256_app="${{ steps.sha_app.outputs.sha256 }}"
+          sha256_daemon="${{ steps.sha_daemon.outputs.sha256 }}"
 
           # Clone the tap repo
           git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/mariodian/homebrew-tap.git" /tmp/tap
           cd /tmp/tap
 
           mkdir -p Casks
+          mkdir -p Formula
 
           # Write the updated cask formula
           cat > Casks/pincer.rb << 'CASK_EOF'
@@ -80,14 +100,57 @@ jobs:
           end
           CASK_EOF
 
+          # Write the updated daemon formula
+          cat > Formula/pincerd.rb << 'FORMULA_EOF'
+          class Pincerd < Formula
+            desc "Headless Pincer monitoring daemon for local AI agents"
+            homepage "https://github.com/mariodian/pincer"
+            url "https://github.com/mariodian/pincer/releases/download/vVERSION_PLACEHOLDER/pincerd-vVERSION_PLACEHOLDER-macos-arm64.tar.gz"
+            sha256 "SHA256_PLACEHOLDER"
+            version "VERSION_PLACEHOLDER"
+
+            depends_on arch: :arm64
+
+            def install
+              bin.install "pincerd/pincerd"
+              pkgetc.install "pincerd/drizzle/migrations"
+            end
+
+            service do
+              run [opt_bin/"pincerd"]
+              keep_alive true
+              working_dir HOMEBREW_PREFIX
+              log_path var/"log/pincerd.log"
+              error_log_path var/"log/pincerd.log"
+            end
+
+            def caveats
+              <<~EOS
+                DAEMON_SECRET must be set before starting the service.
+                Edit the service with:
+                  brew services edit pincerd
+
+                Add your secret to the EnvironmentVariables section:
+                  <key>DAEMON_SECRET</key>
+                  <string>your-secret-here</string>
+
+                Then start the service:
+                  brew services start pincerd
+              EOS
+            end
+          end
+          FORMULA_EOF
 
           # Replace placeholders with actual values
           sed -i "s/VERSION_PLACEHOLDER/$version_bare/" Casks/pincer.rb
-          sed -i "s/SHA256_PLACEHOLDER/$sha256/" Casks/pincer.rb
+          sed -i "s/SHA256_PLACEHOLDER/$sha256_app/" Casks/pincer.rb
+
+          sed -i "s/VERSION_PLACEHOLDER/$version_bare/" Formula/pincerd.rb
+          sed -i "s/SHA256_PLACEHOLDER/$sha256_daemon/" Formula/pincerd.rb
 
           # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/pincer.rb
+          git add Casks/pincer.rb Formula/pincerd.rb
           git commit -m "Update pincer to $version"
           git push
