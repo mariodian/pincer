@@ -5,6 +5,18 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.2] - 2026-06-16
+
+### Changed
+
+- Updated Homebrew formula to use `#{version}` interpolation for download URLs and fixed binary and migration install paths.
+- Improved Homebrew caveats with clearer step-by-step instructions for configuring `DAEMON_SECRET`.
+- Updated daemon README with detailed plist editing steps for Homebrew installations.
+
+### Fixed
+
+- Fixed daemon migration directory resolution to support Homebrew `pkgetc` location (`/opt/homebrew/etc/pincerd/migrations`) in addition to the runtime base directory and explicit `PINCERD_MIGRATIONS_DIR` override.
+
 ## [v0.4.1] - 2026-06-16
 
 ### Added
