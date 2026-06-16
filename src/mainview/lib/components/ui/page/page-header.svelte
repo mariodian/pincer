@@ -53,7 +53,7 @@
   });
 </script>
 
-<div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-6 max-w-5xl">
   <div class="overflow-hidden flex-1">
     <div
       class={[
