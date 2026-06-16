@@ -5,6 +5,23 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.1] - 2026-06-16
+
+### Added
+
+- Added macOS daemon support with Homebrew formula and direct install script for the Pincer daemon on macOS.
+- Added macOS daemon build step to the release workflow and Homebrew formula update automation.
+- Integrated HeatmapLegend into the incident timeline for richer visual context.
+
+### Changed
+
+- Updated daemon README with macOS installation instructions covering Homebrew and direct install methods.
+
+### Fixed
+
+- Fixed grid and width alignment across agent forms, lists, dashboard, and settings pages.
+- Added max-width constraints to page header and body components for consistent layout.
+
 ## [v0.4.0] - 2026-06-12
 
 ### Added

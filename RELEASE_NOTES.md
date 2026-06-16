@@ -4,6 +4,7 @@ User-facing release history for Pincer. For full technical details, see [CHANGEL
 
 | Version                             | Date       | Summary                                                 |
 | ----------------------------------- | ---------- | ------------------------------------------------------- |
+| [v0.4.1](./release-notes/v0.4.1.md) | 2026-06-16 | macOS daemon support with Homebrew install              |
 | [v0.4.0](./release-notes/v0.4.0.md) | 2026-06-12 | Force sync from daemon with real-time sync status       |
 | [v0.3.9](./release-notes/v0.3.9.md) | 2026-05-28 | Ollama health parsing and non-JSON response reliability |
 | [v0.3.8](./release-notes/v0.3.8.md) | 2026-05-18 | Incident recovery and daemon sync reliability           |
