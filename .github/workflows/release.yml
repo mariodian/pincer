@@ -66,11 +66,29 @@ jobs:
           tar -czf artifacts/pincerd-${{ github.ref_name }}-linux-x64.tar.gz -C daemon/dist pincerd
       - uses: actions/upload-artifact@v4
         with:
-          name: artifacts-daemon
+          name: artifacts-daemon-linux
           path: artifacts/pincerd-${{ github.ref_name }}-linux-x64.tar.gz
 
+  build-daemon-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun run daemon:bundle
+      - name: Package daemon bundle
+        run: |
+          mkdir -p artifacts
+          tar -czf artifacts/pincerd-${{ github.ref_name }}-macos-arm64.tar.gz -C daemon/dist pincerd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-daemon-macos
+          path: artifacts/pincerd-${{ github.ref_name }}-macos-arm64.tar.gz
+
   release:
-    needs: [build-macos, build-windows, build-linux, build-daemon-linux]
+    needs: [build-macos, build-windows, build-linux, build-daemon-linux, build-daemon-macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
