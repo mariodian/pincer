@@ -166,7 +166,7 @@
 </script>
 
 {#if loading}
-  <div class="max-w-lg space-y-6">
+  <div class="max-w-2xl space-y-6">
     <div class="space-y-2">
       <Skeleton class="h-8 w-48" />
       <Skeleton class="h-4 w-64" />
@@ -178,7 +178,7 @@
     </div>
   </div>
 {:else if updateInfo}
-  <div class="max-w-lg space-y-6">
+  <div class="max-w-2xl space-y-6">
     <Card.Root>
       <Card.Header>
         <Card.Title class="flex flex-col items-center justify-center">

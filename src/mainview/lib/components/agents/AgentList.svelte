@@ -144,7 +144,7 @@
 
   <PageBody>
     {#if loading}
-      <div class="flex flex-col gap-4">
+      <div class="flex grid flex-col gap-4 lg:grid-cols-2">
         {#each [1, 2, 3] as _, i (i)}
           <div
             class={cn(
@@ -170,7 +170,7 @@
       </div>
     {:else if agents.length > 0}
       <div
-        class="-mx-0.5 grid grid-cols-1 gap-3 overflow-x-hidden xl:grid-cols-2"
+        class="-mx-0.5 grid grid-cols-1 gap-3 overflow-x-hidden lg:grid-cols-2"
       >
         {#each agents as agent (agent.id)}
           <div class="overflow-x-hidden p-0.5">

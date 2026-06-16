@@ -145,7 +145,7 @@
     <div
       class={[
         "mt-8 grid gap-4 lg:mt-12 lg:gap-6",
-        "3xl:grid-cols-4 grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3",
+        "grid-cols-1 lg:grid-cols-2",
       ]}
     >
       <MetricChart

@@ -302,7 +302,7 @@
 
 <svelte:window onkeydown={handleEscKey} />
 
-<div class="flex h-full max-w-lg flex-col">
+<div class="flex h-full max-w-2xl flex-col">
   <PageHeader
     title={isEdit ? "Edit Agent" : "Add Agent"}
     description={isEdit

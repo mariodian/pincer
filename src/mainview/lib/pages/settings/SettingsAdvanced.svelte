@@ -95,7 +95,7 @@
 </script>
 
 {#if loading}
-  <div class="max-w-lg space-y-6">
+  <div class="max-w-2xl space-y-6">
     <div class="space-y-2">
       <Skeleton class="h-4 w-32" />
       <Skeleton class="h-9 w-full" />
@@ -117,7 +117,7 @@
     </div>
   </div>
 {:else}
-  <div class="max-w-lg space-y-6">
+  <div class="max-w-2xl space-y-6">
     <h3 class="mb-2 font-medium">System</h3>
     <Card.Root>
       <Card.Content>
