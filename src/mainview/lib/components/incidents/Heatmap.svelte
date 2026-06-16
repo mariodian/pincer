@@ -214,7 +214,7 @@
 
 <div class="w-full max-w-full min-w-0 overflow-x-auto">
   <div
-    class={cn("mb-3 grid gap-1", className)}
+    class={cn("grid gap-1", className)}
     style={`grid-template-columns: repeat(${columns}, minmax(0, ${CELL_SIZE})); width: max-content;`}
   >
     {#each timeBuckets as slot (slot.startTime.getTime())}

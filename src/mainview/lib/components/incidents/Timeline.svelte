@@ -2,7 +2,11 @@
   import type { CheckBucket, IncidentEvent, TimeRange } from "$shared/types";
   import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
-  import { Heatmap, IncidentCard } from "$lib/components/incidents";
+  import {
+    Heatmap,
+    HeatmapLegend,
+    IncidentCard,
+  } from "$lib/components/incidents";
   import * as Empty from "$lib/components/ui/empty";
   import { Icon } from "$lib/components/ui/icon";
   import TooltipProvider from "$lib/components/ui/tooltip/tooltip-provider.svelte";
@@ -163,6 +167,7 @@
   <div class={cn("w-full max-w-full min-w-0 space-y-3", className)}>
     <!-- Single heatmap for the entire period (24h or 7d) -->
     <Heatmap {range} {checkBuckets} {anchorDate} cellSize={4} />
+    <HeatmapLegend class="mb-8" />
 
     {#each allDays as day (day)}
       {@const dayIncidents = incidentsByDay.get(day)}
@@ -187,21 +192,23 @@
             >
               Events
             </h4>
-            {#each dayIncidents as group (group.id)}
-              {@const firstEvent = group.events[0]}
-              {@const agent = getAgent(firstEvent.agentId)}
-              {#if agent}
-                <IncidentCard
-                  events={group.events}
-                  agentName={agent.name}
-                  agentColor={agent.color}
-                />
-              {:else}
-                <div class="text-muted-foreground text-xs">
-                  Unknown agent (ID: {firstEvent.agentId})
-                </div>
-              {/if}
-            {/each}
+            <div class={["grid gap-4 lg:gap-6", "grid-cols-1 lg:grid-cols-2"]}>
+              {#each dayIncidents as group (group.id)}
+                {@const firstEvent = group.events[0]}
+                {@const agent = getAgent(firstEvent.agentId)}
+                {#if agent}
+                  <IncidentCard
+                    events={group.events}
+                    agentName={agent.name}
+                    agentColor={agent.color}
+                  />
+                {:else}
+                  <div class="text-muted-foreground text-xs">
+                    Unknown agent (ID: {firstEvent.agentId})
+                  </div>
+                {/if}
+              {/each}
+            </div>
           </div>
         {/if}
       </div>
