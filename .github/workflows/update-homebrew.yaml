@@ -120,12 +120,11 @@ jobs:
 
             app "Pincer.app"
 
-            uninstall quit: "com.mariodian.pincer"
-
-            postflight do
-              system_command "/usr/bin/xattr",
-                args: ["-dr", "com.apple.quarantine", "#{appdir}/Pincer.app"]
+            postflight_steps do
+              run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/Pincer.app"]
             end
+
+            uninstall quit: "com.mariodian.pincer"
 
             zap trash: [
               "~/Library/Application Support/com.mariodian.pincer",
