@@ -6,7 +6,6 @@
 
   let {
     ref = $bindable(null),
-    gapRef = $bindable(null),
     side = "left",
     variant = "sidebar",
     collapsible = "offcanvas",
@@ -14,7 +13,6 @@
     children,
     ...restProps
   }: WithElementRef<HTMLAttributes<HTMLDivElement>> & {
-    gapRef?: HTMLElement | null;
     side?: "left" | "right";
     variant?: "sidebar" | "floating" | "inset";
     collapsible?: "offcanvas" | "icon" | "none";
@@ -47,7 +45,6 @@
   >
     <!-- This is what handles the sidebar gap on desktop -->
     <div
-      bind:this={gapRef}
       data-slot="sidebar-gap"
       class={cn(
         "transition-[width] duration-200 ease-linear relative w-(--sidebar-width-mobile) bg-transparent md:w-(--sidebar-width)",

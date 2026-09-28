@@ -57,51 +57,22 @@
     typeof navigator !== "undefined" &&
     navigator.userAgent.includes("Macintosh");
 
-  let gapEl = $state<HTMLElement | null>(null);
-  let contentEl = $state<HTMLElement | null>(null);
   let trackedPath = $state<string | undefined>(undefined);
 
   $effect(() => {
-    if (!isMacOS || gapEl === null || contentEl === null) {
+    if (!isMacOS || !$rpcReady) {
       return;
     }
 
-    const gap = gapEl;
-    const content = contentEl;
-    let frame = 0;
-
-    const pushDragRegion = () => {
-      if (frame !== 0) {
-        return;
-      }
-
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        const region = resolveMacOSDragRegion({
-          originX: MACOS_DRAG_ORIGIN_X,
-          titlebarInset: MACOS_TITLEBAR_INSET,
-          sidebarWidth: gap.getBoundingClientRect().width,
-          contentTop: content.getBoundingClientRect().top,
-        });
-        void getMainRPC()
-          .request.setWindowDragRegion(region)
-          .catch((error: unknown) => {
-            console.error("Failed to update the window drag region:", error);
-          });
+    const region = resolveMacOSDragRegion({
+      originX: MACOS_DRAG_ORIGIN_X,
+      titlebarInset: MACOS_TITLEBAR_INSET,
+    });
+    void getMainRPC()
+      .request.setWindowDragRegion(region)
+      .catch((error: unknown) => {
+        console.error("Failed to update the window drag region:", error);
       });
-    };
-
-    const observer = new ResizeObserver(pushDragRegion);
-    observer.observe(gap);
-    observer.observe(content);
-    pushDragRegion();
-
-    return () => {
-      if (frame !== 0) {
-        cancelAnimationFrame(frame);
-      }
-      observer.disconnect();
-    };
   });
 
   $effect(() => {
@@ -126,9 +97,8 @@
         ? `--titlebar-inset: ${MACOS_TITLEBAR_INSET}px`
         : undefined}
     >
-      <AppSidebar bind:gapRef={gapEl} />
+      <AppSidebar />
       <Sidebar.Inset
-        bind:ref={contentEl}
         data-slot="content"
         class={[
           "m-1.5 min-w-0 px-4 pt-5 pb-4",

@@ -55,7 +55,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
     nativeDragRegion: true,
     nativeDragRegionX: MACOS_DRAG_ORIGIN_X,
     nativeDragRegionHeight: MACOS_TITLEBAR_INSET,
-    nativeDragRegionMaxX: 256,
+    nativeDragRegionMaxX: 0,
     minWidth: MAIN_WINDOW.minWidth,
     minHeight: MAIN_WINDOW.minHeight,
   },

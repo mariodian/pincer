@@ -6,36 +6,21 @@ const originX = 92;
 const titlebarInset = 28;
 
 describe("resolveMacOSDragRegion", () => {
-  it("keeps the strip on the sidebar while the gap covers the drag origin", () => {
+  it("spans from the drag origin to the right edge at the titlebar height", () => {
     expect(
       resolveMacOSDragRegion({
         originX,
         titlebarInset,
-        sidebarWidth: 256,
-        contentTop: 6,
       }),
-    ).toEqual({ x: originX, height: titlebarInset, maxX: 256 });
+    ).toEqual({ x: originX, height: titlebarInset, maxX: 0 });
   });
 
-  it("spans the top gap once the sidebar no longer covers the drag origin", () => {
+  it("drops a negative titlebar height", () => {
     expect(
       resolveMacOSDragRegion({
         originX,
-        titlebarInset,
-        sidebarWidth: 48,
-        contentTop: 6,
-      }),
-    ).toEqual({ x: originX, height: 6, maxX: 0 });
-  });
-
-  it("treats a sidebar that ends on the drag origin as too narrow to host the strip", () => {
-    expect(
-      resolveMacOSDragRegion({
-        originX,
-        titlebarInset,
-        sidebarWidth: originX,
-        contentTop: 6,
-      }).maxX,
+        titlebarInset: -4,
+      }).height,
     ).toBe(0);
   });
 });
