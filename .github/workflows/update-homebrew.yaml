@@ -3,6 +3,12 @@ name: Update Homebrew Tap
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish to the tap (for example v0.4.3)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -10,12 +16,22 @@ permissions:
 jobs:
   update-tap:
     runs-on: ubuntu-latest
-    if: ${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')) }}
     steps:
       - name: Get release info
         id: release
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
-          version="${GITHUB_REF#refs/tags/}"
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            version="$INPUT_TAG"
+          else
+            version="${GITHUB_REF#refs/tags/}"
+          fi
+          if [[ ! "$version" =~ ^v[0-9] ]] || [[ "$version" == *-* ]]; then
+            echo "::error::Refusing non-stable tag: $version"
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "version_bare=${version#v}" >> "$GITHUB_OUTPUT"
 
@@ -33,7 +49,7 @@ jobs:
               --repo "${{ github.repository }}" \
               --json assets \
               --jq '.assets[].name' |
-            grep -E '^stable-macos-arm64-.*\.dmg$' |
+            grep -E '^macos-arm64-.*\.dmg$' |
             head -n 1
           )"
       
@@ -95,7 +111,7 @@ jobs:
             version "VERSION_PLACEHOLDER"
             sha256 "SHA256_PLACEHOLDER"
 
-            url "https://github.com/mariodian/pincer/releases/download/v#{version}/stable-macos-arm64-Pincer.dmg"
+            url "https://github.com/mariodian/pincer/releases/download/v#{version}/macos-arm64-Pincer.dmg"
             name "Pincer"
             desc "Desktop monitoring for local AI agents"
             homepage "https://github.com/mariodian/pincer"
