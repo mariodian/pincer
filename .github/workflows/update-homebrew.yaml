@@ -25,16 +25,34 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           version="${{ steps.release.outputs.version }}"
-          pattern="stable-macos-arm64-Pincer.dmg"
-
+      
+          mkdir -p /tmp/assets
+      
+          asset_name="$(
+            gh release view "$version" \
+              --repo "${{ github.repository }}" \
+              --json assets \
+              --jq '.assets[].name' |
+            grep -E '^stable-macos-arm64-.*\.dmg$' |
+            head -n 1
+          )"
+      
+          if [[ -z "$asset_name" ]]; then
+            echo "::error::No macOS ARM64 DMG found in release $version"
+            gh release view "$version" \
+              --repo "${{ github.repository }}" \
+              --json assets \
+              --jq '.assets[].name'
+            exit 1
+          fi
+      
           gh release download "$version" \
             --repo "${{ github.repository }}" \
-            --pattern "$pattern" \
+            --pattern "$asset_name" \
             --dir /tmp/assets
-
-          file="/tmp/assets/$pattern"
+      
+          file="/tmp/assets/$asset_name"
           sha256=$(sha256sum "$file" | awk '{print $1}')
-
           echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
 
       - name: Download macOS daemon and compute SHA256
