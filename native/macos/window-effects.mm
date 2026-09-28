@@ -231,6 +231,8 @@ extern "C" bool enableWindowVibrancy(void *windowPtr,
     [window setOpaque:NO];
     [window setBackgroundColor:[NSColor clearColor]];
     [window setTitlebarAppearsTransparent:titleBarTransparent ? YES : NO];
+    [window setTitleVisibility:titleBarTransparent ? NSWindowTitleHidden
+                                                   : NSWindowTitleVisible];
     [window setHasShadow:YES];
 
     NSView *contentView = [window contentView];

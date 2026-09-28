@@ -1,6 +1,6 @@
 // Window Service - Shared window configuration and types
 
-import { MAIN_WINDOW } from "../config";
+import { MACOS_TITLEBAR_INSET, MAIN_WINDOW } from "../config";
 
 export interface WindowConfig {
   titleBarStyle: "hiddenInset" | "hidden" | "default";
@@ -39,16 +39,16 @@ export type WindowName = "main" | "popover";
 
 export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
   main: {
-    titleBarTransparent: false,
-    titleBarStyle: "default",
+    titleBarTransparent: true,
+    titleBarStyle: "hiddenInset",
     transparent: true,
     vibrancy: true,
     trafficLights: true,
     trafficLightsX: 14,
     trafficLightsY: 7,
-    nativeDragRegion: false,
+    nativeDragRegion: true,
     nativeDragRegionX: 92,
-    nativeDragRegionHeight: 40,
+    nativeDragRegionHeight: MACOS_TITLEBAR_INSET,
     minWidth: MAIN_WINDOW.minWidth,
     minHeight: MAIN_WINDOW.minHeight,
   },

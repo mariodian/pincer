@@ -14,7 +14,7 @@
   import Settings from "$lib/pages/Settings.svelte";
   import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
-  import { TRAY_TITLE } from "../bun/config";
+  import { MACOS_TITLEBAR_INSET, TRAY_TITLE } from "../bun/config";
 
   import "./app.css";
 
@@ -44,6 +44,10 @@
     "/settings": Settings,
   };
 
+  const isMacOS =
+    typeof navigator !== "undefined" &&
+    navigator.userAgent.includes("Macintosh");
+
   let trackedPath = $state<string | undefined>(undefined);
 
   $effect(() => {
@@ -62,7 +66,12 @@
     themeStorageKey={MAIN_WINDOW_THEME_STORAGE_KEY}
   />
   {#if $rpcReady}
-    <Sidebar.Provider>
+    <Sidebar.Provider
+      class={isMacOS ? "macos-hidden-titlebar" : undefined}
+      style={isMacOS
+        ? `--titlebar-inset: ${MACOS_TITLEBAR_INSET}px`
+        : undefined}
+    >
       <AppSidebar />
       <Sidebar.Inset
         data-slot="content"
@@ -86,6 +95,12 @@
   }
   :global([data-slot="sidebar-container"]) {
     border-color: transparent !important;
+  }
+  :global(.macos-hidden-titlebar [data-slot="sidebar-header"]) {
+    padding-top: calc(var(--titlebar-inset) + 0.5rem);
+  }
+  :global(.macos-hidden-titlebar [data-slot="content"]) {
+    margin-top: calc(var(--titlebar-inset) + 0.375rem);
   }
   :global(
     html.dark input,

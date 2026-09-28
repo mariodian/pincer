@@ -5,6 +5,9 @@ export const MAIN_WINDOW = {
   minWidth: 600,
   minHeight: 400,
 };
+
+/** Height of the macOS hidden-inset strip (traffic lights and window drag). */
+export const MACOS_TITLEBAR_INSET = 28;
 export const POPOVER_WINDOW = { width: 250, height: 300 };
 
 // Tray
