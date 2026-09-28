@@ -1,6 +1,10 @@
 // Window Service - Shared window configuration and types
 
-import { MACOS_TITLEBAR_INSET, MAIN_WINDOW } from "../config";
+import {
+  MACOS_DRAG_ORIGIN_X,
+  MACOS_TITLEBAR_INSET,
+  MAIN_WINDOW,
+} from "../config";
 
 export interface WindowConfig {
   titleBarStyle: "hiddenInset" | "hidden" | "default";
@@ -13,6 +17,8 @@ export interface WindowConfig {
   nativeDragRegion: boolean;
   nativeDragRegionX: number;
   nativeDragRegionHeight: number;
+  /** Right edge of the drag strip. 0 spans the rest of the window. */
+  nativeDragRegionMaxX: number;
   minWidth?: number;
   minHeight?: number;
 }
@@ -47,8 +53,9 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
     trafficLightsX: 14,
     trafficLightsY: 7,
     nativeDragRegion: true,
-    nativeDragRegionX: 92,
+    nativeDragRegionX: MACOS_DRAG_ORIGIN_X,
     nativeDragRegionHeight: MACOS_TITLEBAR_INSET,
+    nativeDragRegionMaxX: 256,
     minWidth: MAIN_WINDOW.minWidth,
     minHeight: MAIN_WINDOW.minHeight,
   },
@@ -63,6 +70,7 @@ export const DEFAULT_WINDOW_CONFIGS: Record<WindowName, WindowConfig> = {
     nativeDragRegion: false,
     nativeDragRegionX: 0,
     nativeDragRegionHeight: 0,
+    nativeDragRegionMaxX: 0,
   },
 };
 

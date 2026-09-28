@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { dlopen, FFIType, type Pointer } from "bun:ffi";
 import { BrowserWindow } from "electrobun/main";
 
+import type { DragRegion } from "../../shared/dragRegion";
 import { logger } from "../services/loggerService";
 import type { WindowConfig, WindowName } from "./windowConfig";
 
@@ -37,16 +38,21 @@ type MacWindowEffectsLibrary = {
       windowPtr: Pointer,
       x: number,
       height: number,
+      maxX: number,
     ) => boolean;
   };
 };
 
+const MAX_DRAG_COORDINATE = 10000;
+
 let currentWindowAppearance: WindowAppearance = "system";
+let mainDragRegion: DragRegion | null = null;
 let macWindowEffectsLib: MacWindowEffectsLibrary | null = null;
 const trackedMacOSWindows: Record<WindowName, Set<BrowserWindow>> = {
   main: new Set<BrowserWindow>(),
   popover: new Set<BrowserWindow>(),
 };
+const trackedWindowConfigs = new WeakMap<BrowserWindow, WindowConfig>();
 
 function toNativeWindowAppearance(appearance: WindowAppearance): number {
   switch (appearance) {
@@ -110,7 +116,7 @@ function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
         returns: FFIType.bool,
       },
       setNativeWindowDragRegion: {
-        args: [FFIType.ptr, FFIType.f64, FFIType.f64],
+        args: [FFIType.ptr, FFIType.f64, FFIType.f64, FFIType.f64],
         returns: FFIType.bool,
       },
     }) as unknown as MacWindowEffectsLibrary;
@@ -122,7 +128,12 @@ function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
   return macWindowEffectsLib;
 }
 
-function trackMacOSWindow(windowName: WindowName, window: BrowserWindow) {
+function trackMacOSWindow(
+  windowName: WindowName,
+  window: BrowserWindow,
+  windowConfig: WindowConfig,
+) {
+  trackedWindowConfigs.set(window, windowConfig);
   const windows = trackedMacOSWindows[windowName];
 
   if (windows.has(window)) {
@@ -132,7 +143,89 @@ function trackMacOSWindow(windowName: WindowName, window: BrowserWindow) {
   windows.add(window);
   window.on("close", () => {
     windows.delete(window);
+    trackedWindowConfigs.delete(window);
   });
+}
+
+function isDragCoordinate(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= MAX_DRAG_COORDINATE
+  );
+}
+
+function isDragRegion(value: unknown): value is DragRegion {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+
+  const region = value as { x: unknown; height: unknown; maxX: unknown };
+  return (
+    isDragCoordinate(region.x) &&
+    isDragCoordinate(region.height) &&
+    isDragCoordinate(region.maxX)
+  );
+}
+
+function dragRegionFor(
+  windowName: WindowName,
+  windowConfig: WindowConfig,
+): DragRegion {
+  if (windowName === "main" && mainDragRegion !== null) {
+    return mainDragRegion;
+  }
+
+  return {
+    x: windowConfig.nativeDragRegionX,
+    height: windowConfig.nativeDragRegionHeight,
+    maxX: windowConfig.nativeDragRegionMaxX,
+  };
+}
+
+function applyDragRegion(
+  window: BrowserWindow,
+  windowName: WindowName,
+  windowConfig: WindowConfig,
+): boolean {
+  const lib = getMacWindowEffectsLibrary();
+  if (lib === null || !windowConfig.nativeDragRegion) {
+    return false;
+  }
+
+  const ptr = readWindowPtr(window);
+  if (ptr === null) {
+    return false;
+  }
+
+  const region = dragRegionFor(windowName, windowConfig);
+  return lib.symbols.setNativeWindowDragRegion(
+    ptr,
+    region.x,
+    region.height,
+    region.maxX,
+  );
+}
+
+function applyTrackedMainDragRegion(): boolean {
+  const windows = trackedMacOSWindows.main;
+  if (windows.size === 0) {
+    return true;
+  }
+
+  let success = true;
+  for (const window of windows) {
+    const windowConfig = trackedWindowConfigs.get(window);
+    if (windowConfig === undefined) {
+      success = false;
+      continue;
+    }
+
+    success = applyDragRegion(window, "main", windowConfig) && success;
+  }
+
+  return success;
 }
 
 function getWindowAppearance(windowName: WindowName): WindowAppearance {
@@ -178,6 +271,16 @@ export function setMacOSWindowAppearance(
   return success;
 }
 
+/** Store the main-window drag strip and apply it to tracked main windows. */
+export function setMacOSMainDragRegion(region: DragRegion): boolean {
+  if (!isDragRegion(region)) {
+    return false;
+  }
+
+  mainDragRegion = region;
+  return applyTrackedMainDragRegion();
+}
+
 export function applyMacOSWindowEffects(
   windowName: WindowName,
   mainWindow: BrowserWindow,
@@ -188,7 +291,7 @@ export function applyMacOSWindowEffects(
     return;
   }
 
-  trackMacOSWindow(windowName, mainWindow);
+  trackMacOSWindow(windowName, mainWindow, windowConfig);
 
   const windowPtr = readWindowPtr(mainWindow);
   if (windowPtr === null) {
@@ -226,16 +329,8 @@ export function applyMacOSWindowEffects(
           )
         : false;
     };
-    const alignNativeDragRegion = () => {
-      const ptr = readWindowPtr(mainWindow);
-      return windowConfig.nativeDragRegion && ptr !== null
-        ? lib.symbols.setNativeWindowDragRegion(
-            ptr,
-            windowConfig.nativeDragRegionX,
-            windowConfig.nativeDragRegionHeight,
-          )
-        : false;
-    };
+    const alignNativeDragRegion = () =>
+      applyDragRegion(mainWindow, windowName, windowConfig);
 
     const alignMacOSControls = () => {
       alignButtons();

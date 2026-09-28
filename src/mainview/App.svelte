@@ -1,6 +1,7 @@
 <script lang="ts">
   import Router, { replace, router } from "@bmlt-enabled/svelte-spa-router";
   import wrap from "@bmlt-enabled/svelte-spa-router/wrap";
+  import { resolveMacOSDragRegion } from "$shared/dragRegion";
   import { mode, ModeWatcher } from "mode-watcher";
   import { Toaster } from "svelte-sonner";
 
@@ -12,9 +13,17 @@
   import Incidents from "$lib/pages/Incidents.svelte";
   import Reports from "$lib/pages/Reports.svelte";
   import Settings from "$lib/pages/Settings.svelte";
-  import { pendingNavigationRoute, rpcReady } from "$lib/services/mainRPC";
+  import {
+    getMainRPC,
+    pendingNavigationRoute,
+    rpcReady,
+  } from "$lib/services/mainRPC";
   import { currentRoute, previousRoute } from "$lib/services/navigationStore";
-  import { MACOS_TITLEBAR_INSET, TRAY_TITLE } from "../bun/config";
+  import {
+    MACOS_DRAG_ORIGIN_X,
+    MACOS_TITLEBAR_INSET,
+    TRAY_TITLE,
+  } from "../bun/config";
 
   import "./app.css";
 
@@ -48,7 +57,52 @@
     typeof navigator !== "undefined" &&
     navigator.userAgent.includes("Macintosh");
 
+  let gapEl = $state<HTMLElement | null>(null);
+  let contentEl = $state<HTMLElement | null>(null);
   let trackedPath = $state<string | undefined>(undefined);
+
+  $effect(() => {
+    if (!isMacOS || gapEl === null || contentEl === null) {
+      return;
+    }
+
+    const gap = gapEl;
+    const content = contentEl;
+    let frame = 0;
+
+    const pushDragRegion = () => {
+      if (frame !== 0) {
+        return;
+      }
+
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const region = resolveMacOSDragRegion({
+          originX: MACOS_DRAG_ORIGIN_X,
+          titlebarInset: MACOS_TITLEBAR_INSET,
+          sidebarWidth: gap.getBoundingClientRect().width,
+          contentTop: content.getBoundingClientRect().top,
+        });
+        void getMainRPC()
+          .request.setWindowDragRegion(region)
+          .catch((error: unknown) => {
+            console.error("Failed to update the window drag region:", error);
+          });
+      });
+    };
+
+    const observer = new ResizeObserver(pushDragRegion);
+    observer.observe(gap);
+    observer.observe(content);
+    pushDragRegion();
+
+    return () => {
+      if (frame !== 0) {
+        cancelAnimationFrame(frame);
+      }
+      observer.disconnect();
+    };
+  });
 
   $effect(() => {
     if (trackedPath !== undefined && router.location !== trackedPath) {
@@ -72,8 +126,9 @@
         ? `--titlebar-inset: ${MACOS_TITLEBAR_INSET}px`
         : undefined}
     >
-      <AppSidebar />
+      <AppSidebar bind:gapRef={gapEl} />
       <Sidebar.Inset
+        bind:ref={contentEl}
         data-slot="content"
         class={[
           "m-1.5 min-w-0 px-4 pt-5 pb-4",
@@ -98,9 +153,6 @@
   }
   :global(.macos-hidden-titlebar [data-slot="sidebar-header"]) {
     padding-top: calc(var(--titlebar-inset) + 0.5rem);
-  }
-  :global(.macos-hidden-titlebar [data-slot="content"]) {
-    margin-top: calc(var(--titlebar-inset) + 0.375rem);
   }
   :global(
     html.dark input,

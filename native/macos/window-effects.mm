@@ -372,7 +372,7 @@ extern "C" bool setTrafficLightsVisible(void *windowPtr, bool visible) {
 }
 
 extern "C" bool setNativeWindowDragRegion(void *windowPtr, double x,
-                      double height) {
+                      double height, double maxX) {
   if (windowPtr == nullptr) {
     return false;
   }
@@ -391,8 +391,18 @@ extern "C" bool setNativeWindowDragRegion(void *windowPtr, double x,
 
     CGFloat dragX = MAX(0.0, x);
     CGFloat dragHeight = MAX(0.0, height);
-    CGFloat dragWidth = MAX(0.0, contentView.bounds.size.width - dragX);
+    CGFloat availableWidth = MAX(0.0, contentView.bounds.size.width - dragX);
+    BOOL spanToRightEdge = maxX <= 0.0;
+    CGFloat dragWidth = spanToRightEdge
+      ? availableWidth
+      : MIN(availableWidth, MAX(0.0, maxX - dragX));
+
+    ElectrobunNativeDragView *dragView = findNativeDragView(contentView);
     if (dragHeight <= 0.0 || dragWidth <= 0.0) {
+      if (dragView != nil) {
+        [dragView removeFromSuperview];
+      }
+      success = YES;
       return;
     }
 
@@ -400,14 +410,13 @@ extern "C" bool setNativeWindowDragRegion(void *windowPtr, double x,
     CGFloat dragY = flipped ? 0.0 : contentView.bounds.size.height - dragHeight;
     dragY = MAX(0.0, dragY);
 
-    ElectrobunNativeDragView *dragView = findNativeDragView(contentView);
     if (dragView == nil) {
       dragView = [[ElectrobunNativeDragView alloc] initWithFrame:NSZeroRect];
       [dragView setIdentifier:kElectrobunNativeDragViewIdentifier];
     }
 
     [dragView setFrame:NSMakeRect(dragX, dragY, dragWidth, dragHeight)];
-    [dragView setAutoresizingMask:NSViewWidthSizable];
+    [dragView setAutoresizingMask:spanToRightEdge ? NSViewWidthSizable : 0];
 
     if ([dragView superview] == nil) {
       [contentView addSubview:dragView

@@ -1,10 +1,12 @@
 // System RPC - Shared RPC definition for system info
 import { BrowserView, Utils } from "electrobun/main";
 
+import type { DragRegion } from "../../shared/dragRegion";
 import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
 import type { Platform } from "../../shared/types";
 import { logger } from "../services/loggerService";
 import {
+  setMacOSMainDragRegion,
   setMacOSWindowAppearance,
   type WindowAppearance,
 } from "../utils/macOSWindowEffects";
@@ -32,6 +34,10 @@ export type SystemRPCType = {
       };
       setWindowAppearance: {
         params: { appearance: WindowAppearance };
+        response: { success: boolean };
+      };
+      setWindowDragRegion: {
+        params: DragRegion;
         response: { success: boolean };
       };
       notifyRendererReady: {
@@ -73,6 +79,18 @@ export const systemRequestHandlers = {
     const os = getPlatform();
     return { os };
   },
+  setWindowDragRegion: (region: DragRegion) =>
+    withErrorResult(
+      "systemRPC",
+      async () => {
+        const success = setMacOSMainDragRegion(region);
+        if (!success) {
+          logger.warn("systemRPC", "setMacOSMainDragRegion returned false");
+        }
+        return { success };
+      },
+      { success: false },
+    ),
   setWindowAppearance: ({ appearance }: { appearance: WindowAppearance }) =>
     withErrorResult(
       "systemRPC",

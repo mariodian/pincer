@@ -7,6 +7,8 @@
   import NavMain from "./NavMain.svelte";
   import NavSecondary from "./NavSecondary.svelte";
 
+  let { gapRef = $bindable(null) }: { gapRef?: HTMLElement | null } = $props();
+
   const appVersion = packageJson.version;
 
   const menuItems = {
@@ -22,7 +24,7 @@
   };
 </script>
 
-<Sidebar.Root collapsible="icon">
+<Sidebar.Root collapsible="icon" bind:gapRef>
   <Sidebar.Header>
     <Sidebar.Menu>
       <Sidebar.MenuItem>

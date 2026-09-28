@@ -8,6 +8,9 @@ export const MAIN_WINDOW = {
 
 /** Height of the macOS hidden-inset strip (traffic lights and window drag). */
 export const MACOS_TITLEBAR_INSET = 28;
+
+/** Left edge of the drag strip, clear of the traffic lights. */
+export const MACOS_DRAG_ORIGIN_X = 92;
 export const POPOVER_WINDOW = { width: 250, height: 300 };
 
 // Tray
