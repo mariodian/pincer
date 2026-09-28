@@ -1,27 +1,13 @@
 {
+  "extends": "./tsconfig.paths.json",
   "compilerOptions": {
-    // Language and module settings
     "target": "ES2020",
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
-    "rootDir": ".",
-    "paths": {
-      "$assets": ["./src/mainview/assets"],
-      "$assets/*": ["./src/mainview/assets/*"],
-      "$lib": ["./src/mainview/lib"],
-      "$lib/*": ["./src/mainview/lib/*"],
-      "$bun": ["./src/bun"],
-      "$bun/*": ["./src/bun/*"],
-      "$resources": ["./src/resources"],
-      "$resources/*": ["./src/resources/*"],
-      "$shared": ["./src/shared"],
-      "$shared/*": ["./src/shared/*"]
-    },
     "allowImportingTsExtensions": true,
-    // Type checking
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -32,10 +18,9 @@
     "resolveJsonModule": true,
     "useDefineForClassFields": true,
     "isolatedModules": true,
-    // Output
     "noEmit": true
   },
-  "include": ["src"],
+  "include": ["src", "electrobun.config.ts", "hutch.config.ts"],
   "exclude": [
     "node_modules",
     "dist",

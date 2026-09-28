@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 
+# Electrobun 2 / Hutch generated state
+.hutch/
+.cottontail-tmp/
+tsconfig.paths.json
+
 # Build artifacts
 dist/
 build/

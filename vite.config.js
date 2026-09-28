@@ -1,19 +1,26 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from "path";
 import { defineConfig } from "vite";
+
+import { electrobunViteAliases } from "./.hutch/devkit/api/config/electrobun-vite";
 import svelteConfig from "./svelte.config.js";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [svelte({ configFile: false, ...svelteConfig }), tailwindcss()],
   resolve: {
-    alias: {
-      $assets: resolve(__dirname, "src/mainview/assets"),
-      $bun: resolve(__dirname, "src/bun"),
-      $lib: resolve(__dirname, "src/mainview/lib"),
-      $resources: resolve(__dirname, "src/resources"),
-      $shared: resolve(__dirname, "src/shared"),
-    },
+    alias: [
+      ...electrobunViteAliases(resolve(rootDir, ".hutch/devkit")),
+      { find: "$assets", replacement: resolve(rootDir, "src/mainview/assets") },
+      { find: "$bun", replacement: resolve(rootDir, "src/bun") },
+      { find: "$lib", replacement: resolve(rootDir, "src/mainview/lib") },
+      { find: "$resources", replacement: resolve(rootDir, "src/resources") },
+      { find: "$shared", replacement: resolve(rootDir, "src/shared") },
+    ],
   },
   root: "src/mainview",
   base: "./",
@@ -23,8 +30,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rolldownOptions: {
       input: {
-        main: resolve(__dirname, "src/mainview/index.html"),
-        trayPopover: resolve(__dirname, "src/mainview/tray-popover.html"),
+        main: resolve(rootDir, "src/mainview/index.html"),
+        trayPopover: resolve(rootDir, "src/mainview/tray-popover.html"),
       },
     },
   },

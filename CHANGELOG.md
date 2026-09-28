@@ -5,6 +5,12 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Migrated the desktop shell to Electrobun 2. The main process stays on Bun because the app uses `bun:ffi` and `bun:sqlite`. SDK imports now use `electrobun/main`.
+
 ## [v0.4.2] - 2026-06-16
 
 ### Changed

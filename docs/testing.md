@@ -47,9 +47,9 @@ mock.module("../../../bun/storage/index", () => ({
 }));
 ```
 
-### `electrobun/bun` is mocked globally
+### `electrobun/main` is mocked globally
 
-The preload script (`src/__tests__/setup/mock-electrobun.ts`, configured in `bunfig.toml`) mocks `electrobun/bun` for every test. **Do not add `mock.module("electrobun/bun", ...)` in individual test files** — redundant mocks cause Bun ≥1.3.14 to hang during teardown.
+The preload script (`src/__tests__/setup/mock-electrobun.ts`, configured in `bunfig.toml`) mocks `electrobun/main` and the deprecated `electrobun/bun` alias for every test. **Do not add `mock.module("electrobun/main", ...)` or `mock.module("electrobun/bun", ...)` in individual test files.** Redundant mocks cause Bun >=1.3.14 to hang during teardown.
 
 ### Mock `windowRegistry` when needed
 
@@ -127,10 +127,10 @@ mock.module("../../../../bun/services/loggerService", () => ({
   },
 }));
 
-// ✅ Required — test asserts mockShowNotification was called
-mock.module("electrobun/bun", () => ({
-  Utils: { showNotification: mockShowNotification },
-}));
+// ✅ Required — test asserts mockShowNotification was called.
+// Import the shared mock. Do not mock.module("electrobun/main") in the test file.
+import { mockShowNotification } from "../../mocks/electrobun";
+expect(mockShowNotification).toHaveBeenCalled();
 ```
 
 ---
@@ -439,7 +439,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 const mockFoo = mock(() => Promise.resolve(defaultValue));
 
 // 3. Register module mocks (MUST be before await import)
-//    Do NOT mock electrobun/bun — the preload handles it globally
+//    Do NOT mock electrobun/main or electrobun/bun — the preload handles both globally
 mock.module("../../../bun/rpc/windowRegistry", () => ({ getMainWindow: mock(() => null) }));
 mock.module("../../../bun/services/fooService", () => ({ foo: mockFoo }));
 

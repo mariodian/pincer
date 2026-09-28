@@ -95,6 +95,7 @@ bun install
 ### ✅ Requirements
 
 - [Bun](https://bun.sh) v1.0+
+- Electrobun 2 toolchain, downloaded on the first `bun run dev`
 - macOS 13+, Windows 10+, or Linux (GTK3)
 - Xcode Command Line Tools (macOS only, required for native vibrancy effects)
 

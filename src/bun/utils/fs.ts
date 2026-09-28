@@ -1,6 +1,6 @@
 import { mkdir, stat } from "node:fs/promises";
 
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 /** Ensure the app's user-data directory exists. */
 export async function ensureAppDataDir(): Promise<void> {

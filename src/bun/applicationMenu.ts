@@ -1,4 +1,4 @@
-import { ApplicationMenu, BrowserWindow } from "electrobun/bun";
+import { ApplicationMenu, BrowserWindow } from "electrobun/main";
 
 import { logger } from "./services/loggerService";
 import { showMainWindow } from "./utils/navigation";

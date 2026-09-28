@@ -1,1 +1,4 @@
 src/mainview/lib/components/ui/**
+.hutch
+.cottontail-tmp
+tsconfig.paths.json

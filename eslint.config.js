@@ -43,6 +43,6 @@ export default [
   },
   {
     // @TODO: Move shadcn components to its own folders instead
-    ignores: ["src/mainview/lib/components/ui/**"],
+    ignores: ["src/mainview/lib/components/ui/**", ".hutch/**"],
   },
 ];

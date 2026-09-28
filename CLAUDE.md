@@ -2,15 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Critical: This is Electrobun, NOT Electron
+## Critical: This is Electrobun 2, NOT Electron
 
-Do not use Electron APIs or patterns. Electrobun uses Bun as the main process runtime with its own window/tray/RPC APIs. Reference: https://blackboard.sh/electrobun/llms.txt
+Do not use Electron APIs or patterns. Electrobun 2 uses Hutch for builds and Bun as this app's main-process runtime (`build.mainProcess: "bun"`). Cottontail is the framework default, but this app needs the real Bun runtime for `bun:ffi` and `bun:sqlite`.
+
+SDK imports: `electrobun/main` in the main process, `electrobun/view` in the renderer. `electrobun/bun` is a deprecated alias. Docs: https://framework.blackboard.sh/electrobun/
 
 ## Commands
 
 | Command                     | Purpose                                                                 |
 | --------------------------- | ----------------------------------------------------------------------- |
-| `bun run dev`               | Dev server (setup + Vite + Electrobun)                                  |
+| `bun run dev`               | Dev server (devkit + setup + Vite + Electrobun)                         |
+| `bun run devkit`            | Materialize `.hutch/devkit` and refresh TypeScript paths                |
 | `bun run dev:hmr`           | HMR for renderer iteration (Vite on :5173 + desktop runtime)            |
 | `bun run build`             | Production build (setup + Vite + Electrobun)                            |
 | `bun run build:native-libs` | Compile macOS dylib — run if app crashes on startup                     |
@@ -34,11 +37,11 @@ Do not use Electron APIs or patterns. Electrobun uses Bun as the main process ru
 - **Renderer** (`src/mainview/`): Svelte 5 SPA. Dashboard, agents CRUD, incidents, reports, settings. Entry: `src/mainview/main.ts`.
 - **Tray popover** (`src/mainview/tray-popover.html` + `TrayPopover.svelte`): Mini-dashboard in macOS tray popover. Shares RPC interface with main window.
 
-All windows run in the same Bun process (single-process mode per `electrobun.config.ts`).
+All windows run in the Bun main process (`build.mainProcess: "bun"` in `electrobun.config.ts`).
 
 ### Inter-Process Communication
 
-RPC via Electrobun's `BrowserView.defineRPC<T>()`. Shared types in `src/shared/`. Handler files in `src/bun/rpc/` — one per domain (`agentRPC.ts`, `systemRPC.ts`, `settingsRPC.ts`, `statsRPC.ts`, `reportsRPC.ts`, `incidentRPC.ts`, `trayPopoverRPC.ts`, `updateRPC.ts`).
+RPC via Electrobun's `BrowserView.defineRPC<T>()`. Shared types in `src/shared/`. Handler files in `src/bun/rpc/`. Main-process SDK imports come from `electrobun/main`.
 
 ### Service Layer
 

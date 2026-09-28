@@ -1,4 +1,4 @@
-import Electrobun, { BrowserWindow, Screen, Utils } from "electrobun/bun";
+import Electrobun, { BrowserWindow, Screen, Utils } from "electrobun/main";
 
 import { setupMainWindowMenu } from "./applicationMenu";
 import { APP_NAME, MAIN_WINDOW } from "./config";

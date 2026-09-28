@@ -1,4 +1,4 @@
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 import { getMainWindow } from "../rpc/windowRegistry";
 import { logger } from "../services/loggerService";

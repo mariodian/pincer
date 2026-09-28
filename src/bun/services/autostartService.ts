@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { $ } from "bun";
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 import { getChannel } from "../utils/channel";
 import { isBSD, isLinux, isMacOS, isWindows } from "../utils/platform";

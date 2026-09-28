@@ -1,5 +1,5 @@
 // Tray Popover RPC - Handlers for tray popover IPC
-import { BrowserView, Utils } from "electrobun/bun";
+import { BrowserView, Utils } from "electrobun/main";
 
 import type { TrayPopoverRPCType } from "../../shared/rpc";
 import { readAgents } from "../services/agentService";

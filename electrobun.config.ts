@@ -1,4 +1,5 @@
 import type { ElectrobunConfig } from "electrobun";
+
 import { appConfig } from "./src/shared/appConfig";
 
 export default {
@@ -11,14 +12,19 @@ export default {
     exitOnLastWindowClosed: false, // keep running when all windows are closed
   },
   build: {
+    // Cottontail is the v2 default. Stay on Bun: the main process uses
+    // bun:ffi and bun:sqlite, which need the real Bun runtime.
+    mainProcess: "bun",
+    bun: {
+      entrypoint: "src/bun/index.ts",
+    },
     // Vite builds to dist/, we copy from there
     copy: {
       "dist/index.html": "views/mainview/index.html",
       "dist/tray-popover.html": "views/mainview/tray-popover.html",
       "dist/assets": "views/mainview/assets",
       "src/resources": "views/resources",
-      "src/bun/libs/libMacOS.dylib":
-        "bun/libs/libMacOS.dylib",
+      "src/bun/libs/libMacOS.dylib": "bun/libs/libMacOS.dylib",
       "drizzle/migrations": "drizzle/migrations",
     },
     mac: {

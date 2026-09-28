@@ -4,9 +4,10 @@
   "description": "Desktop application for monitoring and managing local AI agents via system tray, featuring health checks, status history, and performance charts.",
   "type": "module",
   "scripts": {
-    "dev": "bun run setup && vite build && electrobun dev",
-    "dev:hmr": "concurrently \"vite --port 5173\" \"bun run dev\"",
-    "build": "bun run setup && vite build && electrobun build",
+    "devkit": "electrobun prepare && bun scripts/sync-tsconfig-paths.mjs",
+    "dev": "bun run devkit && bun run setup && vite build && electrobun dev",
+    "dev:hmr": "bun run devkit && concurrently \"vite --port 5173\" \"bun run dev\"",
+    "build": "bun run devkit && bun run setup && vite build && electrobun build",
     "build:native-libs": "bash ./scripts/build-macos-lib.sh",
     "build:canary": "bun run build --env=canary",
     "build:stable": "bun run build --env=stable",
@@ -20,7 +21,7 @@
     "lint:fix": "eslint --fix src",
     "lint:fix:backend": "eslint --fix src/bun",
     "lint:fix:svelte": "eslint --fix src/mainview",
-    "typecheck": "bun run typecheck:backend && bun run typecheck:svelte && bun run daemon:typecheck && bun run test:typecheck",
+    "typecheck": "bun run devkit && bun run typecheck:backend && bun run typecheck:svelte && bun run daemon:typecheck && bun run test:typecheck",
     "typecheck:backend": "tsc --noEmit --project tsconfig.backend.json",
     "typecheck:svelte": "svelte-check --tsconfig ./tsconfig.json",
     "db:generate": "bunx drizzle-kit generate",
@@ -48,10 +49,10 @@
     "*.{css,html}": "prettier --write"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2",
-    "electrobun": "1.18.1"
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "electrobun": "2.0.1",
     "@bmlt-enabled/svelte-spa-router": "^5.0.8",
     "@eslint/js": "^10.0.1",
     "@fontsource-variable/inter": "^5.2.8",

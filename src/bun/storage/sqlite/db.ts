@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { PATHS, Utils } from "electrobun/bun";
+import { PATHS, Utils } from "electrobun/main";
 
 import { createDatabase, getDatabaseInstances } from "../../../shared/db-core";
 import { runDatabaseInitialization } from "../../services/dbInitService";

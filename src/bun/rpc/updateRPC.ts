@@ -1,5 +1,5 @@
 // Update RPC - Shared RPC definition for update management
-import { Updater } from "electrobun/bun";
+import { Updater } from "electrobun/main";
 
 import { logger } from "../services/loggerService";
 import {

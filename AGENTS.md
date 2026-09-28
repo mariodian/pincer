@@ -1,13 +1,16 @@
 # Pincer Agent Guidelines
 
-> **Important:** This is an **Electrobun** desktop app (NOT Electron). Do not use Electron APIs or patterns.
-> Full Electrobun API reference: https://blackboard.sh/electrobun/llms.txt
+> **Important:** This is an **Electrobun 2** desktop app (NOT Electron). Do not use Electron APIs or patterns.
+> Docs: https://framework.blackboard.sh/electrobun/
+>
+> The main process stays on Bun (`build.mainProcess: "bun"` in `electrobun.config.ts`) because it uses `bun:ffi` and `bun:sqlite`. Import the SDK from `electrobun/main`, not the deprecated `electrobun/bun` alias. Renderer code imports `electrobun/view`. Run `bun run devkit` before typecheck if `.hutch/devkit` is missing.
 
 ## Essential Commands
 
 | Command                     | Purpose                                          |
 | --------------------------- | ------------------------------------------------ |
-| `bun run dev`               | Dev server (builds native dylib + Vite)          |
+| `bun run dev`               | Dev server (devkit + native dylib + Vite)        |
+| `bun run devkit`            | Download the Electrobun 2 devkit and refresh TS paths |
 | `bun run build:native-libs` | Compile macOS dylib (required before dev/build)  |
 | `bun run build`             | Full production build                            |
 | `bun run db:generate`       | Generate Drizzle migrations after schema changes |
@@ -51,7 +54,7 @@ Electrobun+Bun · Svelte 5 (runes) · Tailwind v4 · shadcn-svelte · Drizzle+SQ
 ## RPC & Native Integration
 
 - Validate all renderer inputs before passing to native code or storage
-- RPC types: `src/bun/rpc/*.ts` via `BrowserView.defineRPC<T>()`; shared types in `src/shared/types.ts`
+- RPC types: `src/bun/rpc/*.ts` via `BrowserView.defineRPC<T>()`. Shared types in `src/shared/types.ts`. SDK import: `electrobun/main`
 - Use Bun FFI (`bun:ffi`) with explicit `CString`/`ptr` types; handle missing native libs gracefully
 
 ## Svelte 5

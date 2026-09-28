@@ -1,5 +1,5 @@
 // Tray Manager - Handles system tray icon and menu for agent monitoring
-import { BrowserWindow, Tray, Utils } from "electrobun/bun";
+import { BrowserWindow, Tray, Utils } from "electrobun/main";
 
 import { sortAgentsByStatus } from "../shared/agent-helpers";
 import type { Status } from "../shared/types";

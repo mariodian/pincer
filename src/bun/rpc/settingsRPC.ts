@@ -1,5 +1,5 @@
 // Settings RPC - Shared RPC definition for settings management
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 import type {
   AdvancedSettings,

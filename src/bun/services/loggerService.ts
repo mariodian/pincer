@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 import { getDefaultLogLevel, type LogLevel } from "../../shared/logger";
 import { getMainWindow } from "../rpc/windowRegistry";

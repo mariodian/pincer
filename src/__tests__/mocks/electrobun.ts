@@ -1,4 +1,4 @@
-// Mocks electrobun/bun @ 1.16.0
+// Mocks electrobun/main @ 2.0.1 (electrobun/bun is the deprecated alias).
 //
 // Export dependency map (source file(s) → export used):
 //   PATHS                 → db.ts

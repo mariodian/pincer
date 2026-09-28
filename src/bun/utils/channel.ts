@@ -1,4 +1,4 @@
-import { Updater } from "electrobun/bun";
+import { Updater } from "electrobun/main";
 
 export async function getChannel(): Promise<string> {
   try {

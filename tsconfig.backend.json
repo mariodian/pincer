@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["src/bun/**/*.ts", "src/shared/**/*.ts"],
+  "include": ["src/bun/**/*.ts", "src/shared/**/*.ts", "electrobun.config.ts"],
   "exclude": ["node_modules", "dist", "build", "src/**/__tests__"]
 }

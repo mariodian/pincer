@@ -1,5 +1,5 @@
 // Status Notifier - Handles status change detection and notifications
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 import type { AgentStatusInfo } from "../../shared/types";
 import { getNotificationSettings } from "../storage/sqlite/settingsNotificationsRepo";

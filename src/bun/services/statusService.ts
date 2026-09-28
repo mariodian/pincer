@@ -1,7 +1,7 @@
 // Status Service - Centralized status polling for agent monitoring
 // Thin production wrapper around statusCore.
 
-import { Utils } from "electrobun/bun";
+import { Utils } from "electrobun/main";
 
 import type { DaemonSyncResult } from "../../shared/types";
 import { getMainWindow } from "../rpc/windowRegistry";

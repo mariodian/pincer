@@ -1,5 +1,5 @@
 // Status Sync Service - Centralized status synchronization across windows and localStorage
-import type { BrowserWindow } from "electrobun/bun";
+import type { BrowserWindow } from "electrobun/main";
 
 import { mergeAgentsWithStatuses } from "../../shared/agent-helpers";
 import type { AgentStatus, AgentStatusInfo } from "../../shared/types";

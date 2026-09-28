@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { dlopen, FFIType, type Pointer } from "bun:ffi";
-import { BrowserWindow } from "electrobun/bun";
+import { BrowserWindow } from "electrobun/main";
 
 import { logger } from "../services/loggerService";
 import type { WindowConfig, WindowName } from "./windowConfig";
@@ -58,6 +58,14 @@ function toNativeWindowAppearance(appearance: WindowAppearance): number {
     default:
       return 0;
   }
+}
+
+function readWindowPtr(window: BrowserWindow): Pointer | null {
+  const ptr = window.ptr;
+  if (ptr === null) {
+    logger.warn("native", "Native window pointer is unavailable");
+  }
+  return ptr;
 }
 
 function getMacWindowEffectsLibrary(): MacWindowEffectsLibrary | null {
@@ -150,10 +158,13 @@ export function setMacOSWindowAppearance(
   let success = true;
 
   for (const window of windows) {
-    const applied = lib.symbols.setWindowAppearance(
-      window.ptr,
-      nativeAppearance,
-    );
+    const ptr = readWindowPtr(window);
+    if (ptr === null) {
+      success = false;
+      continue;
+    }
+
+    const applied = lib.symbols.setWindowAppearance(ptr, nativeAppearance);
     success = applied && success;
   }
 
@@ -179,46 +190,52 @@ export function applyMacOSWindowEffects(
 
   trackMacOSWindow(windowName, mainWindow);
 
+  const windowPtr = readWindowPtr(mainWindow);
+  if (windowPtr === null) {
+    return;
+  }
+
   const windowAppearance = getWindowAppearance(windowName);
 
   try {
     const minSizeSet = lib.symbols.setWindowMinSize(
-      mainWindow.ptr,
+      windowPtr,
       windowConfig.minWidth,
       windowConfig.minHeight,
     );
     const vibrancyEnabled = windowConfig.vibrancy
       ? lib.symbols.enableWindowVibrancy(
-          mainWindow.ptr,
+          windowPtr,
           windowConfig.titleBarTransparent,
           toNativeWindowAppearance(windowAppearance),
         )
       : false;
     const appearanceEnabled = lib.symbols.setWindowAppearance(
-      mainWindow.ptr,
+      windowPtr,
       toNativeWindowAppearance(windowAppearance),
     );
-    const shadowEnabled = lib.symbols.ensureWindowShadow(mainWindow.ptr);
-    lib.symbols.setTrafficLightsVisible(
-      mainWindow.ptr,
-      windowConfig.trafficLights,
-    );
-    const alignButtons = () =>
-      windowConfig.trafficLights
+    const shadowEnabled = lib.symbols.ensureWindowShadow(windowPtr);
+    lib.symbols.setTrafficLightsVisible(windowPtr, windowConfig.trafficLights);
+    const alignButtons = () => {
+      const ptr = readWindowPtr(mainWindow);
+      return windowConfig.trafficLights && ptr !== null
         ? lib.symbols.setWindowTrafficLightsPosition(
-            mainWindow.ptr,
+            ptr,
             windowConfig.trafficLightsX,
             windowConfig.trafficLightsY,
           )
         : false;
-    const alignNativeDragRegion = () =>
-      windowConfig.nativeDragRegion
+    };
+    const alignNativeDragRegion = () => {
+      const ptr = readWindowPtr(mainWindow);
+      return windowConfig.nativeDragRegion && ptr !== null
         ? lib.symbols.setNativeWindowDragRegion(
-            mainWindow.ptr,
+            ptr,
             windowConfig.nativeDragRegionX,
             windowConfig.nativeDragRegionHeight,
           )
         : false;
+    };
 
     const alignMacOSControls = () => {
       alignButtons();

@@ -1,5 +1,5 @@
 // System RPC - Shared RPC definition for system info
-import { BrowserView, Utils } from "electrobun/bun";
+import { BrowserView, Utils } from "electrobun/main";
 
 import { RPC_MAX_REQUEST_TIME } from "../../shared/rpc";
 import type { Platform } from "../../shared/types";
