@@ -5,11 +5,13 @@ All notable changes to Pincer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.4.3] - 2026-09-28
 
 ### Changed
 
 - Migrated the desktop shell to Electrobun 2. The main process stays on Bun because the app uses `bun:ffi` and `bun:sqlite`. SDK imports now use `electrobun/main`.
+- Updated the macOS title bar so the drag region follows the window layout and no longer depends on the sidebar width.
+- Added a typecheck step that restores Electrobun devkit TypeScript paths when they are missing.
 
 ## [v0.4.2] - 2026-06-16
 
