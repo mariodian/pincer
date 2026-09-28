@@ -21,7 +21,7 @@
     "lint:fix": "eslint --fix src",
     "lint:fix:backend": "eslint --fix src/bun",
     "lint:fix:svelte": "eslint --fix src/mainview",
-    "typecheck": "bun run devkit && bun run typecheck:backend && bun run typecheck:svelte && bun run daemon:typecheck && bun run test:typecheck",
+    "typecheck": "bun scripts/ensure-devkit-paths.mjs && bun run typecheck:backend && bun run typecheck:svelte && bun run daemon:typecheck && bun run test:typecheck",
     "typecheck:backend": "tsc --noEmit --project tsconfig.backend.json",
     "typecheck:svelte": "svelte-check --tsconfig ./tsconfig.json",
     "db:generate": "bunx drizzle-kit generate",
